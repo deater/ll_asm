@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.12
+#  linux_logo in ix86 assembler 0.13
 #
 #  Originally by 
 #       Vince Weaver <vince@deater.net>
@@ -62,51 +62,43 @@ _start:
 	rep 	
 	stosb
 
-	mov  	$logo, %esi
-	mov	$out_buffer, %edi
+	mov  	$logo, %esi		# %esi points to logo (for lodsb)
+
+       # add $(2*34-1),%edi		# point %edi to out_buffer
+        .BYTE 0x83     			
+	.BYTE 0xC7			# can't figure out how to make 
+	.BYTE (2*F-1)			# ^*^% gas use the 3-byte instruction
 
 decompression_loop:	
-
     	test	$0x2,%bh	# if 0, we shifted through 8 and must re-load
-	jne 	test_flags     	# if not move on with things
+	jnz 	test_flags     	# if not move on with things
 
-	call 	read_byte	# load in a byte
+	lodsb			# load in a byte
+	cmp	$logo_end, %esi # have we reached the end?
+	je	done_logo  	# if so, exit
 
-	mov 	$0xff, %bh	# re-load top as a counter
+	mov 	$0xff, %bh	# re-load top as a hackish 8-bit counter
 	mov 	%al, %bl	# move in the flags
 
 test_flags:
 	rcr 	$1, %bx		# rotate bottom bit into carry flag
-	jnc 	offset_length	# if one,  jump to offset_length
-
-discreet_char:
-	call  	read_byte		# get byte
-	stosb				# store it	
-	mov    	%al, text_buf(%ebp)	# move byte to text_buf[r]
-	inc 	%ebp 			# r++
-	and 	$(N-1), %ebp		# mask it
-	jmp 	decompression_loop	# keep going
+	jc	discreet_char	# if set, we jump to discreet char
 
 offset_length:
-
-	call  	read_byte	# get first byte (ch1)
-	mov 	%al, %dl	# move to dl
-
-	call 	read_byte	# get next byte  (ch2)
+	lodsw                   # get match_length and match_position
+	mov %eax,%edx
+	and $7,%dh              # dx = ax & 0x7ff;      (=match_position)
 	
-	shl 	$4, %eax		# pointer is top 4bits of ch2 bottom 8 of ch1
-	mov 	%ah, %dh 	# aka dx|=(al&0xf0)<<4;
-
-	shr	$4, %al		# trick to mask off top 4bits (sams as and 0xf)
-	mov	%al,%cl		# counter is bottom 4 of ch2 + THRESHOLD
-	inc 	%ecx  		# add $THRESHOLD, %ebp (assume THRESHOLD=2)
-	inc 	%ecx
-	inc	%ecx		# and loop once more so the loop works out
-	
+	shr $11,%eax
+	add $(THRESHOLD+1),%al
+	mov %al,%cl             # cl = (ax >> 11) + THRESHOLD + 1
+                                #                       (=match_length)
+		
 output_loop:
 	and 	$(N-1), %edx		# mask it
 	mov 	text_buf(%edx), %al	# load byte from text_buf[]
 	inc 	%edx	    		# advance pointer in text_buf
+store_byte:	
 	stosb				# store it
 	
 	mov     %al, text_buf(%ebp)	# store also to text_buf[r]
@@ -117,17 +109,21 @@ output_loop:
 	
 	jmp 	decompression_loop
 
-read_byte:
+discreet_char:
 	lodsb				# load a byte
-	cmp $logo_end, %esi		# have we reached the end?
-	je done_logo   			# if so, exit
-	ret
+        mov     $1, %cl
+        cmp     $logo_end, %esi         # have we reached the end?
+        jne     store_byte              # if so, exit
+
 
 # end of LZSS code
 
 done_logo:
-	mov	$out_buffer,%ecx	# our nice huge logo
-	call	write_stdout
+#	mov	$out_buffer,%ecx
+       mov $(text_buf+(N+F-1)), %ecx # alignment reasons
+       push    %ecx                  # save address of out_buffer on the stack
+                                     # because we'll need it a lot
+       call	write_stdout
 
 	#==========================
 	# PRINT VERSION
@@ -139,7 +135,9 @@ done_logo:
 	mov	$uname_info,%ebx	# uname struct
 	int	$0x80			# do syscall
 	
-	mov	$out_buffer,%edi		# destination is temp_string
+	pop	%edi		# destination is temp_string
+	push	%edi
+	
 	mov	$(uname_info+U_SYSNAME),%esi	# os-name from uname "Linux"
 	call	strcat
 	
@@ -155,14 +153,17 @@ done_logo:
 	mov	$(uname_info+U_VERSION),%esi	# compiled date
 	call 	strcat
 	
-	mov	$out_buffer,%ecx
+	pop	%ecx
+	push	%ecx
 	
 	call	center			# print some spaces
 	
 	mov	$0xa,%ax		# store linefeed on end
 	stosw				# and zero			  
 	
-	mov 	$out_buffer,%ecx	
+	pop	%ecx
+	push	%ecx
+	
         call	write_stdout
 	
   
@@ -227,7 +228,9 @@ done_bogo:
 					# mov esi, [ebx*4+ordinal-4]
 					# for those of you using intel syntax
 
-	mov	$out_buffer,%edi	# destination string
+	pop	%edi			# destination string
+	push	%edi
+	
 	call	strcat			# copy it
 
 	mov	$' ',%al		# print a space
@@ -281,7 +284,23 @@ chip_name:
 	shr	$20,%eax		# divide by 1024*1024 to get M
 	adc	$0, %eax		# round 
 
-	call	num_to_ascii
+        # num_to_ascii
+        push    $10
+        pop     %ebx
+        xor     %ecx,%ecx       # clear ecx
+ div_by_10:
+        cdq                     # clear edx
+        div     %ebx            # divide
+        push    %edx            # save for later
+        inc     %ecx            # add to length counter
+        or      %eax,%eax       # was Q zero?
+        jnz     div_by_10       # if not divide again
+ 
+write_out:
+        pop     %eax            # restore in reverse order
+        add     $0x30, %al      # convert to ASCII
+        stosb                   # save digit
+        loop    write_out       # loop till done
 		
 	mov	$ram_comma,%esi		# print 'M RAM, '
 	call	strcat
@@ -298,27 +317,33 @@ chip_name:
    	mov	$bogo_total,%esi
 	call	strcat
    
-	mov	$out_buffer,%ecx	# string done, lets print it
+	pop	%ecx			# string done, lets print it
+	push	%ecx
 	
 	call	center			# print some spaces
 	
 	mov	$0xa,%ax		# and line feed and zero
 	stosw
 
-	mov 	$out_buffer,%ecx		
+	pop 	%ecx
+	push	%ecx
 	call 	write_stdout
 	
 	#=================================
 	# Print Host Name
 	#=================================
 	
-	mov	$out_buffer,%edi		# output string
+	pop	%edi		# output string
+	push	%edi
+	
 	mov	$(uname_info+U_NODENAME),%esi	# host name from uname()
-	mov	$out_buffer,%ecx		# for strlen
+	mov	%edi,%ecx		# for strlen
 	call	strcat
 	call	center			# center it
 	
-	mov 	$out_buffer,%ecx		
+	pop	%ecx
+	push	%ecx
+	
 	call	write_stdout
 
 	mov	$default_colors,%ecx	# print two linefeeds and color
@@ -343,11 +368,14 @@ write_stdout:
 	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
 	pop     %eax     		# in 3 bytes of code
 	
+	cdq   	      			# clear edx
+	
 	xor	%ebx,%ebx		# put 1 in ebx (stdout)
 	inc	%ebx			# in 3 bytes of code
 	
 	# old strlen()
-	cdq   	      			# clear edx
+                       # another way of doing this:    lea 1(%edx), %ebx
+
 str_loop1:
 	inc	%edx
 	cmpb	$0,(%ecx,%edx)		# repeat till zero
@@ -355,39 +383,6 @@ str_loop1:
 
 	int	$0x80  			# run the syscall
 	ret
-
-
-	#=================================
-	# NUM_TO_ASCII
-	#=================================
-	# al has number
-	# output [edi]
-	# trashed eax,ebx,ecx,edx
-
-num_to_ascii:	
-
-	push	 $10
-	pop	 %ebx		# we will divide by 10
-	xor	 %ecx,%ecx	# clear ecx
-		
-div_by_10:	
-	cdq			# clear edx
-	div	 %ebx		# divide
-	
-	add	 $0x30,%dl	# convert to ascii
-	push	 %edx		# save for later
-	inc	 %ecx		# add to length counter
-	
-        or	 %eax,%eax	# was Q zero?
-       	jnz	 div_by_10	# if not divide again
-	
-write_out:
-	pop	 %eax		# restore in reverse order
-	stosb	     		# save digit
-	loop     write_out	# loop till done
-
-	ret
-
 
 	#=================================
 	# FIND_STRING 
@@ -494,8 +489,6 @@ done_center:
 #===========================================================================
 .data
 
-.include	"logo.lzss"
-
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 .equ	comma,ram_comma+5
@@ -515,12 +508,14 @@ two:	.ascii	"Two\0"
 three:	.ascii	"Three\0"
 four:	.ascii	"Four\0"
 
+.include	"logo.lzss_new"
+
 #============================================================================
 #	section .bss
 #============================================================================
 .bss
 
-.lcomm  text_buf, (N+F-1)       # these two buffers must follow one after the other!
+.lcomm  text_buf, (N+F-1)
 .lcomm	out_buffer,16384
 
 .lcomm	disk_buffer,4096	# we cheat!!!!

@@ -242,7 +242,7 @@ finished:
 
 int main(int argc, char **argv) {
       
-    FILE *ansi,*output,*output_lzss;
+    FILE *ansi,*output,*output_lzss,*output_lzss_new;
     int ch,byte_count=0,orig_byte_count=0;
    
        /* Hard coded output.  This shouldn't be a problem I hope */
@@ -256,6 +256,12 @@ int main(int argc, char **argv) {
     output_lzss=fopen("logo.lzss","w");
     if (output==NULL) {
        printf("Could not open \"logo.lzss\"\n");
+       return 1;
+    }
+
+    output_lzss_new=fopen("logo.lzss_new","w");
+    if (output==NULL) {
+       printf("Could not open \"logo.lzss_new\"\n");
        return 1;
     }
    
@@ -279,6 +285,11 @@ int main(int argc, char **argv) {
     printf("Size of LZSS version: %i\n",byte_count);
     fclose(output_lzss);
    
+    rewind(ansi);
+    byte_count=lzss_encode_better(ansi,output_lzss_new);
+    printf("Size of LZSS-NEW version: %i\n",byte_count);
+    fclose(output_lzss_new);
+    
     rewind(ansi);
    
 

@@ -8,7 +8,15 @@
 		PC-VAN		SCIENCE
 		NIFTY-Serve	PAF01022
 		CompuServe	74050,1022
-**************************************************************/
+**************************************************************
+ 
+         WARNING: order of match_position and match_lenght changed!
+         see lines 178 to 182
+         Mofication by <stephan.walter@gmx.ch>
+*/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,13 +24,12 @@
 
 #define FREQUENT_CHAR	'#'
 #define N		 2048	/* size of ring buffer */
-#define F		   18	/* upper limit for match_length */
+#define F		   34	/* upper limit for match_length */
 #define THRESHOLD	    2   /* encode string into position and length
 				   if match_length is greater than this */
 #define NIL		    N	/* index for root of binary search trees */
 
-unsigned long int textsize = 0,	/* text size counter */
-		  codesize = 0;	/* code size counter */
+
 
 unsigned char text_buf[N + F - 1]; /* ring buffer of size N, with extra F-1 
 				      bytes to facilitate string comparison */
@@ -34,7 +41,7 @@ int match_position, match_length,  /* of longest match.  These are
 					        binary search trees. */
 
   /* initialize trees */
-void InitTree(void) {
+void newInitTree(void) {
 	
     int  i;
 
@@ -50,7 +57,7 @@ void InitTree(void) {
     for (i = 0; i < N; i++) dad[i] = NIL;
 }
 
-void InsertNode(int r) {
+void newInsertNode(int r) {
 	/* Inserts string of length F, text_buf[r..r+F-1], into one of the
 	   trees (text_buf[r]'th tree) and returns the longest-match position
 	   and length via the global variables match_position and match_length.
@@ -102,7 +109,7 @@ void InsertNode(int r) {
 }
 
   /* deletes node p from tree */
-void DeleteNode(int p) {
+void newDeleteNode(int p) {
    
     int  q;
 	
@@ -126,12 +133,15 @@ void DeleteNode(int p) {
     dad[p] = NIL;
 }
 
-int lzss_encode(FILE *infile,FILE *outfile) {
+int lzss_encode_better(FILE *infile,FILE *outfile) {
+
+   unsigned long int textsize = 0,	/* text size counter */
+		  codesize = 0;	/* code size counter */
    
     int  i, c, len, r, s, last_match_length, code_buf_ptr;
     unsigned char  code_buf[8*2+1], mask;
 	
-    InitTree();  /* initialize trees */
+    newInitTree();  /* initialize trees */
     code_buf[0] = 0;  /* code_buf[1..16] saves eight units of code, and
 		         code_buf[0] works as eight flags, "1" representing 
 		         that the unit is an unencoded letter (1 byte), 
@@ -154,11 +164,11 @@ int lzss_encode(FILE *infile,FILE *outfile) {
 	  text_buf[r + len] = c;  /* Read F bytes into the last F bytes of
 			              the buffer */
        if ((textsize = len) == 0) return 0;  /* text of size zero */
-       for(i = 1; i <= F; i++) InsertNode(r - i);  /* Insert the F strings,
+       for(i = 1; i <= F; i++) newInsertNode(r - i);  /* Insert the F strings,
 		each of which begins with one or more 'space' characters.  Note
 		the order in which these strings are inserted.  This way,
 		degenerate trees will be less likely to occur. */
-       InsertNode(r);  /* Finally, insert the whole string just read.  The
+       newInsertNode(r);  /* Finally, insert the whole string just read.  The
 		global variables match_length and match_position are set. */
        do {
           if (match_length > len) match_length = len;  /* match_length
@@ -168,11 +178,13 @@ int lzss_encode(FILE *infile,FILE *outfile) {
 			code_buf[0] |= mask;  /* 'send one byte' flag */
 			code_buf[code_buf_ptr++] = text_buf[r];  /* Send uncoded. */
 		} else {
-			code_buf[code_buf_ptr++] = (unsigned char) match_position;
-			code_buf[code_buf_ptr++] = (unsigned char)
-				(((match_position >> 4) & 0xf0)
-			  | (match_length - (THRESHOLD + 1)));  /* Send position and
-					length pair. Note match_length > THRESHOLD. */
+		   code_buf[code_buf_ptr++] = (unsigned char) match_position;
+		   code_buf[code_buf_ptr++] = (unsigned char)
+                      (((match_position >> 8) & 7) | (match_length - (THRESHOLD+1))<<3);
+		                 //              (((match_position >> 4) & 0xf0)
+		                    //        | (match_length - (THRESHOLD + 1)));  /* Send position and
+		                    //                      length pair. Note match_length > THRESHOLD. */
+		     
 		}
 		if ((mask <<= 1) == 0) {  /* Shift mask left one bit. */
 		   
@@ -188,7 +200,7 @@ int lzss_encode(FILE *infile,FILE *outfile) {
 		last_match_length = match_length;
 		for (i = 0; i < last_match_length &&
 				(c = getc(infile)) != EOF; i++) {
-			DeleteNode(s);		/* Delete old strings and */
+			newDeleteNode(s);		/* Delete old strings and */
 			text_buf[s] = c;	/* read new bytes */
 			if (s < F - 1) text_buf[s + N] = c;  /* If the position is
 				near the end of buffer, extend the buffer to make
@@ -196,12 +208,12 @@ int lzss_encode(FILE *infile,FILE *outfile) {
 			s = (s + 1) & (N - 1);  r = (r + 1) & (N - 1);
 				/* Since this is a ring buffer, increment the position
 				   modulo N. */
-			InsertNode(r);	/* Register the string in text_buf[r..r+F-1] */
+			newInsertNode(r);	/* Register the string in text_buf[r..r+F-1] */
 		}
 		while (i++ < last_match_length) {	/* After the end of text, */
-			DeleteNode(s);					/* no need to read, but */
+			newDeleteNode(s);					/* no need to read, but */
 			s = (s + 1) & (N - 1);  r = (r + 1) & (N - 1);
-			if (--len) InsertNode(r);		/* buffer may not be empty. */
+			if (--len) newInsertNode(r);		/* buffer may not be empty. */
 		}
 	} while (len > 0);	/* until length of string to be processed is zero */
 	if (code_buf_ptr > 1) {		/* Send remaining code. */
@@ -216,33 +228,4 @@ int lzss_encode(FILE *infile,FILE *outfile) {
         fprintf(outfile,"logo_end:\n");
    
         return codesize;
-}
-
-void Decode(FILE *infile,FILE *outfile)	/* Just the reverse of Encode(). */
-{
-	int  i, j, k, r, c;
-	unsigned int  flags;
-	
-	for (i = 0; i < N - F; i++) text_buf[i] = FREQUENT_CHAR;
-	r = N - F;  flags = 0;
-	for ( ; ; ) {
-		if (((flags >>= 1) & 256) == 0) {
-			if ((c = getc(infile)) == EOF) break;
-			flags = c | 0xff00;		/* uses higher byte cleverly */
-		}							/* to count eight */
-		if (flags & 1) {
-			if ((c = getc(infile)) == EOF) break;
-			putc(c, outfile);  text_buf[r++] = c;  r &= (N - 1);
-		} else {
-			if ((i = getc(infile)) == EOF) break;
-			if ((j = getc(infile)) == EOF) break;
-/*			i |= ((j & 0xf0) << 4);  j = (j & 0x0f) + THRESHOLD; */
-			i |= ((j & 0xf0) << 4);
-			j = (j & 0x0f) + THRESHOLD;
-			for (k = 0; k <= j; k++) {
-				c = text_buf[(i + k) & (N - 1)];
-				putc(c, outfile);  text_buf[r++] = c;  r &= (N - 1);
-			}
-		}
-	}
 }
