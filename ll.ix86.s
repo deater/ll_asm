@@ -1,19 +1,22 @@
 #
-#  linux_logo in ix86 assembler 0.9
+#  linux_logo in ix86 assembler 0.11
 #
 #  Originally by 
 #       Vince Weaver <vince@deater.net>
 #
-#  Extensive Size Optimization Suggestions from
+#  Crazy size-optimization hacks by
 #       Stephan Walter <stephan.walter@gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.ix86.s"
 #  link with         "ld -o ll ll.o"
 
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
-#      :  Only works with <896MB of RAM (linux limitation of /proc/kcore)
-#         need to parse /proc/iomem to get up to 4gig reporting
+#      :  MHz might crash on <586 machine w/o the field there
+#      :  sysinfo() returns RAM - reserved area which can be from 1-20MB off
+#      :  sysinfo results struct changed between 2.2 and 2.4 kernels
 #      :  Doesn't print vendor name
+
+#  WARNING:  uses undocumented SALC opcode
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -23,83 +26,109 @@
 .equ U_MACHINE,(65*4)
 .equ U_DOMAINNAME,65*5
 
-# offset into the results returned by the stat syscall
-.equ S_SIZE,20
+# offset into the results returned by the sysinfo syscall
+.equ S_TOTALRAM,16
 
 # Sycscalls
-.equ SYSCALL_EXIT,   1
-.equ SYSCALL_READ,   3
-.equ SYSCALL_WRITE,  4
-.equ SYSCALL_OPEN,   5
-.equ SYSCALL_CLOSE,  6
-.equ SYSCALL_STAT, 106
-.equ SYSCALL_UNAME,122
+.equ SYSCALL_EXIT,     1
+.equ SYSCALL_READ,     3
+.equ SYSCALL_WRITE,    4
+.equ SYSCALL_OPEN,     5
+.equ SYSCALL_CLOSE,    6
+.equ SYSCALL_STAT,   106
+.equ SYSCALL_SYSINFO,116
+.equ SYSCALL_UNAME,  122
 
 #
 .equ STDIN,0
 .equ STDOUT,1
 .equ STDERR,2
 
-
-
 	.globl _start	
 _start:	
 	#=========================
 	# PRINT LOGO
 	#=========================
-	
-	mov 	$new_logo,%esi		# point input to new_logo
-	mov 	$out_buffer,%edi	# point output to buffer
 
-main_logo_loop:	
-	lodsb				# load character
-	cmp	$0,%al			# if zero, we are done
-	je 	done_logo
-	
-	cmp	$27,%al			# if ^[, we are a color
-	jne 	blit_repeat
+# LZSS decompression algorithm implementation
+# by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
+# optimized some more by Vince Weaver
 
-	mov 	$'[',%ah		# load ^[[
-	stosw				# out to buffer
+	mov 	$text_buf, %edi		# fill "text_buf" with most common char
+	mov 	$FREQUENT_CHAR, %al     # frequent char is '#' in default logo
 
-	lodsb				# counter, for num to output
-	mov	%al,%cl			# move to loop register
-
-out_elements:
-	xor	%eax,%eax		# clear eax
-        lodsb				# load color
-
-	call num_to_ascii
-
-	mov	$';',%al		# store semi-colon
+	mov 	$(N-F), %cx
+	mov 	%ecx, %ebp
+	rep 	
 	stosb
 
-	loop 	out_elements
+	mov  	$logo, %esi
+	add 	$(2*F+6), %edi		# shorter than mov $out_buffer, %edi
 
-	dec 	%di			# erase extra semi-colon
-	lodsb				# load closing char
-	stosb				# store to buffer
+decompression_loop:	
+	shr 	$1, %bx		# cx has 8bit counter at top and flags bottom 
+    	test	$0x1,%bh	# if 0, we shifted through 8 and must re-load
+	jne 	test_flags     	# if not move on with things
 
-	jmp 	main_logo_loop		# done with color
+	call 	read_byte	# load in a byte
 
-blit_repeat:
-	mov     %al,%dl			# save the character
-	lodsb				# get times to repeat
-	mov	%al,%cl			# move times to repeat in loop reg
-	mov	%dl,%al			# restore the character to output
-	rep 				# rle to buffer
-	stosb				# stosb on separate line to work
-					# around 2.9.1 binutils
+	mov 	$0xff, %bh	# re-load top as a counter
+	mov 	%al, %bl	# move in the flags
 
-	jmp main_logo_loop
+test_flags:
+	test	$1,%bl		# is flag 0?
+	je 	offset_length	# if so jump to offset_length
 
-done_logo:	
-	mov	$0xa,%al
-	stosb				# print linefeed
+discreet_char:
+	call  	read_byte		# get byte
+	stosb				# store it	
+	mov    	%al, text_buf(%ebp)	# move byte to text_buf[r]
+	inc 	%ebp 			# r++
+	and 	$(N-1), %ebp		# mask it
+	jmp 	decompression_loop	# keep going
+
+offset_length:
+
+	call  	read_byte	# get first byte (ch1)
+	mov 	%al, %dl	# move to dl
+
+	call 	read_byte	# get next byte  (ch2)
 	
-	mov     $out_buffer,%ecx	# our nice huge logo
+	shl 	$4, %ax		# pointer is top 4bits of ch2 bottom 8 of ch1
+	mov 	%ah, %dh 	# aka dx|=(al&0xf0)<<4;
+
+	shr	$4, %al		# trick to mask off top 4bits (sams as and 0xf)
+	mov	%al,%cl		# counter is bottom 4 of ch2 + THRESHOLD
+	inc 	%ecx  		# add $THRESHOLD, %ebp (assume THRESHOLD=2)
+	inc 	%ecx
+	inc	%ecx		# and loop once more so the loop works out
+	
+output_loop:
+	and 	$(N-1), %edx		# mask it
+	mov 	text_buf(%edx), %al	# load byte from text_buf[]
+	inc 	%edx	    		# advance pointer in text_buf
+	stosb				# store it
+	
+	mov     %al, text_buf(%ebp)	# store also to text_buf[r]
+	inc 	%ebp 			# r++
+	and 	$(N-1), %ebp		# mask r
+
+	loop 	output_loop		# repeat until k>j
+	
+	jmp 	decompression_loop
+
+read_byte:
+	lodsb
+	cmp $logo_end, %esi
+	je done_logo
+	ret
+
+# end of LZSS code
+
+done_logo:
+	mov	$out_buffer,%ecx	# our nice huge logo
 	call	write_stdout
-	
+
 	#==========================
 	# PRINT VERSION
 	#==========================
@@ -151,7 +180,7 @@ done_logo:
 	
 	mov	$cpuinfo,%ebx		# '/proc/cpuinfo'
 	xor	%ecx,%ecx		# 0 = O_RDONLY <bits/fcntl.h>
-	xor	%edx,%edx
+	cdq				# clear edx in clever way
 	int	$0x80			# syscall.  fd in eax.  
 					# we should check that eax>=0
 	mov	%eax,%ebx
@@ -201,36 +230,36 @@ done_bogo:
 	mov	$out_buffer,%edi	# destination string
 	call	strcat			# copy it
 
-	mov	$space,%esi		# print a space
-	call	strcat
-	
-	
+	mov	$' ',%al		# print a space
+	stosb
+
+
 	#=========
 	# MHz
 	#=========
-	
+print_mhz:
 	mov	$('z'<<24+'H'<<16+'M'<<8+' '),%ebx	
 			   		# find ' MHz\t: ' and grab up to .
 	                                # we are little endian
 	mov	$'.',%dl			
    	call	find_string
-   
-   	mov	$megahertz,%esi		# print 'MHz '
-	call	strcat
-   
-   
+ 
+	mov	$(' '<<24+'z'<<16+'H'<<8+'M'),%eax	
+	stosl	    			# cheat and print MHz a little
+					# faster
+    
    	#=========
 	# Chip Name
 	#=========
-	
+chip_name:	
    	mov	$('e'<<24+'m'<<16+'a'<<8+'n'),%ebx     	
 					# find 'name\t: ' and grab up to \n
        					# we are little endian
 	mov	$0xa,%dl
 	call	find_string
-	
-	mov	$comma,%esi		# print ', '
-	call	strcat
+
+	mov	$0x202c,%ax		# ', '
+	stosw
 	
 	# if we were being clever here we could have saved 'bx' from
 	# the bogomips count and then add an 's' to make the chip
@@ -242,17 +271,15 @@ done_bogo:
 	# RAM
 	#========
 	
-	push    $SYSCALL_STAT		# stat() syscall (106)
+	push    $SYSCALL_SYSINFO	# stat() syscall (116)
 	pop	%eax
 	
-	mov	$kcore,%ebx		# size of /proc/kcore
-	mov	$stat_buff,%ecx		# is size of RAM
+	mov	$sysinfo_buff,%ebx	# size of /proc/kcore
 	int	$0x80
 	
-	mov	(stat_buff+S_SIZE),%eax	# size in bytes of RAM
+	mov	(sysinfo_buff+S_TOTALRAM),%eax	# size in bytes of RAM
 	shr	$20,%eax		# divide by 1024*1024 to get M
-
-#	adc	$0, %eax		# round ??
+	adc	$0, %eax		# round 
 
 	call	num_to_ascii
 		
@@ -291,19 +318,16 @@ done_bogo:
 	call	strcat
 	call	center			# center it
 	
-	mov	$0xa0a,%eax		# tack 2 line-feeds and zero on end
-	stos    %eax,%es:(%edi)		# load 32 bits (lodsd)
-
 	mov 	$out_buffer,%ecx		
 	call	write_stdout
 
-	mov	$default_colors,%ecx
+	mov	$default_colors,%ecx	# print two linefeeds and color
 	call	write_stdout
 
 	#================================
 	# Exit
 	#================================
-	
+
         xor     %ebx,%ebx
 	xor	%eax,%eax
 	inc	%eax	 		# put exit syscall number (1) in eax
@@ -322,8 +346,13 @@ write_stdout:
 	xor	%ebx,%ebx		# put 1 in ebx (stdout)
 	inc	%ebx			# in 3 bytes of code
 	
-	call	strlen			# get strlength in edx
-	
+	# old strlen()
+	cdq   	      			# clear edx
+str_loop1:
+	inc	%edx
+	cmpb	$0,(%ecx,%edx)		# repeat till zero
+	jne	str_loop1
+
 	int	$0x80  			# run the syscall
 	ret
 
@@ -333,31 +362,30 @@ write_stdout:
 	#=================================
 	# al has number
 	# output [edi]
-	# bl, eax trashed
-	
+	# trashed eax,ebx,ecx,edx
+
 num_to_ascii:	
-	push	 %ecx		# save ecx
+
+	push	 $10
+	pop	 %ebx		# we will divide by 10
 	xor	 %ecx,%ecx	# clear ecx
-	
-	mov	 $10,%bl	# we will divide by 10
+		
 div_by_10:	
-	div	 %bl		# divide
+	cdq			# clear edx
+	div	 %ebx		# divide
 	
-	ror	 $8,%ax		# get the remainder in al
-	add	 $0x30,%al	# convert to ascii
-	push	 %eax		# save for later
+	add	 $0x30,%dl	# convert to ascii
+	push	 %edx		# save for later
 	inc	 %ecx		# add to length counter
 	
-	shr	 $8,%ax		# restore quotient and clear ah
-       
-        cmp	 $0,%al		# was Q zero?
+        or	 %eax,%eax	# was Q zero?
        	jnz	 div_by_10	# if not divide again
 	
 write_out:
 	pop	 %eax		# restore in reverse order
 	stosb	     		# save digit
 	loop     write_out	# loop till done
-	pop	 %ecx		# restore ecx
+
 	ret
 
 
@@ -372,7 +400,7 @@ find_string:
 					
 	mov	$disk_buffer,%esi	# look in cpuinfo buffer
 find_loop:
-	lods    %ds:(%esi),%eax		# load 32 bits (lodsd)	
+	lodsl				# load 32 bits (lodsd)	
 	dec	%esi
 	dec	%esi
 	dec	%esi			# move pointer +1 to search all file
@@ -404,7 +432,12 @@ store_loop:
 	 jmp	store_loop
 	 
 almost_done:	 
-	xor	%eax,%eax		# replace last value with null
+	
+	# use undocumented SALC (.byte 0xD6) opcode here
+	# since come from cmp; je we know carry=0
+	
+	.byte 0xD6   	       	     	# replace last value with null
+	
 	stosb
 	dec	%edi			# move pointer back 
 done:
@@ -423,46 +456,34 @@ strcat:
 	dec	%edi			# point to one less than null
 	ret				# return
 
-	#===============================
-	# strlen
-	#===============================
-	# ecx points to string
-	# edx is returned with length
-
-strlen:
-	push 	%ecx			# save pointer
-	xor	%edx,%edx		# clear counter
-str_loop:
-	inc	%ecx
-	inc	%edx
-	cmpb 	$0,(%ecx)		# repeat till we find zero
-	jne	str_loop
-	
-	pop %ecx
-	ret
-	
 	#==============================
 	# center
 	#==============================
 
 	
 center:
-        call	strlen
+#        call	strlen
+
+	cdq	      			# clear dx
+str_loop2:	
+	inc	%edx
+	cmpb	$0,(%ecx,%edx)		# repeat till we find zero
+	jne	str_loop2
 	
 	push	$80
 	pop	%ebp
 	
-	cmp	%bp,%dx			# see if we are >=80
+	cmp	%ebp,%edx		# see if we are >=80
 	jge	done_center		# if so, bail
 	
-	sub	%dx,%bp			# subtract size from 80
+	sub	%edx,%ebp		# subtract size from 80
 	
-	shr	%bp			# then divide by 2
+	shr	%ebp			# then divide by 2
 	mov 	$space,%ecx		# load in a space
 	
 center_loop:
 	call 	write_stdout		# and print that many spaces
-	dec	%bp
+	dec	%ebp
 	jnz	center_loop
 done_center:	
 	ret
@@ -472,17 +493,16 @@ done_center:
 #	section .data
 #===========================================================================
 .data
-.include	"logo.inc"
+
+.include	"logo.lzss"
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 space:		.ascii	" \0"
-megahertz:	.ascii	"MHz \0"
-comma:		.ascii	", \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
 
-default_colors:	.ascii "\033[0m\0"
+default_colors:	.ascii "\033[0m\n\n\0"
 
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 kcore:		.ascii	"/proc/kcore\0"
@@ -499,16 +519,12 @@ four:	.ascii	"Four\0"
 #============================================================================
 .bss
 
-.lcomm	disk_buffer,4096	# we cheat!!!!
+.lcomm  text_buf, (N+F-1)       # these two buffers must follow one after the other!
 .lcomm	out_buffer,16384
 
-.lcomm stat_buff,(4*2+2*4+4*12)
-	# urgh get above from /usr/src/linux/include/asm/stat.h
-	# not glibc
+.lcomm	disk_buffer,4096	# we cheat!!!!
 
+
+   # see /usr/src/linux/include/linux/kernel.h
+.lcomm sysinfo_buff,(64)
 .lcomm uname_info,(65*6)
-
-
-
-
-

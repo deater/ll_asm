@@ -37,3 +37,10 @@
 + Optimize 208bytes off of ix86 code, thanks to suggestions from
   Stephan Walter <stephan.walter@gmx.ch>
 + Add the RiSC port to the 16bit directory  
+
+2 August 2002
++ added s390 support
+
+8 August 2002
++ Add "lzss" logo support and convert ix86 over to new code
+  (with much help from Stephan Walter).

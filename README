@@ -15,13 +15,14 @@ benefits of linux_logo in a smaller, faster package!
 Some Statistics
 ---------------
 
-     Processor         Stripped Size of executable
-     ---------         ---------------------------
-     ia64		     5736 bytes
-     alpha		     4264 bytes
-     SPARC		     3708 bytes	
-     PPC		     3228 bytes
-     x86                     2636 bytes
+     Processor        lzss executable     old RLE executable
+     ---------        ---------------     ------------------
+     ia64		                      5736 bytes
+     alpha		                      4264 bytes
+     SPARC		                      3708 bytes	
+     PPC		                      3228 bytes
+     s390	                              2844 bytes
+     x86                1484 bytes            2636 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -44,7 +45,15 @@ Some Statistics
 	   an add instruction that x86 and ppc do automatically.
 	   Thus, taking 24 bytes.
 
-     Why is x86 so small?
+     Why is s390 code so small?
+
+        It is the CISC-iest architecture I've ever seen.  If only it had
+	   a "load byte" opcode it would definitely beat out x86.  I am sure
+	   it can be optimized even smaller than x86 by a s390 expert.
+	   Being able to do "strcat" in 2 or 3 op-codes and strlen in not
+	   more than 5 is a big plus.
+
+     Why is x86 the smallest?
 
 	Partly because I have lots of experience with x86 assembly and thus
 	   I am best at optimizing that.  Mainly though it's because
@@ -68,14 +77,8 @@ BUGS:
                             as /proc/cpuinfo reports, ugly model-name, off 
 			    MHz, and all.
 
-	Doesn't work on >1GB systems: This is because I was lazy and didn't
-                                      want to do a 16bit divide in the 
-				      binary->decimal converter.  If there's
-				      enough demand I can probably fix this 
-				      up in a few bytes.
-			    
 	Possibly kernel-dependent:  I only tested this on 2.4.x kernels.
-
+                            The sysinfo() syscall changed between 2.2 and 2.4
 
 Custom Logo:
 ------------
