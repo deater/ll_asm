@@ -56,3 +56,8 @@
 10 September 2002
 + re-written PPC code is 1796 bytes!
 + release 0.12
+
+27 September 2002
++ added "sstrip" utility by Brian Raiter which really reduces the size
++ got the ix86 code to 1021 bytes!!! thanks to Stephan Walter again,
+  but also I re-wrote the lzss core and did some tricks myself

@@ -18,6 +18,8 @@
 
 #  WARNING:  uses undocumented SALC opcode
 
+.include "logo.include"
+
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -54,48 +56,51 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	mov 	$text_buf, %edi		# fill "text_buf" with most common char
-	mov 	$FREQUENT_CHAR, %al     # frequent char is '#' in default logo
+        # we used to fill the buffer with FREQUENT_CHAR
+	# but, that only gains us one byte of space in the lzss image.
+        # the lzss algorithm does automatic RLE... pretty clever
+	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov 	$(N-F), %cx
-	mov 	%ecx, %ebp
-	rep 	
-	stosb
+	mov     $(N-F), %bp   	     	# R
 
 	mov  	$logo, %esi		# %esi points to logo (for lodsb)
 
-       # add $(2*34-1),%edi		# point %edi to out_buffer
-        .BYTE 0x83     			
-	.BYTE 0xC7			# can't figure out how to make 
-	.BYTE (2*F-1)			# ^*^% gas use the 3-byte instruction
+	mov	$out_buffer, %edi	# point to out_buffer
+	push	%edi	     		# save this value for later
+
+	push 	$logo_end		# save logo_end for later
 
 decompression_loop:	
-    	test	$0x2,%bh	# if 0, we shifted through 8 and must re-load
+    	test	$0x1,%bh	# if 0, we shifted through 8 and must re-load
 	jnz 	test_flags     	# if not move on with things
 
 	lodsb			# load in a byte
-	cmp	$logo_end, %esi # have we reached the end?
-	je	done_logo  	# if so, exit
 
 	mov 	$0xff, %bh	# re-load top as a hackish 8-bit counter
 	mov 	%al, %bl	# move in the flags
 
 test_flags:
+	pop	%edx		# load in logo_end
+	push	%edx		# put it back for later
+	cmp	%edx, %esi 	# have we reached the end?
+	je	done_logo  	# if so, exit
+	clc			# restore carry flag
+
 	rcr 	$1, %bx		# rotate bottom bit into carry flag
 	jc	discreet_char	# if set, we jump to discreet char
 
 offset_length:
 	lodsw                   # get match_length and match_position
 	mov %eax,%edx
-	and $7,%dh              # dx = ax & 0x7ff;      (=match_position)
+	and $POSITION_MASK,%dh  # dx = ax & POSITION_MASK<<8+ff
 	
-	shr $11,%eax
+	shr $(P_BITS),%eax	
 	add $(THRESHOLD+1),%al
-	mov %al,%cl             # cl = (ax >> 11) + THRESHOLD + 1
+	mov %al,%cl             # cl = (ax >> P_BITS) + THRESHOLD + 1
                                 #                       (=match_length)
 		
 output_loop:
-	and 	$(N-1), %edx		# mask it
+	and 	$(N-1), %dx		# mask it
 	mov 	text_buf(%edx), %al	# load byte from text_buf[]
 	inc 	%edx	    		# advance pointer in text_buf
 store_byte:	
@@ -103,7 +108,7 @@ store_byte:
 	
 	mov     %al, text_buf(%ebp)	# store also to text_buf[r]
 	inc 	%ebp 			# r++
-	and 	$(N-1), %ebp		# mask r
+	and 	$(N-1), %bp		# mask r
 
 	loop 	output_loop		# repeat until k>j
 	
@@ -112,62 +117,55 @@ store_byte:
 discreet_char:
 	lodsb				# load a byte
         mov     $1, %cl
-        cmp     $logo_end, %esi         # have we reached the end?
-        jne     store_byte              # if so, exit
+        jmp     store_byte              # and cleverly store it
 
 
 # end of LZSS code
 
 done_logo:
-#	mov	$out_buffer,%ecx
-       mov $(text_buf+(N+F-1)), %ecx # alignment reasons
-       push    %ecx                  # save address of out_buffer on the stack
-                                     # because we'll need it a lot
-       call	write_stdout
+	pop 	%ecx			# remove logo_end from stack
+
+	pop 	%ebp			# get out_buffer and keep in bp
+	mov	%ebp,%ecx		# move out_buffer to ecx
+
+        call	write_stdout		# print the logo
 
 	#==========================
 	# PRINT VERSION
 	#==========================
 	
 	push 	$SYSCALL_UNAME		# uname syscall
-	pop	%eax			# in 3 bytes
-	
+	pop	%eax			# in 3 bytes	
 	mov	$uname_info,%ebx	# uname struct
 	int	$0x80			# do syscall
-	
-	pop	%edi		# destination is temp_string
-	push	%edi
-	
+
+	mov	%ebp,%edi		# point %edi to out_buffer
+		
 	mov	$(uname_info+U_SYSNAME),%esi	# os-name from uname "Linux"
 	call	strcat
 	
 	mov	$ver_string,%esi		# source is " Version "
 	call 	strcat
+	push	%esi  				# save our .txt pointer
 	
 	mov	$(uname_info+U_RELEASE),%esi    # version from uname "2.4.1"
 	call 	strcat
 	
-	mov	$compiled_string,%esi		# source is ", Compiled "
+	pop	%esi  			# restore .txt pointer
+                                        # source is ", Compiled "
 	call 	strcat
+	push	%esi  			# store for later
 
 	mov	$(uname_info+U_VERSION),%esi	# compiled date
 	call 	strcat
-	
-	pop	%ecx
-	push	%ecx
-	
-	call	center			# print some spaces
-	
+
+	mov	%ebp,%ecx		# move out_buffer to ecx
+
 	mov	$0xa,%ax		# store linefeed on end
 	stosw				# and zero			  
-	
-	pop	%ecx
-	push	%ecx
-	
-        call	write_stdout
-	
-  
-	
+
+	call	center_and_print	# center and print
+  	
 	#===============================
 	# Middle-Line
 	#===============================
@@ -184,7 +182,8 @@ done_logo:
 	cdq				# clear edx in clever way
 	int	$0x80			# syscall.  fd in eax.  
 					# we should check that eax>=0
-	mov	%eax,%ebx
+					
+	mov	%eax,%ebx		# save our fd
 	
 	push	$SYSCALL_READ		# load 3 = read()
 	pop	%eax			# in 3 bytes
@@ -207,29 +206,31 @@ done_logo:
 	
 	mov	$disk_buffer,%esi
 bogo_loop:	
-	lods    %ds:(%esi),%eax		# load 32 bits (lodsd)
+	lodsl
+#	lods    %ds:(%esi),%eax		# load 32 bits (lodsd)
+	                                # can use "lodsl" but only on newer
+					# binutils
+					
 	dec     %esi			# back up 3 bytes to we will
 	dec	%esi			# cover whole file eventually
 	dec	%esi
 	cmp	$0,%al
 	je	done_bogo
-	cmp	$0x6f676f62,%eax	# "bogo" in little-endian
+	cmp	$('o'<<24+'g'<<16+'o'<<8+'b'),%eax	# "bogo" in little-endian
 	jne	bogo_loop
 	inc	%ebx			# we have a bogo
 	jmp	bogo_loop
 
 done_bogo:
+	 xor	%ecx,%ecx
+	 mov	$ordinal-1,%esi		# correct for array starting at 0
+	 add	%ebx,%esi
+	 lodsb
+	 mov  	%al,%cl
+	 rep
+	 lodsb
 
-        mov      ordinal-4(,%ebx,4),%esi	# yes, intel assembly
-		 				# is CRAZY
-						# point to the (ebx-1)th
-						# element of 4byte wide
-						# array at ordinal
-					# mov esi, [ebx*4+ordinal-4]
-					# for those of you using intel syntax
-
-	pop	%edi			# destination string
-	push	%edi
+	mov	%ebp,%edi		# move output buffer to edi
 	
 	call	strcat			# copy it
 
@@ -247,9 +248,9 @@ print_mhz:
 	mov	$'.',%dl			
    	call	find_string
  
-	mov	$(' '<<24+'z'<<16+'H'<<8+'M'),%eax	
-	stosl	    			# cheat and print MHz a little
-					# faster
+ 	mov	%ebx,%eax  		# clever way to get MHz in, sadly
+	ror	$8,%eax			# not any smaller than a mov
+	stosl	    			
     
    	#=========
 	# Chip Name
@@ -275,8 +276,7 @@ chip_name:
 	#========
 	
 	push    $SYSCALL_SYSINFO	# sysinfo() syscall
-	pop	%eax
-	
+	pop	%eax	
 	mov	$sysinfo_buff,%ebx	
 	int	$0x80
 	
@@ -284,26 +284,12 @@ chip_name:
 	shr	$20,%eax		# divide by 1024*1024 to get M
 	adc	$0, %eax		# round 
 
-        # num_to_ascii
-        push    $10
-        pop     %ebx
-        xor     %ecx,%ecx       # clear ecx
- div_by_10:
-        cdq                     # clear edx
-        div     %ebx            # divide
-        push    %edx            # save for later
-        inc     %ecx            # add to length counter
-        or      %eax,%eax       # was Q zero?
-        jnz     div_by_10       # if not divide again
- 
-write_out:
-        pop     %eax            # restore in reverse order
-        add     $0x30, %al      # convert to ASCII
-        stosb                   # save digit
-        loop    write_out       # loop till done
-		
-	mov	$ram_comma,%esi		# print 'M RAM, '
+	call num_to_ascii
+	
+	pop     %esi	 		# print 'M RAM, '
 	call	strcat
+	push	%esi
+	
 	
 	#========
 	# Bogomips
@@ -313,76 +299,42 @@ write_out:
 					# find 'mips\t: ' and grab up to \n
 	mov	$0xa,%dl
 	call	find_string
-   
-   	mov	$bogo_total,%esi
+ 
+ 	pop	%esi	   		# bogo total follows RAM 
 	call	strcat
-   
-	pop	%ecx			# string done, lets print it
-	push	%ecx
-	
-	call	center			# print some spaces
-	
+   	push	%esi
+ 
+        mov	%ebp,%ecx		# point ecx to out_buffer
+
 	mov	$0xa,%ax		# and line feed and zero
 	stosw
 
-	pop 	%ecx
-	push	%ecx
-	call 	write_stdout
+	call	center_and_print	# center and print
 	
 	#=================================
 	# Print Host Name
 	#=================================
-	
-	pop	%edi		# output string
-	push	%edi
+
+	mov     %ebp,%edi		  # point to output_buffer
 	
 	mov	$(uname_info+U_NODENAME),%esi	# host name from uname()
-	mov	%edi,%ecx		# for strlen
 	call	strcat
-	call	center			# center it
 	
-	pop	%ecx
-	push	%ecx
+		      			# ecx is unchanged
+	call	center_and_print	# center and print
 	
-	call	write_stdout
-
-	mov	$default_colors,%ecx	# print two linefeeds and color
+	pop	%ecx			# (.txt) pointer to default_colors
 	call	write_stdout
 
 	#================================
 	# Exit
 	#================================
-
+exit:
         xor     %ebx,%ebx
 	xor	%eax,%eax
 	inc	%eax	 		# put exit syscall number (1) in eax
         int     $0x80             	# and exit
 
-
-	#================================
-	# WRITE_STDOUT
-	#================================
-	# ecx has string
-	# eax,ebx,ecx,edx trashed
-write_stdout:
-	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
-	pop     %eax     		# in 3 bytes of code
-	
-	cdq   	      			# clear edx
-	
-	xor	%ebx,%ebx		# put 1 in ebx (stdout)
-	inc	%ebx			# in 3 bytes of code
-	
-	# old strlen()
-                       # another way of doing this:    lea 1(%edx), %ebx
-
-str_loop1:
-	inc	%edx
-	cmpb	$0,(%ecx,%edx)		# repeat till zero
-	jne	str_loop1
-
-	int	$0x80  			# run the syscall
-	ret
 
 	#=================================
 	# FIND_STRING 
@@ -452,37 +404,95 @@ strcat:
 	ret				# return
 
 	#==============================
-	# center
+	# center_and_print
 	#==============================
+	# string to center in ecx
+       
+center_and_print:
+       push	%ecx			# save the string pointer
+       inc	%edi			# move to a clear buffer
+       push	%edi			# save for later
+       
+       mov	$('['<<8+27),%ax	# we want to output ^[[
+       stosw
 
+       cdq	      			# clear dx
 	
-center:
-#        call	strlen
+str_loop2:				# find end of string	
+       inc	%edx
+       cmpb	$0,(%ecx,%edx)		# repeat till we find zero
+       jne	str_loop2
+	
+       push	$81	 		# one added to cheat, we don't
+					# count the trailing '\n'
+       pop	%eax
+	
+       cmp	%eax,%edx		# see if we are >=80
+       jge	done_center		# if so, bail
+	
+       sub	%edx,%eax		# subtract size from 80
+	
+       shr	%eax			# then divide by 2
 
-	cdq	      			# clear dx
-str_loop2:	
+       call	num_to_ascii		# print number of spaces
+       mov	$'C',%ax		# tack a 'C' on the end
+       stosw				# store C and a NULL
+       pop  %ecx			# pop the pointer to ^[[xC
+       call write_stdout		# write to the screen
+		
+done_center:
+        pop  %ecx			# restore string pointer
+	     				# and trickily print the real string
+	 
+	#================================
+	# WRITE_STDOUT
+	#================================
+	# ecx has string
+	# eax,ebx,ecx,edx trashed
+write_stdout:
+	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
+	pop     %eax     		# in 3 bytes of code
+	
+	cdq   	      			# clear edx
+	
+	xor	%ebx,%ebx		# put 1 in ebx (stdout)
+	inc	%ebx			# in 3 bytes of code
+	
+	# old strlen()
+                       # another way of doing this:    lea 1(%edx), %ebx
+
+str_loop1:
 	inc	%edx
-	cmpb	$0,(%ecx,%edx)		# repeat till we find zero
-	jne	str_loop2
-	
-	push	$80
-	pop	%ebp
-	
-	cmp	%ebp,%edx		# see if we are >=80
-	jge	done_center		# if so, bail
-	
-	sub	%edx,%ebp		# subtract size from 80
-	
-	shr	%ebp			# then divide by 2
-	mov 	$space,%ecx		# load in a space
-	
-center_loop:
-	call 	write_stdout		# and print that many spaces
-	dec	%ebp
-	jnz	center_loop
-done_center:	
+	cmpb	$0,(%ecx,%edx)		# repeat till zero
+	jne	str_loop1
+
+	int	$0x80  			# run the syscall
 	ret
 
+	##############################
+	# num_to_ascii
+	##############################
+	# ax = value to print
+	# di points to where we want it
+	
+num_to_ascii:
+        push    $10
+        pop     %ebx
+        xor     %ecx,%ecx       # clear ecx
+ div_by_10:
+        cdq                     # clear edx
+        div     %ebx            # divide
+        push    %edx            # save for later
+        inc     %ecx            # add to length counter
+        or      %eax,%eax       # was Q zero?
+        jnz     div_by_10       # if not divide again
+ 
+write_out:
+        pop     %eax            # restore in reverse order
+        add     $0x30, %al      # convert to ASCII
+        stosb                   # save digit
+        loop    write_out       # loop till done
+	ret
 
 #===========================================================================
 #	section .data
@@ -491,8 +501,6 @@ done_center:
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
-.equ	comma,ram_comma+5
-.equ	space,ram_comma+6
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
 
@@ -501,7 +509,8 @@ default_colors:	.ascii "\033[0m\n\n\0"
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 kcore:		.ascii	"/proc/kcore\0"
 
-ordinal:	.long	one,two,three,four	
+#ordinal:	.long	one,two,three,four	
+ordinal:	.byte	3,6,9,14
 
 one:	.ascii	"One\0"
 two:	.ascii	"Two\0"

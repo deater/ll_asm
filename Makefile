@@ -20,14 +20,20 @@ lzss_new.o:    lzss_new.c
 
 ll:	ll.o ./sstrip/sstrip
 	ld -o ll ll.o
-#	./sstrip/sstrip ll
+	./sstrip/sstrip ll
 	
 ll.o:	ll.s 
 	as -o ll.o ll.s
 
 ll.s:	configure logo.inc
 	./configure
-	
+
+logo_optimize:	   logo_optimize.o lzss_new.o
+		   gcc -o logo_optimize logo_optimize.o lzss_new.o
+		   
+logo_optimize.o:   logo_optimize.c
+		   gcc -Wall -O2 -c logo_optimize.c
+
 logo.inc:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
@@ -38,5 +44,5 @@ configure:	configure.c
 	gcc -O2 -Wall -o configure configure.c
 
 clean:
-	rm -f ll *.o *~ configure ll.s ansi_compress logo.inc logo.lzss core
+	rm -f ll *.o *~ configure ll.s ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize
 	cd sstrip && make clean

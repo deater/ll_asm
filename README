@@ -22,7 +22,7 @@ Some Statistics
      SPARC		                      3708 bytes	
      PPC		1796 bytes            3228 bytes
      s390	        1692 bytes            2844 bytes
-     x86                1476 bytes            2636 bytes
+     x86                1021 bytes            2636 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross

@@ -242,7 +242,7 @@ finished:
 
 int main(int argc, char **argv) {
       
-    FILE *ansi,*output,*output_lzss,*output_lzss_new;
+    FILE *ansi,*output,*output_lzss,*output_lzss_new,*header;
     int ch,byte_count=0,orig_byte_count=0;
    
        /* Hard coded output.  This shouldn't be a problem I hope */
@@ -254,14 +254,20 @@ int main(int argc, char **argv) {
     }
    
     output_lzss=fopen("logo.lzss","w");
-    if (output==NULL) {
+    if (output_lzss==NULL) {
        printf("Could not open \"logo.lzss\"\n");
        return 1;
     }
 
     output_lzss_new=fopen("logo.lzss_new","w");
-    if (output==NULL) {
+    if (output_lzss_new==NULL) {
        printf("Could not open \"logo.lzss_new\"\n");
+       return 1;
+    }
+   
+    header=fopen("logo.include","w");
+    if (header==NULL) {
+       printf("Could not open \"header\"\n");
        return 1;
     }
    
@@ -286,14 +292,14 @@ int main(int argc, char **argv) {
     fclose(output_lzss);
    
     rewind(ansi);
-    byte_count=lzss_encode_better(ansi,output_lzss_new);
+    byte_count=lzss_encode_better(ansi,header,output_lzss_new,'\0',1024,2);
     printf("Size of LZSS-NEW version: %i\n",byte_count);
     fclose(output_lzss_new);
-    
+    fclose(header);
     rewind(ansi);
    
 
-    ansi=fopen(argv[1],"r");
+//    ansi=fopen(argv[1],"r");
     while((ch=fgetc(ansi))!=EOF) {
 	orig_byte_count++;
     }
