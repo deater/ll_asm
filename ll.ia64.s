@@ -805,18 +805,6 @@ num_all_done:
 //===========================================================================
 //.data
 //===========================================================================
-
-
-		// logo is Run Length Encoded.  This saves ~1k
-		// first character is char to output, second is run-length
-		// if first char is ESC (27) then what follows is a color
-		// to be print using "^[[xm" where x is the color
-		// I could have compressed this more, but I left it generic
-		// enough that _any_ logo, not just default, can be used
-		// we could save a mov instruction by flipping order of fields
-		// oh well
-
-
 		
 .include "logo.inc"
 

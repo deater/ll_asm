@@ -3,3 +3,5 @@
 
 + re-optimize the code that got bloated about 200 bytes by making it
   handle generic ANSI files
+
++ OPTIMIZE

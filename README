@@ -19,9 +19,13 @@ Some Statistics
      ---------         ---------------------------
      ia64		     5736 bytes
      alpha		     4264 bytes
+     SPARC		     3708 bytes	
      PPC		     3228 bytes
      x86                     2908 bytes
 
+     The various implementations have varying functunality and often
+     use different methods to get system info.  Still, some gross
+     comparisons between the architectures can be made.
 
      Why is the ia64 code so huge?
      
@@ -100,6 +104,10 @@ Useful Resources:
         http://www.linuxassembly.org
 	http://www.deater.net/weave/vmwprod/asm
 	http://www.deater.net/weave/vmwprod/linux_logo
+
+Special Thanks:
+---------------
+	to Kristina Gonser
 
 AUTHOR:
 -------
