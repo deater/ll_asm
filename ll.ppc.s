@@ -488,24 +488,6 @@ done_center:
 #.data
 #===========================================================================
 
-.equ		NORMAL , 0
-.equ		BOLD   , 1
-.equ		F_BLACK,30
-.equ		F_RED  ,31
-.equ		F_YELLW,33
-.equ		F_WHITE,37
-.equ		B_BLACK,40
-.equ		B_WHITE,47
-
-		# logo is Run Length Encoded.  This saves ~1k
-		# first character is char to output, second is run-length
-		# if first char is ESC (27) then what follows is a color
-		# to be print using "^[[xm" where x is the color
-		# I could have compressed this more, but I left it generic
-		# enough that _any_ logo, not just default, can be used
-		# we could save a mov instruction by flipping order of fields
-		# oh well
-
 .include "logo.inc"
 
 line_feed:	.ascii  "\n"

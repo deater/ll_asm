@@ -1,0 +1,66 @@
+So, how does Vince create these assembly-language versions?
+
+1).  He obtains an account on the new architecture.  While in theory
+     he could do it w/o a machine using just the manuals, in reality it 
+     would be practically impossible.
+     
+2).  He searches the web to find manuals from the maunfacturing detailing
+     instruction sets (easy to find) and for previously existing assembly
+     sample code (hard to find).
+    
+3).  He attempts to write a program that simply calls "exit(0)", the simplest
+     program there is.
+     
+     This is more complicated than you might think.
+     
+     Each processor calls system_calls in a different way, and it is often
+     Linux specific and not mentioned in manuals.  Also you have to find
+     the table of syscalls to find which number is applicable.
+     
+     /usr/src/linux/include/asm-???/unistd.h and
+     /usr/src/linux/arch/???/kernel/ are good places to start
+     if you replace ??? with the name of your architecture.
+     
+     Once you find out how to call the system call, next you have to find
+     out how to pass the paremeters along.  This is difficult too, but
+     usually it just involves figuring out which registers to use.
+     
+     "objdump --disassemble-all" and "gdb" are your friends.
+     
+     Despite what some might guess, "gcc -S" is practically useless
+     as it does lots of linker and glibc dependent stuff, and never
+     calls syscalls directly.
+     
+4).  Now it's time to write a "Hello World" program.  This is the hardest
+     step of all because it involves grabbing data from variables and this
+     is never intuitive or obvious.  You often can't just do a 
+     "mov bx,string" like you can on x86, but you have to mess around with
+     stack frames and gp pointers and crazy other stuff.
+     
+     Once you get the write syscall putting "Hello World" to standard out
+     you are home free though ;)
+     
+5).  Now it's time to translate one of the other assembly versions to the
+     new version.  This tends to be the easiest part, as most modern assembly
+     langugaes support similar features.  I do the logo part first because
+     it's simply a bunch of math followed by a write.
+     
+     Be careful choosing registers to use, because often the more that
+     are available -> the more that the kernel or system use for special
+     purposes and get quite upset if you change the values.
+     
+     The cpuinfo stuff is more complicated, because it invovles calls to
+     "uname" and "fstat" and the like, which return different sized structures
+     on different architectures and sometimes it takes some trial and error
+     and grepping of include files to find out where items are.  [NOTE
+     always use the *kernel* includes when doing this, not GLIBC's, because
+     GLIBC uses their own structures which rarely match the kernel's].
+     
+6).  The final step is optimization!  On x86 this might mean trying to
+     reuse registers in clever ways to avoid using the stack.  On PPC
+     it might mean reading the compiler optimizers guide to learn about
+     neat specialized (and seemingly non-RISC) load and loop instructions.
+     On Alpha it means trying to avoid byte-sized loads.  And on ia64 it
+     would mean trying to do speculative loads and predication depending
+     on how crazy you are.
+     
