@@ -1,0 +1,42 @@
+Many people write me to tell me that the GNU Assembler (gas) sucks!
+How could I ever think of using it!  Why not use "nasm" and the
+one true Intel assembly format?
+
+I too once used only nasm.  And if you are doing development under DOS
+(or cross-compiling DOS executables from under Linux, which I did 
+extensively in college) it is the way to go.
+
+But, after doing lots of non-intel assembly you realize gas isn't all that
+bad.
+
+So here we go, reasons why vmw uses gas:
+
+1.  AT&T Syntax goes hand-in-hand with UNIX(tm)
+
+    If you are doing assembly under Linux, especially in-line in C,
+    you will have to learn AT&T syntax anyway.  
+    
+    Intel's format, while easy to use if you are used to it, is completely
+    backwards from pretty much _any_ non intel architecture.  If you are
+    stuck in the world of x86 compatible chips like 90% of the world, then
+    fine.  If you move back and forth a lot the benefit wears off.
+
+2. Portability
+
+   "ll" compiles on lots of architectures, all of which I maintain.  It
+   would be a pain to have to develop separate includes and helper
+   macros for just the intel architecture.
+   
+3. Ubiquity
+
+   Any system that runs Linux and has gcc installed has "gas" as well.
+   nasm is almost _always_ a separate download and thus a pain to require
+   especially if you don't have internet access on the machine you are
+   developing on.
+
+4. Similar Feature Set
+
+   nasm is a bit nicer in regard to options, but in standard use I have yet
+   to find a feature I need from nasm that gas can't do with a little coaxing.
+   (well, besides creating DOS executables, but luckily I don't have to do
+   that much anymore).

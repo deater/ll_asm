@@ -1,13 +1,18 @@
 #
-#  linux_logo in ix86 assembler 0.5
+#  linux_logo in ix86 assembler 0.9
 #
-#  by Vince Weaver <vince@deater.net>
+#  Originally by 
+#       Vince Weaver <vince@deater.net>
+#
+#  Extensive Size Optimization Suggestions from
+#       Stephan Walter <stephan.walter@gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.ix86.s"
 #  link with         "ld -o ll ll.o"
 
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
-#      :  Only works with <1GB of RAM
+#      :  Only works with <896MB of RAM (linux limitation of /proc/kcore)
+#         need to parse /proc/iomem to get up to 4gig reporting
 #      :  Doesn't print vendor name
 
 # offsets into the results returned by the uname syscall
@@ -21,6 +26,22 @@
 # offset into the results returned by the stat syscall
 .equ S_SIZE,20
 
+# Sycscalls
+.equ SYSCALL_EXIT,   1
+.equ SYSCALL_READ,   3
+.equ SYSCALL_WRITE,  4
+.equ SYSCALL_OPEN,   5
+.equ SYSCALL_CLOSE,  6
+.equ SYSCALL_STAT, 106
+.equ SYSCALL_UNAME,122
+
+#
+.equ STDIN,0
+.equ STDOUT,1
+.equ STDERR,2
+
+
+
 	.globl _start	
 _start:	
 	#=========================
@@ -29,8 +50,6 @@ _start:
 	
 	mov 	$new_logo,%esi		# point input to new_logo
 	mov 	$out_buffer,%edi	# point output to buffer
-	xor 	%ecx,%ecx		# clear color register
-	mov 	$(('['<<8)+27),%bx	# store ^[[ in bx to save time
 
 main_logo_loop:	
 	lodsb				# load character
@@ -40,7 +59,7 @@ main_logo_loop:
 	cmp	$27,%al			# if ^[, we are a color
 	jne 	blit_repeat
 
-	mov 	%bx,%ax			# load ^[[
+	mov 	$'[',%ah		# load ^[[
 	stosw				# out to buffer
 
 	lodsb				# counter, for num to output
@@ -49,29 +68,9 @@ main_logo_loop:
 out_elements:
 	xor	%eax,%eax		# clear eax
         lodsb				# load color
-		
-	cmp	$100,%ax		# is it less than 100?
-	jl	out_tens		# if so, skip ahead
 
-	mov	$0x64,%dh		# we want to divide by 100
-	div	%dh
-	add	$0x30,%al		# convert hundreds to ascii
-	stosb
-	mov	%ah,%al			# copy tens to al
-	xor	%ah,%ah			# AIEEE MUST DO THIS
-out_tens:	
-	cmp	$10,%al			# is it less than 10?		
-	jl	out_ones		# if so skip ahead
-	
-	mov 	$10,%dh			# ten, used in division later	
-	div	%dh			# divide ax by 10
-	add	$0x30,%al		# convert tens to ascii
-	stosb				# out the tens digit
-	mov	%ah,%al			# copy ones to al
-	
-out_ones:
-	add	$0x30,%al		# convert ones digit to ascii
-	stosb				# out to buffer
+	call num_to_ascii
+
 	mov	$';',%al		# store semi-colon
 	stosb
 
@@ -95,20 +94,19 @@ blit_repeat:
 	jmp main_logo_loop
 
 done_logo:	
-	mov     $4,%eax			# number of the "write" syscall
-	mov     $1,%ebx			# stdout
+	mov	$0xa,%al
+	stosb				# print linefeed
+	
 	mov     $out_buffer,%ecx	# our nice huge logo
-	call	strlen
-	int     $0x80     		# do syscall
-
-	movb	$0xa,out_char		# print line-feed
-	call	put_char
+	call	write_stdout
 	
 	#==========================
 	# PRINT VERSION
 	#==========================
 	
-	mov	$122,%eax		# uname syscall
+	push 	$SYSCALL_UNAME		# uname syscall
+	pop	%eax			# in 3 bytes
+	
 	mov	$uname_info,%ebx	# uname struct
 	int	$0x80			# do syscall
 	
@@ -129,18 +127,14 @@ done_logo:
 	call 	strcat
 	
 	mov	$out_buffer,%ecx
-	call	strlen			# returns size in edx
 	
 	call	center			# print some spaces
 	
-	mov 	$4,%eax			# write syscall
-	mov 	$1,%ebx			# stdout
-	mov 	$out_buffer,%ecx	
-        call	strlen			
-        int	$0x80
+	mov	$0xa,%ax		# store linefeed on end
+	stosw				# and zero			  
 	
-	movb	$0xa,out_char		# print line-feed
-	call	put_char
+	mov 	$out_buffer,%ecx	
+        call	write_stdout
 	
   
 	
@@ -152,20 +146,27 @@ done_logo:
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-	mov	$5,%eax			# open()
+	push	$SYSCALL_OPEN		# load 5 [ open() ]
+	pop	%eax			# in 3 bytes
+	
 	mov	$cpuinfo,%ebx		# '/proc/cpuinfo'
-	mov	$0,%ecx			# O_RDONLY <bits/fcntl.h>
+	xor	%ecx,%ecx		# 0 = O_RDONLY <bits/fcntl.h>
 	xor	%edx,%edx
 	int	$0x80			# syscall.  fd in eax.  
 					# we should check that eax>=0
 	mov	%eax,%ebx
 	
-	mov	$3,%eax			# read
+	push	$SYSCALL_READ		# load 3 = read()
+	pop	%eax			# in 3 bytes
+	
 	mov	$disk_buffer,%ecx
-	mov	$4096,%edx		# 4096 is maximum size of proc file #)
+	mov	$16,%dh		 	# 4096 is maximum size of proc file #)
+					# we load sneakily by knowing
+					# 16<<8 = 4096. be sure edx clear
 	int	$0x80
 
-	mov	$6,%eax			# close
+	push	$SYSCALL_CLOSE		# close (to be correct)
+	pop	%eax
 	int	$0x80			
 
 	#=============
@@ -176,28 +177,27 @@ done_logo:
 	
 	mov	$disk_buffer,%esi
 bogo_loop:	
-	lodsb				# really inefficient way to search
-	cmp 	$0,%al			# for 'bogo' string
-	je 	done_bogo		# and then count them up
-	cmp	$'b',%al		# the number found
-	jne 	bogo_loop		# is number of cpus on intel Linux
-	lodsb
-	cmp	$'o',%al
-	jne	bogo_loop
-	lodsb
-	cmp	$'g',%al
-	jne	bogo_loop
-	lodsb
-	cmp	$'o',%al
+	lods    %ds:(%esi),%eax		# load 32 bits (lodsd)
+	dec     %esi			# back up 3 bytes to we will
+	dec	%esi			# cover whole file eventually
+	dec	%esi
+	cmp	$0,%al
+	je	done_bogo
+	cmp	$0x6f676f62,%eax	# "bogo" in little-endian
 	jne	bogo_loop
 	inc	%ebx			# we have a bogo
 	jmp	bogo_loop
+
 done_bogo:
-       
-       	dec	%ebx			# correct for array index begin at 0
-	shl	$2,%ebx			# *4  [ie, make it into dword]
-	mov	ordinal,%esi		# load pointer array
-	add	%ebx,%esi		# index into it
+
+        mov      ordinal-4(,%ebx,4),%esi	# yes, intel assembly
+		 				# is CRAZY
+						# point to the (ebx-1)th
+						# element of 4byte wide
+						# array at ordinal
+					# mov esi, [ebx*4+ordinal-4]
+					# for those of you using intel syntax
+
 	mov	$out_buffer,%edi	# destination string
 	call	strcat			# copy it
 
@@ -209,8 +209,9 @@ done_bogo:
 	# MHz
 	#=========
 	
-	mov	$('M'<<8+' '),%bx	# find ' MHz\t: ' and grab up to .
-	mov	$('z'<<8+'H'),%cx	# we are little endian
+	mov	$('z'<<24+'H'<<16+'M'<<8+' '),%ebx	
+			   		# find ' MHz\t: ' and grab up to .
+	                                # we are little endian
 	mov	$'.',%dl			
    	call	find_string
    
@@ -222,45 +223,38 @@ done_bogo:
 	# Chip Name
 	#=========
 	
-   	mov	$('a'<<8+'n'),%bx     	# find 'name\t: ' and grab up to \n
-	mov	$('e'<<8+'m'),%cx	# we are little endian
+   	mov	$('e'<<24+'m'<<16+'a'<<8+'n'),%ebx     	
+					# find 'name\t: ' and grab up to \n
+       					# we are little endian
 	mov	$0xa,%dl
 	call	find_string
 	
 	mov	$comma,%esi		# print ', '
 	call	strcat
 	
+	# if we were being clever here we could have saved 'bx' from
+	# the bogomips count and then add an 's' to make the chip
+	# plural.  Sadly this doesn't look right with any of the chips
+	# I have (yet another feature from Stephan Walter)
+	
+	
 	#========
 	# RAM
 	#========
 	
-	mov	$106,%eax	       	# stat() syscall
-	mov	$kcore,%ebx		# /proc/kcore
-	mov	$stat_buff,%ecx
+	push    $SYSCALL_STAT		# stat() syscall (106)
+	pop	%eax
+	
+	mov	$kcore,%ebx		# size of /proc/kcore
+	mov	$stat_buff,%ecx		# is size of RAM
 	int	$0x80
 	
 	mov	(stat_buff+S_SIZE),%eax	# size in bytes of RAM
-	shr	$10,%eax		# divide to get K
-	shr	$10,%eax		# divide to get M
-	
-	mov	$100,%ecx		# divide mem by 100 
-	div	%cl			# [works only on 3-digit values of RAM]
-	cmp	$0,%al			# suppress leading zeros
-	jz	tens
-	add	$0x30,%al		# convert to ascii
-	stosb				# print hundreds digit
-tens:	
-	shr	$8,%eax			# move ah into al
-	mov	$10,%ecx		# divide reaminder by 10
-	div	%cl			# quotient in al, remainder in ah
-	cmp	$0,%al			# suppress leading zeros
-	jz	ones
-      	add	$0x30,%al		# convert to ascii
-	stosb				# print tens digit
-ones:	
-	shr	$8,%eax			# remainder is ones digit
-	add	$0x30,%al		# convert to ascii
-	stosb				# print ones digit
+	shr	$20,%eax		# divide by 1024*1024 to get M
+
+#	adc	$0, %eax		# round ??
+
+	call	num_to_ascii
 		
 	mov	$ram_comma,%esi		# print 'M RAM, '
 	call	strcat
@@ -269,8 +263,8 @@ ones:
 	# Bogomips
 	#========
 	
-	mov	$('i'<<8+'m'),%bx      	# find 'mips\t: ' and grab up to \n
-	mov	$('s'<<8+'p'),%cx
+	mov	$('s'<<24+'p'<<16+'i'<<8+'m'),%ebx      	
+					# find 'mips\t: ' and grab up to \n
 	mov	$0xa,%dl
 	call	find_string
    
@@ -278,18 +272,14 @@ ones:
 	call	strcat
    
 	mov	$out_buffer,%ecx	# string done, lets print it
-	call	strlen			# returns size in edx
 	
 	call	center			# print some spaces
-		
-	mov 	$4,%eax			# write syscall
-	mov 	$1,%ebx			# stdout
+	
+	mov	$0xa,%eax		# and line feed and zero
+	stosw
+
 	mov 	$out_buffer,%ecx		
-        call	strlen			
-        int 	$0x80
-       		
-	movb 	$0xa,out_char		# print line-feed
-	call 	put_char
+	call 	write_stdout
 	
 	#=================================
 	# Print Host Name
@@ -299,58 +289,98 @@ ones:
 	mov	$(uname_info+U_NODENAME),%esi	# host name from uname()
 	mov	$out_buffer,%ecx		# for strlen
 	call	strcat
-	call	strlen
 	call	center			# center it
-	mov 	$4,%eax			# write syscall
-	mov 	$1,%ebx			# stdout
+	
+	mov	$0xa0a,%eax		# tack 2 line-feeds and zero on end
+	stos    %eax,%es:(%edi)		# load 32 bits (lodsd)
+
 	mov 	$out_buffer,%ecx		
-        call	strlen			
-        int 	$0x80
+	call	write_stdout
 
-        mov	$4,%eax			# return to default text colors
-	mov	$1,%ebx
 	mov	$default_colors,%ecx
-	call	strlen
-	int	$0x80
-
-	movb 	$0xA, out_char		# print line-feed
-	call 	put_char
-	call	put_char
+	call	write_stdout
 
 	#================================
 	# Exit
 	#================================
 	
         xor     %ebx,%ebx
-        mov     $1,%eax           	# put the exit syscall number in eax
+	xor	%eax,%eax
+	inc	%eax	 		# put exit syscall number (1) in eax
         int     $0x80             	# and exit
 
+
+	#================================
+	# WRITE_STDOUT
+	#================================
+	# ecx has string
+	# eax,ebx,ecx,edx trashed
+write_stdout:
+	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
+	pop     %eax     		# in 3 bytes of code
+	
+	xor	%ebx,%ebx		# put 1 in ebx (stdout)
+	inc	%ebx			# in 3 bytes of code
+	
+	call	strlen			# get strlength in edx
+	
+	int	$0x80  			# run the syscall
+	ret
+
+
+	#=================================
+	# NUM_TO_ASCII
+	#=================================
+	# al has number
+	# output [edi]
+	# bl, eax trashed
+	
+num_to_ascii:	
+	push	 %ecx		# save ecx
+	xor	 %ecx,%ecx	# clear ecx
+	
+	mov	 $10,%bl	# we will divide by 10
+div_by_10:	
+	div	 %bl		# divide
+	
+	ror	 $8,%ax		# get the remainder in al
+	add	 $0x30,%al	# convert to ascii
+	push	 %eax		# save for later
+	inc	 %ecx		# add to length counter
+	
+	shr	 $8,%ax		# restore quotient and clear ah
+       
+        cmp	 $0,%al		# was Q zero?
+       	jnz	 div_by_10	# if not divide again
+	
+write_out:
+	pop	 %eax		# restore in reverse order
+	stosb	     		# save digit
+	loop     write_out	# loop till done
+	pop	 %ecx		# restore ecx
+	ret
 
 
 	#=================================
 	# FIND_STRING 
 	#=================================
 	#   dl is char to end at
-	#   bx and cx are 4-char ascii string to look for
+	#   ebx is 4-char ascii string to look for
 	#   edi points at output buffer
 
 find_string:
 					
 	mov	$disk_buffer,%esi	# look in cpuinfo buffer
 find_loop:
-	lodsb				# watch for first char
+	lods    %ds:(%esi),%eax		# load 32 bits (lodsd)	
+	dec	%esi
+	dec	%esi
+	dec	%esi			# move pointer +1 to search all file
+
 	cmp	$0,%al
 	je	done
-	cmp	%bl,%al
-	jne	find_loop
-	lodsb				# watch for second char
-	cmp	%bh,%al
-	jne	find_loop
-	lodsb				# watch for third char
-	cmp	%cl,%al
-	jne	find_loop
-	lodsb				# watch for fourth char
-	cmp	%ch,%al
+
+	cmp	%eax,%ebx
 	jne	find_loop
 	
 					# if we get this far, we matched
@@ -380,27 +410,6 @@ almost_done:
 done:
 	ret
 
-
-	#================================
-	# put_char
-	#================================
-	# value to print in [out_char]
-
-put_char:
-	push 	%eax
-	push 	%ebx
-	push 	%ecx
-	push 	%edx
-	mov	$4,%eax			# write char
-	mov	$1,%ebx			# stdout
-	mov	$out_char,%ecx		# output character
-	mov 	$1,%edx			# write 1 char
-	int	$0x80
-	pop	%edx
-	pop	%ecx
-	pop	%ebx
-	pop	%eax
-	ret
 
 	#================================
 	# strcat
@@ -435,19 +444,26 @@ str_loop:
 	#==============================
 	# center
 	#==============================
-	# edx has length of string
+
 	
 center:
-	cmp	$80,%edx		# see if we are >80
+        call	strlen
+	
+	push	$80
+	pop	%ebp
+	
+	cmp	%bp,%dx			# see if we are >=80
 	jge	done_center		# if so, bail
-	mov	%edx,%ecx		# 80-length
-	neg	%ecx
-	add	$80,%ecx
-	shr	%ecx			# then divide by 2
-	movb 	$0x20,out_char		# load in a space
+	
+	sub	%dx,%bp			# subtract size from 80
+	
+	shr	%bp			# then divide by 2
+	mov 	$space,%ecx		# load in a space
+	
 center_loop:
-	call 	put_char		# and print that many spaces
-	loop	center_loop
+	call 	write_stdout		# and print that many spaces
+	dec	%bp
+	jnz	center_loop
 done_center:	
 	ret
 
@@ -455,7 +471,7 @@ done_center:
 #===========================================================================
 #	section .data
 #===========================================================================
-
+.data
 .include	"logo.inc"
 
 ver_string:	.ascii	" Version \0"
@@ -481,8 +497,10 @@ four:	.ascii	"Four\0"
 #============================================================================
 #	section .bss
 #============================================================================
-	
-.lcomm out_char,1	
+.bss
+
+.lcomm	disk_buffer,4096	# we cheat!!!!
+.lcomm	out_buffer,16384
 
 .lcomm stat_buff,(4*2+2*4+4*12)
 	# urgh get above from /usr/src/linux/include/asm/stat.h
@@ -490,8 +508,7 @@ four:	.ascii	"Four\0"
 
 .lcomm uname_info,(65*6)
 
-.lcomm	disk_buffer,4096	# we cheat!!!!
-.lcomm	out_buffer,16384
+
 
 
 

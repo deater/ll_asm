@@ -1,0 +1,6 @@
+ll.RiSC.s is assembler for the educational RiSC architecture.
+Information on this can be found at http://www.engr.umd.edu/~blj/RiSC/
+The assembler there should be able to compile this source. 
+To run it you will need to make a standard simulator that believes
+"nand 0,0,0" mimicks the Linux syscall instruction.  For a working
+simulator e-mail me.

@@ -21,7 +21,7 @@ Some Statistics
      alpha		     4264 bytes
      SPARC		     3708 bytes	
      PPC		     3228 bytes
-     x86                     2908 bytes
+     x86                     2636 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
