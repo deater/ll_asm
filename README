@@ -1,6 +1,5 @@
 yes, I am insane
 
-
 Tired of waiting many miliseconds for linux_logo to run?
 Tired of wasting 35k of disk space?
 Upset that to run linux_logo you need huge GLIBC?
@@ -10,15 +9,21 @@ Well your worries are over!
 With "ll"  [even the name was shortened to save space!] you get all of the
 benefits of linux_logo in a smaller, faster package!
 
-"ll" is written entirely in 32-bit Linux x86 nasm assembly-language!
+"ll" is written entirely in 32-bit Linux x86 assembly-language!
+BONUS: now included is also a PowerPC assembly language version!
+
 
 Features:
 + Runs in 4 miliseconds, more than twice as fast as the 10 linux_logo takes 
   on a K6-2+ 450!
-+ Takes up only 3.9k when stripped!  This is small enough to fit in one 4k 
++ Takes up only 2.6k when stripped!  This is small enough to fit in one 4k 
   x86 memory page!
   
 Amaze your enemies!  Impress your friends!
+
+FEATURES:
+	Point the "ANSI_TO_USE" variable in the Makefile to any text
+	or ansi file you want when building.
 
 BUGS:
 	No pretty-printing: This means that your computer is reported just
@@ -30,12 +35,14 @@ BUGS:
 				      binary->decimal converter.  If there's
 				      enough demand I can probably fix this 
 				      up in a few bytes.
-				       
-	Not very portable:  I could have used the Linux-assembly project's
-	                    arch-independent stuff, but didn't bother.
 			    
 	Possibly kernel-dependent:  I only tested this on 2.4.x kernels.
-	
+
+HOW TO HELP:
+	Feel free to contribute code for other architectures!
+	SPARC, ARM, ALPHA, and MIPS would be much appreciated.
+
+
 
 Useful Resources:  http://www.linuxassembly.org
 

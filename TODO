@@ -1,0 +1,5 @@
++ no-compress mode (with a one-byte flag at the beginning) for those
+  ANSI's that are actually _bigger_ when RLE compressed
+
++ re-optimize the code that got bloated about 200 bytes by making it
+  handle generic ANSI files

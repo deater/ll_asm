@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.4
+#  linux_logo in ix86 assembler 0.5
 #
 #  by Vince Weaver <vince@deater.net>
 #
@@ -31,22 +31,39 @@ _start:
 	mov 	$out_buffer,%edi	# point output to buffer
 	xor 	%ecx,%ecx		# clear color register
 	mov 	$(('['<<8)+27),%bx	# store ^[[ in bx to save time
-	mov 	$10,%dh			# ten, used in division later
+
 main_logo_loop:	
 	lodsb				# load character
 	cmp	$0,%al			# if zero, we are done
 	je 	done_logo
+	
 	cmp	$27,%al			# if ^[, we are a color
 	jne 	blit_repeat
 
 	mov 	%bx,%ax			# load ^[[
 	stosw				# out to buffer
 
+	lodsb				# counter, for num to output
+	mov	%al,%cl			# move to loop register
+
+out_elements:
 	xor	%eax,%eax		# clear eax
         lodsb				# load color
+		
+	cmp	$100,%ax		# is it less than 100?
+	jl	out_tens		# if so, skip ahead
+
+	mov	$0x64,%dh		# we want to divide by 100
+	div	%dh
+	add	$0x30,%al		# convert hundreds to ascii
+	stosb
+	mov	%ah,%al			# copy tens to al
+	xor	%ah,%ah			# AIEEE MUST DO THIS
+out_tens:	
 	cmp	$10,%al			# is it less than 10?		
 	jl	out_ones		# if so skip ahead
 	
+	mov 	$10,%dh			# ten, used in division later	
 	div	%dh			# divide ax by 10
 	add	$0x30,%al		# convert tens to ascii
 	stosb				# out the tens digit
@@ -55,8 +72,13 @@ main_logo_loop:
 out_ones:
 	add	$0x30,%al		# convert ones digit to ascii
 	stosb				# out to buffer
-	
-	mov	$'m',%al		# load 'm'
+	mov	$';',%al		# store semi-colon
+	stosb
+
+	loop 	out_elements
+
+	dec 	%di			# erase extra semi-colon
+	lodsb				# load closing char
 	stosb				# store to buffer
 
 	jmp 	main_logo_loop		# done with color
@@ -69,7 +91,7 @@ blit_repeat:
 	rep 				# rle to buffer
 	stosb				# stosb on separate line to work
 					# around 2.9.1 binutils
-	
+
 	jmp main_logo_loop
 
 done_logo:	
@@ -285,6 +307,12 @@ ones:
         call	strlen			
         int 	$0x80
 
+        mov	$4,%eax			# return to default text colors
+	mov	$1,%ebx
+	mov	$default_colors,%ecx
+	call	strlen
+	int	$0x80
+
 	movb 	$0xA, out_char		# print line-feed
 	call 	put_char
 	call	put_char
@@ -428,239 +456,7 @@ done_center:
 #	section .data
 #===========================================================================
 
-.equ		NORMAL , 0
-.equ		BOLD   , 1
-.equ		F_BLACK,30
-.equ		F_RED  ,31
-.equ		F_YELLW,33
-.equ		F_WHITE,37
-.equ		B_BLACK,40
-.equ		B_WHITE,47
-
-		# logo is Run Length Encoded.  This saves ~1k
-		# first character is char to output, second is run-length
-		# if first char is ESC (27) then what follows is a color
-		# to be print using "^[[xm" where x is the color
-		# I could have compressed this more, but I left it generic
-		# enough that _any_ logo, not just default, can be used
-		# we could save a mov instruction by flipping order of fields
-		# oh well
-
-new_logo:	.byte	27,NORMAL,  27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',65
-                .byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',5 
-		.byte	27,BOLD,    27,F_WHITE, '#',9
-		.byte	27,NORMAL,  10,1
-line_2:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',64
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',7
-		.byte	27,BOLD,    27,F_WHITE, '#',8
-		.byte	27,NORMAL,  10,1
-line_3:	        .byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',19 
-		.byte	27,F_RED,   '#',1
-		.byte	27,F_WHITE, '#',44
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, 'O',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, 'O',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',8
-		.byte	27,NORMAL,  10,1
-line_4:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',2
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',6
-		.byte      27,BOLD,    27,F_WHITE, '#',10
-		.byte      27,F_RED,   '#',2 
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',43
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte      27,BOLD,    27,F_YELLW, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',8
-		.byte	27,NORMAL,  10,1
-line_5:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte      27,BOLD,    27,F_WHITE, '#',13
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',42
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,F_YELLW, '#',3
-		.byte	27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',6
-		.byte	27,NORMAL,  10,1
-line_6:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',9
-		.byte	27,F_RED,   '#',3
-		.byte	27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',4
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3 
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',5
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',6
-	        .byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',10
-		.byte 	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  10,1
-line_7:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',8
-		.byte	27,F_RED,   '#',1
-	        .byte	27,F_WHITE, '#',2
-		.byte	27,F_RED,   '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',7
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',12
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-	        .byte	27,NORMAL,  10,1
-line_8:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-	        .byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte      27,BOLD,    27,F_WHITE, '#',7
-		.byte	27,F_RED,   '#',1
-		.byte	27,F_WHITE, '#',3
-		.byte	27,F_RED,   '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte      27,BOLD,    27,F_WHITE, '#',6
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',9
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',12
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  10,1
-line_9:		.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',10
-		.byte	27,F_RED,   '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte      27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',6
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',8
-		.byte	27,F_YELLW, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',11
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_YELLW, '#',1
-		.byte	27,F_WHITE, '#',3
-		.byte	27,NORMAL,  10,1
-line_10:	.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',7
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,F_RED,   '#',2 
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,F_YELLW, '#',6
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',7
-		.byte	27,F_BLACK, '#',1
-		.byte	27,F_YELLW, '#',6
-		.byte      27,F_WHITE, '#',1
-		.byte	27,NORMAL,  10,1
-line_11:	.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',6
-	        .byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,F_RED,   '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-	        .byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',2
-		.byte	27,BOLD,    27,F_WHITE, '#',4
-		.byte	27,F_YELLW, '#',7
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE,  '#',1
-		.byte	27,BOLD,    27,F_WHITE, '#',5
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',1
-		.byte	27,BOLD,    27,F_YELLW, '#',7
-		.byte	27,F_WHITE, '#',1
-		.byte	27,NORMAL,  10,1
-line_12:	.byte	27,BOLD,    27,F_WHITE, 27,B_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',12
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',2
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',4
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',4
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',4
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',3
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',5
-		.byte	27,BOLD,    27,F_WHITE, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',6
-		.byte	27,BOLD,    27,F_WHITE, '#',3
-		.byte	27,F_YELLW, '#',5
-		.byte	27,F_BLACK, '#',1
-		.byte	27,NORMAL,  27,F_BLACK, 27,B_WHITE, '#',5
-		.byte	27,BOLD,    '#',1
-		.byte	27,F_YELLW, '#',5
-		.byte	27,F_WHITE, '#',3
-		.byte	27,NORMAL,  27,BOLD,	10,1
-		.byte	0,0	
+.include	"logo.inc"
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
@@ -669,6 +465,8 @@ megahertz:	.ascii	"MHz \0"
 comma:		.ascii	", \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
+
+default_colors:	.ascii "\033[0m\0"
 
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 kcore:		.ascii	"/proc/kcore\0"
@@ -693,7 +491,7 @@ four:	.ascii	"Four\0"
 .lcomm uname_info,(65*6)
 
 .lcomm	disk_buffer,4096	# we cheat!!!!
-.lcomm	out_buffer,8192
+.lcomm	out_buffer,16384
 
 
 

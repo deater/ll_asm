@@ -13,3 +13,12 @@
 
 13 March 2002
 + Finally have ppc version all working
+
+6 May 2002
++ Add ansi_rle.c program which will convert any ansi into a form
+  suitable to use with ll
++ Re-wrote the code a bit to handle generic ANSI sequences, not just
+  color-changes anymore
+
+7 May 2002
++ Make 'll' return to normal plain console color after running
