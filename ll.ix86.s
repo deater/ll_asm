@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.13
+#  linux_logo in ix86 assembler 0.14
 #
 #  Originally by 
 #       Vince Weaver <vince@deater.net>
@@ -15,8 +15,6 @@
 #      :  sysinfo() returns RAM - reserved area which can be from 1-20MB off
 #      :  sysinfo results struct changed between 2.2 and 2.4 kernels
 #      :  Doesn't print vendor name
-
-#  WARNING:  uses undocumented SALC opcode
 
 .include "logo.include"
 
@@ -68,31 +66,24 @@ _start:
 	mov	$out_buffer, %edi	# point to out_buffer
 	push	%edi	     		# save this value for later
 
-	push 	$logo_end		# save logo_end for later
-
 decompression_loop:	
-    	test	$0x1,%bh	# if 0, we shifted through 8 and must re-load
-	jnz 	test_flags     	# if not move on with things
-
 	lodsb			# load in a byte
 
 	mov 	$0xff, %bh	# re-load top as a hackish 8-bit counter
 	mov 	%al, %bl	# move in the flags
 
 test_flags:
-	pop	%edx		# load in logo_end
-	push	%edx		# put it back for later
-	cmp	%edx, %esi 	# have we reached the end?
+	cmp	$logo_end, %esi # have we reached the end?
 	je	done_logo  	# if so, exit
-	clc			# restore carry flag
 
-	rcr 	$1, %bx		# rotate bottom bit into carry flag
+	shr 	$1, %ebx	# shift bottom bit into carry flag
 	jc	discreet_char	# if set, we jump to discreet char
 
 offset_length:
 	lodsw                   # get match_length and match_position
-	mov %eax,%edx
-	and $POSITION_MASK,%dh  # dx = ax & POSITION_MASK<<8+ff
+	mov %eax,%edx		# copy to edx
+	    			# no need to mask dx, as we do it
+				# by default in output_loop
 	
 	shr $(P_BITS),%eax	
 	add $(THRESHOLD+1),%al
@@ -100,7 +91,7 @@ offset_length:
                                 #                       (=match_length)
 		
 output_loop:
-	and 	$(N-1), %dx		# mask it
+        and 	$POSITION_MASK,%dh  	# mask it
 	mov 	text_buf(%edx), %al	# load byte from text_buf[]
 	inc 	%edx	    		# advance pointer in text_buf
 store_byte:	
@@ -112,23 +103,34 @@ store_byte:
 
 	loop 	output_loop		# repeat until k>j
 	
+	or	%bh,%bh			# if 0 we shifted through 8 and must
+	jnz	test_flags		# re-load flags
+	
 	jmp 	decompression_loop
 
 discreet_char:
 	lodsb				# load a byte
-        mov     $1, %cl
+	inc	%ecx			# we set ecx to one so byte
+					# will be output once
+					# (how do we know ecx is zero?)
+					
         jmp     store_byte              # and cleverly store it
 
 
 # end of LZSS code
 
 done_logo:
-	pop 	%ecx			# remove logo_end from stack
 
 	pop 	%ebp			# get out_buffer and keep in bp
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
         call	write_stdout		# print the logo
+
+	#
+	#  Setup
+	#
+setup:
+	mov	$strcat,%edx		# use edx as call pointer
 
 	#==========================
 	# PRINT VERSION
@@ -142,28 +144,30 @@ done_logo:
 	mov	%ebp,%edi		# point %edi to out_buffer
 		
 	mov	$(uname_info+U_SYSNAME),%esi	# os-name from uname "Linux"
-	call	strcat
-	
+	call	*%edx			# call strcat
+blah:	
 	mov	$ver_string,%esi		# source is " Version "
-	call 	strcat
+	call 	*%edx			        # call strcat
 	push	%esi  				# save our .txt pointer
 	
 	mov	$(uname_info+U_RELEASE),%esi    # version from uname "2.4.1"
-	call 	strcat
+	call 	*%edx				# call strcat
 	
 	pop	%esi  			# restore .txt pointer
                                         # source is ", Compiled "
-	call 	strcat
+	call 	*%edx			# call strcat
 	push	%esi  			# store for later
 
 	mov	$(uname_info+U_VERSION),%esi	# compiled date
-	call 	strcat
+	call 	*%edx			# call strcat
 
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
 	mov	$0xa,%ax		# store linefeed on end
 	stosw				# and zero			  
 
+	call	*%edx			# call strcat
+	
 	call	center_and_print	# center and print
   	
 	#===============================
@@ -173,6 +177,8 @@ done_logo:
 	#=========
 	# Load /proc/cpuinfo into buffer
 	#=========
+
+	push	%edx			# save call pointer
 
 	push	$SYSCALL_OPEN		# load 5 [ open() ]
 	pop	%eax			# in 3 bytes
@@ -189,10 +195,14 @@ done_logo:
 	pop	%eax			# in 3 bytes
 	
 	mov	$disk_buffer,%ecx
+
 	mov	$16,%dh		 	# 4096 is maximum size of proc file #)
 					# we load sneakily by knowing
 					# 16<<8 = 4096. be sure edx clear
+
+
 	int	$0x80
+
 
 	push	$SYSCALL_CLOSE		# close (to be correct)
 	pop	%eax
@@ -201,57 +211,67 @@ done_logo:
 	#=============
 	# Number of CPU's
 	#=============
-	
+number_of_cpus:
+
 	xor	%ebx,%ebx		# chip count
 	
-	mov	$disk_buffer,%esi
+					# $disk_buffer still in ecx
 bogo_loop:	
-	lodsl
-#	lods    %ds:(%esi),%eax		# load 32 bits (lodsd)
-	                                # can use "lodsl" but only on newer
-					# binutils
-					
-	dec     %esi			# back up 3 bytes to we will
-	dec	%esi			# cover whole file eventually
-	dec	%esi
-	cmp	$0,%al
+	mov	(%ecx), %eax		# load 4 bytes into eax
+	inc	%ecx			# increment pointer
+	
+	cmp	$0,%al			# check for end of file
 	je	done_bogo
-	cmp	$('o'<<24+'g'<<16+'o'<<8+'b'),%eax	# "bogo" in little-endian
-	jne	bogo_loop
-	inc	%ebx			# we have a bogo
+	
+	cmp	$('o'<<24+'g'<<16+'o'<<8+'b'),%eax	
+				        # "bogo" in little-endian
+					
+	jne	bogo_loop		# if not equal, keep going
+	
+	inc	%ebx			# otherwise, we have a bogo
+	inc	%ebx			# times too for future magic
 	jmp	bogo_loop
 
 done_bogo:
-	 xor	%ecx,%ecx
-	 mov	$ordinal-1,%esi		# correct for array starting at 0
-	 add	%ebx,%esi
-	 lodsb
-	 mov  	%al,%cl
-	 rep
-	 lodsb
-
+	lea	one-6(%ebx,%ebx,2), %esi	
+				    	# Load into esi
+					# [one]+(num_cpus*6)
+					#
+					# the above multiplies by three
+					# esi = (ebx+(ebx*2))
+	 				# and we double-incremented ebx 
+					# earlier
+	 
 	mov	%ebp,%edi		# move output buffer to edi
-	
-	call	strcat			# copy it
+
+	pop	%edx			# restore call pointer
+	call	*%edx			# copy it (call strcat)
 
 	mov	$' ',%al		# print a space
 	stosb
 
 
+	push %edx			# store strcat pointer
+	
 	#=========
 	# MHz
 	#=========
 print_mhz:
 	mov	$('z'<<24+'H'<<16+'M'<<8+' '),%ebx	
-			   		# find ' MHz\t: ' and grab up to .
+			   		# find ' MHz' and grab up to .
 	                                # we are little endian
-	mov	$'.',%dl			
-   	call	find_string
+	mov	$'.',%ah
+
+	# below is same as "sub $(strcat-find_string),%edx
+	# gas won't let us force the one-byte constant
+	.byte 0x83,0xEA,strcat-find_string   
+	
+	call	*%edx			# call find string
  
- 	mov	%ebx,%eax  		# clever way to get MHz in, sadly
+	mov	%ebx,%eax  		# clever way to get MHz in, sadly
 	ror	$8,%eax			# not any smaller than a mov
 	stosl	    			
-    
+
    	#=========
 	# Chip Name
 	#=========
@@ -259,8 +279,8 @@ chip_name:
    	mov	$('e'<<24+'m'<<16+'a'<<8+'n'),%ebx     	
 					# find 'name\t: ' and grab up to \n
        					# we are little endian
-	mov	$0xa,%dl
-	call	find_string
+	mov	$0xa,%ah
+	call	*%edx	   		# call find_string
 
 	mov	$0x202c,%ax		# ', '
 	stosw
@@ -284,25 +304,32 @@ chip_name:
 	shr	$20,%eax		# divide by 1024*1024 to get M
 	adc	$0, %eax		# round 
 
+
 	call num_to_ascii
 	
+	pop  %edx	 		# restore strcat pointer
+	
 	pop     %esi	 		# print 'M RAM, '
-	call	strcat
+	call	*%edx			# call strcat
+
 	push	%esi
 	
-	
+
 	#========
 	# Bogomips
 	#========
 	
 	mov	$('s'<<24+'p'<<16+'i'<<8+'m'),%ebx      	
 					# find 'mips\t: ' and grab up to \n
-	mov	$0xa,%dl
+	mov	$0xa,%ah
 	call	find_string
- 
+
  	pop	%esi	   		# bogo total follows RAM 
-	call	strcat
-   	push	%esi
+
+	call 	*%edx			# call strcat
+
+	push	%esi
+ 
  
         mov	%ebp,%ecx		# point ecx to out_buffer
 
@@ -318,13 +345,15 @@ chip_name:
 	mov     %ebp,%edi		  # point to output_buffer
 	
 	mov	$(uname_info+U_NODENAME),%esi	# host name from uname()
-	call	strcat
+	call    *%edx			  # call strcat
 	
 		      			# ecx is unchanged
 	call	center_and_print	# center and print
 	
 	pop	%ecx			# (.txt) pointer to default_colors
+	
 	call	write_stdout
+	
 
 	#================================
 	# Exit
@@ -339,24 +368,20 @@ exit:
 	#=================================
 	# FIND_STRING 
 	#=================================
-	#   dl is char to end at
+	#   ah is char to end at
 	#   ebx is 4-char ascii string to look for
 	#   edi points at output buffer
 
 find_string:
 					
-	mov	$disk_buffer,%esi	# look in cpuinfo buffer
+	mov	$disk_buffer-1,%esi	# look in cpuinfo buffer
 find_loop:
-	lodsl				# load 32 bits (lodsd)	
-	dec	%esi
-	dec	%esi
-	dec	%esi			# move pointer +1 to search all file
+	inc	%esi
+	cmpb	$0, (%esi)		# are we at EOF?
+	je	done			# if so, done
 
-	cmp	$0,%al
-	je	done
-
-	cmp	%eax,%ebx
-	jne	find_loop
+	cmp	(%esi), %ebx		# do the strings match?
+	jne	find_loop		# if not, loop
 	
 					# if we get this far, we matched
 
@@ -370,23 +395,17 @@ find_colon:
 	lodsb				# skip a char [should be space]
 	
 store_loop:	 
-	 lodsb				# load value
-	 cmp	$0,%al
-	 je	done
-    	 cmp	%dl,%al			# is it end string?
-	 je 	almost_done		# if so, finish
-	 stosb				# if not store and continue
-	 jmp	store_loop
+	lodsb				# load value
+	cmp	$0,%al
+	je	done
+    	cmp	%ah,%al			# is it end string?
+	je 	almost_done		# if so, finish
+	stosb				# if not store and continue
+	jmp	store_loop
 	 
 almost_done:	 
-	
-	# use undocumented SALC (.byte 0xD6) opcode here
-	# since come from cmp; je we know carry=0
-	
-	.byte 0xD6   	       	     	# replace last value with null
-	
-	stosb
-	dec	%edi			# move pointer back 
+
+	movb	 $0, (%edi)	        # replace last value with NUL 
 done:
 	ret
 
@@ -409,6 +428,7 @@ strcat:
 	# string to center in ecx
        
 center_and_print:
+       push    %edx
        push	%ecx			# save the string pointer
        inc	%edi			# move to a clear buffer
        push	%edi			# save for later
@@ -435,21 +455,26 @@ str_loop2:				# find end of string
        shr	%eax			# then divide by 2
 
        call	num_to_ascii		# print number of spaces
-       mov	$'C',%ax		# tack a 'C' on the end
+       mov	$'C',%al		# tack a 'C' on the end
+       					# ah is zero from num_to_ascii
        stosw				# store C and a NULL
        pop  %ecx			# pop the pointer to ^[[xC
+       
        call write_stdout		# write to the screen
-		
+      
 done_center:
         pop  %ecx			# restore string pointer
 	     				# and trickily print the real string
-	 
+
+	pop %edx
+	
 	#================================
 	# WRITE_STDOUT
 	#================================
 	# ecx has string
 	# eax,ebx,ecx,edx trashed
 write_stdout:
+	push    %edx
 	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
 	pop     %eax     		# in 3 bytes of code
 	
@@ -458,7 +483,6 @@ write_stdout:
 	xor	%ebx,%ebx		# put 1 in ebx (stdout)
 	inc	%ebx			# in 3 bytes of code
 	
-	# old strlen()
                        # another way of doing this:    lea 1(%edx), %ebx
 
 str_loop1:
@@ -467,13 +491,14 @@ str_loop1:
 	jne	str_loop1
 
 	int	$0x80  			# run the syscall
+	pop	%edx
 	ret
 
 	##############################
 	# num_to_ascii
 	##############################
 	# ax = value to print
-	# di points to where we want it
+	# edi points to where we want it
 	
 num_to_ascii:
         push    $10
@@ -509,11 +534,8 @@ default_colors:	.ascii "\033[0m\n\n\0"
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 kcore:		.ascii	"/proc/kcore\0"
 
-#ordinal:	.long	one,two,three,four	
-ordinal:	.byte	3,6,9,14
-
-one:	.ascii	"One\0"
-two:	.ascii	"Two\0"
+one:	.ascii	"One\0\0\0"
+two:	.ascii	"Two\0\0\0"
 three:	.ascii	"Three\0"
 four:	.ascii	"Four\0"
 

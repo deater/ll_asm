@@ -180,7 +180,7 @@ loop_no_read:
              for(j=0;j<ANSI_SIZE;j++) printf(" %i",temp_ansi[j]);	    
 	     printf("\n");
 	  
-       skip_add:
+       skip_add:  ;
 	  
     }
        /* not part of escape sequence, so we RLE encode */
