@@ -1,0 +1,7 @@
+On S390
+~~~~~~~
+
+lr  r2,r1         ===  move contents of r1 into r2
+cr  r1,r2	  ===  compare r1,r2
+jne		  === jump not equal
+lhi  r1,immeiate  === load halfword immediate

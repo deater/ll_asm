@@ -1,5 +1,5 @@
 #
-#  linux_logo in s390 assembler 0.10
+#  linux_logo in s390 assembler 0.12
 #
 #  by 
 #       Vince Weaver <vince@deater.net>
@@ -19,9 +19,6 @@
 #        to minimize size more.
 	
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
-#      :  Only works with <896MB of RAM (linux limitation of /proc/kcore)
-#         need to parse /proc/iomem to get up to 4gig reporting
-#      :  Doesn't print vendor name
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -31,16 +28,17 @@
 .equ U_MACHINE,(65*4)
 .equ U_DOMAINNAME,65*5
 
-# offset into the results returned by the stat syscall
-.equ S_SIZE,20
+# offset into the results returned by the sysinfo syscall
+.equ S_TOTALRAM,16
 
 # Sycscalls
-.equ SYSCALL_EXIT,   1
-.equ SYSCALL_READ,   3
-.equ SYSCALL_WRITE,  4
-.equ SYSCALL_OPEN,   5
-.equ SYSCALL_CLOSE,  6
-.equ SYSCALL_STAT, 106
+.equ SYSCALL_EXIT,     1
+.equ SYSCALL_READ,     3
+.equ SYSCALL_WRITE,    4
+.equ SYSCALL_OPEN,     5
+.equ SYSCALL_CLOSE,    6
+.equ SYSCALL_STAT,   106
+.equ SYSCALL_SYSINFO,116
 .equ SYSCALL_UNAME,122
 
 #
@@ -55,76 +53,121 @@ _start:
 	#=========================
 	# PRINT LOGO
 	#=========================
-
+	
 	basr	%r1,0			# get data offset into r1
 base:
 	la	%r2,base
 	sr	%r1,%r2			# addys are releative to segment
 					# so subtract off current offset
-	la	%r12,new_logo(%r1)	# point input to new_logo
-	la 	%r13,out_buffer(%r1)	# point output to buffer
+	la	%r11,text_buf(%r1)
+	la	%r12,logo(%r1)		# point input to new_logo
+	la 	%r13,logo_end(%r1)	# point output to buffer
+	la	%r14,out_buffer(%r1)
+
+	lhi	%r3,(N-1)		# store mask for later
+			
+# LZSS decompression algorithm implementation
+# by Vince Weaver based on LZSS.C by Haruhiko Okumura 1989
 	
-main_logo_loop:
-	lh	%r6,0(0,%r12)		# load 16-bits
-	sra	%r6,8			# shift to get byte
-	ahi	%r12,1			# increment pointer
+	lhi	%r6,FREQUENT_CHAR	# load the "frequent char"
+	lhi	%r10,(N-F)		# load "r"
+	lr	%r5,%r10		# move to r5 as times to fill
+	xr	%r4,%r4			# set r4 = 0
+fill_loop:
+	stc	%r6,0(%r4,%r11)		# save Frequent Char
+	ahi	%r4,1			# add our pointer
+	cr	%r4,%r5			# have we equaled count yet?
+	jne	fill_loop		# if not loop until done
 
-	chi	%r6,0			# if zero, we are done
-	je 	done_logo
+	xr	%r8,%r8			# clear the shift counter
+decompression_loop:
+	sra	%r9,1			# shift right our flags
+
+	chi	%r8,0			# is the shift counter zero?
+	jne	check_flags		# if not, keep going
+grab_new_flags:
+	lhi	%r8,8			# re-load shift counter
+	lh	%r9,0(0,%r12)		# load flags register
+	sra	%r9,8			# shift to get byte
+	ahi	%r12,1			# increment pointer		
 	
-	chi	%r6,27			# if ^[, we are a color
-	jne 	blit
+check_flags:
+	ahi	%r8,-1			# decrement shift counter
 
-	lhi	%r5,0x1b5b		# load ^[[
-	sth	%r5,0(0,%r13)		# out to buffer
-	ahi	%r13,2			# increment pointer		
+	tml	%r9,1			# is lowest bit 0
 
-	lh	%r5,0(0,%r12)		# load counter of num to output
-	sra	%r5,8			
-	ahi	%r12,1			
+	je	offset_length		# if so jump to offset_length
+	
+discreet_char:
+	bras	%r15,read_byte		# grab a byte
+        stc     %r7,0(0,%r14)		# store it to output
+	ahi	%r14,1			# increment pointer
+	stc	%r7,0(%r10,%r11)	# store it to tex_buf[r]
+	ahi	%r10,1			# increment "r"
+	nr	%r10,%r3		# mask "r" with (N-1)
+	j	decompression_loop
 
-out_elements:
+offset_length:
+	bras	%r15,read_byte		# grab a byte
+	lr	%r6,%r7			# r6=i
+	bras	%r15,read_byte		# r7=j
 
-	lh	%r6,0(0,%r12)		# load color
-	sra	%r6,8			
-	ahi	%r12,1			
+# i=i+ top nibble of j << 4
 
-	bras	%r15,num_to_ascii	# convert to ascii string
+	lr	%r5,%r7			# move r7 -> r5
+	sra	%r5,4			# shift right then left to get
+	sla	%r5,8			# top nibble in bits 12-8
+	ar	%r6,%r5			# add to i
+	
+# j=bottom nibble of j+THRESHOLD		
+	lhi	%r5,0xf			# load in a mask
+	nr	%r7,%r5			# mask off all but bottom nibble
+	ahi	%r7,THRESHOLD+1		# add in the threshold value
+	
 
-	lhi	%r4,';'			# store semi-colon
-	stc	%r4,0(0,%r13)
-	ahi	%r13,1
+	
+# could this be optimized with a string-move instruction?
 
-	brct 	%r5,out_elements	# decreemnt r5 and loop
+	xr	%r5,%r5			# k=0
+output_loop:	
+	xr	%r4,%r4			# (wish we had 3 register add)
+	ar	%r4,%r6
+	ar	%r4,%r5			# r4=r6+r5 (i+k)
+	nr	%r4,%r3			# r4=(i+k)&(N-1)
+	lh	%r4,0(%r4,%r11)		# r4=text_buf[(i_k)&(N-1)]
+	sra	%r4,8			# get the byte we want
+		
+	ahi	%r5,1			# k++
 
-	ahi	%r13,-1			# erase extra semi-colon
+	stc	%r4,0(0,%r14)		# store to output
+	ahi	%r14,1			# increment output pointer
+	
+	stc	%r4,0(%r10,%r11)	# store to text_buf[r]	
+	ahi	%r10,1			# increment "r"
+	nr	%r10,%r3		# mask r&(N-1)
 
-	lh	%r6,0(0,%r12)		# load closing char
-	sra	%r6,8
-	stc	%r6,0(0,%r13)		# save it tooutput
-	ahi	%r12,1		
-	ahi	%r13,1	
-
-	j	main_logo_loop		# done with color
-
-blit:
-	lh	%r5,0(0,%r12)		# load counter of times to blit
-	sra	%r5,8			
-	ahi	%r12,1			
-
-blit_repeat:		
-	stc	%r6,0(0,%r13)		# save it
-	ahi	%r13,1				
-	brct	%r5,blit_repeat		# decrement r5, compare to zero, loop
+	cr	%r5,%r7			# is k==j?
+	jne	output_loop		# if not, loop
 				
-	j main_logo_loop
-
-done_logo:
-	lhi	%r4,0x0a00	
-	sth	%r4,0(0,%r13)		# append linefeed and nul
+	j	decompression_loop
+	
+read_byte:
+	lh	%r7,0(0,%r12)		# load flags register
+	sra	%r7,8			# shift to get byte
+	
+	lhi	%r4,0xff	
+	nr	%r7,%r4			# mask because of &#^*^ sign extend
+	
+	ahi	%r12,1			# increment pointer
+	
+	cr	%r12,%r13		# see if we've reached the end
+	je	done_decompressing	# if so, exit
+	
+	basr	0,%r15		
+	
+done_decompressing:		
 
 	la	%r3,out_buffer(%r1)	# point to beginning of buffer
-
 	bras	%r15,write_stdout	# and print it
 	
 	#==========================
@@ -143,7 +186,7 @@ print_version:
 
 	la	%r12,ver_string(%r1)	# source is " Version "
 	mvst	%r13,%r12
-	
+
 	la	%r12,uname_info+U_RELEASE(%r1)	# version from uname "2.4.1"
 	mvst	%r13,%r12
 	
@@ -168,7 +211,7 @@ print_version:
 	# Middle-Line
 	#===============================
 
-	la	%r13,out_buffer(%r1)	# point to beginning of buffer
+
 	
 	#=========
 	# Load /proc/cpuinfo into buffer
@@ -198,26 +241,14 @@ end_cpuinfo:
 	# Number of CPU's
 	#=============
 
-	la	%r4,search_sors(%r1)
-	l	%r5,0(%r4)		# 4-byte string in r5
-	l	%r6,disk_buffer_p(%r1)	# point to cpuinfo
+	la	%r13,temp_num(%r1)	# point to beginning of temp_num
+	la	%r4,search_sors(%r1)	# search for "sors"
+	bras	%r15,find_string	
+
+	ahi	%r13,-1			# back up result
+	lh	%r4,0(%r13)		# grab the number
+	sra	%r4,8
 	
-cpu_loop:
-	l	%r7,0(%r6)		# load 4 bytes from cpuinfo
-	ahi	%r6,1			# increment pointer
-	cr	%r5,%r7			# do we match search pattern?
-	jne	cpu_loop		# if not, keep searching
-					# (should check for EOF as well	
-	
-					# if we get this far, we matched
-
-cpu_colon:
-	lhi	%r0,':'			# search for colon
-	srst	%r5,%r6			# repeat till we find colon
-
-	ahi	%r5,1			# point after colon
-
-	lh	%r4,0(%r5)		# grab the number
         n       %r4,half_byte_mask(%r1) # mask off (convert from ascii)
 	ahi	%r4,-1			# decrement (arrays start at 0)
 	sla	%r4,2			# shift over (32bit pointer)
@@ -225,12 +256,15 @@ cpu_colon:
 	la	%r5,ordinal(%r1)	# load the pointer
 	ar	%r5,%r4			# add the offset
 
+	la	%r13,out_buffer(%r1)	# point to beginning of output buffer
+	
 	l	%r12,0(%r5)		# print the string
 	sr	%r0,%r0	
 	mvst	%r13,%r12   		
-	
-	la	%r12,space(%r1)		# print a space
-	mvst	%r13,%r12
+
+	lhi	%r4,' '			# print a space
+	stc	%r4,0(0,%r13)
+	ahi	%r13,1
 	
 	
 	#=========
@@ -250,21 +284,17 @@ cpu_colon:
 	la	%r12,comma(%r1)		# print ' Processor, '
 	mvst	%r13,%r12   		
 			
-	# if we were being clever here we could have saved 'bx' from
-	# the bogomips count and then add an 's' to make the chip
-	# plural.  Sadly this doesn't look right with any of the chips
-	# I have (yet another feature from Stephan Walter)
+# we should tack an 's' on for an SMP system....
 	
 	
 	#========
 	# RAM
 	#========
 
-	la	%r3,stat_buff(%r1)	# do stat() syscall
-	la	%r2,kcore(%r1)		# on /proc/kcore (rough size of RAM)
-	svc	SYSCALL_STAT
+	la	%r2,sysinfo_buff(%r1)	# do sysinfo() syscall
+	svc	SYSCALL_SYSINFO
 	
-	l	%r6,stat_buff+S_SIZE(%r1)	# size in bytes of RAM
+	l	%r6,sysinfo_buff+S_TOTALRAM(%r1)	# size in bytes of RAM
 
 	sra	%r6,20			# divide by 1024*1024 to get M
 	bras	%r15,num_to_ascii
@@ -280,7 +310,7 @@ cpu_colon:
 	la	%r4,search_bogo(%r1)	# Grab number of bogomips
 	bras	%r15,find_string
 		
-	lhi	%r0,0
+	sr	%r0,%r0
 	la	%r12,bogo_total(%r1)	# source is " Bogomips Total"
 	mvst	%r13,%r12   
 
@@ -392,9 +422,9 @@ num_done:
 	#=================================
 	#   r5 is char to end at
 	#   r4 points to search string
-	#   ebx is 4-char ascii string to look for
-	#   edi points at output buffer
-
+	#  r13 points at output buffer
+	#   r0 trashed
+	
 find_string:
 	l	%r5,0(%r4)		# 4-byte string in r5
 	l	%r6,disk_buffer_p(%r1)	# point to cpuinfo
@@ -479,13 +509,12 @@ done_center:
 #	section .data
 #===========================================================================
 
-.include	"logo.inc"
+.include	"logo.lzss"
 
 	
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 space:		.ascii	" \0"
-megahertz:	.ascii	"MHz \0"
 comma:		.ascii	" Processor, \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
@@ -493,7 +522,6 @@ bogo_total:	.ascii	" Bogomips Total\0"
 default_colors:	.ascii "\033[0m\0"
 
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
-kcore:		.ascii	"/proc/kcore\0"
 
 ordinal:	.long	one,two,three,four	
 
@@ -515,10 +543,12 @@ disk_buffer_p:	.long disk_buffer
 #.bss
 
 .lcomm decimal,8
+.lcomm temp_num,8
 .lcomm uname_info,(65*6)
-.lcomm stat_buff,(4*2+2*4+4*12)
+.lcomm sysinfo_buff,(64)
 	# urgh get above from /usr/src/linux/include/asm/stat.h
-	# not glibc	
+	# not glibc
+.lcomm text_buf, (N+F-1)	
 .lcomm out_buffer,16384
 .lcomm	disk_buffer,4096	# we cheat!!!!
 

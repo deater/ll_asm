@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.11
+#  linux_logo in ix86 assembler 0.12
 #
 #  Originally by 
 #       Vince Weaver <vince@deater.net>
@@ -63,11 +63,11 @@ _start:
 	stosb
 
 	mov  	$logo, %esi
-	add 	$(2*F+6), %edi		# shorter than mov $out_buffer, %edi
+	mov	$out_buffer, %edi
 
 decompression_loop:	
-	shr 	$1, %bx		# cx has 8bit counter at top and flags bottom 
-    	test	$0x1,%bh	# if 0, we shifted through 8 and must re-load
+
+    	test	$0x2,%bh	# if 0, we shifted through 8 and must re-load
 	jne 	test_flags     	# if not move on with things
 
 	call 	read_byte	# load in a byte
@@ -76,8 +76,8 @@ decompression_loop:
 	mov 	%al, %bl	# move in the flags
 
 test_flags:
-	test	$1,%bl		# is flag 0?
-	je 	offset_length	# if so jump to offset_length
+	rcr 	$1, %bx		# rotate bottom bit into carry flag
+	jnc 	offset_length	# if one,  jump to offset_length
 
 discreet_char:
 	call  	read_byte		# get byte
@@ -94,7 +94,7 @@ offset_length:
 
 	call 	read_byte	# get next byte  (ch2)
 	
-	shl 	$4, %ax		# pointer is top 4bits of ch2 bottom 8 of ch1
+	shl 	$4, %eax		# pointer is top 4bits of ch2 bottom 8 of ch1
 	mov 	%ah, %dh 	# aka dx|=(al&0xf0)<<4;
 
 	shr	$4, %al		# trick to mask off top 4bits (sams as and 0xf)
@@ -118,9 +118,9 @@ output_loop:
 	jmp 	decompression_loop
 
 read_byte:
-	lodsb
-	cmp $logo_end, %esi
-	je done_logo
+	lodsb				# load a byte
+	cmp $logo_end, %esi		# have we reached the end?
+	je done_logo   			# if so, exit
 	ret
 
 # end of LZSS code
@@ -271,10 +271,10 @@ chip_name:
 	# RAM
 	#========
 	
-	push    $SYSCALL_SYSINFO	# stat() syscall (116)
+	push    $SYSCALL_SYSINFO	# sysinfo() syscall
 	pop	%eax
 	
-	mov	$sysinfo_buff,%ebx	# size of /proc/kcore
+	mov	$sysinfo_buff,%ebx	
 	int	$0x80
 	
 	mov	(sysinfo_buff+S_TOTALRAM),%eax	# size in bytes of RAM
@@ -302,7 +302,7 @@ chip_name:
 	
 	call	center			# print some spaces
 	
-	mov	$0xa,%eax		# and line feed and zero
+	mov	$0xa,%ax		# and line feed and zero
 	stosw
 
 	mov 	$out_buffer,%ecx		
@@ -498,7 +498,8 @@ done_center:
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
-space:		.ascii	" \0"
+.equ	comma,ram_comma+5
+.equ	space,ram_comma+6
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
 

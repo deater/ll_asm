@@ -44,3 +44,15 @@
 8 August 2002
 + Add "lzss" logo support and convert ix86 over to new code
   (with much help from Stephan Walter).
+
+22 August 2002
++ Have ix86 code down to 1476bytes!
++ Have partially working PPC version of lzss code
+
+28 August 2002
++ Update s390 to lzss before my testdrive account expires
++ Update ix86 comments a bit
+
+10 September 2002
++ re-written PPC code is 1796 bytes!
++ release 0.12
