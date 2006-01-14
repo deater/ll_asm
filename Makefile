@@ -2,6 +2,9 @@ ANSI_TO_USE = banner_logo.ansi
 
 all:	ll configure ansi_compress ./sstrip/sstrip
 
+sstrip_ll: ll ./sstrip/sstrip
+	./sstrip/sstrip ll
+
 ./sstrip/sstrip:
 	cd sstrip && make
        
@@ -18,9 +21,9 @@ lzss_new.o:    lzss_new.c
 	       		 gcc -O2 -Wall -c lzss_new.c
 			 
 
-ll:	ll.o ./sstrip/sstrip
-	ld -o ll ll.o
-	./sstrip/sstrip ll
+ll:	ll.o
+	ld -o ll ll.o	
+
 	
 ll.o:	ll.s 
 	as -o ll.o ll.s

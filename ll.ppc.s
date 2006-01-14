@@ -1,5 +1,5 @@
 #
-#  linux_logo in ppc assembler    0.12
+#  linux_logo in ppc assembler    0.15
 #
 #  by Vince Weaver <vince@deater.net>
 #
@@ -9,6 +9,36 @@
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
 #      :  Doesn't print vendor name
 #      :  doesn't count CPU's on SMP systems
+
+
+#  notes ...
+#    a lot of the offsets are off by 1.  This is to use the more
+#      efficient lbu commands that auto-update.
+#    don't use non callee saved registers around a syscall.
+#      it looks like Linux does not save those anymore
+
+# Register        Usage                CALLEE SAVE
+# r0            prolog/epilog           NO
+# r1            stack pointer           YES
+# r2            TOC pointer (reserved)  YES
+# r3-r4         1/2 para and return     NO
+# r5-r10        3-8th para              NO
+# r11-r12       Func Linkage reg        NO
+# r12           Used by global linkage  NO
+# r13           Small data area pointer NO
+# r14-r30       General Int registers   YES
+# r31           Global Environment Ptr  YES	  
+# f0            Scratch                 NO
+# f1            1st param/return        NO
+# f2-f8         2-8th fp param          NO
+# f9-f13        Scratch Reg             NO
+# f14-f31       Global fp regs          YES
+# CR0-CR7       Condition Regs          2,3,4 Yes
+# LR            Link register           YES
+# CTR           Counter register        NO
+# XER           Fixed Point Exception   NO
+# FPSCR         fp status& ctrl         NO
+		   
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -27,7 +57,6 @@
 .equ SYSCALL_WRITE,    4
 .equ SYSCALL_OPEN,     5
 .equ SYSCALL_CLOSE,    6
-.equ SYSCALL_STAT,   106
 .equ SYSCALL_SYSINFO,116
 .equ SYSCALL_UNAME,  122
 
@@ -39,18 +68,18 @@
 .equ BSS_BEGIN,25
 .equ DATA_BEGIN,26
 
+.include "logo.include"
+
 	.globl _start	
 _start:	
+
+        #========================
+	# Initialization
+	#========================
+	
+
 #	eieio				# coolest opcode of all time ;)
 					# not needed, but I had to put it here
-        #=========================
-	# PRINT LOGO
-	#=========================
-
-# LZSS decompression algorithm implementation
-# by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
-# optimized some more by Vince Weaver
-
   	# the hack loading BSS_BEGIN and DATA_BEGIN
 	# saves one instruction on any future load from memory
 	# as we can just do an addi rather than an lis;addi
@@ -61,106 +90,100 @@ _start:
 	lis	26,data_begin@ha
 	addi	26,26,data_begin@l
 
-	addi	11,BSS_BEGIN,(text_buf-bss_begin)
- 	     				# fill "text_buf" with most common char
-				        # frequent char is '#' in default logo
-
-	addi	12,DATA_BEGIN,(logo-data_begin)-1
-					# logo_pointer
-
-	addi	13,DATA_BEGIN,(logo_end-data_begin)
-					# end of the logo
-	
 	addi	14,BSS_BEGIN,(out_buffer-bss_begin)
 					# the output buffer
 
+	addi	21,BSS_BEGIN,(text_buf-bss_begin)
+ 	     	
+
 	mr	17,14		    	# store out-buffer for later
 
-	li	31,FREQUENT_CHAR	# load the "frequent char"
-	li	10,(N-F)		# grab how many times to store it
-	mr	6,10			# save also as "r"
-	li	5,0	
-fill_loop:	
-	addi	5,5,1			# decrement pointer
-	stbx	31,11,5			# store the frequent char
-	cmp	0,5,10
-	bne	fill_loop		# loop until filled our block
+        #=========================
+	# PRINT LOGO
+	#=========================
 
-	li	8,0			# load the shift counter
+# LZSS decompression algorithm implementation
+# by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
+# optimized some more by Vince Weaver
+
+
+	li	8,(N-F)			# grab "R"
+
+	addi	9,DATA_BEGIN,(logo-data_begin)-1
+					# logo_pointer
+
+	addi	12,DATA_BEGIN,(logo_end-data_begin)-1
+					# end of the logo
+
+
+	mr      16,17
+
 decompression_loop:
-	srwi 	10,10,1			# shift right our flags
+	lbzu 	10,1(9)			# load in a byte
+					# auto-update
+	mr	11,10			# copy to 11
+	ori	11,11,0xff00		# re-load top as a hackish 
+					# 8-bit counter
 
-	addic.	8,8,-1			# decrement the shift counter
-	bgt	check_flags		# if <0 we need a new flag
-grab_new_flags:
-	li     	8,8			# reload shift counter
-	bl      read_byte		# load a byte
-	mr	10,9			# move it to r10
+test_flags:
+	cmpw	0,12,9			# have we reached the end?
+	ble	done_logo		# if so exit
 
-check_flags:
-	andi.	7,10,1			# grab low bit and check for zero
+	andi.	13,11,0x1
+	srawi   11,11,1
 	
-	beq	offset_length		# if zero, offset_length and move ahead
+	bne	0,discrete_char
 
-discreet_char:	
-	bl	read_byte		# get a byte
-	stbu	9,1(14)			# store it to output
-	stbx	9,11,6			# store it to tex_buf["r"]
-	addi	6,6,1			# increment "r"
-	andi.	6,6,(N-1)		# mask it
-	b       decompression_loop	# and keep looping
+offset_length:
+	lbzu  	10,1(9)
+	lbzu	24,1(9)
+	slwi	24,24,8
+	or	24,24,10
 	
-offset_length:				
-	bl read_byte			# get a byte
-	mr	5,9			# save it
-	bl	read_byte		# get another byte
-	
-	# 5=i, 9=j
-	
-	rlwinm 	4,9,4,20,23		# rotate r9 left by 4, mask
-					# off bits 20-24, then store in r4
-					# very CISC ;)
-					
-	or	5,4,5			# i= top 4 bits of j, 8 bits of i
+	mr	10,24
 
-	andi.	9,9,0x0f		# j= bottom 4 bits + threshold
-	addi	9,9,THRESHOLD+1		# plus one to make it work out
-	
-	li	3,0	     	# k=0
-	
-      	
-	
+	srawi  15,10,P_BITS
+	addi   15,15,THRESHOLD+1 # cl = ax >> (P_BITS)+THRESH+1
+	       			 # = match length
+	       			 
 output_loop:
-	add 	4,5,3		# r4= i+k
-	andi.	4,4,(N-1)	# r4= (i+k)&(N-1)
-	lbzx	4,11,4		# r4=text_buf[(i+k)&(N-1)]
-	addi	3,3,1		# k++
+	andi.  24,24,(POSITION_MASK<<8+0xff)	# mask it
+	lbzx   10,21,24				
+	addi   24,24,1
 	
-	stbu	4,1(14)		# out(c)
+store_byte:
+	stbu   10,1(16)
 	
-	stbx	4,11,6		# text_buf[r]=c
-	addi	6,6,1		# r++
-	andi.	6,6,(N-1)	# r&=(N-1)
-	
-	cmp	0,3,9		# if k>j?
-	blt	output_loop	# if not, loop
+	stbx    10,21,8
+	addi	8,8,1
+	andi.	8,8,(N-1)
 
-	b   	decompression_loop
+	addic.	15,15,-1
+	bne	0,output_loop
 	
-read_byte:
-	lbzu    9,1(12)		# get a byte from pointed to area
-        cmpw	0,12,13		# does our pointer match end pointer?
-     	
-        beq	done_decompressing	# if so stop decoding
-	blr			# otherwise return
+	andi.	13,11,0xff00
+	bne	test_flags
 	
-	
-done_decompressing:
+	b	decompression_loop
+
+discrete_char:
+
+	lbzu    10,1(9)
+	li	15,1
+
+	b       store_byte
+
+done_logo:
 
 	addi	4,17,1		# restore (plus one because r17 is decremented)
 	bl	write_stdout	# and print the logo
+	
 
+        #==========================
+	# First Line
+	#==========================
 
+	
 	#==========================
 	# PRINT VERSION
 	#==========================
@@ -170,7 +193,6 @@ done_decompressing:
 					# uname struct
 	sc				# do syscall
 
-	mr	14,17			# restore out buffer
 
 	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_SYSNAME@l-1	
 					# os-name from uname "Linux"
@@ -192,16 +214,9 @@ done_decompressing:
       					# compiled date
 	bl 	strcat
 	
-	addi	14,17,1			# restore pointer to output buffer
-	bl	center			# center it
+	bl	center_and_print	# write it to screen
 	
-	li	6,0x0a00  		# load linefeed and null
-	sthu	6,0(14)			# save to end of string
 
-	addi	4,17,1			# restore pointer to output
-	bl	write_stdout		# write it to screen
-
-	
 	#===============================
 	# Middle-Line
 	#===============================
@@ -277,36 +292,13 @@ done_decompressing:
 
 	sc
 
-	addi	18,BSS_BEGIN,(sysinfo_buff-bss_begin)+S_TOTALRAM
-					# load pointer to bytes of RAM into r18
-	lwz	19,0(18)		# load bytes of RAM into r19
+	lwz	4,(sysinfo_buff+S_TOTALRAM-bss_begin)(BSS_BEGIN)
+					# load bytes of RAM into r4
 
-	srawi	19,19,20		# divide by 2^20 to get MB
+	srawi	4,4,20		# divide by 2^20 to get MB
+	li	5,0
 
-
-	addi	16,BSS_BEGIN,(num_to_ascii_end-bss_begin)
-					# the end of a backwards growing
-					# 10 byte long buffer.  Hopefully
-					# our RAM is less than that
-
-
-	li	20,10			# load in 10
-div_by_10:
-	divw	21,19,20		# divide r19 by r20 put into r21 
-	
-	mullw	22,21,20		# find remainder.  1st q*dividend
-	subf	22,22,19		# then subtract from original = R
-	addi	22,22,0x30		# convert remainder to ascii
-    	
-	stbu	22,-1(16)		# Store to backwards buffer
-	
-	mr	19,21			# move Quotient as new dividend
-	cmpwi	19,0			# was quotient zero?
-	bne    	div_by_10		# if not keep dividing
-	
-write_out:
-	addi	16,16,-1		# point to the beginning
-	bl	strcat			# and print it
+	bl	num_to_ascii
 
 	addi	16,DATA_BEGIN,(ram_comma-data_begin)-1
 					# print 'M RAM, '
@@ -326,61 +318,30 @@ write_out:
 					# print "Bogomips Total"
 	bl	strcat
 
-	addi	14,17,1			# point to output buffer
-	bl	center			# center it
-	
-	li	6,0x0a00		# tack a linefeed and null on end
-	sthu	6,0(14)			# write out 16 bits
-	
-	addi	4,17,1			# point to buffer
-	bl	write_stdout		# print it
+	bl	center_and_print	# center it
+
 
 	#=================================
 	# Print Host Name
 	#=================================
-
-	addi	14,BSS_BEGIN,(uname_info-bss_begin)+U_NODENAME
-					# hostname		       
-	bl	center
 	
-	addi	4,BSS_BEGIN,(uname_info-bss_begin)+U_NODENAME
-					# hostname again
-	bl	write_stdout
+	mr	14,17			# restore out buffer
 	
-	addi	4,DATA_BEGIN,(default_colors-data_begin)
-					# ansi to restore colors and two lf's
-	bl	write_stdout
+	addi	16,BSS_BEGIN,((uname_info-bss_begin)+U_NODENAME)-1
+					# hostname		      
+					
+	bl	strcat				
+	
+	bl	center_and_print
 
 	#================================
 	# Exit
 	#================================
-	
+exit:	
         li      3,0		# 0 exit value
 	li      0,SYSCALL_EXIT  # put the exit syscall number in eax
 	sc	             	# and exit
 
-
-	#================================
-	# WRITE_STDOUT
-	#================================
-	# r4 has string
-	# r0,r3,r4,r5,r6 trashed
-	
-	
-write_stdout:
-	li	0,SYSCALL_WRITE		# write syscall
-	li	3,STDOUT		# stdout	
-	
-	li	5,0			# string length counter
-strlen_loop:
-	addi	5,5,1			# increment counter
-	lbzx 	6,4,5			# get string[r5]
-	cmpi	0,6,0			# is it zero?
-	bne	strlen_loop		# if not keep counting
-	
-	sc				# syscall
-	
-	blr				# return
 
 
 
@@ -390,6 +351,7 @@ strlen_loop:
 	#   r23 is char to end at
 	#   r20 is the 4-char ascii string to look for
 	#   r14 points at output buffer
+	#   r16,r21
 
 find_string:
 		
@@ -448,40 +410,122 @@ strcat:
 	blr				# return
 
 	#==============================
-	# center
+	# center_and_print
 	#==============================
-	# r13, r7, r5, r6 =temp
-	# r14 is string (points to end afterwards)
+	# r14 is end of buffer
+	# r17 is start of buffer
+	# r29 = saved link register
+	# r4-r10, r19-r22, r30 trashed
 	
-center:
+center_and_print:
 
+	mflr 	29			# back up return address
 
-	li	5,0			# string length counter
-str_loop:
-	addi	5,5,1			# increment counter
-	lbzu 	6,1(14)			# get string[r5]
-	cmpi	0,6,0			# is it zero?
-	bne	str_loop		# if not keep counting
-	
+	subf	5,17,14			# see how long the output
+					# buffer is
+					
 	cmpwi	5,80			# see if we are >80
         bgt	done_center		# if so, bail
 
-	li	13,80			# 80 column screen
-	subf	13,5,13			# subtract strlen
-	srawi	13,13,1			# divide by tw
-	addi	4,DATA_BEGIN,(space-data_begin)
-					# load pointer to space		
+	li	4,80			# 80 column screen
+	subf	4,5,4			# subtract strlen
+	srawi	23,4,1			# divide by two
 
-	mtctr   13	   		# load into count register
+	lis	4,escape@ha
+	addi	4,4,escape@l
+	bl	write_stdout
 
-center_loop: 
-	li	0,SYSCALL_WRITE		# write char
-	li	3,STDOUT		# stdout
-	li	5,1			# write 1 char
-	sc				# print it
-	bdnz	center_loop
+	mr	4,23
+	li	5,1			# print to stdout
+	bl	num_to_ascii		# print number
+	
+	lis	4,c@ha
+	addi	4,4,c@l
+	bl	write_stdout
+
+
 done_center:	
-	blr
+
+	addi	4,17,1			# move string to output+1
+	bl	write_stdout		# call write stdout
+
+	lis	4,linefeed@ha
+	addi	4,4,linefeed@l
+
+	mtlr	29	      		# restore link register
+					# and let write_stdout
+					# return for us
+
+
+
+	#================================
+	# WRITE_STDOUT
+	#================================
+	# r4 has string
+	# r0,r3,r4,r5,r6 trashed
+		
+write_stdout:
+	li	0,SYSCALL_WRITE		# write syscall
+	li	3,STDOUT		# stdout	
+	
+	li	5,0			# string length counter
+strlen_loop:
+	lbzx 	6,4,5			# get byte from (r4+r5)
+       	addi	5,5,1			# increment counter
+	cmpi	0,6,0			# is it zero?
+	bne	strlen_loop		# if not keep counting
+	addi	5,5,-1
+	sc				# syscall
+	
+	blr				# return
+
+
+	##############################
+	# Num to Ascii
+	##############################
+	# num is in r4
+	# r5 =0 then strcat, otherwise stdout
+	# r5-r10,r19,r20,r21,r22,r30 trashed	
+
+num_to_ascii:
+
+	mflr    30			# save the link register
+
+	addi	16,BSS_BEGIN,(num_to_ascii_end-bss_begin)
+					# the end of a backwards growing
+					# 10 byte long buffer.  
+					
+	li	20,10			# we will divide by 10
+	mr	19,4			# load in the value passed
+	
+div_by_10:
+	divw	21,19,20		# divide r19 by r20 put into r21 
+	
+	mullw	22,21,20		# find remainder.  1st q*dividend
+	subf	22,22,19		# then subtract from original = R
+	addi	22,22,0x30		# convert remainder to ascii
+    	
+	stbu	22,-1(16)		# Store to backwards buffer
+	
+	mr	19,21			# move Quotient as new dividend
+	cmpwi	19,0			# was quotient zero?
+	bne    	div_by_10		# if not keep dividing
+	
+write_out:
+	cmpwi	5,0			# if r5 is 0 then skip ahead
+	bne 	stdout_num		
+
+	addi	16,16,-1		# point to the beginning
+	bl	strcat			# and strcat it
+
+	mtlr	30			# restore link register
+
+	blr				# return
+	
+stdout_num:
+        mr	4,16			# point to our buffer
+	mtlr	30			# restore link register
+	b	write_stdout		# stdout will return for us
 
 
 #===========================================================================
@@ -491,13 +535,16 @@ done_center:
 
 data_begin:
 
-.include "logo.lzss"
+.include "logo.lzss_new"
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 megahertz:	.ascii	"MHz PPC \0"
 .equ space, ram_comma+6
 .equ comma, ram_comma+5
+linefeed:   	.ascii  "\n\0"
+escape:		.ascii	"\033[\0"
+c:		.ascii  "C\0"
 ram_comma:	.ascii	"M RAM, \0"
 
 bogo_total:	.ascii	" Bogomips Total\0"
@@ -505,8 +552,6 @@ bogo_total:	.ascii	" Bogomips Total\0"
 default_colors:	.ascii	"\033[0m\n\n\0"
 
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
-kcore:		.ascii	"/proc/kcore\0"
-
 
 one:	.ascii	"One \0"
 

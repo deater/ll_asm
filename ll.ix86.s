@@ -35,7 +35,6 @@
 .equ SYSCALL_WRITE,    4
 .equ SYSCALL_OPEN,     5
 .equ SYSCALL_CLOSE,    6
-.equ SYSCALL_STAT,   106
 .equ SYSCALL_SYSINFO,116
 .equ SYSCALL_UNAME,  122
 
@@ -532,7 +531,7 @@ bogo_total:	.ascii	" Bogomips Total\0"
 default_colors:	.ascii "\033[0m\n\n\0"
 
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
-kcore:		.ascii	"/proc/kcore\0"
+
 
 one:	.ascii	"One\0\0\0"
 two:	.ascii	"Two\0\0\0"

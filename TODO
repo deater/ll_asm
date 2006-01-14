@@ -1,7 +1,7 @@
-+ no-compress mode (with a one-byte flag at the beginning) for those
-  ANSI's that are actually _bigger_ when RLE compressed
++ new archs 
+  - arm, hp-parisc, x86_64
+  - m68k, sh3
 
-+ re-optimize the code that got bloated about 200 bytes by making it
-  handle generic ANSI files
-
-+ OPTIMIZE
++ OPTIMIZE mips
++ redo ppc, alpha, etc to work with new lzss
+ 

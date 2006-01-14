@@ -46,7 +46,7 @@
   (with much help from Stephan Walter).
 
 22 August 2002
-+ Have ix86 code down to 1476bytes!
++ Have ix86 code down to 1476 bytes!
 + Have partially working PPC version of lzss code
 
 28 August 2002
@@ -61,3 +61,20 @@
 + added "sstrip" utility by Brian Raiter which really reduces the size
 + got the ix86 code to 1021 bytes!!! thanks to Stephan Walter again,
   but also I re-wrote the lzss core and did some tricks myself
+
+16 December 2002
++ Thanks to Stephan Walker again for getting the ix86 code down to
+  993 bytes.
+* Worked on the code myself and got it down to 977 by using edx as a
+  function pointer and using 2-byte call *%edx.  The ix86 code
+  is becoming so optimized as to be unreadable...
+  
+
+13 January 2006
++ Mips version working.  Should optimize for size a bit. 
+  It is based off of the x86 code so uses the more optimized
+  LZSS logo.
++ Work on the PPC version which stopped working, apparently
+  because the "ctr" register is not saved across a syscall with
+  kernel 2.6.  Interesting.
+  

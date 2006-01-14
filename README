@@ -22,7 +22,7 @@ Some Statistics
      SPARC		                      3708 bytes	
      PPC		1796 bytes            3228 bytes
      s390	        1692 bytes            2844 bytes
-     x86                1021 bytes            2636 bytes
+     x86                 977 bytes            2636 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -65,7 +65,7 @@ Features:
 --------
     + Runs in 4 miliseconds, more than twice as fast as the 10 linux_logo 
       takes on a K6-2+ 450!
-    + Takes up only 2.9k when stripped!  This is small enough to fit in 
+    + Takes up only 977 bytes when stripped!  This is small enough to fit in 
       one 4k x86 memory page!
   
      Amaze your enemies!  Impress your friends!
@@ -77,7 +77,7 @@ BUGS:
                             as /proc/cpuinfo reports, ugly model-name, off 
 			    MHz, and all.
 
-	Possibly kernel-dependent:  I only tested this on 2.4.x kernels.
+	Possibly kernel-dependent:  I only tested this on 2.4 and 2.6.x kernels.
                             The sysinfo() syscall changed between 2.2 and 2.4
 
 Custom Logo:
@@ -93,15 +93,6 @@ HOW TO HELP:
 	offer the author a shell-account so he can create a version
 	for your type of machine!
 
-	Also you can offer the author a job doing Linux and/or assembly
-	language stuff.  He had been working at BIOS programming on a Linux 
-	web-pad for a company that no longer exists, but now all the EE jobs 
-	on the US East coast seem to have vanished.
-	
-	Or maybe you could suggest a good US graduate school that 
-	would take said author who only had a 2.9 GPA but comes with
-	good reccomendations, GREs, and a love for EE stuff.
-
 Useful Resources:
 -----------------
         http://www.linuxassembly.org
@@ -110,8 +101,8 @@ Useful Resources:
 
 Special Thanks:
 ---------------
-	to Kristina Gonser
+	to my lovely wife
 
 AUTHOR:
 -------
-        Vince Weaver <vince@deater.net>  http://www.deater.net/weave
+        Vince Weaver <vince _at_ deater.net>  http://www.deater.net/weave
