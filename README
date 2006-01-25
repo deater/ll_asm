@@ -15,28 +15,38 @@ benefits of linux_logo in a smaller, faster package!
 Some Statistics
 ---------------
 
+     *NOTE*  not all architectures implement the same feature-set
+       (IE, not all have MHz in /proc/cpuinfo) so this is only
+       a rough comparison.
+
+
      Processor        lzss executable     old RLE executable
      ---------        ---------------     ------------------
+     mips              65916 bytes
      ia64		                      5736 bytes
      alpha		                      4264 bytes
      SPARC		                      3708 bytes	
-     PPC		1796 bytes            3228 bytes
      s390	        1692 bytes            2844 bytes
+     PPC		1238 bytes            3228 bytes     
      x86                 977 bytes            2636 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
      comparisons between the architectures can be made.
 
-     Why is the ia64 code so huge?
+mips:   I have no idea what the MIPS executable is so huge.
+        Stripping doesn't seem to help.
+	Maybe the .bss data is being included in the exectuable?
+
+ia64:   ia64 is VLIW.
      
         The way the instruction set works you can have up to 3-instructions
 	per "bundle" to parallelize things.  My code is not optimized and
 	thus often wastes 2/3 of each "bundle".
+	
+	Also I have not moved it to the more compact LZSS logo method yet.
 
-     Why is the alpha code so large?
-     
-        Unfortunately ll uses a lot of byte-sized loads and stores.
+alpha:  Unfortunately ll uses a lot of byte-sized loads and stores.
      
         On the x86 the instruction is "lodsb" which is 1 byte in size.
         On the PPC the instruction is "lbzu" which is 4 bytes in size.
@@ -45,28 +55,35 @@ Some Statistics
 	   an add instruction that x86 and ppc do automatically.
 	   Thus, taking 24 bytes.
 
-     Why is s390 code so small?
+sparc:  I cheat a bit on sparc and avoid all of the overhead
+        of register windows.
+	
 
-        It is the CISC-iest architecture I've ever seen.  If only it had
+s390:   This is the most CISC architecture I've ever seen.  If only it had
 	   a "load byte" opcode it would definitely beat out x86.  I am sure
 	   it can be optimized even smaller than x86 by a s390 expert.
 	   Being able to do "strcat" in 2 or 3 op-codes and strlen in not
 	   more than 5 is a big plus.
 
-     Why is x86 the smallest?
+ppc:	The PowerPC has very CISC-like opcodes as well.
+        Despite being load-store with 3 operand instructions, you almost
+	wouldn't know it was considered RISC.  I also think I could
+	optimize the code a bit more and challence x86.
 
-	Partly because I have lots of experience with x86 assembly and thus
-	   I am best at optimizing that.  Mainly though it's because
-	   x86 uses a variable-length instruction size, and while that's
-	   crazy for the instruction-fetch hardware, it really does do wonders
-	   for code size.
+x86:    The x86 code is currently the smallest, mainly because I had a
+        running contest for a while with Stephan Walter until
+	we got it below 1k.    It does help that there are a lot of
+	useful 1-byte instructions in the x86 command set, which give
+	it an instant advantage over all of the RISC chips.
+	
+	The only thing that holds x86 back a bit is the register pressure.
+	I should do an x86_64 version and see what the tradeoffs are.
 
 Features:
 --------
     + Runs in 4 miliseconds, more than twice as fast as the 10 linux_logo 
       takes on a K6-2+ 450!
-    + Takes up only 977 bytes when stripped!  This is small enough to fit in 
-      one 4k x86 memory page!
+    + Takes up only 977 bytes when stripped!
   
      Amaze your enemies!  Impress your friends!
 
@@ -77,7 +94,7 @@ BUGS:
                             as /proc/cpuinfo reports, ugly model-name, off 
 			    MHz, and all.
 
-	Possibly kernel-dependent:  I only tested this on 2.4 and 2.6.x kernels.
+	Possibly kernel-dependent:  I only tested this on 2.4 and 2.6 kernels.
                             The sysinfo() syscall changed between 2.2 and 2.4
 
 Custom Logo:

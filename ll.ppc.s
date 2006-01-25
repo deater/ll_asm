@@ -1,5 +1,5 @@
 #
-#  linux_logo in ppc assembler    0.15
+#  linux_logo in ppc assembler    0.16
 #
 #  by Vince Weaver <vince@deater.net>
 #

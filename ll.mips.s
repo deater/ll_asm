@@ -1,9 +1,9 @@
 #
 # TODO!  Remove nops, use gp!
-#
+#   Possibly optimize the delay slots myself
 
 #
-#  linux_logo in mips assembler 0.14
+#  linux_logo in mips assembler 0.16
 #
 #  By 
 #       Vince Weaver <vince@deater.net>
@@ -24,39 +24,39 @@
 # Register definitions.  Why does't gas know these?
 #
 
-.equ zero , 0
-.equ at   , 1  # Assembler Temporary
-.equ v0   , 2  # Returned value registers
-.equ v1	  , 3
-.equ a0	  , 4  # Argument Registers (Caller Saved)
-.equ a1	  , 5
-.equ a2	  , 6
-.equ a3	  , 7
-.equ t0   , 8  # Temporary (Caller Saved)
-.equ t1   , 9
-.equ t2   ,10
-.equ t3   ,11
-.equ t4   ,12
-.equ t5   ,13
-.equ t6   ,14
-.equ t7   ,15
-.equ s0   ,16  # Callee-Saved
-.equ s1   ,17
-.equ s2   ,18
-.equ s3   ,19
-.equ s4   ,20
-.equ s5   ,21
-.equ s6   ,22
-.equ s7   ,23
-.equ t8   ,24
-.equ t9   ,25
-.equ k0	  ,26  # Kernel Reserved (do not use!)
-.equ k1   ,27
-.equ gp	  ,28  # Global Pointer
-.equ sp	  ,29  # Stack Pointer
-.equ fp   ,30  # Frame Pointer
-.equ s8	  ,30
-.equ ra	  ,31  # return address (of subroutine call)
+#.equ zero , 0
+#.equ at   , 1  # Assembler Temporary
+#.equ v0   , 2  # Returned value registers
+#.equ v1   , 3
+#.equ a0   , 4  # Argument Registers (Caller Saved)
+#.equ a1   , 5
+#.equ a2   , 6
+#.equ a3   , 7
+#.equ t0   , 8  # Temporary (Caller Saved)
+#.equ t1   , 9
+#.equ t2   ,10
+#.equ t3   ,11
+#.equ t4   ,12
+#.equ t5   ,13
+#.equ t6   ,14
+#.equ t7   ,15
+#.equ s0   ,16  # Callee-Saved
+#.equ s1   ,17
+#.equ s2   ,18
+#.equ s3   ,19
+#.equ s4   ,20
+#.equ s5   ,21
+#.equ s6   ,22
+#.equ s7   ,23
+#.equ t8   ,24
+#.equ t9   ,25
+#.equ k0   ,26  # Kernel Reserved (do not use!)
+#.equ k1   ,27
+#.equ gp   ,28  # Global Pointer
+#.equ sp   ,29  # Stack Pointer
+#.equ fp   ,30  # Frame Pointer (GCC)
+#.equ s8   ,30  # s8 on mips compiler
+#.equ ra   ,31  # return address (of subroutine call)
 
 
 # offsets into the results returned by the uname syscall
