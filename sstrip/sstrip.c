@@ -16,6 +16,10 @@
 #define	FALSE		0
 #endif
 
+#ifdef __mips__
+#define ELF_CLASS ELFCLASS32
+#endif
+
 #if ELF_CLASS == ELFCLASS32
 #define	Elf_Ehdr	Elf32_Ehdr
 #define	Elf_Phdr	Elf32_Phdr

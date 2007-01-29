@@ -26,6 +26,7 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "arch.h"
 
 #define num_trees 256
 
@@ -137,7 +138,8 @@ void newDeleteNode(int p, int binary_search_index,
 
 int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
 		       unsigned char frequent_char,
-		       int ring_buffer_size, int position_length_threshold) {
+		       int ring_buffer_size, int position_length_threshold,
+		       int arch) {
 
 //    unsigned char frequent_char='#';
 //    int ring_buffer_size=1024;  /* N */
@@ -199,12 +201,22 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
     r = ring_buffer_size - match_length_limit;
    
     if (header!=NULL) {
-    fprintf(header,".equ FREQUENT_CHAR,'%c'\n",frequent_char);
-    fprintf(header,".equ N,%i\n",ring_buffer_size);
-    fprintf(header,".equ F,%i\n",match_length_limit);
-    fprintf(header,".equ THRESHOLD,%i\n",position_length_threshold);
-    fprintf(header,".equ P_BITS,%i\n",position_bits);
-    fprintf(header,".equ POSITION_MASK,%i\n",(0xff>>(8-(position_bits-8))));
+       if (arch==ARCH_PARISC) {
+	  fprintf(header,"FREQUENT_CHAR: .equ %i\n",frequent_char);
+          fprintf(header,"N: .equ %i\n",ring_buffer_size);
+          fprintf(header,"F: .equ %i\n",match_length_limit);
+          fprintf(header,"THRESHOLD: .equ %i\n",position_length_threshold);
+          fprintf(header,"P_BITS: .equ %i\n",position_bits);
+          fprintf(header,"POSITION_MASK: .equ %i\n",(0xff>>(8-(position_bits-8))));
+       }
+       else {
+         fprintf(header,".equ FREQUENT_CHAR,'%c'\n",frequent_char);
+         fprintf(header,".equ N,%i\n",ring_buffer_size);
+         fprintf(header,".equ F,%i\n",match_length_limit);
+         fprintf(header,".equ THRESHOLD,%i\n",position_length_threshold);
+         fprintf(header,".equ P_BITS,%i\n",position_bits);
+         fprintf(header,".equ POSITION_MASK,%i\n",(0xff>>(8-(position_bits-8))));
+       }
     }
     if (outfile!=NULL) {
        fprintf(outfile,"logo:\n");

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* calloc() */
 
+#include "arch.h"
 #include "lzss.h"
 
     /* This program creates the "logo.inc" file used by "ll" */
@@ -243,7 +244,10 @@ finished:
 int main(int argc, char **argv) {
       
     FILE *ansi,*output,*output_lzss,*output_lzss_new,*header;
-    int ch,byte_count=0,orig_byte_count=0;
+    int ch,byte_count=0,orig_byte_count=0,arch=0;
+   
+       /* Detect arch */
+   arch=linux_detect_arch();
    
        /* Hard coded output.  This shouldn't be a problem I hope */
    
@@ -292,7 +296,7 @@ int main(int argc, char **argv) {
     fclose(output_lzss);
    
     rewind(ansi);
-    byte_count=lzss_encode_better(ansi,header,output_lzss_new,'\0',1024,2);
+    byte_count=lzss_encode_better(ansi,header,output_lzss_new,'\0',1024,2,arch);
     printf("Size of LZSS-NEW version: %i\n",byte_count);
     fclose(output_lzss_new);
     fclose(header);

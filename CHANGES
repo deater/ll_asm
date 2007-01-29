@@ -78,3 +78,14 @@
   because the "ctr" register is not saved across a syscall with
   kernel 2.6.  Interesting.
   
+19 May 2006
++ Start work on the HP PA-RISC version
++ Fix up the infrastructure to special-case the weird .EQU
+  directive order the hppa arch needs.
+  
+13 January 2007
++ Work on PA-RISC again after long delay.  Have it working, but not optimized
+  
+29 January 2007
++ Optimized PA-RISC code.  sstrip'd version before was 2096 bytes, after is
+  1432 bytes.
