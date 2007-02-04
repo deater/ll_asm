@@ -26,8 +26,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "arch.h"
-
 #define num_trees 256
 
   /* initialize trees */
@@ -139,7 +137,7 @@ void newDeleteNode(int p, int binary_search_index,
 int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
 		       unsigned char frequent_char,
 		       int ring_buffer_size, int position_length_threshold,
-		       int arch) {
+		       int arch_parisc) {
 
 //    unsigned char frequent_char='#';
 //    int ring_buffer_size=1024;  /* N */
@@ -201,7 +199,7 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
     r = ring_buffer_size - match_length_limit;
    
     if (header!=NULL) {
-       if (arch==ARCH_PARISC) {
+       if (arch_parisc) {
 	  fprintf(header,"FREQUENT_CHAR: .equ %i\n",frequent_char);
           fprintf(header,"N: .equ %i\n",ring_buffer_size);
           fprintf(header,"F: .equ %i\n",match_length_limit);

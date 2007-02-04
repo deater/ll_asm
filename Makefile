@@ -1,10 +1,32 @@
 ANSI_TO_USE = banner_logo.ansi
 
+ARCH = $(shell uname -m)
+
+
+# Fix the ARCH for architectures who have multiple names for same thing
+
+#
+# See if arch has "86" in it (ie, 386,486,586,686) but _not_ x86_64
+#
+ifneq (,$(findstring 86,$(ARCH)))
+   ifeq (,$(findstring x86_64,$(ARCH)))
+      ARCH := i686
+   endif
+endif
+
+#
+# Handle various ARM variants
+#
+ifneq (,$(findstring arm,$(ARCH)))
+   ARCH := arm
+endif
+
+
 CC = gcc
 CFLAGS = -O2 -Wall
-LFLAGS = 
+LDFLAGS = 
 
-all:	ll configure ansi_compress ./sstrip/sstrip
+all:	ll ansi_compress ./sstrip/sstrip
 
 sstrip_ll: ll ./sstrip/sstrip
 	./sstrip/sstrip ll
@@ -12,10 +34,10 @@ sstrip_ll: ll ./sstrip/sstrip
 ./sstrip/sstrip:
 	cd sstrip && make
        
-ansi_compress:  ansi_compress.o lzss.o lzss_new.o arch.o
-	$(CC) -o ansi_compress ansi_compress.o lzss.o lzss_new.o arch.o
-	   
-ansi_compress.o:    ansi_compress.c arch.o
+ansi_compress:  ansi_compress.o lzss.o lzss_new.o 
+	$(CC) $(LDFLAFS) -o ansi_compress ansi_compress.o lzss.o lzss_new.o
+
+ansi_compress.o:    ansi_compress.c
 	$(CC) $(CFLAGS) -c ansi_compress.c
 
 lzss.o:	   lzss.c
@@ -23,38 +45,28 @@ lzss.o:	   lzss.c
 
 lzss_new.o:    lzss_new.c
 	$(CC) $(CFLAGS) -c lzss_new.c
-			 
-arch.o:	arch.c arch.h
-	$(CC) $(CFLAGS) -c arch.c
+
+#
+# The -N option avoids padding the .text segment, at least on x86_64
+#
 
 ll:	ll.o
-	ld -o ll ll.o	
+	ld -N -o ll ll.o	
 
-	
-ll.o:	ll.s 
+ll.o:	ll.s logo.lzss
 	as -o ll.o ll.s
 
-ll.s:	configure logo.inc
-	./configure
-
-logo_optimize:	   logo_optimize.o lzss_new.o
-		   gcc -o logo_optimize logo_optimize.o lzss_new.o
+ll.s:	
+	ln -s ll.$(ARCH).s ll.s
 		   
-logo_optimize.o:   logo_optimize.c
-		   gcc -Wall -O2 -c logo_optimize.c
-
 logo.inc:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
 logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
-configure:	configure.o arch.o
-	$(CC) -o configure configure.o arch.o
-
-configure.o:	configure.c arch.h
-	$(CC) $(CFLAGS) -c configure.c
-
 clean:
-	rm -f ll *.o *~ configure ll.s ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize
+	rm -f ll *.o *~ ll.s ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc
 	cd sstrip && make clean
+
+

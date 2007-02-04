@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h> /* calloc() */
 
-#include "arch.h"
 #include "lzss.h"
 
     /* This program creates the "logo.inc" file used by "ll" */
@@ -243,67 +242,88 @@ finished:
 
 int main(int argc, char **argv) {
       
-    FILE *ansi,*output,*output_lzss,*output_lzss_new,*header;
-    int ch,byte_count=0,orig_byte_count=0,arch=0;
-   
-       /* Detect arch */
-   arch=linux_detect_arch();
-   
-       /* Hard coded output.  This shouldn't be a problem I hope */
-   
-    output=fopen("logo.inc","w");
-    if (output==NULL) {
-       printf("Could not open \"logo.inc\"\n");
-       return 1;
-    }
-   
-    output_lzss=fopen("logo.lzss","w");
-    if (output_lzss==NULL) {
-       printf("Could not open \"logo.lzss\"\n");
-       return 1;
-    }
+    FILE *output,*header,*ansi;
+    int ch,byte_count=0,orig_byte_count=0;
 
-    output_lzss_new=fopen("logo.lzss_new","w");
-    if (output_lzss_new==NULL) {
-       printf("Could not open \"logo.lzss_new\"\n");
-       return 1;
-    }
-   
-    header=fopen("logo.include","w");
-    if (header==NULL) {
-       printf("Could not open \"header\"\n");
-       return 1;
-    }
-   
+       /* Check command line arguments */
     if (argc<2) {
        printf("\nUseage:\n\t%s ansi_file\n\n",argv[0]);
        return 3;
     }
-   
+
+       /* Open input file */
     ansi=fopen(argv[1],"r");
     if (ansi==NULL) {
        printf("Could not open \"%s\"\n",argv[1]);
        return 2;
     }   
 
+   
+    /* RLE version */
+    output=fopen("logo.inc","w");
+    if (output==NULL) {
+       printf("Could not open \"logo.inc\"\n");
+       return 1;
+    }
     byte_count=rle_one(ansi,output);
     printf("Size of RLE version: %i\n",byte_count);   
     fclose(output);
-   
+
+
+
+    /* Old lzss version */   
+    output=fopen("logo.lzss","w");
+    if (output==NULL) {
+       printf("Could not open \"logo.lzss\"\n");
+       return 1;
+    }
+
     rewind(ansi);
-    byte_count=lzss_encode(ansi,output_lzss);
+    byte_count=lzss_encode(ansi,output);
     printf("Size of LZSS version: %i\n",byte_count);
-    fclose(output_lzss);
-   
+    fclose(output);
+
+
+    /* new lzss */
+    output=fopen("logo.lzss_new","w");
+    if (output==NULL) {
+       printf("Could not open \"logo.lzss_new\"\n");
+       return 1;
+    }   
+    header=fopen("logo.include","w");
+    if (header==NULL) {
+       printf("Could not open \"header\"\n");
+       return 1;
+    }
+      
     rewind(ansi);
-    byte_count=lzss_encode_better(ansi,header,output_lzss_new,'\0',1024,2,arch);
+    byte_count=lzss_encode_better(ansi,header,output,'\0',1024,2,0);
+
+
     printf("Size of LZSS-NEW version: %i\n",byte_count);
-    fclose(output_lzss_new);
+    fclose(output);
+    fclose(header);
+
+    /* PA-RISC lzss */
+    output=fopen("logo.lzss_new.parisc","w");
+    if (output==NULL) {
+       printf("Could not open \"logo.lzss_new.parisc\"\n");
+       return 1;
+    }   
+    header=fopen("logo.include.parisc","w");
+    if (header==NULL) {
+       printf("Could not open \"header\"\n");
+       return 1;
+    }
+    rewind(ansi);
+    lzss_encode_better(ansi,header,output,'\0',1024,2,1);
+
+    fclose(output);
     fclose(header);
     rewind(ansi);
-   
 
-//    ansi=fopen(argv[1],"r");
+    
+    /* calculate size of original */
     while((ch=fgetc(ansi))!=EOF) {
 	orig_byte_count++;
     }

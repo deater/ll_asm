@@ -89,3 +89,16 @@
 29 January 2007
 + Optimized PA-RISC code.  sstrip'd version before was 2096 bytes, after is
   1432 bytes.
+
+2 Feburary 2007
++ Change the way the Makefile detects architecture
++ x86 ll was crashing on newer machines with really stupid cpuinfo cpu types
+  (core2 and newer xeons, I'm looking at you).  The problem was it makes
+  the middle string >80, which the check for was broken.  Fix, but it
+  adds an extra 3 bytes to program length.
+
+3 February 2007
++ x86_64 version.  Hoped I could make it smaller, but for various reasons
+  it ends up being a tens of bytes bigger than x86 version.  Try 
+  various optimizations to no avail.
+

@@ -1,10 +1,10 @@
 ;
-;  linux_logo in hppa pa-risc assembler 0.17
+;  linux_logo in hppa pa-risc assembler 0.18
 ;
 ;  By 
 ;       Vince Weaver <vince@deater.net>
 ;
-;  assemble with     "as -o ll.o ll.mips.s"
+;  assemble with     "as -o ll.o ll.parisc.s"
 ;  link with         "ld -o ll ll.o"
 
 
@@ -49,7 +49,7 @@
 ;    by using an ill-formed syscall instruction.
 
 
-.include "logo.include"
+.include "logo.include.parisc"
 
 # offsets into the results returned by the uname syscall
 U_SYSNAME:   	   	.equ	  0
@@ -740,7 +740,7 @@ one:	.ascii	"One \0"
 MHz:	.ascii	"MHz PA-RISC \0"
 processor:	.ascii " Processor, \0"
 
-.include	"logo.lzss_new"
+.include	"logo.lzss_new.parisc"
 
 ;============================================================================
 ;	section .bss

@@ -11,11 +11,6 @@
 #include	<elf.h>
 #include	<asm/elf.h>
 
-#ifndef TRUE
-#define	TRUE		1
-#define	FALSE		0
-#endif
-
 #ifdef __mips__
 #define ELF_CLASS ELFCLASS32
 #endif
@@ -37,13 +32,13 @@ static char const      *progname;
 static char const      *filename;
 
 
-/* A simple error-handling function. FALSE is always returned for the
+/* A simple error-handling function. 0 is always returned for the
  * convenience of the caller.
  */
 static int err(char const *errmsg)
 {
     fprintf(stderr, "%s: %s: %s\n", progname, filename, errmsg);
-    return FALSE;
+    return 0;
 }
 
 /* A macro for I/O errors: The given error message is used only when
@@ -55,66 +50,79 @@ static int err(char const *errmsg)
  * checks to make sure that this is in fact a file that we should be
  * munging.
  */
-static int readelfheader(int fd, Elf_Ehdr *ehdr)
-{
+static int readelfheader(int fd, Elf_Ehdr *ehdr) {
     errno = 0;
-    if (read(fd, ehdr, sizeof *ehdr) != sizeof *ehdr)
+    if (read(fd, ehdr, sizeof *ehdr) != sizeof *ehdr) {
 	return ferr("missing or incomplete ELF header.");
+    }
 
     /* Check the ELF signature.
      */
     if (!(ehdr->e_ident[EI_MAG0] == ELFMAG0 &&
 	  ehdr->e_ident[EI_MAG1] == ELFMAG1 &&
 	  ehdr->e_ident[EI_MAG2] == ELFMAG2 &&
-	  ehdr->e_ident[EI_MAG3] == ELFMAG3))
+	  ehdr->e_ident[EI_MAG3] == ELFMAG3)) {
 	return err("missing ELF signature.");
+    }
 
     /* Compare the file's class and endianness with the program's.
      */
-    if (ehdr->e_ident[EI_DATA] != ELF_DATA)
+    if (ehdr->e_ident[EI_DATA] != ELF_DATA) {
 	return err("ELF file has different endianness.");
-    if (ehdr->e_ident[EI_CLASS] != ELF_CLASS)
+    }
+
+    if (ehdr->e_ident[EI_CLASS] != ELF_CLASS) {
 	return err("ELF file has different word size.");
+    }
 
     /* Check the target architecture.
      */
-    if (ehdr->e_machine != ELF_ARCH)
+    if (ehdr->e_machine != ELF_ARCH) {
 	return err("ELF file created for different architecture.");
+    }
 
     /* Verify the sizes of the ELF header and the program segment
      * header table entries.
      */
-    if (ehdr->e_ehsize != sizeof(Elf_Ehdr))
+    if (ehdr->e_ehsize != sizeof(Elf_Ehdr)) {
 	return err("unrecognized ELF header size.");
-    if (ehdr->e_phentsize != sizeof(Elf_Phdr))
+    }
+    if (ehdr->e_phentsize != sizeof(Elf_Phdr)) {
 	return err("unrecognized program segment header size.");
+    }
 
     /* Finally, check the file type.
      */
-    if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN)
+    if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
 	return err("not an executable or shared-object library.");
+    }
 
-    return TRUE;
+    return 1;
 }
 
 /* readphdrtable() loads the program segment header table into memory.
  */
-static int readphdrtable(int fd, Elf_Ehdr const *ehdr, Elf_Phdr **phdrs)
-{
+static int readphdrtable(int fd, Elf_Ehdr const *ehdr, Elf_Phdr **phdrs) {
+
     size_t	size;
 
-    if (!ehdr->e_phoff || !ehdr->e_phnum)
+    if (!ehdr->e_phoff || !ehdr->e_phnum) {
 	return err("ELF file has no program header table.");
+    }
 
     size = ehdr->e_phnum * sizeof **phdrs;
-    if (!(*phdrs = malloc(size)))
+
+    if (!(*phdrs = malloc(size))) {
 	return err("Out of memory!");
+    }
 
     errno = 0;
-    if (read(fd, *phdrs, size) != (ssize_t)size)
-	return ferr("missing or incomplete program segment header table.");
 
-    return TRUE;
+    if (read(fd, *phdrs, size) != (ssize_t)size) {
+	return ferr("missing or incomplete program segment header table.");
+    }
+
+    return 1;
 }
 
 /* getmemorysize() determines the offset of the last byte of the file
@@ -122,33 +130,38 @@ static int readphdrtable(int fd, Elf_Ehdr const *ehdr, Elf_Phdr **phdrs)
  * (Anything in the file after that point is not used when the program
  * is executing, and thus can be safely discarded.)
  */
-static int getmemorysize(Elf_Ehdr const *ehdr, Elf_Phdr const *phdrs,
+static int getmemorysize(Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 			 unsigned long *newsize)
 {
-    Elf32_Phdr const   *phdr;
-    unsigned long	size, n;
+    Elf_Phdr    *phdr;
+    unsigned long	size, n ,end=0;
     int			i;
 
     /* Start by setting the size to include the ELF header and the
      * complete program segment header table.
      */
     size = ehdr->e_phoff + ehdr->e_phnum * sizeof *phdrs;
-    if (size < sizeof *ehdr)
+
+    if (size < sizeof *ehdr) {
 	size = sizeof *ehdr;
+        printf("-> Adjusting that to %ld\n",size);
+    }
 
     /* Then keep extending the size to include whatever data the
      * program segment header table references.
      */
     for (i = 0, phdr = phdrs ; i < ehdr->e_phnum ; ++i, ++phdr) {
 	if (phdr->p_type != PT_NULL) {
+
 	    n = phdr->p_offset + phdr->p_filesz;
 	    if (n > size)
 		size = n;
+            end=size;
 	}
     }
 
     *newsize = size;
-    return TRUE;
+    return 1;
 }
 
 /* truncatezeros() examines the bytes at the end of the file's
@@ -179,7 +192,7 @@ static int truncatezeros(int fd, unsigned long *newsize)
 	return err("ELF file is completely blank!");
 
     *newsize = size;
-    return TRUE;
+    return 1;
 }
 
 /* modifyheaders() removes references to the section header table if
@@ -189,7 +202,7 @@ static int truncatezeros(int fd, unsigned long *newsize)
 static int modifyheaders(Elf_Ehdr *ehdr, Elf_Phdr *phdrs,
 			 unsigned long newsize)
 {
-    Elf32_Phdr *phdr;
+    Elf_Phdr *phdr;
     int		i;
 
     /* If the section header table is gone, then remove all references
@@ -215,7 +228,7 @@ static int modifyheaders(Elf_Ehdr *ehdr, Elf_Phdr *phdrs,
 	}
     }
 
-    return TRUE;
+    return 1;
 }
 
 /* commitchanges() writes the new headers back to the original file
@@ -259,7 +272,7 @@ static int commitchanges(int fd, Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 	goto warning;
     }
 
-    return TRUE;
+    return 1;
 
   warning:
     return err("ELF file may have been corrupted!");
@@ -268,8 +281,8 @@ static int commitchanges(int fd, Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 /* main() loops over the cmdline arguments, leaving all the real work
  * to the other functions.
  */
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
+
     int			fd;
     Elf_Ehdr		ehdr;
     Elf_Phdr	       *phdrs;
@@ -289,6 +302,7 @@ int main(int argc, char *argv[])
     progname = argv[0];
 
     for (arg = argv + 1 ; *arg != NULL ; ++arg) {
+
 	filename = *arg;
 
 	fd = open(*arg, O_RDWR);
