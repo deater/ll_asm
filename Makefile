@@ -10,7 +10,7 @@ ARCH = $(shell uname -m)
 #
 ifneq (,$(findstring 86,$(ARCH)))
    ifeq (,$(findstring x86_64,$(ARCH)))
-      ARCH := i686
+      ARCH := i386
    endif
 endif
 
@@ -19,6 +19,20 @@ endif
 #
 ifneq (,$(findstring arm,$(ARCH)))
    ARCH := arm
+endif
+
+#
+# Handle SPARC
+#
+ifneq (,$(findstring sparc,$(ARCH)))
+   ARCH := sparc
+endif
+
+#
+# Handle MIPS
+#
+ifneq (,$(findstring mips,$(ARCH)))
+   ARCH := mips
 endif
 
 

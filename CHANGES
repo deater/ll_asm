@@ -35,7 +35,7 @@
 26 July 2002
 + Import "configure" from linux_logo-4.03
 + Optimize 208bytes off of ix86 code, thanks to suggestions from
-  Stephan Walter <stephan.walter@gmx.ch>
+  Stephan Walter <stephan.walter _at_ gmx.ch>
 + Add the RiSC port to the 16bit directory  
 
 2 August 2002
@@ -102,3 +102,5 @@
   it ends up being a tens of bytes bigger than x86 version.  Try 
   various optimizations to no avail.
 
+6 February 2007
++ Re-optimize the mips version.  It is now 160 bytes smaller.

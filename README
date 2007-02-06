@@ -27,8 +27,8 @@ Some Statistics
      alpha		                      4264 bytes
      SPARC		                      3708 bytes	
      s390	        1692 bytes            2844 bytes
-     mips               1500 bytes     
-     parisc		1432 bytes     
+     parisc		1432 bytes
+     mips               1340 bytes
      PPC		1238 bytes            3228 bytes     
      x86_64		1001 bytes
      x86                 969 bytes            2636 bytes
@@ -40,12 +40,15 @@ Some Statistics
 mips:   Recent binutils has made mips come in line with the
         other architectures.
 
-parisc:	no integer divide, have to code it up... not so bad in loop form
-        crazy delay slot that can be nulled out
-	some ALU instructions can also null out following instructions conditionally
-	compare immediate instruction only can handle 5-bit immediate	
-        loads/stores must be aligned
-	no AND immediate instruction
+parisc:	+ really hurt by its short immediate field.  Most addresses
+	  require 2 instructions to load, even if try to use relative-data add.
+	+ no integer divide, have to code it up... not so bad in loop form
+        + delay slot that can be nulled out
+	+ some ALU instructions can also null out following instructions 
+          conditionally
+	+ compare immediate instruction only can handle 5-bit immediate	
+        + loads/stores must be aligned
+	+ no AND immediate instruction
 	
 ia64:   ia64 is VLIW.
      

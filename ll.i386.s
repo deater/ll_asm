@@ -2,10 +2,10 @@
 #  linux_logo in ix86 assembler 0.18
 #
 #  Originally by 
-#       Vince Weaver <vince@deater.net>
+#       Vince Weaver <vince _at_ deater.net>
 #
 #  Crazy size-optimization hacks by
-#       Stephan Walter <stephan.walter@gmx.ch>
+#       Stephan Walter <stephan.walter _at_ gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.i686.s"
 #  link with         "ld -o ll ll.o"

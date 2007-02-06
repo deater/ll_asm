@@ -2,10 +2,10 @@
 #  linux_logo in x86_64 assembler 0.18
 #
 #  Originally by 
-#       Vince Weaver <vince@deater.net>
+#       Vince Weaver <vince _at_ deater.net>
 #
-#  Crazy size-optimization hacks by
-#       Stephan Walter <stephan.walter@gmx.ch>
+#  Crazy x86 hacks originally by
+#       Stephan Walter <stephan.walter _at_ gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.x86_64.s"
 #  link with         "ld -N -o ll ll.o"

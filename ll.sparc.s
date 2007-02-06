@@ -1,21 +1,28 @@
 !
-!  linux_logo in sparc assembler    0.8
+!  linux_logo in sparc assembler    0.18
 !
-!  by Vince Weaver <vince@deater.net>
+!  Should in theory work for both sparc32 and sparc64
+!
+!  by Vince Weaver <vince _at_ deater.net>
 !
 !  assemble with     "as -o ll.o ll.sparc.s"
 !  link with         "ld -o ll ll.o"
 
 ! Things to remember about SPARC assembly:	
-!     + Has a branch delay slot!   (That is, the instruction after
-!	a branch is always executed)
+!     + Has a branch delay slot!  The annul bit can cancel that.
 !     + Comments are the "!" character
 !     + Syscalls have number in %g0, options in %o0,%o1,...
 !	Result returned in %o0
 !	Linux syscall is called by "ta 0x10"
-!     + The registers are windowed!	
-!     + %g0 is always zero, %o6 is the stack pointer
-	
+!     + %g0 - %g7 regs always visible
+!	%g0 is always read as 0	
+!	Windowed registers:	8 in registers %i0..%i7
+!				8 local registers %l0..%l7
+!				8 out registers %o0..%o7
+!	When move up a window, the outs become the ins  SAVE/RESTORE instr
+!     + Call instruction writes to %o7
+!     + Condition codes:	 xcc = 64 bit, icc= 32 bit nzvc
+			
 ! FIXME:	 use register windows
 !		 optimize the divide routine
 !		 use branch delay slots

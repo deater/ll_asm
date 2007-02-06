@@ -2,7 +2,7 @@
 ;  linux_logo in hppa pa-risc assembler 0.18
 ;
 ;  By 
-;       Vince Weaver <vince@deater.net>
+;       Vince Weaver <vince _at_ deater.net>
 ;
 ;  assemble with     "as -o ll.o ll.parisc.s"
 ;  link with         "ld -o ll ll.o"

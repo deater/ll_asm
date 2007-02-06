@@ -1,12 +1,8 @@
 #
-# TODO!  Remove nops, use gp!
-#   Possibly optimize the delay slots myself
-
-#
-#  linux_logo in mips assembler 0.16
+#  linux_logo in mips assembler 0.19
 #
 #  By 
-#       Vince Weaver <vince@deater.net>
+#       Vince Weaver <vince _at_ deater.net>
 #
 #  assemble with     "as -o ll.o ll.mips.s"
 #  link with         "ld -o ll ll.o"
@@ -18,8 +14,14 @@
 # Keep gas from handling branch-delay and load-delay slots automatically
 #
 
-#.set noreorder
+.set noreorder
 
+#
+# Keep gas from using the assembly temp register (no pseudo-ops basically)
+#
+
+.set noat
+		
 #
 # Register definitions.  Why does't gas know these?
 #
@@ -71,6 +73,10 @@
 .equ S_TOTALRAM,16
 
 # Sycscalls
+#  -- the lower syscalls are compat with IRIX, etc
+#     syscalls trash r14?
+#  -- no branch delay after syscall
+		
 .equ SYSCALL_LINUX,	4000
 .equ SYSCALL_EXIT,      SYSCALL_LINUX+1
 .equ SYSCALL_READ,      SYSCALL_LINUX+3
@@ -95,29 +101,14 @@ __start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-        # we used to fill the buffer with FREQUENT_CHAR
-	# but, that only gains us one byte of space in the lzss image.
-        # the lzss algorithm does automatic RLE... pretty clever
-	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
-
-# bp = $8 = t0
-# esi = $9 = t1
-# edi = $17
-# eax = $10 = t2
-# ebx = $11 = t3
-# logo_end = $12 = t4
-# temp = $13 = t5
-# ah = $14 = t6
-# ecx = $15 = t7
-# edx = $24 = t8
+	la	$17,data_begin		# point $17 at .data segment begin
+	la	$18,bss_begin		# point $18 at .bss segment begin
 
 	li      $8,(N-F)   	     	# R
-
-	la  	$9,logo			# t1 points to logo 
-	la	$12,logo_end
-	la	$16, out_buffer		# point s0 to out_buffer
-	move	$17,$16			# copy to s0 for output
-
+	
+	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo 
+	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
+	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
 
 decompression_loop:
 
@@ -125,133 +116,160 @@ decompression_loop:
 	addiu	$9,$9,1		# increment source pointer
 
 	move 	$11, $10	# move in the flags
-	ori 	$11,$11,0xff00  # re-load top as a hackish 8-bit counter
+	ori 	$11,$11,0xff00  # put 0xff in top as a hackish 8-bit counter
 
 test_flags:
-	beq	$12, $9, done_logo  # have we reached the end?
-				# if so, exit
+	beq	$12, $9, done_logo	# have we reached the end?
+					# if so, exit
+	nop
 
-        andi	$13,$11,0x1
-	srl	$11,$11,1  	# shift bottom bit into carry flag
+        andi	$13,$11,0x1	# test to see if discrete char
 
-	bne	$13,$0,discrete_char # if set, we jump to discrete char
+
+	bne	$13,$0,discrete_char	# if set, we jump to discrete char
+	
+	# BRANCH DELAY SLOT
+	srl	$11,$11,1  	# shift	
+
 
 offset_length:
-	lbu     $10,0($9)	# le lodsw = high i
-	lbu	$24,1($9)	
+	lbu     $10,0($9)	# load 16-bit length and match_position combo
+	lbu	$24,1($9)	# can't use lhu because might be unaligned
+	addiu	$9,$9,2	 	# increment source pointer	
 	sll	$24,$24,8
 	or	$24,$24,$10
-	move	$10,$24
 	
-	addiu	$9,$9,2	 	# get match_length and match_position
-	    			# no need to mask dx, as we do it
-				# by default in output_loop
+
 	
-	srl $15,$10,P_BITS	
+	srl $15,$24,P_BITS	# get the top bits, which is length
+	
 	addiu $15,$15,THRESHOLD+1 
-	      			# cl = (ax >> P_BITS) + THRESHOLD + 1
-                                #                       (=match_length)
+	      			# add in the threshold?
 		
 output_loop:
-        andi 	$24,$24,(POSITION_MASK<<8+0xff)  	# mask it
-	lbu 	$10,text_buf($24)	# load byte from text_buf[]
-	addiu 	$24,$24,1	    	# advance pointer in text_buf
+        andi 	$24,$24,(POSITION_MASK<<8+0xff)  	
+					# get the position bits
+	addiu	$10,$18,(text_buf-bss_begin)
+	addu	$10,$10,$24
+	lbu	$10,0($10)		# load byte from text_buf[]
+					# should have been able to do
+					# in 2 not 3 instr
+	addiu	$24,$24,1	    	# advance pointer in text_buf
 store_byte:	
-        sb      $10,0($17)
-	addiu	$17,$17,1      		# store it
-	
-	sb      $10, text_buf($8)	# store also to text_buf[r]
+        sb      $10,0($16)
+	addiu	$16,$16,1      		# store byte to output buffer
+
+	addiu	$1,$18,(text_buf-bss_begin)
+	addu	$1,$1,$8	
+	sb      $10, 0($1)		# store also to text_buf[r]
 	addi 	$8,$8,1        		# r++
-	andi 	$8,$8,(N-1)		# mask r
+
 
 	addiu	$15,$15,-1		# decrement count
 	bne	$15,$0,output_loop	# repeat until k>j
+	#BRANCH DELAY SLOT
+	andi 	$8,$8,(N-1)		# wrap r if we are too big
 
 	andi	$13,$11,0xff00		# if 0 we shifted through 8 and must
 	bne	$13,$0,test_flags	# re-load flags
+	# BRANCH DELAY SLOT
+	nop
 	
 	j 	decompression_loop
+	# BRANCH DELAY SLOT
+	nop
 
 discrete_char:
 	lbu     $10,0($9)
 	addiu	$9,$9,1		       	# load a byte
-	li   	$15,1		# we set ecx to one so byte
-					# will be output once
-					# (how do we know ecx is zero?)
-					
-        j     store_byte              # and cleverly store it
-
+        j     store_byte		# and store it
+	# BRANCH DELAY SLOT
+	li   	$15,1			# force a one-byte output
 
 # end of LZSS code
 
 done_logo:
 
-	move	$5,$16
+        jal	write_stdout			# print the logo
+	# BRANCH DELAY SLOT
+	addiu	$5,$18,(out_buffer-bss_begin)	# point $5 to out_buffer
 
-        jal	write_stdout		# print the logo
 
-
+first_line:	
 	#==========================
 	# PRINT VERSION
 	#==========================
 
-	li	$2, SYSCALL_UNAME      # uname syscall in v0
-	la	$4, uname_info	       # destination of uname
-	or	$23, $4,$0 	       # point s7 to uname_info struct
-	syscall	    		       # do syscall
+	li	$2, SYSCALL_UNAME		# uname syscall in $2
+	addiu	$4, $18,(uname_info-bss_begin)	# destination of uname in $4
+	syscall					# do syscall
 
-	or	$17,$16,$0	       # copy s0 to s1 (output_buf_offset)
+	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
 		
-	la	$5, U_SYSNAME($23)     # os-name from uname "Linux"
 
+					# os-name from uname "Linux"
 	jal	strcat
-	
-	la	$5, ver_string		# source is " Version "
+	# BRANCH DELAY SLOT
+	addiu	$5,$18,((uname_info-bss_begin)+U_SYSNAME)	
+
+
+					# source is " Version "	
        	jal	strcat			# call strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(ver_string-data_begin)
 
-	
-	la	$5, U_RELEASE($23)	# version from uname "2.4.1"
-	jal	strcat			# call strcat
 
-	la	$5, compiled_string     # source is ", Compiled "
+					# version from uname, ie "2.6.20"
 	jal	strcat			# call strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$18,((uname_info-bss_begin)+U_RELEASE)
 
-	la	$5,U_VERSION($23)	# compiled date
+
+
+					# source is ", Compiled "
 	jal	strcat			# call strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(compiled_string-data_begin)
+	     
+
+					# compiled date
+	jal	strcat			# call strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$18,((uname_info-bss_begin)+U_VERSION)	
 
 	jal	center_and_print	# center and print
 	nop				# branch delay
-  	
+ 	
 	#===============================
 	# Middle-Line
 	#===============================
-
-	or	$17,$16,$0	       # copy s0 to s1 (output_buf_offset)
-
+middle_line:
+	
+	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
+	
 	#=========
 	# Load /proc/cpuinfo into buffer
 	#=========
 
 	li	$2, SYSCALL_OPEN	# OPEN Syscall
 	
-	la	$4, cpuinfo		# '/proc/cpuinfo'
+	addiu	$4,$17,(cpuinfo-data_begin)
+					# '/proc/cpuinfo'
 	li	$5, 0			# 0 = O_RDONLY <bits/fcntl.h>
-#	li	$6, 0			# 
+
 	syscall				# syscall.  fd in v0  
 					# we should check that 
 					# return v0>=0
-					
-	or	$4,$2,$0		# copy v0 (the result) to a0
+						
+	move	$4,$2			# copy $2 (the result) to $4
 	
 	li	$2, SYSCALL_READ	# read()
 	
-	la	$5, disk_buffer		# point a2 to the buffer
+	addiu	$5, $18,(disk_buffer-bss_begin)
+					# point $5 to the buffer
 
-
-	li	$6, 4096		# 4096 is maximum size of proc file #)
+	li	$6, 4096		# 4096 is maximum size of proc file ;) 
 					# we load sneakily by knowing
-					# 16<<8 = 4096. be sure edx clear
-
 	syscall
 
 	li	$2, SYSCALL_CLOSE	# close (to be correct)
@@ -266,10 +284,11 @@ number_of_cpus:
 	# we cheat here and just assume 1.  
 	# besides, I don't have a SMP Mips machine to test on
 
-	la	 $5,one	   	        # printf "One"
-	jal	 strcat
+	jal	strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(one-data_begin)		# print "One"	
 
-	
+
 	#=========
 	# MHz
 	#=========
@@ -284,30 +303,37 @@ print_mhz:
 chip_name:	
    	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')     	
 					# find 'odel\t: ' and grab up to ' '
-	li	$6,' '
+
 	jal	find_string
-
-	la	$5,processor		# printf "Processor, "
+	# BRANCH DELAY SLOT
+	li	$6,' '	
+	
+					# printf "Processor, "
 	jal	strcat
-
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(processor-data_begin)
 	
 	#========
 	# RAM
 	#========
 	
 	li	$2, SYSCALL_SYSINFO	# sysinfo() syscall
-	la	$4, sysinfo_buff	
+	addiu	$4, $18,(sysinfo_buff-bss_begin)
 	syscall
 	
-	lw	$4, (sysinfo_buff+S_TOTALRAM)	# size in bytes of RAM
-		
+	lw	$4, S_TOTALRAM($4)	# size in bytes of RAM
+	# LOAD DELAY SLOT
+	li	$19,1			# print to strcat, not stderr
+			
+	jal     num_to_ascii
+	# BRANCH DELAY SLOT
 	srl	$4,$4,20		# divide by 1024*1024 to get M
 
-	li	$19,1
-	jal     num_to_ascii
 	
-	la   	$5, ram_comma           # print 'M RAM, '
+					# print 'M RAM, '
 	jal	strcat			# call strcat
+	addiu	$5,$17,(ram_comma-data_begin)
+
 	
 
 	#========
@@ -316,35 +342,48 @@ chip_name:
 	
 	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')      	
 					# find 'mips\t: ' and grab up to \n
-	li	$6, 0xa
-	jal	find_string
 
-	la	$5, bogo_total	   	# bogo total follows RAM 
+	jal	find_string
+	# BRANCH DELAY SLOT
+	li	$6, 0xa	
+
+	
+					# bogo total follows RAM 
 	jal 	strcat			# call strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(bogo_total-data_begin)
+
 
 	jal	center_and_print	# center and print
+	nop
 	
 	#=================================
 	# Print Host Name
 	#=================================
+
+	addiu	$16,$18,(out_buffer-bss_begin)  
+					# point $16 to out_buffer
+
+
+					# host name from uname()
+	jal	strcat			# call strcat
+	# BRANCH DELAY SLOT
+	addiu	$5,$18,(uname_info-bss_begin)+U_NODENAME    	
 	
-	or	$17,$16,$0	       # copy s0 to s1 (output_buf_offset)
-		
-	la	$5, U_NODENAME($23)    # host name from uname()
-	jal	strcat		       # call strcat
+	jal	center_and_print	# center and print
+	# BRANCH DELAY SLOT
+	nop
 	
-	jal	center_and_print       # center and print
-	
-	la	$5,default_colors      # (.txt) pointer to default_colors
-	
+					# (.txt) pointer to default_colors
 	jal	write_stdout
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(default_colors-data_begin)	
 	
 
 	#================================
 	# Exit
 	#================================
 exit:
-
      	li	$2, SYSCALL_EXIT	# put exit syscall in v0
 	li	$4, 0			# put exit code in a0
         syscall	    			# exit
@@ -360,114 +399,138 @@ exit:
 	#   $5 is destroyed
 	#   $11 (t3) is destroyed
 
-find_string:
-					
-	la	$5, disk_buffer-1	# look in cpuinfo buffer
+find_string:					
+	addiu	$5, $18,(disk_buffer-bss_begin)-1	
+					# look in cpuinfo buffer
 find_loop:
-	addiu   $5,$5,1		        # increment pointer
-	ulw	$11,0($5)		# load un-aligned 32 bits
+
+	ulw	$11,1($5)		# load un-aligned 32 bits
 	beq	$11,$0,done		# are we at EOF?
 					# if so, done
+	# BRANCH DELAY SLOT
+	addiu   $5,$5,1		        # increment pointer
 
+	
 	bne	$4,$11, find_loop	# do the strings match?
 					# if not, loop
 	
 					# if we get this far, we matched
-
+	# BRANCH DELAY SLOT
+	nop
+	
 find_colon:
+	lbu	$11,1($5)		# repeat till we find colon
+	# LOAD DELAY SLOT
 	addiu	$5,$5,1
-	lbu	$11,0($5)		# repeat till we find colon
 	beq	$11,$0,done		# not found? then done
-
-	bne	$11,':',find_colon
-
+	# BRANCH DELAY SLOT
+	nop
+	
+	li	$1,':'
+	bne	$11,$1,find_colon
+	# BRANCH DELAY SLOT
+	nop
 
 	addiu   $5,$5,2			# skip a char [should be space]
 	
 store_loop:	 
 	lbu	$11,0($5)		# load value
+	# LOAD DELAY SLOT
 	addiu	$5,$5,1			# increment
 	beq	$11,$0,done		# off end, then stop
+	# BRANCH DELAY SLOT
+	nop
 	
 	beq	$11,$6,done      	# is it end char?
-					# if so, finish
-	sb	$11,0($17)		# if not store and continue
-	addiu	$17,$17,1		# increment output pointer
-	j	store_loop		# loop
+	# BRANCH DELAY SLOT
+	nop				# if so, finish
 	
+	sb	$11,0($16)		# if not store and continue
+	j	store_loop		# loop
+	# BRANCH DELAY SLOT
+	addiu	$16,$16,1		# increment output pointer
+
 done:
 	jr	$31			# return
-
+	# BRANCH DELAY SLOT
+	nop
 
 	#================================
 	# strcat
 	#================================
-	# output_buffer_offset = $17 (s1)
+	# output_buffer_offset = $16 (s0)
 	# string to cat = $5         (a1)
 	# destroys t0 ($8)
 
 strcat:
-       lbu 	$8,0($5)		# load byte from string
-       nop				# load delay (move inc here?)
-       sb  	$8,0($17)		# store byte to output_buffer
-       beq 	$8,$0,done_strcat	# if zero, we are done
-       nop 				# branch delay
-
-       addiu	$5,$5,1			# increment string
-       addiu	$17,$17,1		# increment output_buffer
-       
-       j	strcat	 		# loop
-       nop				# branch delay
+	lbu 	$8,0($5)		# load byte from string
+	# LOAD DELAY SLOT	
+	addiu	$5,$5,1			# increment string	
+	sb  	$8,0($16)		# store byte to output_buffer
+	addiu	$16,$16,1		# increment output_buffer
+		
+	bne 	$8,$0,strcat		# if zero, we are done
+	# BRANCH DELAY SLOT
+	nop
 
 done_strcat:
-       jr	$31			# return
-       nop				# branch delay	
+	jr	$31			# return
+	# BRANCH DELAY SLOT
+	addiu	$16,$16,-1		# correct pointer	
+
 
 	#==============================
 	# center_and_print
 	#==============================
 	# string is in $16 (s0) output_buffer
-        #$20
-	#$22
+	# s3 $19= stdout or strcat
+        # $20, $21, $22 trashed
        
 center_and_print:
-	move $5,$16			# save pointer
-	move $21,$31			# save return address
 
-#s3 $19= stdout or strcat
+	move	$21,$31				# save return address
+	move	$20,$16				# $20 is the end of our string
+	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to beginning 
+	
 
-       move	$20,$5
-
-       li    	$19,0 			# print to stdout
-       subu	$4, $17,$16		# subtract end pointer from start
+	subu	$4, $20,$16		# subtract end pointer from start
        		    			# (cheaty way to get size of string)
 
-       bgt	$4,80, done_center	# don't center if > 80
+	slti	$1,$4,81
+	beq	$1,$0, done_center	# don't center if > 80
+	# BRANCH DELAY SLOT
+	li    	$19,0 			# print to stdout	
 
-       neg	$4,$4  			# negate length
-       addiu	$4,$4,80		# add to 80 
+	neg	$4,$4  			# negate length
+	addiu	$4,$4,80		# add to 80 
 
-       srl	$22,$4,1			# divide by 2 
+	srl	$22,$4,1		# divide by 2 
 
-       la	$5,escape
-       jal	write_stdout
-       
-       move	$4,$22
+	jal	write_stdout		# print ESCAPE char
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(escape-data_begin)
 
-       jal	num_to_ascii		# print number of spaces
 
-       la	$5,c			# print "C"
-       jal	write_stdout
+	jal	num_to_ascii		# print number of spaces
+	# BRANCH DELAY SLOT
+	move	$4,$22			# how much to shift to right
 
+	jal	write_stdout
+	# BRANCH DELAY SLOT
+	addiu	$5,$17,(c-data_begin)	# print "C"
 
 
 done_center:
-        move 	$5, $20			# point to the string to print
-        jal 	write_stdout
-       
-	la	$5, linefeed	        # print linefeed at end of line
+					# point to the string to print
+	jal 	write_stdout
+	# BRANCH DELAY SLOT
+	addiu	$5,$18,(out_buffer-bss_begin)
+
+
+	addiu	$5,$17,(linefeed-data_begin)
+					# print linefeed at end of line
 	
-        move 	$31,$21 		# restore saved pointer
+	move 	$31,$21 		# restore saved pointer
 	     				# so we'll return to
 					# where we were called from 
 					# at the end of the write_stdout
@@ -480,30 +543,28 @@ done_center:
 	
 
 write_stdout:
-	li      $2, SYSCALL_WRITE       # Write syscall in v0
-	li	$4, STDOUT		# 1 in a0 (stdout)
+	li      $2, SYSCALL_WRITE       # Write syscall in $2
+	li	$4, STDOUT		# 1 in $4 (stdout)
 	
-	li	$6, 0			# 0 (count) in a2
+	li	$6, 0			# 0 (count) in $6
 	
-	or	$25,$5,$0		# move a1 -> t9
+	move	$25,$5			# copy string to $25
 	
 str_loop1:
-
-	addi	$25,$25,1		# increment t9	
-	lbu	$24,($25)		# load byte at (t9)
-	addi	$6,$6,1			# increment a2  (load delay slot)
-	
+	lbu	$24,1($25)		# load byte at (t9)
+	addi	$25,$25,1		# LOAD DELAY SLOT	
 	bnez	$24,str_loop1		# if not nul, repeat
-
+	# BRANCH DELAY SLOT
+	addi	$6,$6,1			# increment a2
 	syscall  			# run the syscall
 
 	jr	$31 			# return
+	# BRANCH DELAY SLOT
 	nop
 	
 	##############################
 	# num_to_ascii
-	##############################
-	
+	##############################	
 	# a0 ($4)  = value to print
 	# a1 ($5)  = output buffer	
 	# s3 ($19) = 0=stdout, 1=strcat
@@ -513,28 +574,32 @@ str_loop1:
 	
 num_to_ascii:
 
-	 la	 $5,ascii_buffer+10	# point to end of ascii_buffer
+	addiu	 $5,(ascii_buffer-bss_begin)+10	
+				# point to end of ascii_buffer
 
- div_by_10:
- 	 addiu	 $5,$5,-1	 # point back one
- 	 divu	 $10,$4,10	 # divide.  hi= remainder, lo=quotient
-	 mfhi	 $11		 # remainder into t3 ($11)
-	 addiu	 $11,$11,0x30	 # convert to ascii
-	 sb	 $11,0($5)	 # store to buffer
-	 or	 $4,$10,$0	 # move old result into next divide
-	 bne	 $10,$0, div_by_10	 
- 
+div_by_10:
+	addiu	$5,$5,-1	# point back one
+	li	$1,10
+	divu	$10,$4,$1	# divide.  hi= remainder, lo=quotient
+	mfhi	$11		# remainder into t3 ($11)
+	addiu	$11,$11,0x30	# convert to ascii
+	sb	$11,0($5)	# store to buffer
+	bne	$10,$0, div_by_10
+	# BRANCH DELAY SLOT
+	move	$4,$10		# move old result into next divide	
+	
 write_out:
-
-	 beq	 $19,$0,write_stdout
-     	 j	 strcat		 # strcat will return for us
-
+	beq	$19,$0,write_stdout
+	nop			# if write stdout, go there 
+    	j	strcat		# else, strcat will return for us
+	nop
 
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
 
+data_begin:	
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 ram_comma:	.ascii	"M RAM, \0"
@@ -555,7 +620,7 @@ processor:	.ascii " Processor, \0"
 #	section .bss
 #============================================================================
 .bss
-
+bss_begin:	
 .lcomm  text_buf, (N+F-1)
 .lcomm	out_buffer,16384
 

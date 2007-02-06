@@ -1,7 +1,7 @@
 #
 #  linux_logo in alpha assembler    0.6
 #
-#  by Vince Weaver <vince@deater.net>
+#  by Vince Weaver <vince _at_ deater.net>
 #
 #  assemble with     "as -o ll.o ll.alpha.s"
 #  link with         "ld -o ll ll.o"
