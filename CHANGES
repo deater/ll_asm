@@ -104,3 +104,9 @@
 
 6 February 2007
 + Re-optimize the mips version.  It is now 160 bytes smaller.
+
+9 February 2007
++ Fix branch-delay slot optimization in strcat in MIPS.
+  Binary now 16 bytes smaller!
++ Re-optimize SPARC version.
++ Added a FAQ.

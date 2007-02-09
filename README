@@ -25,10 +25,10 @@ Some Statistics
 
      ia64		                      5736 bytes
      alpha		                      4264 bytes
-     SPARC		                      3708 bytes	
      s390	        1692 bytes            2844 bytes
      parisc		1432 bytes
-     mips               1340 bytes
+     SPARC		1397 bytes            3708 bytes
+     mips               1324 bytes
      PPC		1238 bytes            3228 bytes     
      x86_64		1001 bytes
      x86                 969 bytes            2636 bytes
@@ -67,8 +67,15 @@ alpha:  Unfortunately ll uses a lot of byte-sized loads and stores.
 	   an add instruction that x86 and ppc do automatically.
 	   Thus, taking 24 bytes.
 
-sparc:  I cheat a bit on sparc and avoid all of the overhead
-        of register windows.
+sparc:  
+	Condition codes make for tighter code.
+	register/register load address calcs also help.
+	13-bit immdediate hurts a bit.
+
+	SPARC is unfair a bit, because my test machine is a 24-proc
+        niagara, so it has extra code to handle that many chips properly.
+
+
 	
 
 s390:   This is the most CISC architecture I've ever seen.  If only it had

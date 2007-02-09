@@ -1,0 +1,100 @@
+Q1: When I run your program the output is all messed up.
+Q2: The amount of RAM reported is wrong.
+Q3: Did you code all of these yourself?
+Q4: What resources you use to find out about all the different architectures?
+Q5: Why?
+
+--------------------
+
+
+Q1:  When I run your program the output is all messed up.
+
+A1:	That's more of a statement than a question, but OK.
+
+	On some architectures, most notably x86, and most recently with 
+	core and core2 processors, you will get ugly results.  
+	Because ll is optimized for size, it reports blindly what's in the 
+	/proc/cpuinfo file.  If intel or your BIOS manufacturer put really 
+	ugly and pointlessly long info there, there's not much I can do 
+	about it.
+
+	If you want pretty output, use linux_logo instead.
+
+
+
+Q2: The amount of RAM reported is wrong.
+
+A2:	See the previous question.  
+
+	I report what the sysinfo syscall reports.
+
+	This doesn't report ACPI, shared video ram, and other things that 
+	might make you appear to have less RAM.  
+
+	For a more accurate tool use linux_logo.
+
+
+Q3: Did you code all of these yourself?
+
+A3:	Originally I only had an x86 version that I posted to my website,
+	and Stephan Walter found the page and sent me a more optimized 
+	version.  We had a little contest going on for a while, seeing
+	who could shave off the most bytes from the x86 code.  He's the 
+	one who had the great idea of using LZSS compression.  
+	Since in the end all of the other architecture's code are loosely 
+	based on the x86 code, a lot is owed to him.
+
+	Overall though, most of the code was done by me, by hand.
+
+Q4: What resources you use to find out about all the different architectures?
+
+A4:	The architecture manuals provided by the manufacturer are the best 
+	resource there is, as the companies involved want you to use their 
+	processor.
+    
+	Knowing what instructions does what doesn't help though if you don't
+	know how to interface with the Linux kernel.  The best reference for 
+	that is the web.  
+
+	Bizzarrely the best code examples you'll find are by shell-coders.  
+	These are hackers who try to explot buffer overflow flaws in 
+	programs to get a root shell on your machine (hence the 
+	shell-coder moniker).  While their motives might be questionable, 
+	they are the experts at using Linux at the syscall level without
+	a C library and their source examples are an invaluable resource.
+    
+	There are Other useful tools.  
+
+	strace is great at helping you see if you are calling the syscalls 
+	with the proper arguments.
+
+	objdump (specifically the --disassemble-all option) will show you 
+	exactly how much space each instruction is taking in the final 
+	exceutable.  
+
+	The linux kernel source is useful, primarily for the asm/unistd.h
+	header which has all the syscall info for an arch
+	Overall the linx kernel source doesn't help much.  Neither
+	does the glibc code, nor does using gcc -S.
+
+
+Q5: Why?
+
+A5:	Assembly language is the ultimate puzzle.   You have this black
+	box (a computer) that only accepts a series of coded numbers.
+	Different numbers make it do specified things.  Using only this
+	limited amount of numbered codes, make the machine do the
+	task at hand.  Extra Credit:  make it as small as possible
+	(or as fast as possible).  Fun!
+    
+	More practically, my work as a computer architect has me often
+	working at a low level with different architectures.  It is nice
+	having a "rosetta stone" set of programs that all do more or less
+	the same thing, but on different platforms.  Just knowing how
+	to run an exit() syscall on a platform can make programming it
+	in assembly that much easier.
+    
+    
+
+    
+    

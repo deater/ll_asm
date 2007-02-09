@@ -15,6 +15,11 @@
 #define ELF_CLASS ELFCLASS32
 #endif
 
+#ifdef __sparc__
+#define ELF_CLASS ELFCLASS32
+#endif
+
+
 #if ELF_CLASS == ELFCLASS32
 #define	Elf_Ehdr	Elf32_Ehdr
 #define	Elf_Phdr	Elf32_Phdr
@@ -67,6 +72,7 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
 
     /* Compare the file's class and endianness with the program's.
      */
+#ifndef __sparc__
     if (ehdr->e_ident[EI_DATA] != ELF_DATA) {
 	return err("ELF file has different endianness.");
     }
@@ -80,7 +86,7 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
     if (ehdr->e_machine != ELF_ARCH) {
 	return err("ELF file created for different architecture.");
     }
-
+#endif
     /* Verify the sizes of the ELF header and the program segment
      * header table entries.
      */

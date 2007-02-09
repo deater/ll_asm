@@ -1,5 +1,5 @@
 #
-#  linux_logo in mips assembler 0.19
+#  linux_logo in mips assembler 0.20
 #
 #  By 
 #       Vince Weaver <vince _at_ deater.net>
@@ -277,7 +277,7 @@ middle_line:
 	syscall
 
 	#=============
-	# Number of CPU's
+	# Number of CPUs
 	#=============
 number_of_cpus:
 
@@ -467,11 +467,10 @@ strcat:
 	# LOAD DELAY SLOT	
 	addiu	$5,$5,1			# increment string	
 	sb  	$8,0($16)		# store byte to output_buffer
-	addiu	$16,$16,1		# increment output_buffer
-		
+
 	bne 	$8,$0,strcat		# if zero, we are done
 	# BRANCH DELAY SLOT
-	nop
+	addiu	$16,$16,1		# increment output_buffer
 
 done_strcat:
 	jr	$31			# return
