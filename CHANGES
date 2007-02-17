@@ -110,3 +110,9 @@
   Binary now 16 bytes smaller!
 + Re-optimize SPARC version.
 + Added a FAQ.
+
+16 February 2007
++ Start optimizing Alpha code
+
+17 February 2007
++ Finish optimizing Alpha code.  It could use another pass though.

@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.18
+#  linux_logo in ix86 assembler 0.21
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -7,7 +7,7 @@
 #  Crazy size-optimization hacks by
 #       Stephan Walter <stephan.walter _at_ gmx.ch>
 #
-#  assemble with     "as -o ll.o ll.i686.s"
+#  assemble with     "as -o ll.o ll.i386.s"
 #  link with         "ld -o ll ll.o"
 
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
