@@ -1,7 +1,0 @@
-+ new archs 
-  - arm, hp-parisc, x86_64
-  - m68k, sh3
-
-+ OPTIMIZE mips
-+ redo ppc, alpha, etc to work with new lzss
- 

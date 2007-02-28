@@ -17,6 +17,14 @@
 #      :  sysinfo results struct changed between 2.2 and 2.4 kernels
 #      :  Doesn't print vendor name
 
+# Optimizations
+# + "push $smallval; pop %eax" smaller than "mov $smallval,%eax"
+# + "mov $(value>>8), %ah" smaller than "mov $value, %ax"
+#   (only can be done if lower 8 bits of value zero)
+# + "xor %ebx,%ebx" is smaller than "mov $0,%ebx"
+# + "or ah,ah" is NOT smaller than "cmp $0,ah"
+
+	
 .include "logo.include"
 
 # offsets into the results returned by the uname syscall
@@ -209,7 +217,7 @@ setup:
 	int	$0x80			
 
 	#=============
-	# Number of CPU's
+	# Number of CPUs
 	#=============
 number_of_cpus:
 

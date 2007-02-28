@@ -19,6 +19,7 @@ endif
 #
 ifneq (,$(findstring arm,$(ARCH)))
    ARCH := arm
+   THUMB := ll_thumb
 endif
 
 #
@@ -40,7 +41,7 @@ CC = gcc
 CFLAGS = -O2 -Wall
 LDFLAGS = 
 
-all:	ll ansi_compress ./sstrip/sstrip
+all:	ll $(THUMB) ansi_compress ./sstrip/sstrip
 
 sstrip_ll: ll ./sstrip/sstrip
 	./sstrip/sstrip ll
@@ -70,6 +71,12 @@ ll:	ll.o
 ll.o:	ll.s logo.lzss
 	as -o ll.o ll.s
 
+ll_thumb:	ll.thumb.o
+	ld -N --thumb-entry=_start -o ll_thumb ll.thumb.o
+
+ll_thumb.o:	ll.thumb.s
+	as -mthumb-interwork -o ll.thumb.o ll.thumb.s
+
 ll.s:	
 	ln -s ll.$(ARCH).s ll.s
 		   
@@ -80,7 +87,7 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
 clean:
-	rm -f ll *.o *~ ll.s ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc
+	rm -f ll *.o *~ ll.s ll_thumb ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc
 	cd sstrip && make clean
 
 

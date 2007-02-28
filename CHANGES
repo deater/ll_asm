@@ -116,3 +116,9 @@
 
 17 February 2007
 + Finish optimizing Alpha code.  It could use another pass though.
+
+27 February 2007
++ Have ARM completely working.
++ Started on arm thumb version, but on my development board the kernel isn't
+  compiled with thumb support, and I'm a bit wary of flashing the boot flash.
+  I'll try to get a kernel booted off a CF card at some point.

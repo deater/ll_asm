@@ -20,6 +20,11 @@
 	
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
 
+# lr  r2,r1         ===  move contents of r1 into r2
+# cr  r1,r2         ===  compare r1,r2
+# jne               === jump not equal
+# lhi  r1,immeiate  === load halfword immediate
+
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
