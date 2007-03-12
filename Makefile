@@ -74,7 +74,7 @@ ll.o:	ll.s logo.lzss
 ll_thumb:	ll.thumb.o
 	ld -N --thumb-entry=_start -o ll_thumb ll.thumb.o
 
-ll_thumb.o:	ll.thumb.s
+ll.thumb.o:	ll.thumb.s
 	as -mthumb-interwork -o ll.thumb.o ll.thumb.s
 
 ll.s:	

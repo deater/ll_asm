@@ -1,5 +1,5 @@
 @
-@  linux_logo in ARM THUMB assembler 0.22
+@  linux_logo in ARM THUMB assembler 0.23
 @
 @  Originally by 
 @       Vince Weaver <vince _at_ deater.net>
@@ -7,79 +7,53 @@
 @  Crazy size-optimization hacks by
 @       Stephan Walter <stephan.walter _at_ gmx.ch>
 @
-@  assemble with     "as -o ll.o ll.thumb.s"
-@  link with         "ld -o ll ll.o"
+@  assemble with     "as -o ll.thumb.o ll.thumb.s"
+@  link with         "ld -o ll_thumb ll.thumb.o"
 
-
-	
 .include "logo.include"
 
-# ARM has 31 registers, (only lower 16 visible to userspace)
-#  r0-r7 are unbanked, alwas the same.  r8-r14 change depending on mode
-# + r0-r12 are general purpose
-# + r13 = stack pointer
-# + r14 = link register
-# + r15 = program counter
-# reading r15 in general gives you current PC+8 (exceptions for STM and STR)
-# 6 Status registers (only one visible in userspace)
-# - NZCVQ (Negative, Zero, Carry, oVerflow, saturate)
-# prefix most instructions to handle the condition codes:
-# EQ, NE (equal/not equal)  CS, CC (carry set/clear)
-# MI, PL (minus/plus)       VS, VC (overflow set/clear)
-# HI, LS (unsigned higer/lowersame) 
-# GE, LT (greaterequal,less than)
-# GT, LE (greater than, lessthanequal)
-# AL (always)		
+@ Optimization progress:	
+@	1035 - original
+@	1031 - not load r3 each time
+@	1027 - use "blx" instruction for strcat_r4  (arm5 specific opt)
+@	1023 - use "blx" instruction for strcat_r3
+@	1015 - use "blx" instruction for write_stdout
+@	1007 - inlined divide function
+@	1007 - use "blx" for center and print (only got rid of two bytes,
+@	       hidden by padding)
+@	1003 - use r5 instead of r3 to hold uname info pointer
+@	995  - restructure strcat to use r4 rather than r1
+@	995  - use r4 to point to /proc/cpinfo (only got rid of 2 bytes)
+@	989  - in-line linefeed instead of doing it by hand (first line)
 	
-# comment character is a @
-# gas supports "nop"=mov r0,r0
-#   ldr = load register
-#   adr reg,label = load label into addr (via pc-relative add or sub)
-#   adrl = like above, but always an 8-byte instr
-# every instruction has a condition code
-# THUMB instructions... will do both.
-
-# ALU ops can also do a shift (no dedicated shift instr)
-#   Shift goes last.  LSL, LSR (logical shift left/right)
-#                     ASR (arithmatic shift right)
-#		      ROR (rotate right)
-#		      RRX (rotate right sign extend)
-#   Carry out is the last value shifted out, or C if no value shifted
-# 
-
-# load store addressing modes for load word/store word/ unsigned byte
-#   [ r , #+/- 12bitoffset]            = load as expected
-#   [ r , +/- reg         ]            = load as expected
-#   [ r , +/- reg, shift #shift amt ]  = load as expected
-#   [ r , #+/- 12bitoffset]!           = pre-index / load+off, then if CC then write back new index
-#   [ r , +/- reg         ]!           = pre-index / load+off, then if CC then write back new index
-#   [ r , +/- reg, shift #shift amt]!  = pre-index / load+off, then if CC then write back new index
-#   [ r ], #+/- 12bitofset             = post-index / load, then if CC write back base+off
-#   [ r ] , +/- reg                    = post-index / load, then if CC write back base+off
-#   [ r ] , +/- reg, shift #shift amt  = post-index / load, then if CC write back base+off
-
-# for halfword, signed bytes you only get an 8bit offset and some other caveats
-	
-	
-# Constants are 8 bits, optionally shifted left by an even amount
-	
-# The PC is a gp register and can be written too by any ALU op
-
-# multiply with accumulate option, mul two numbers together, add in third, store to 4th
-	
-# no support for unaligned memory access	
-		
-# Addressing modes include pre/post incrememnt that can
-#  save back the updated address to a register
-# Also, multiple registers worth of data can be read/stored at once
-		
-# Syscalls.. old way is swi SYSCALLNUM with args in r0-r?
-#            New way, syscall num is in r7, do a "swi 0"
-
-
-# TODO - see if we can optimize with condition codes!
-
-
+@
+@ Architectural info
+@
+@ ARM has 31 registers (only 16 visible at a time)
+@ In thumb, obly r0-r7 are accessible normally
+@ The BX instruction is used to change into thumb.  Bottom bit
+@   of the target address is the important one.
+@ + r13 = stack pointer
+@ + r14 = link register
+@ + r15 = program counter
+@ powerful push/pop that can push/pop any combination of r0-r7 in one insn.
+@    also can push LR and pop that to PC
+@ Instructions that can use the high registers:	
+@  add, cmp, mov	
+@ "bl" instructions are 32 bits!
+@		
+@ syscalls are like EABI syscalls, syscall num is in r7, args in r0-r?
+@ reading r15 in general gives you current PC+4
+@ 6 Status registers (only one visible in userspace)
+@ - NZCVQ (Negative, Zero, Carry, oVerflow, saturate)
+@ prefix most instructions to handle the condition codes:
+@ EQ, NE (equal/not equal)  CS, CC (carry set/clear)
+@ MI, PL (minus/plus)       VS, VC (overflow set/clear)
+@ HI, LS (unsigned higer/lowersame) 
+@ GE, LT (greaterequal,less than)
+@ GT, LE (greater than, lessthanequal)
+@ AL (always)		
+@ comment character is a @
 
 	
 # offsets into the results returned by the uname syscall
@@ -94,7 +68,6 @@
 .equ S_TOTALRAM,16
 
 # Sycscalls
-.equ SYSCALL_BASE,	0x900000
 .equ SYSCALL_EXIT,	1
 .equ SYSCALL_READ,	3
 .equ SYSCALL_WRITE,	4
@@ -110,13 +83,10 @@
 
 
 .thumb	@ use 16-bit thumb instructions
-
 	
 	.globl _start	
 _start:
-/*	
-	ldr	r11,data_addr
-	ldr	r12,bss_addr
+	
 
 	#=========================
 	# PRINT LOGO
@@ -126,35 +96,54 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
+	@ r0 = temp
+	@ r1 = output_buffer
+	@ r2 = R
+	@ r3 = logo data inputting from
+	@ r4 = temp
+	@ r5 = counter
+	@ r6 = position
+	@ r7 = match length
+	@ r8 = logo end
+	@ r9 = text_addr
+	
+	
 	ldr	r1,out_addr		@ buffer we are printing to
+	ldr	r2,R			@ R
+	
+	ldr	r3,logo_addr		@ r3 points to logo data
+	
+	ldr	r0,logo_end_addr
+	mov	r8,r0			@ r8 points to logo end
 
-	mov     r2,#(N-F)		@ R
-
-	add	r3,r11,#(logo-data_begin)
-					@ r3 points to logo data
-	ldr	r8,logo_end_addr
-					@ r8 points to logo end
-	ldr	r9,text_addr		@ r9 points to text buf
-
+	ldr	r0,text_addr		@ r9 points to text buf
+	mov	r9,r0
+	
 decompression_loop:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer 	
+	ldrb	r4,[r3]			@ load a byte
+	add	r3,#1			@ increment pointer
 
 	mov	r5,#0xff		@ load top as a hackish 8-bit counter
-	orr 	r5,r4,r5,LSL #8		@ shift 0xff left by 8 and or in the byte we loaded
+	lsl	r5,#8			@ shift 0xff left by 8
+	orr 	r5,r4			@ or in the byte we loaded
 
 test_flags:
 	cmp	r3,r8		@ have we reached the end?
 	bge	done_logo  	@ if so, exit
 
-	lsrs 	r5,#1		@ shift bottom bit into carry flag
+	lsr 	r5,#1		@ shift bottom bit into carry flag
 	bcs	discreet_char	@ if set, we jump to discreet char
 
 offset_length:
-	ldrb	r0,[r3],#+1	@ load a byte, increment pointer
-	ldrb	r4,[r3],#+1	@ load a byte, increment pointer	
-				@ we can't load halfword as no unaligned loads on arm
+	ldrb	r0,[r3]		@ load a byte
+	add	r3,#1		@ increment pointer
+	ldrb	r4,[r3]		@ load a byte
+	add	r3,#1		@ increment pointer	
+				@ we can't load halfword 
+				@ as no unaligned loads on arm
 
-	orr	r4,r0,r4,LSL #8	@ merge back into 16 bits
+	lsl	r4,#8
+	orr	r4,r0,r4	@ merge back into 16 bits
 				@ this has match_length and match_position
 
 	mov	r7,r4		@ copy r4 to r7
@@ -162,83 +151,101 @@ offset_length:
 				@ by default in output_loop
 
 	mov	r0,#(THRESHOLD+1)
-	add	r6,r0,r4,LSR #(P_BITS)
+	lsr	r4,#(P_BITS)
+	add	r6,r4,r0
 				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
 	ldr	r0,pos_mask		@ urgh, can't handle simple constants
-	and	r7,r7,r0		@ mask it
-	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
-	add	r7,r7,#1		@ advance pointer in text_buf
+	and	r7,r0			@ mask it
+	mov	r0,r9
+	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
+	add	r7,#1			@ advance pointer in text_buf
 
 store_byte:
-	strb	r4,[r1],#+1		@ store a byte, increment pointer
-	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
-	add 	r2,r2,#1		@ r++
-	mov	r0,#(N)
-	sub	r0,r0,#1		@ grrr no way to get this easier
-	and 	r2,r2,r0		@ mask r
+	strb	r4,[r1]			@ store a byte
+	add	r1,#1			@ increment pointer
+	mov	r0,r9
+	strb	r4,[r0,r2]		@ store a byte to text_buf[r]
+	add 	r2,#1			@ r++
 
-	subs	r6,r6,#1		@ decement count
+	ldr	r0,NMINUS1		@ grrr no way to get this easier
+	and 	r2,r0			@ mask r
+
+	sub	r6,#1			@ decement count
 	bne 	output_loop		@ repeat until k>j
 
-	tst	r5,#0xff00		@ are the top bits 0?
+	mov	r0,#0xff
+	lsl	r0,#8
+	tst	r5,r0			@ are the top bits 0?
 	bne	test_flags		@ if not, re-load flags
 
 	b	decompression_loop
 
 discreet_char:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer 		
+	ldrb	r4,[r3]			@ load a byte
+	add	r3,#1			@ increment pointer 		
 	mov	r6,#1			@ we set r6 to one so byte
 					@ will be output once
 
 	b	store_byte		@ and store it
-
 
 # end of LZSS code
 
 done_logo:
 	ldr	r1,out_addr		@ buffer we are printing to
 
-	bl	write_stdout		@ print the logo
+
+	ldr	r0,strcat_addr
+	mov	r11,r0			@ point r11 to "strcat_r4"
+	sub	r0,#8
+	mov	r10,r0			@ point r10 to "strcat_r3"
+	sub	r0,#(strcat_r5-write_stdout)
+	mov	r9,r0			@ point r9 to "write_stdout"
+
+	sub	r0,#(write_stdout-center_and_print)
+	mov	r8,r0
+	
+	blx	r9			@ print the logo
+	
+
 		
 	#==========================
 	# PRINT VERSION
 	#==========================
-first_line:
-
-	add	r0,r12,#(uname_info-bss_begin)	@ uname struct
-	swi	SYSCALL_BASE+SYSCALL_UNAME	@ do syscall
-
-	add	r1,r12,#(uname_info-bss_begin)
-						@ os-name from uname "Linux"
-
-	ldr	r10,out_addr			@ point r10 to out_buffer
-
-	bl	strcat				@ call strcat
-
 	
-	add	r1,r11,#(ver_string-data_begin) @ source is " Version "
-	bl 	strcat			        @ call strcat
+first_line:	
+	ldr	r0,uname_addr
+	mov	r5,r0
+	mov	r7,#SYSCALL_UNAME
+	swi	#0			@ do uname syscall
 
-	add	r1,r12,#((uname_info-bss_begin)+U_RELEASE)
-						@ version from uname, ie "2.6.20"
-	bl	strcat				@ call strcat
+					@ os-name from uname "Linux"
+
+	ldr	r6,out_addr		@ point r6 to out_buffer
+
+	blx	r10			@ call strcat_r5
 	
-	add	r1,r11,#(compiled_string-data_begin)
-						@ source is ", Compiled "
-	bl	strcat				@  call strcat
+	ldr	r4,ver_addr		@ source is " Version "
 
-	add	r1,r12,#((uname_info-bss_begin)+U_VERSION)
-						@ compiled date
-	bl	strcat				@ call strcat
+	blx 	r11			@ call strcat_r4
 
-	mov	r3,#0xa	
-	strb	r3,[r10],#+1		@ store a linefeed, increment pointer
-	strb	r0,[r10],#+1		@ NUL terminate, increment pointer
+	add	r5,#U_RELEASE
+					@ version from uname, ie "2.6.20"
+	blx	r10			@ call strcat_r5
 	
-	bl	center_and_print	@ center and print
+					@ source is ", Compiled "
+	blx	r11			@ call strcat_r4
+
+	add	r5,#(U_VERSION-U_RELEASE)
+					@ compiled date
+	blx	r10			@ call strcat_r5
+
+					@ source is "\n"
+	blx	r11			@ call strcat_r4
+			
+	blx	r8			@ center and print
 
 	@===============================
 	@ Middle-Line
@@ -248,22 +255,24 @@ middle_line:
 	@ Load /proc/cpuinfo into buffer
 	@=========
 
-	ldr	r10,out_addr		@ point r10 to out_buffer
-	
-	add	r0,r11,#(cpuinfo-data_begin)
+	ldr	r6,out_addr		@ point r6 to out_buffer
+
+	mov	r0,r4
 					@ '/proc/cpuinfo'
 	mov	r1,#0			@ 0 = O_RDONLY <bits/fcntl.h>
-	swi	SYSCALL_BASE+SYSCALL_OPEN			
-					@ syscall.  return in r0?  
-	mov	r5,r0			@ save our fd
-	ldr	r1,disk_addr
-	mov	r2,#4096
-				 	@ 4096 is maximum size of proc file ;)
-	swi	SYSCALL_BASE+SYSCALL_READ
+	mov	r7,#SYSCALL_OPEN
+	swi	#0			@ syscall.  return in r0?
 
-	mov	r0,r5
-	swi	SYSCALL_BASE+SYSCALL_CLOSE
-					@ close (to be correct)
+	mov	r3,r0			@ save our fd
+	ldr	r1,disk_addr
+	mov	r2,#128
+	lsl	r2,#5		 	@ 4096 is maximum size of proc file ;)
+	mov	r7,#SYSCALL_READ
+	swi	#0
+
+	mov	r0,r3
+	mov	r7,#SYSCALL_CLOSE
+	swi	#0			@ close (to be correct)
 
 
 	@=============
@@ -271,9 +280,10 @@ middle_line:
 	@=============
 number_of_cpus:
 
-	add	r1,r11,#(one-data_begin)
-					# cheat.  Who has an SMP arm?
-	bl	strcat
+					@ cheat.  Who has an SMP arm?
+					@ Print "One"
+	add	r4,#14			@ length of /proc/cpuinfo
+	blx	r11			@ call strcat_r4
 
 	@=========
 	@ MHz
@@ -285,7 +295,8 @@ print_mhz:
 	@=========
 	@ Chip Name
 	@=========
-chip_name:	
+chip_name:
+	
 	mov	r0,#'s'
 	mov	r1,#'o'
 	mov	r2,#'r'
@@ -293,30 +304,27 @@ chip_name:
 	bl	find_string
 					@ find 'sor\t: ' and grab up to ' '
 
-	add	r1,r11,#(processor-data_begin)
-					@ print " Processor, "
-	bl	strcat	
+	blx	r11			@ print " Processor, "
 	
 	@========
 	@ RAM
 	@========
-	
-	add	r0,r12,#(sysinfo_buff-bss_begin)
-	swi	SYSCALL_BASE+SYSCALL_SYSINFO
-					@ sysinfo() syscall
-	
-	ldr	r3,[r12,#((sysinfo_buff-bss_begin)+S_TOTALRAM)]
+	ldr	r0,sysinfo_addr
+	mov	r2,r0
+
+	mov	r7,#SYSCALL_SYSINFO
+	swi	#0			@ sysinfo() syscall
+
+	add	r2,#S_TOTALRAM		
+	ldr	r3,[r2]
 					@ size in bytes of RAM
-	movs	r3,r3,lsr #20		@ divide by 1024*1024 to get M
-	adc	r3,r3,#0		@ round
+	lsr	r3,#20			@ divide by 1024*1024 to get M
 
 	mov	r0,#1
 	bl num_to_ascii
-	
-	add	r1,r11,#(ram_comma-data_begin)
+
 					@ print 'M RAM, '
-	bl	strcat			@ call strcat
-	
+	blx	r11			@ call strcat
 
 	@========
 	@ Bogomips
@@ -328,99 +336,91 @@ chip_name:
 	mov	r3,#'\n'
 	bl	find_string
 
-	add	r1,r11,#(bogo_total-data_begin)
-	bl	strcat			@ print bogomips total
-	
-	bl	center_and_print	@ center and print
+	blx	r11			@ print bogomips total
+
+	blx	r8			@ center and print
 
 	#=================================
 	# Print Host Name
 	#=================================
 last_line:
-	ldr	r10,out_addr		@ point r10 to out_buffer	
-	
-	add	r1,r12,#((uname_info-bss_begin)+U_NODENAME)
+	ldr	r6,out_addr		@ point r6 to out_buffer	
+
+	sub	r5,#(U_VERSION-U_NODENAME)
 					@ host name from uname()
-	bl	strcat			@ call strcat
-	
-	bl	center_and_print	@ center and print
+	blx	r10			@ call strcat_r5
 
-	add	r1,r11,#(default_colors-data_begin)
+	blx	r8			@ center and print
+
+	ldr	r1,colors_addr
+
 					@ restore colors, print a few linefeeds
-	bl	write_stdout
-	
-*/
+	blx	r9			@ write_stdout
 
-	blx	exit
-
-.arm		
-	
 	@================================
 	@ Exit
 	@================================
 exit:
-	mov	r0,#0				@ result is zero
-	swi	#(SYSCALL_BASE+SYSCALL_EXIT)	@ and exit
-
-.thumb	
+	mov	r0,#0				@ result is zero	
+	mov	r7,#SYSCALL_EXIT
+	swi	#0
+		
 	
-/*
+
 	@=================================
 	@ FIND_STRING 
 	@=================================
 	@ r0,r1,r2 = string to find
 	@ r3 = char to end at
-	@ r5 trashed
+	@ writes to r6
+
 find_string:
+	push	{r5,r7,lr}
 	ldr	r7,disk_addr		@ look in cpuinfo buffer
 find_loop:
-	ldrb	r5,[r7],#+1		@ load a byte, increment pointer	
+	ldrb	r5,[r7]			@ load a byte
+	cmp	r5,#0			@ off the end?
+	beq	done			@ then finished	
+	
+	add	r7,#1			@ increment pointer	
 	cmp	r5,r0			@ compare against first byte
+	bne	find_loop
+	
 	ldrb	r5,[r7]			@ load next byte
-	cmpeq	r5,r1			@ if first byte matched, comp this one
-	ldrb	r5,[r7,#+1]		@ load next byte 
-	cmpeq	r5,r2			@ if first two matched, comp this one
-	beq	find_colon		@ if all 3 matched, we are found
+	cmp	r5,r1			
+	bne	find_loop		@ if not equal, loop
 	
-	cmp	r5,#0			@ are we at EOF?
-	beq	done			@ if so, done
+	ldrb	r5,[r7,#1]		@ load next byte 
+	cmp	r5,r2			
+	bne	find_loop		@ if not equal, loop
+	
+					@ if all 3 matched, we are found
 
-	b	find_loop
-	
 find_colon:
-	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
+	ldrb	r5,[r7]			@ load a byte
+	add	r7,#1			@ increment pointer
 	cmp	r5,#':'
 	bne	find_colon		@ repeat till we find colon
 
 	add	r7,r7,#1		@ skip the space
 		
 store_loop:
-	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
-	strb	r5,[r10],#+1		@ store a byte, increment pointer	
+	ldrb	r5,[r7]			@ load a byte, increment pointer
+	strb	r5,[r6]			@ store a byte, increment pointer
+	add	r7,#1			@ increment pointers
+	add	r6,#1
 	cmp	r5,r3
 	bne	store_loop
-	
+
 almost_done:
 	mov	r0,#0
-	strb	r0,[r10],#-1		@ replace last value with NUL
-
-done:
-	blx	r14			@ return
-
-	#================================
-	# strcat
-	#================================
-	# value to cat in r1
-	# output buffer in r10
-	# r3 trashed
-strcat:
-	ldrb	r3,[r1],#+1		@ load a byte, increment pointer 
-	strb	r3,[r10],#+1		@ store a byte, increment pointer
-	cmp	r3,#0			@ is it zero?
-	bne	strcat			@ if not loop
-	sub	r10,r10,#1		@ point to one less than null
-	bx	r14			@ return
+	strb	r0,[r6]			@ replace last value with NUL	
+	sub	r6,#1			@ adjust pointer
 	
+done:
+	pop	{r5,r7,pc}		@ return
+
+
 
 	#==============================
 	# center_and_print
@@ -429,34 +429,122 @@ strcat:
 
 center_and_print:
 
-	stmfd	SP!,{LR}		@ store return address on stack
+	push	{r3,r4,LR}		@ store return address on stack
 
-	add	r1,r11,#(escape-data_begin)
-					@ we want to output ^[[
-	bl	write_stdout
+	ldr	r1,colors_addr		@ we want to output ^[[
+	mov	r2,#2
+
+	bl	write_stdout_we_know_size
 		
 str_loop2:				
 	ldr	r2,out_addr		@ point r2 to out_buffer
-	sub	r2,r10,r2		@ get length by subtracting
+	sub	r2,r2,r6		@ get length by subtracting
+					@ actually, negative value here
+					@ an optimization...
 
-	rsb	r2,r2,#81		@ reverse subtract!  r2=81-r2
-					@ we use 81 to not count ending \n
+					@ subtract r2 from 81
+	add	r2,#81			@ we use 81 to not count ending \n
 
-	bne	done_center		@ if result negative, don't center
-	
-	lsrs	r3,r2,#1		@ divide by 2
-	adc	r3,r3,#0		@ round?
+	blt	done_center		@ if result negative, don't center
+
+	lsr	r3,r2,#1		@ divide by 2
 
 	mov	r0,#0			@ print to stdout
 	bl	num_to_ascii		@ print number of spaces
 
-	add	r1,r11,#(C-data_begin)
-					@ we want to output C
-	bl	write_stdout
+	add	r1,#7			@ we want to output C
+	blx	r9			@ write_stdout
 
 done_center:
 	ldr	r1,out_addr		@ point r1 to out_buffer
-	ldmfd	SP!,{LR}		@ restore return address from stack
+	blx	r9			@ write_stdout
+	pop	{r3,r4,PC}		@ restore return address from stack
+	
+	@#############################
+	@ num_to_ascii
+	@#############################
+	@ r3 = value to print
+	@ r0 = 0=stdout, 1=strcat
+	
+num_to_ascii:
+
+	push	{r1,r2,r3,r4,r5,LR}	@ store return address on stack
+	ldr	r2,ascii_addr
+	add	r2,#9			@ point to end of our buffer
+
+	mov	r7,#10		@ we'll be dividing by 10
+div_by_10:
+
+
+	@===================================================
+	@ Divide - because AEM has no hardware int divide
+	@ yes this is an awful algorithm, but simple
+	@  and uses few registers
+	@==================================================
+	@ r3=numerator   r7=denominator
+	@ r5=quotient    r4=remainder
+	
+divide:
+	mov	r5,#0		@ zero out quotient
+divide_loop:
+	mov	r1,r5		@ move Q temporarily to r2
+	mul	r1,r7		@ multiply Q by denominator
+	add	r5,#1		@ increment quotient
+	cmp	r1,r3		@ is it greater than numerator?
+	ble	divide_loop	@ if not, loop
+	sub	r5,#2		@ otherwise went too far, decrement
+				@ and done
+
+	mov	r1,r5		@ move Q temporarily to r2
+	mul	r1,r7		@ calculate remainder
+	sub	r4,r3,r1	@ R=N-(Q*D)
+
+		
+@	bl	divide		@ Q=r5, R=r4
+	add	r4,#0x30	@ convert to ascii
+	strb	r4,[r2]		@ store a byte
+	sub	r2,#1		@ decrement pointer	
+	mov	r3,r5		@ move Q in for next divide, update flags
+	bne	div_by_10	@ if Q not zero, loop
+	
+write_out:
+	add	r1,r2,#1	@ adjust pointer
+	
+	cmp	r0,#0
+	beq	num_stdout
+
+	mov	r5,r1
+	blx	r10			@ if 1, strcat_r5
+	pop	{r1,r2,r3,r4,r5,pc}	@ pop and return
+	
+num_stdout:	
+	blx	r9			@ else, fallthrough to stdout
+	pop	{r1,r2,r3,r4,r5,pc}	@ pop and return
+
+	
+	#================================
+	# strcat
+	#================================
+	# value to cat in r4
+	# output buffer in r6
+	# r3 trashed
+strcat_r5:
+	push	{r4,lr}
+	mov	r4,r5
+	blx	r11
+	pop	{r4,pc}
+	
+strcat_r4:
+	push	{r3,lr}
+strcat_loop:
+	ldrb	r3,[r4]			@ load a byte
+	add	r4,#1			@ increment pointer 
+	strb	r3,[r6]			@ store a byte
+	add	r6,#1			@ increment pointer
+	cmp	r3,#0			@ is it zero?
+	bne	strcat_loop		@ if not loop
+	sub	r6,r6,#1		@ point to one less than null
+	pop	{r3,pc}			@ return
 
 	#================================
 	# WRITE_STDOUT
@@ -467,98 +555,57 @@ write_stdout:
 	mov	r2,#0				@ clear count
 
 str_loop1:
-	add	r2,r2,#1
+	add	r2,#1
 	ldrb	r3,[r1,r2]
 	cmp	r3,#0
 	bne	str_loop1			@ repeat till zero
-
+	
 write_stdout_we_know_size:	
 	mov	r0,#STDOUT			@ print to stdout
-	swi	SYSCALL_BASE+SYSCALL_WRITE	@ run the syscall
-	bx	r14				@ return
+	mov	r7,#SYSCALL_WRITE
+	swi	#0				@ run the syscall
+	bx	lr				@ return
 
-	
-	@#############################
-	@ num_to_ascii
-	@#############################
-	@ r3 = value to print
-	@ r0 = 0=stdout, 1=strcat
-	
-num_to_ascii:
-	stmfd	SP!,{r10,LR}		@ store return address on stack
-	add	r10,r12,#((ascii_buffer-bss_begin))
-	add	r10,r10,#10
-					@ point to end of our buffer
 
-	mov	r4,#10		@ we'll be dividing by 10
-div_by_10:
-	bl	divide		@ Q=r7,$0, R=r8,$1
-	add	r8,r8,#0x30	@ convert to ascii
-	strb	r8,[r10],#-1	@ store a byte, decrement pointer	
-	adds	r3,r7,#0	@ move Q in for next divide, update flags
-	bne	div_by_10	@ if Q not zero, loop
-	
-write_out:
-	add	r1,r10,#1	@ adjust pointer
-	ldmfd	SP!,{r10,LR}	@ restore return address from stack
-	
-	cmp	r0,#0
-	bne	strcat		@ if 1, strcat
-	
-	b write_stdout		@ else, fallthrough to stdout
-
-	
-	@===================================================
-	@ Divide - because AEM has no hardware int divide
-	@ yes this is an awful algorithm, but simple
-	@  and uses few registers
-	@==================================================
-	@ r3=numerator   r4=denominator
-	@ r7=quotient    r8=remainder
-	@ r5=trashed
-divide:
-
-	mov	r7,#0		@ zero out quotient
-divide_loop:
-	mul	r5,r7,r4	@ multiply Q by denominator
-	add	r7,r7,#1	@ increment quotient
-	cmp	r5,r3		@ is it greater than numerator?
-	ble	divide_loop	@ if not, loop
-	sub	r7,r7,#2	@ otherwise went too far, decrement
-				@ and done
-	
-	mul	r5,r7,r4	@ calculate remainder
-	sub	r8,r3,r5	@ R=N-(Q*D)
-	blx	r14		@ return
-*/
-	
-bss_addr:	.word bss_begin
-data_addr:	.word data_begin
-out_addr:	.word out_buffer
-disk_addr:	.word disk_buffer
+.align 2
+@ data address	
+ver_addr:	.word ver_string
+colors_addr:	.word default_colors
+logo_addr:	.word logo
 logo_end_addr:	.word logo_end
-pos_mask:	.word ((POSITION_MASK<<8)+0xff)
+
+@bss addresses
+uname_addr:	.word uname_info
+sysinfo_addr:	.word sysinfo_buff
+ascii_addr:	.word ascii_buffer
 text_addr:	.word text_buf
-							
+disk_addr:	.word disk_buffer
+out_addr:	.word out_buffer
+	
+@ constant values	
+pos_mask:	.word ((POSITION_MASK<<8)+0xff)
+R:		.word (N-F)
+NMINUS1:	.word (N-1)
+
+@ function pointers	
+strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
+.align 1		
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
-data_begin:
-ver_string:	.ascii	" Version \0"
-compiled_string:	.ascii	", Compiled \0"
-processor:	.ascii	" Processor, \0"
-ram_comma:	.ascii	"M RAM, \0"
-bogo_total:	.ascii	" Bogomips Total\n\0"
+ver_string:	.asciz	" Version "
+compiled_string:.asciz	", Compiled "
+linefeed:	.asciz	"\n"
+cpuinfo:	.asciz	"/proc/cpuinfo"
+one:		.asciz	"One "
+processor:	.asciz	" Processor, "
+ram_comma:	.asciz	"M RAM, "
+bogo_total:	.asciz	" Bogomips Total\n"
 
-default_colors:	.ascii "\033[0m\n\n\0"
-escape:		.ascii "\033[\0"
-C:		.ascii "C\0"
+default_colors:	.asciz "\033[0m\n\n"
+C:		.asciz "C"
 		
-cpuinfo:	.ascii	"/proc/cpuinfo\0"
-
-
-one:	.ascii	"One \0"
 
 
 .include	"logo.lzss_new"
@@ -572,8 +619,7 @@ bss_begin:
 .lcomm uname_info,(65*6)
 .lcomm sysinfo_buff,(64)
 .lcomm ascii_buffer,10
-.lcomm  text_buf, (N+F-1)
-
+.lcomm text_buf, (N+F-1)
 .lcomm	disk_buffer,4096	@ we cheat!!!!
 .lcomm	out_buffer,16384
 

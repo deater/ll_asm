@@ -20,18 +20,19 @@ Some Statistics
        a rough comparison.
 
 
-     Processor        lzss executable     old RLE executable
-     ---------        ---------------     ------------------
-     ia64		                      5736 bytes
-     alpha		2013 bytes            4264 bytes
-     s390	        1692 bytes            2844 bytes
+     Processor        lzss executable
+     ---------        ---------------
+     ia64		             
+     alpha		2013 bytes
+     s390	        1692 bytes
      parisc		1432 bytes
-     SPARC		1397 bytes            3708 bytes
+     SPARC		1397 bytes
      mips               1324 bytes
-     PPC		1238 bytes            3228 bytes
+     PPC		1238 bytes
      arm		1218 bytes
      x86_64		1001 bytes
-     x86                 969 bytes            2636 bytes
+     arm_thumb		 989 bytes
+     x86                 969 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -143,6 +144,25 @@ x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
 	handle 4GB of RAM so we lose a few bytes for a 64-bit load.
 
 
+arm_thumb:
+        I tried by hardest to beat x86, even though the arm port
+	doesn't have to do things x86 does (SMP support for example).
+	
+	I came close, but not close enough.  The lack of an integer
+	divide instruction and the lack of unaligned memory reads
+	killed it.
+	
+	I do like the thumb instruction set, it is in many ways more
+	powerful than x86 while cleaner at the same time.
+	
+	There is a powerful push/pop instructions that can push/pop 
+	 any combination of registers in 16 bits.
+
+        The "blx" instruction to branch to a register (even a high one!)
+	 is great.  I cheated a bit by using it as it's an Arm5 instruction.
+	 The code wouldn't be anywhere near as small if I had to use
+	 generic arm4 thumb.
+
 
 x86:    The x86 code is currently the smallest, mainly because I had a
         running contest for a while with Stephan Walter until
@@ -153,6 +173,8 @@ x86:    The x86 code is currently the smallest, mainly because I had a
 	Lack of alignment makes string manipulating programs (like ll) a lot
 	easier, as you can store 16 and 32 bit values w/o having to worry
 	if the string is properly aligned.
+
+
 
 	
 
