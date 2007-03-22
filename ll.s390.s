@@ -103,7 +103,7 @@ check_flags:
 
 	je	offset_length		# if so jump to offset_length
 	
-discreet_char:
+discrete_char:
 	bras	%r15,read_byte		# grab a byte
         stc     %r7,0(0,%r14)		# store it to output
 	ahi	%r14,1			# increment pointer

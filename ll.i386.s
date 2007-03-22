@@ -85,7 +85,7 @@ test_flags:
 	je	done_logo  	# if so, exit
 
 	shr 	$1, %ebx	# shift bottom bit into carry flag
-	jc	discreet_char	# if set, we jump to discreet char
+	jc	discrete_char	# if set, we jump to discrete char
 
 offset_length:
 	lodsw                   # get match_length and match_position
@@ -116,7 +116,7 @@ store_byte:
 	
 	jmp 	decompression_loop
 
-discreet_char:
+discrete_char:
 	lodsb				# load a byte
 	inc	%ecx			# we set ecx to one so byte
 					# will be output once

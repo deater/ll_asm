@@ -140,7 +140,7 @@ test_flags:
 	bge	done_logo  	@ if so, exit
 
 	lsrs 	r5,#1		@ shift bottom bit into carry flag
-	bcs	discreet_char	@ if set, we jump to discreet char
+	bcs	discrete_char	@ if set, we jump to discrete char
 
 offset_length:
 	ldrb	r0,[r3],#+1	@ load a byte, increment pointer
@@ -181,7 +181,7 @@ store_byte:
 
 	b	decompression_loop
 
-discreet_char:
+discrete_char:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer 		
 	mov	r6,#1			@ we set r6 to one so byte
 					@ will be output once
