@@ -22,7 +22,7 @@ Some Statistics
 
      Processor        lzss executable
      ---------        ---------------
-     ia64		             
+     ia64		2874 bytes
      alpha		2013 bytes
      s390	        1692 bytes
      parisc		1432 bytes
@@ -44,11 +44,30 @@ Individual architectural comments, in descending order of executable size:
 
 ia64:   ia64 is VLIW.
      
-        The way the instruction set works you can have up to 3-instructions
-	per "bundle" to parallelize things.  My code is not optimized and
-	thus often wastes 2/3 of each "bundle".
+	no divide at all.
+	you use the fp unit to do int multiply
+	no unaligned words.
+	on the plus side, basically have infnite (well, 128) registers
+
+	does have an auto-incrementing load/store.
 	
-	Also I have not moved it to the more compact LZSS logo method yet.
+	The actual ia64 architecture is too bizzarre for words.
+	It probably doesn't make any sense at all unless you are a 
+	   computer architect.
+	The instructions come in groups of 3 (40-bits each, with
+	   a total instruction size of 128bits).  These run in
+	   parallel.  So if your instructions don't parallelize,
+	   you end up running lots of nops.
+	   
+	In any case it's no suprise the executable ends up being
+	   so huge.  It very probably can be optimized a lot from here.
+	If I really cared I'd turn off the automatic bundling
+	   and set all of the instruction bundles by hand.
+
+	   I found a bug in the assembler where it puts two
+	   call instructions in the same bundle (which can't work).
+	   I wonder if thise means I am one of the few people who
+	   writes programs entirely in assembly for ia64....
 
 alpha:  
 	Alpha is hurt because it implements some "optional" features,

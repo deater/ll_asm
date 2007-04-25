@@ -63,7 +63,7 @@
   but also I re-wrote the lzss core and did some tricks myself
 
 16 December 2002
-+ Thanks to Stephan Walker again for getting the ix86 code down to
++ Thanks to Stephan Walter again for getting the ix86 code down to
   993 bytes.
 * Worked on the code myself and got it down to 977 by using edx as a
   function pointer and using 2-byte call *%edx.  The ix86 code
@@ -122,3 +122,12 @@
 + Started on arm thumb version, but on my development board the kernel isn't
   compiled with thumb support, and I'm a bit wary of flashing the boot flash.
   I'll try to get a kernel booted off a CF card at some point.
+
+11 March 2007
++ Thumb support working.  Wasted a day chasing down an off-by-one
+  loop thinko with strcat.
++ Optimized thumb support.
+  
+22 March 2007
++ Update itanium code to use LZSS logo.  It's the last of the RLE
+  executables.
