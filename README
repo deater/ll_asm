@@ -30,6 +30,7 @@ Some Statistics
      mips               1324 bytes
      PPC		1238 bytes
      arm		1218 bytes
+     m68k		1014 bytes
      x86_64		1001 bytes
      arm_thumb		 989 bytes
      x86                 969 bytes
@@ -41,6 +42,7 @@ Some Statistics
 
 Individual architectural comments, in descending order of executable size:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 ia64:   ia64 is VLIW.
      
@@ -145,6 +147,22 @@ arm:	no integer division routine
 	  else 8-bit values shifted by power of two.
 	If we had integer divide, saner constant support, and  unaligned loads 
 	  we could probably beat x86 even with 32 bit instructions.
+
+
+m68k:   is even more CISC than x86 if such a thing is possible
+           (if you don't count Vector instructions).  In addition
+	   to BCD instructions it also has a wide variety of
+	   bit-field manipulation instructions, plus full ALU complement.
+
+	   bizzarrely, m68k assembly is very similar to THUMB.
+
+	   weird having separate address and data registers.
+
+	   can't shift by an immediate more than 8?
+	   can't add carry with immediate?
+	   have to clear upper parts of words when doing byte math;
+	      no equivelant of the mips "lbu" instruction.
+	      
 
 x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
         all of the push %e?? instructions into push %r??, as well as jmp *%edx

@@ -1,5 +1,5 @@
 #
-#  linux_logo in ARM assembler 0.22
+#  linux_logo in ARM assembler 0.25
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -495,7 +495,7 @@ write_out:
 
 	
 	@===================================================
-	@ Divide - because AEM has no hardware int divide
+	@ Divide - because ARM has no hardware int divide
 	@ yes this is an awful algorithm, but simple
 	@  and uses few registers
 	@==================================================

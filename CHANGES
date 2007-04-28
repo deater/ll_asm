@@ -131,3 +131,15 @@
 22 March 2007
 + Update itanium code to use LZSS logo.  It's the last of the RLE
   executables.
+
+24 April 2007
++ Get aranym going for m68k emulation.
+
+26 April 2007
++ Initial m68k work
+
+27 Aptil 2007
++ m68k version finished
+
+28 April 2007
++ Optimized m68k version

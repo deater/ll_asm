@@ -3,6 +3,7 @@ Q2: The amount of RAM reported is wrong.
 Q3: Did you code all of these yourself?
 Q4: What resources you use to find out about all the different architectures?
 Q5: Why?
+Q6: What are the most unusual opcodes you've come across?
 
 --------------------
 
@@ -95,6 +96,14 @@ A5:	Assembly language is the ultimate puzzle.   You have this black
 	in assembly that much easier.
     
     
+Q6: What are the weirdest opcodes you've come across?    
 
-    
-    
+A6:    abcd  - m68k
+       aaa   - x86
+       eieio - ppc
+       pea   - m68k
+       bra   - m68k
+       sex   - such an opcode exists, but not in any platforms linux supports.
+               Most processors have a "Sign EXtend" instruction but most
+	       companies were too afraid to use that opcode (for example,
+	       it's cdq on x86)

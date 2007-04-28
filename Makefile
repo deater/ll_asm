@@ -78,6 +78,7 @@ ll.thumb.o:	ll.thumb.s
 	as -mthumb-interwork -o ll.thumb.o ll.thumb.s
 
 ll.s:	
+	rm -f ll.s
 	ln -s ll.$(ARCH).s ll.s
 		   
 logo.inc:	   $(ANSI_TO_USE) ansi_compress
