@@ -143,3 +143,11 @@
 
 28 April 2007
 + Optimized m68k version
+
+6 July 2007
++ Have VAX "hello world" stub going
++ Also have avr32 "hello world" going
+
+8 July 2007
++ avr32 working
++ super-optimized avr32 and got it to 914 bytes, a new record!

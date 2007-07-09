@@ -1,0 +1,4 @@
+make CROSS=vax-linux- ARCH=vax
+
+make CROSS=avr32-linux- ARCH=avr32
+

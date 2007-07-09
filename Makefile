@@ -1,7 +1,9 @@
 ANSI_TO_USE = banner_logo.ansi
 
-ARCH = $(shell uname -m)
 
+ifeq ($(ARCH),)
+   ARCH = $(shell uname -m)
+endif
 
 # Fix the ARCH for architectures who have multiple names for same thing
 
@@ -66,16 +68,16 @@ lzss_new.o:    lzss_new.c
 #
 
 ll:	ll.o
-	ld -N -o ll ll.o	
+	$(CROSS)$(LD) -N -o ll ll.o	
 
 ll.o:	ll.s logo.lzss
-	as -o ll.o ll.s
+	$(CROSS)$(AS) -o ll.o ll.s
 
 ll_thumb:	ll.thumb.o
-	ld -N --thumb-entry=_start -o ll_thumb ll.thumb.o
+	$(CROSS)$(LD) -N --thumb-entry=_start -o ll_thumb ll.thumb.o
 
 ll.thumb.o:	ll.thumb.s
-	as -mthumb-interwork -o ll.thumb.o ll.thumb.s
+	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s
 
 ll.s:	
 	rm -f ll.s

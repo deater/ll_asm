@@ -34,6 +34,7 @@ Some Statistics
      x86_64		1001 bytes
      arm_thumb		 989 bytes
      x86                 969 bytes
+     avr32		 914 bytes
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -200,7 +201,6 @@ arm_thumb:
 	 The code wouldn't be anywhere near as small if I had to use
 	 generic arm4 thumb.
 
-
 x86:    The x86 code is currently the smallest, mainly because I had a
         running contest for a while with Stephan Walter until
 	we got it below 1k.  It does help that there are a lot of
@@ -211,15 +211,30 @@ x86:    The x86 code is currently the smallest, mainly because I had a
 	easier, as you can store 16 and 32 bit values w/o having to worry
 	if the string is properly aligned.
 
+avr32:  They specifically designed the arch to have compact assemley.
 
+        The "ret" return instruction is the most useful ever.  It 
+	 can handle returning a value, as well as having a special
+	 case to return 0 or -1, and also sets the status flags.
+	 
+	The one weakness is that almost no instructions can take
+	 immediate values.
+	 
+	It also has a great "load halfword and swap bytes" which
+	  would be great, only it has to be an aligned halfword
+	  so we can't use it :(
+	  
+	Has the advantage that binaries start at a low address,
+	  so the addresses of functions fit in a small number of bits.
 
-	
+        The new champion for size ;)  And there's probably a few
+	  bytes lurking that can be removed still.
 
 Features:
 --------
     + Runs in 4 miliseconds, more than twice as fast as the 10 linux_logo 
       takes on a K6-2+ 450!
-    + Takes up only 969 bytes when super-stripped!
+    + Takes up only 969 bytes when super-stripped on x86!
   
      Amaze your enemies!  Impress your friends!
 
