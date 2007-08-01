@@ -22,19 +22,19 @@ Some Statistics
 
      Processor        lzss executable
      ---------        ---------------
-     ia64		2874 bytes
-     alpha		2013 bytes
-     s390	        1692 bytes
-     parisc		1432 bytes
-     SPARC		1397 bytes
-     mips               1324 bytes
-     PPC		1238 bytes
-     arm		1218 bytes
+     ia64		2874 bytes   (as 2.17)
+     alpha		1957 bytes   (as 2.17.50)
+     parisc		1400 bytes   (as 2.17.50)
+     SPARC		1397 bytes   (as 2.17.50)
+     mips               1292 bytes   (as 2.17.50)
+     arm		1218 bytes   (as 2.17)
+     PPC		1206 bytes   (as 2.17.50)     
+     s390	        1096 bytes   (as 2.17)
      m68k		1014 bytes
-     x86_64		1001 bytes
-     arm_thumb		 989 bytes
-     x86                 969 bytes
-     avr32		 914 bytes
+     x86_64		1001 bytes   (as 2.17.50.0.5)
+     arm_thumb		 989 bytes   (as 2.17)
+     x86                 937 bytes   (as 2.17.50)
+     avr32		 914 bytes   (as 2.16.1)
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -107,6 +107,11 @@ s390:   This is the most CISC architecture I've ever seen.  If only it had
 	   it can be optimized even smaller than x86 by a s390 expert.
 	   Being able to do "strcat" in 2 or 3 op-codes and strlen in not
 	   more than 5 is a big plus.
+	+ fact all opcodes are often 16-bit and often 32-bit is annoying
+	+ not having 3-operand opcodes also hurts
+	+ crazy CISC operations are amazing, but often don't do what I need
+	+ would be nice if offsets could be negative
+	+ would be nice if there was a relative branch shorter than 32-bits
 
 parisc:	+ really hurt by its short immediate field.  Most addresses
 	  require 2 instructions to load, even if try to use relative-data add.

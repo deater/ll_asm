@@ -23,14 +23,22 @@
 7 May 2002
 + Make 'll' return to normal plain console color after running
 
+RELEASE 0.5
+
 5 June 2002
 + Add Alpha version.  Thanks to the compaq test drive people
+
+RELEASE 0.6
 
 8 June 2002
 + Add ia64 version.  Thanks again to compaq test drive.
 
+RELEASE 0.7
+
 2 July 2002
 + Add SPARC version
+
+RELEASE 0.8
 
 26 July 2002
 + Import "configure" from linux_logo-4.03
@@ -38,12 +46,18 @@
   Stephan Walter <stephan.walter _at_ gmx.ch>
 + Add the RiSC port to the 16bit directory  
 
+RELEASE 0.9
+
 2 August 2002
 + added s390 support
+
+RELEASE 0.10
 
 8 August 2002
 + Add "lzss" logo support and convert ix86 over to new code
   (with much help from Stephan Walter).
+
+RELEASE 0.11
 
 22 August 2002
 + Have ix86 code down to 1476 bytes!
@@ -57,10 +71,14 @@
 + re-written PPC code is 1796 bytes!
 + release 0.12
 
+RELEASE 0.12
+
 27 September 2002
 + added "sstrip" utility by Brian Raiter which really reduces the size
 + got the ix86 code to 1021 bytes!!! thanks to Stephan Walter again,
   but also I re-wrote the lzss core and did some tricks myself
+
+RELEASE 0.13
 
 16 December 2002
 + Thanks to Stephan Walter again for getting the ix86 code down to
@@ -69,6 +87,7 @@
   function pointer and using 2-byte call *%edx.  The ix86 code
   is becoming so optimized as to be unreadable...
   
+RELEASE 0.14
 
 13 January 2006
 + Mips version working.  Should optimize for size a bit. 
@@ -86,9 +105,14 @@
 13 January 2007
 + Work on PA-RISC again after long delay.  Have it working, but not optimized
   
+RELEASE 0.15
+RELEASE 0.16
+
 29 January 2007
 + Optimized PA-RISC code.  sstrip'd version before was 2096 bytes, after is
   1432 bytes.
+
+RELEASE 0.17
 
 2 Feburary 2007
 + Change the way the Makefile detects architecture
@@ -102,8 +126,12 @@
   it ends up being a tens of bytes bigger than x86 version.  Try 
   various optimizations to no avail.
 
+RELEASE 0.18
+
 6 February 2007
 + Re-optimize the mips version.  It is now 160 bytes smaller.
+
+RELEASE 0.19
 
 9 February 2007
 + Fix branch-delay slot optimization in strcat in MIPS.
@@ -111,11 +139,15 @@
 + Re-optimize SPARC version.
 + Added a FAQ.
 
+RELEASE 0.20
+
 16 February 2007
 + Start optimizing Alpha code
 
 17 February 2007
 + Finish optimizing Alpha code.  It could use another pass though.
+
+RELEASE 0.21
 
 27 February 2007
 + Have ARM completely working.
@@ -123,14 +155,20 @@
   compiled with thumb support, and I'm a bit wary of flashing the boot flash.
   I'll try to get a kernel booted off a CF card at some point.
 
+RELEASE 0.22
+
 11 March 2007
 + Thumb support working.  Wasted a day chasing down an off-by-one
   loop thinko with strcat.
 + Optimized thumb support.
   
+RELEASE 0.23
+  
 22 March 2007
 + Update itanium code to use LZSS logo.  It's the last of the RLE
   executables.
+
+RELEASE 0.24
 
 24 April 2007
 + Get aranym going for m68k emulation.
@@ -144,6 +182,8 @@
 28 April 2007
 + Optimized m68k version
 
+RELEASE 0.25
+
 6 July 2007
 + Have VAX "hello world" stub going
 + Also have avr32 "hello world" going
@@ -151,3 +191,14 @@
 8 July 2007
 + avr32 working
 + super-optimized avr32 and got it to 914 bytes, a new record!
+
+RELEASE 0.27 (there was no 0.26)
+
+30 July 2007
++ Got the hercules s390 emulator working.
+
+1 August 2007
++ re-optimized s390.  Now all of the architectures are using
+  the "new" lzss format and all have a similar code base.
+
+RELEASE 0.28

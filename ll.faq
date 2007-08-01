@@ -103,6 +103,7 @@ A6:    abcd  - m68k
        eieio - ppc
        pea   - m68k
        bra   - m68k
+       bras  - s390
        sex   - such an opcode exists, but not in any platforms linux supports.
                Most processors have a "Sign EXtend" instruction but most
 	       companies were too afraid to use that opcode (for example,
