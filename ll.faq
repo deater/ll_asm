@@ -108,3 +108,6 @@ A6:    abcd  - m68k
                Most processors have a "Sign EXtend" instruction but most
 	       companies were too afraid to use that opcode (for example,
 	       it's cdq on x86)
+       brb   - vax
+       spanc - vax
+       

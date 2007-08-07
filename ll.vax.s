@@ -1,11 +1,8 @@
 #
-#  linux_logo in vax assembler 0.26
+#  linux_logo in vax assembler 0.29
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
-#
-#  Crazy size-optimization hacks by
-#       Stephan Walter <stephan.walter _at_ gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.vax.s"
 #  link with         "ld -o ll ll.o"
@@ -13,11 +10,10 @@
 #  I have to cross-compile, so what I do is was more like
 #      make CROSS=vax-linux- ARCH=vax
 
-# gnu assembler additions:
+# gnu assembler differences from DEC assembler:
 #  immediate char is $  (not #)
 #  indirect char is *   (not @)
 #  displacement sizing char is ` (not ^)
-#  register names are r0 r1 r2 .. r15 ap fp sp pc
 #  bitfields are not supported
 
 # watch out for being able to use minimal sized jumps
@@ -33,8 +29,161 @@
 # variable length instructions, 0-6 arguments
 # >32 bit values are stored in adjacent registers
 
+# crazy amount of addressing modes
+#  + register
+#  + register deferred  (deferred means load from memory address in reg)
+#  + autodecrement   -(r1)
+#  + autoincrement    (r1)+
+#  + immediate address mode
+#  + autoincrement deferred  *(r1)+
+#  + absolute
+#  + byte displacement
+#  + word displacement
+#  + longword displacement
+#  + byte displace deferred
+#  + word displace deferred
+#  + longword displace deferred
+#  + indexed   (%r5)[r4]
+
+# cannot use PC or SP with instructions that group more than one reg together
 
 
+
+#
+# Syscalls are complicated, they are treated like a function call
+#    save the ap register (argument pointer reg)
+#    push the arguments in reverse order
+#    push the number of arguments
+#    move syscall into r0
+#    run "chmk %r0"
+#    restore the stack
+#    restore the ap register
+# Luckily you can avoid most of the above by creating a syscall helper
+#   function and using the "calls" function which does most of this
+#   for you
+
+# If you call a subroutine, it has an "Entry mask" as the first 16-bits
+#   which says which regs to save/restore.  If you don't get this right
+#   weird errors will happen.
+
+
+# Integer opcodes
+# adawi - add aligned word interlock (locking)
+# addb2,addb3,addw2,addw3,addl2,addl3 (2 and 3 operation adds of var sizes)
+# adwc - add with carry
+# ashl,ashq - arithmetic shift.  Shift negative for left, pos for right
+# bicb2,bicb3,bicw2,bicw3,bicl2,bicl3 - bit clear
+# bisb2,bisb3,bisw2,bisw3,bisl2,bisl3 - bit set
+# bitb,bitw,bitl - bit test
+# clrb,clrw,clrl,clrq,clro - clear reg to 0 (1 byte shorter than a move)
+# cmpb,cmpw,cmpl - compare
+# cvtbw,cvtbl,cvtwb,cvtwl.cvtlb,cvtlw - convert type.  sign-extends or truncs
+# decb,decw,decl - decrement.  (1 byte shorter than subtract)
+# divb2,divb3,divw2,divw3,divl2,divl3 - divide
+# ediv - extended divide (with remainder)
+# emul - extended multiply (with 64-bit result)
+# incb,ibcw,incl - increment (1 byte shorter than an add)
+# mcomb,mcomw,mcoml - move complement
+# mnegb,mnegw,mnwgl - move negated
+# movb,movw,movl,movq,movo - move (updates flags)
+# movzbw,movzbl,movzwl - move zero extended
+# mulb2,mulb3,mulw2,mulw3,mull2,mull3 - multiply
+# pushl - push long (equiv to movl src, -(sp) but one byte shorter)
+# rotl - rotate long 
+# sbwc - subtract with carry
+# subb2,subb3,subw2,subw3,subl2,subl3 - subtract
+# tstb,tstl,tstw - test (equiv to compare with 0, but one byte shorter)
+# xorb2,xorb3,xorw2,xorw3,xorl2,xorl3 - xor
+
+# address opcodes
+# movab,movaw,moval,movaf,movaq,movad,movag,movah,movao - move address ?
+# pushab,pushaw,pushal,pushaf,pushaq,pushad,pushag,pushah,pushao - push addy
+
+# variable bitlength opcodes
+# cmp,ext,ff,insv
+# - i leave these out, gas can't assemble them
+
+# control instructions
+# acbb,acbw,acbl,acbf,acbd,acbg,acbh - add compare and branch 
+# aobleq - add one and branch less than or equal
+# aoblss - add one and branch less than
+# bgtr,bleq,bneq,bnequ,beql,beqlu,bgeq,blss,bgtru,blequ
+# bvc,bvs,bgequ,bcc,blssu,bcs - various branches, signed and unsigned
+# bbs,bbc - branch on bit set/clea
+# bbss,bbcs,bbsc,bbcc - branch on bit and set/clear
+# bbssi,bbcci - branch on bit set and set/clear interlocked
+# blbs, blbc - branch on low bit set/clear
+# brb,brw - branch
+# bsbb,bsbw - branch to subroutine.  PC is pushed on stack
+# caseb,casew,casel - case statements in hardware
+# jmp - jump
+# jsb - jump to subroutine
+# rsb - return from subroutine (equiv to jmp @(sp)+ but 1 byte shorter)
+# sobgeq - subtract one and branch greater than or equal
+# sobgtr - subtract one and branch greater than
+
+# procedure call instructions
+# callg - call with general arg list
+# calls - call with stack argument list
+# ret - return from procedure
+
+# misc instructions
+# bicpsw,bispsw,bpt,bug,halt,index,movpsl,nop,popr,pushr
+# xfc - extdended func call, you can extend instr set on fly?
+
+# queue instructions
+# insqhi,insqti,insque,remqhi,remqti,remque,
+
+# floating point instructions
+# add,clr,cmp,cvt,div,emod,mneg,mov,mul
+# poly - evaluate polynomial!
+# sub,tst
+
+# character-string instructions
+#   r0-r1, r0-r3 or r0-r5 used
+#   all but movc may be implemented in software
+# cmpc3,cmpc5 - compare characters
+#                string specified by r0,r1 compared to r3 (or r3,r4)
+# locc - locate character
+# matchc - match characters (search for substring)
+# movc - move character 
+# movtc - move translated characters
+# movtuc - move translated until character
+# scanc - scan characters (uses lookup table?)
+# skpc - skip character
+# spanc - span characters (uses lookup tapble?)
+
+# CRC instructions
+# crc
+
+# Decimal-string instructions
+# addp,ashp,cmpp,cvtlp,cvtpl,cvtps,cvtpt,cvtps,cvttp,divp,movp
+# mulp,subp
+# edit,editpc - format strings for output (COBOL, PL/I, etc)
+# eo$adjust_input,eo$blank_zero,eo$end,eo$end_float,eo$fill,eo$float
+# eo$insert,eo$load,eo$move,eo$replace_sign,eo$_signif,eo$store_sign
+
+# various os instructions, including task switching ones
+# ldpctx and svpctx that load/save process context
+
+# we will ignore pdp-11 compatability mode
+
+
+# optimization
+# - 1102 bytes to start out
+# - 1078 bytes (store out_buffer in r6)
+# - 1078 bytes (convert acbl to acbb)
+# - 1070 bytes (use movz where possible)
+# - 1058 bytes (move strcat to the middle of things so bsbb insns reach it)
+# - 1054 bytes (more movz optimizations)
+# - 1050 bytes (use mneg/addl2 instead of mov/subl3)
+# - 1050 bytes (make a subl3 instruction write directly to stack)
+# - 1046 bytes (some more bsbb optimizations)
+# - 1046 bytes (have center_and_print fallthrough to write_stdout)
+# - 1046 bytes (use movq 0,-(sp) instead of two pushl $0)
+# - 1014 bytes (use registers to hold memory pointers, then force
+#               byte offset accesses instead of re-loading each time)
+# - 1010 bytes (another pass of bsbw/bsbb changes)
 
 .include "logo.include"
 
@@ -63,101 +212,14 @@
 .equ STDOUT,1
 .equ STDERR,2
 
+
+
+
 	.globl _start	
 _start:
-
-
-
-pushl   %ap
-pushl   $12 	     # length
-pushl   $hello_string  # string
-pushl   $STDOUT	     # stdout
-pushl   $0x3
-movl    %sp, %ap
-movl	$SYSCALL_WRITE,%r0
-chmk    %r0      
-addl2   $16, %sp 
-movl    (%sp)+, %ap
-# returns in r0?
-
-
-pushl  %ap
-pushl  $0x2   		# exit value
-pushl  $0x1   		# one argument?
-movl   %sp, %ap 
-movl   $SYSCALL_EXIT,%r0
-chmk   %r0    		# chipmunk?       
-addl2  $8, %sp 
-movl    (%sp)+, %ap
-
-#       movl	$SYSCALL_EXIT,%r0
-#       movl	%sp,%ap
-#       chmk	%r0
-
-
-# from uclibc
-# pushl   %%ap
-# pushl   %2   
-# pushl   $0x1 
-# movl    %%sp, %%ap 
-# chmk    %%r0       
-# addl2   $8, %%sp 
-# movl    (%%sp)+, %%ap
-
-
-
-#register long _sc_0 __asm__("r0") = SYS_ify (name);
-# long _sc_ret; \
-# pushl   %%ap
-# pushl   %4  
-# pushl   %3  
-# pushl   %2  
-# pushl   $0x3
-# movl    %%sp, %%ap
-# chmk    %%r0      
-# addl2   $16, %%sp 
-# movl    (%%sp)+, %%ap
-# returns in r0?
-			   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	.align 1
+	.word 0x0			# this is the "entry mask"
+	      				# which specifies which regs need savd
 
 	#=========================
 	# PRINT LOGO
@@ -167,429 +229,408 @@ movl    (%sp)+, %ap
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
+	# we used to fill the buffer with FREQUENT_CHAR
+	# but, that only gains us one byte of space in the lzss image.
+	# the lzss algorithm does automatic RLE... pretty clever
+	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-#	move.l	#out_buffer,%a6		# buffer we are printing to
-#	move.l	%a6,%a1
-#	move.l  #(N-F),%d2		# R
-
-#	move.l	#(logo),%a3		# a3 points to logo data
-#	move.l	#(logo_end),%a4		# a4 points to logo end
-#	move.l	#text_buf,%a5		# r5 points to text buf
-	
+	moval	data_begin,%r9	     	# use r9 as pointer to begin of data
+	movzwl 	$(N-F),%r4   	     	# R in %r4
+	moval  	b`LOGO_OFFSET(%r9),%r1	# %r1 points to logo
+	moval	out_buffer,%r3		# point r3 to out_buffer
+	movl	%r3,%r6	    		# store out_buffer in %r6 forever
 
 decompression_loop:
-#        clr.l	%d5			# clear the %d5 register
-#	move.b	%a3@+,%d5		# load a byte, increment pointer
-
-#	or.w	#0xff00,%d5		# load top as a hackish 8-bit counter
-
+	clrl	%r5		# reload the shift count
+	movb	(%r1)+,%r7	# load in a byte
+	
 test_flags:
-#	cmp.l	%a4,%a3		# have we reached the end?
-#	bge	done_logo  	# if so, exit
+	cmpl	$logo_end, %r1 	# have we reached the end?
+	beql	done_logo  	# if so, exit
 
-#	lsr 	#1,%d5		# shift bottom bit into carry flag
-#	bcs	discrete_char	# if set, we jump to discrete char
+	bbs	%r5,%r7,discrete_char
+				# branch on bit set
 
 offset_length:
-#	clr.l   %d4
-#	move.b	%a3@+,%d0	# load 16-bits, increment pointer	
-#	move.b	%a3@+,%d4	# do it in 2 steps because our data is little-endian :(
-#	lsl.l	#8,%d4
-#	move.b	%d0,%d4
-
-#	move.l	%d4,%d6		# copy d4 to d6
-				# no need to mask d6, as we do it
+	movzbl 	(%r1)+,%r2  	# get match_length and match_position
+	movzbl  (%r1)+,%r11  	
+	ashl 	$8,%r11,%r11
+	bisb2	%r2,%r11    	# have to swap bytes, big-endian
+		
+	movzwl 	%r11,%r2	# copy to r2
+	    			# no need to mask r2, as we do it
 				# by default in output_loop
 
-#	moveq.l	#P_BITS,%d0
-#	lsr.l	%d0,%d4
-#	move.l	#(THRESHOLD+1),%d0
-#	add.l	%d0,%d4
-#	add	%d4,%d1
-				# d1 = (d4 >> P_BITS) + THRESHOLD + 1
-				#                       (=match_length)
 
+	ashl 	$-(P_BITS),%r2,%r2	
+	addl2	$(THRESHOLD+1),%r2
+		
 output_loop:
-#   	andi	#((POSITION_MASK<<8)+0xff),%d6		# mask it
-#	move.b 	%a5@(0,%d6),%d4		# load byte from text_buf[]
-#	addq	#1,%d6			# advance pointer in text_buf
-
+	bicw2 	$~(POSITION_MASK<<8+0xff),%r11  	# mask it
+	
+	movb 	text_buf(%r11), %r10	# load byte from text_buf[]
+	incl	%r11
+	
 store_byte:
+	movb	%r10,(%r3)+		# store it
+	
+	movb	%r10,text_buf(%r4)	# store also to text_buf[r]
+	incl 	%r4 			# r++
+	bicw2	$~(N-1),%r4		# mask r
 
-#	move.b	%d4,%a1@+		# store a byte, increment pointer
-#	move.b	%d4,%a5@(0,%d2)		# store a byte to text_buf[r]
-#	add 	#1,%d2			# r++
-#	andi	#(N-1),%d2		# mask r
-
-#	dbf	%d1,output_loop		# decrement count and loop
-					# if %d1 is zero or above
-
-#	bftst	%d5,16:8		# are the top bits 0?
-#	bne	test_flags		# if not, re-load flags
-
-#	jmp	decompression_loop
+	acbb 	$1,$-1,%r2,output_loop	# repeat until k>j
+	
+	acbb	$7,$1,%r5,test_flags	# add to our bit offset and loop
+					# if not >7
+	
+	brb 	decompression_loop
 
 discrete_char:
-
-#	move.b	%a3@+,%d4		# load a byte, increment pointer
-#	clr.l	%d1			# we set d1 to zero which on m68k
-					# means do the loop once
-
-#	jmp	store_byte		# and store it
+	movb	(%r1)+,%r10		# load in a byte
+	movzbl	$1,%r2			# set count to one
+	brb	store_byte
 
 
 # end of LZSS code
 
 done_logo:
-#	move.l	%a6,%a3			# out_buffer we are printing to
 
-#	bsr	write_stdout		# print the logo
+	movl	%r6,%r3			# move out_buffer to r3
+	bsbw	write_stdout		# print the logo
 
-optimizations:
-	# Optimization setup
-	
-#	move.l	#strcat,%a5		# load strcat address into %a5
 	
 	#==========================
 	# PRINT VERSION
 	#==========================
-first_line:
+first_line:	
+	movl	%r6,%r11		# point to output buffer
 
+	moval	uname_info,%r7	
+	pushl   %r7   			# uname_struct
+	movzbl	$SYSCALL_UNAME,%r0	# uname syscall
+	calls	$1,syscall		# call syscall handler, 1 parm
 
+	movl	%r7,%r5			# os-name from uname "Linux"
+	bsbb	strcat
 
-#	move.l	#uname_info,%d1			# uname struct
-#	moveq.l	#SYSCALL_UNAME,%d0
-#	trap	#0				# do syscall
+	movl	%r9,%r5			# source is " Version "
+	bsbb	strcat			# call strcat
 
-#	move.l	%d1,%a1
-						# os-name from uname "Linux"
-
-#	move.l	%a6,%a2				# point %a2 to out_buffer
-
-#	jsr	(%a5)				# call strcat
-
-#	move.l	#ver_string,%a1			# source is " Version "
-#	jsr 	(%a5)			        # call strcat
-
-#	move.l	%a1,%a4
-#	move.l	#((uname_info)+U_RELEASE),%a1
-						# version from uname, ie "2.6.20"
-#	jsr	(%a5)				# call strcat
-#	move.l	%a4,%a1
+	moval	U_RELEASE(%r7),%r5	# version from uname "2.4.1"
+	bsbb	strcat			# call strcat
 	
-						# source is ", Compiled "
-#	jsr	(%a5)				#  call strcat
+	moval	b`COMP_OFFSET(%r9),%r5	# source is ", Compiled "
+	bsbb	strcat			# call strcat
 
-#	move.l	%a1,%a4
-#	move.l	#((uname_info)+U_VERSION),%a1
-						# compiled date
-#	jsr	(%a5)				# call strcat
+	moval	U_VERSION(%r7),%r5	# compiled date
+	bsbb 	strcat			# call strcat
 
-#	move.l	%a4,%a1
-#	move.b	#0xa,%a2@+	        # store a linefeed, increment pointer
-#	move.b	#0,%a2@+		# NUL terminate, increment pointer
-
-#	bsr	center_and_print	# center and print
+	movw	$0x000a,(%r11)		# store linefeed and 0 on end
+	
+	bsbw	center_and_print	# center and print
 
 	#===============================
 	# Middle-Line
 	#===============================
 middle_line:
 
+	movl   %r6,%r11			# point to output buffer
+	
 	#=========
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-#	move.l	%a6,%a2			# point a2 to out_buffer
-	
-#	move.l	#(cpuinfo),%d1
-					# '/proc/cpuinfo'
-#	movq.l	#0,%d2			# 0 = O_RDONLY <bits/fcntl.h>
-#	movq.l	#SYSCALL_OPEN,%d0			
-#	trap	#0			# syscall.  return in d0?  
-#	move.l	%d0,%d5			# save our fd
-	
-#	move.l	%d0,%d1			# move fd to right place
-#	move.l	#disk_buffer,%d2
-#	move.l	#4096,%d3
-				 	# 4096 is maximum size of proc file ;)
-#	move.l	#SYSCALL_READ,%d0
-#	trap	#0
+	movq	$0,-(%sp)		# push $0 twice (this is shorter)
+					# arg3 (mode)
+       					# arg2 (0) = O_RDONLY <bits/fcntl.h>
+	pushl   $cpuinfo  		# arg1 '/proc/cpuinfo'
+	movzbl	$SYSCALL_OPEN,%r0	# open syscall
+	calls	$3,syscall		# call syscall handler, 3 parm
 
-#	move.l	%d5,%d1
-#	move.l	#SYSCALL_CLOSE,%d0
-#	trap	#0
-					# close (to be correct)
+	movl	%r0,%r5			# save our fd
 
+	pushl	$4096			# max size of proc file
+	pushl	$disk_buffer		# disk_buffer
+	pushl	%r5			# our fd
+	movzbl	$SYSCALL_READ,%r0	# read syscall
+	calls	$3,syscall		# call syscall, 3 parameters
+
+	pushl	%r5			# push fd
+	movzbl	$SYSCALL_CLOSE,%r0	# close (to be correct)
+	calls	$1,syscall
+
+	brb	number_of_cpus		# skip strcat
+
+
+	#================================
+	# strcat
+	#================================
+	# copy string from r5 to end of r11
+
+strcat:
+	locc 	$0,$65535,(%r5)	# look for byte 0, looking at up to 64k chars
+				# r0=bytes remaining, r1=address located
+	
+strcat_know_size:	
+	subl3	%r5,%r1,%r0	# get the string length by subtracting
+
+
+	movc3   %r0,(%r5),(%r11)  # move r1 bytes from (r3) to (r11)
+				  #  result: r1=end of source, r3=end of dest
+	movl	%r3,%r11	  # update output pointer
+	movb	$0,(%r11)	  # null terminate
+
+	rsb			  # return
 
 	#=============
 	# Number of CPUs
 	#=============
 number_of_cpus:
 
-					# cheat.  Who has an SMP arm?
-#	jsr	(%a5)
+	# for now, assume only single-processor machines
+
+	moval   b`ONE_OFFSET(%r9),%r5   # just print "One"
+	bsbb	strcat			# call strcat
 
 	#=========
 	# MHz
 	#=========
 print_mhz:
-	
-#	move.l	#(('i'<<24)+('n'<<16)+('g'<<8)+':'),%d0
-#	bsr	find_string
-					# find 'ing:' and grab up to '\n'
 
-#	move.b  #' ',%a2@+		# put in a space
+	# no MHz value available
 
 	#=========
 	# Chip Name
 	#=========
 chip_name:	
-#	move.l	#(('C'<<24)+('P'<<16)+('U'<<8)+':'),%d0
-#	bsr	find_string
-					# find 'CPU:' and grab up to '\n'
+	moval	b`TYPE_OFFSET(%r9),%r5	# want to find "type"
+	bsbb	find_string		# get from cpuinfo file
+	
+	moval	b`PROC_OFFSET(%r9),%r5	# "Processor, "
+	bsbb	strcat			# call strcat
 
-					# print " Processor, "
-#	jsr	(%a5)	
 	
 	#========
 	# RAM
 	#========
-	
-#	move.l	#(sysinfo_buff),%d1
-#	move.l	%d1,%a0		   	# copy
-#	moveq.l	#SYSCALL_SYSINFO,%d0
-#	trap	#0
-					# sysinfo() syscall
-	
-#	move.l	%a0@(S_TOTALRAM),%d1	# size in bytes of RAM
-#	moveq.l #20,%d3	
-#	lsr.l	%d3,%d1			# divide by 1024*1024 to get M
-#	adc	r3,r3,#0		# round
 
-#	moveq.l	#1,%d0
-#	move.l	%a1,%a4
-#	bsr 	num_to_ascii
-#	move.l	%a4,%a1
+	moval	sysinfo_buff,%r10
+	pushl	%r10		 	# sysinfo buffer
+	movzbl	$SYSCALL_SYSINFO,%r0	# sysinfo syscall
+	calls	$1,syscall		# call syscall, 1 parameter
 
-					# print 'M RAM, '
-#	jsr	(%a5)			# call strcat
+	movl	b`S_TOTALRAM(%r10),%r3	# size in bytes of RAM
+	ashl	$-20,%r3,%r2		# divide by 1024*1024 to get M
+
+	bsbw	num_to_ascii		# convert to ascii
+
+	movl	%r1,%r5
+	bsbb	strcat 			# print value
 	
+	moval	b`RAM_OFFSET(%r9),%r5	# print 'M RAM, '
+	bsbb	strcat			# call strcat
 
 	#========
 	# Bogomips
 	#========
- #       move.l	#(('i'<<24)+('p'<<16)+('s'<<8)+':'),%d0
-#	bsr	find_string
-					# find 'ips:' and grab up to '\n'
-					
-#	jsr	(%a5)			# print bogomips total
-	
-#	bsr	center_and_print	# center and print
+
+	moval	b`BOGO_OFFSET(%r9),%r5	# want to find "Bogo"
+	bsbb	find_string		# get from cpuinfo file
+
+	moval	b`TOTAL_OFFSET(%r9),%r5
+	bsbb 	strcat			# call strcat
+
+	bsbb	center_and_print	# center and print
 
 	#=================================
 	# Print Host Name
 	#=================================
-last_line:
-#	move.l	%a6,%a2			# point a2 to out_buffer	
+third_line:
+	movl	%r6,%r11		# point to output buffer
 	
-#	move.l	#((uname_info)+U_NODENAME),%a1
-					# host name from uname()
-#	jsr	(%a5)			# call strcat
+	moval	b`U_NODENAME(%r7),%r5	# host name from uname()
+	bsbb    strcat			# call strcat
 	
-#	bsr	center_and_print	# center and print
+	bsbb	center_and_print	# center and print
+	
+	moval	b`COLORS_OFFSET(%r9),%r3	# restore colors	
+	bsbb	write_stdout
 
-#	move.l	#(default_colors),%a3
-					# restore colors, print a few linefeeds
-#	bsr	write_stdout
-	
-	
+
 	#================================
 	# Exit
 	#================================
-	
-
 exit:
- #    	moveq.l	#0,%d1			# return a 0
-#	moveq.l	#SYSCALL_EXIT,%d0
-#	trap	#0		 	# and exit
+	pushl  $0x0			# exit value
+	movzbl $SYSCALL_EXIT,%r0	# syscall
+	calls  $1,syscall		# call syscall handler, 1 parm
 
+
+	
 
 	#=================================
 	# FIND_STRING 
 	#=================================
-	# %d0 = string to find
+	#   %r5 points to 4-char ascii string to look for
+	#   edi points at output buffer
 
-find_string:
-
-#	move.l	#(disk_buffer-1),%a3	# look in cpuinfo buffer
-find_loop:
-#	lea  	%a3@(1),%a3		# add one to pointer
-#	move.l	%a3@,%d1		# load an unaligned word
-#	beq	done			# if off the end, finish
-#	cmp.l	%d1,%d0
-#	bne	find_loop
-
-#	lea	%a3@(4),%a3		# skip what we just searched
-skip_tabs:
-#	move.b	%a3@+,%d3		# read in a byte
-#	cmp.b	#'\t',%d3		# are we a tab?
-#	beq	skip_tabs		# if so, loop
+find_string:	
 	
-#	lea	%a3@(-1),%a3		# adjust pointer
-store_loop:
-#	move.b	%a3@+,%d3		# load a byte, increment pointer
-#	move.b	%d3,%a2@+		# store a byte, increment pointer
-#	cmp.b	#'\n',%d3
-#	bne	store_loop
+	# NOTE!  The matchc instruction is optional
+	#        you have to hack the code to turn it on in simh 3.7
 	
-almost_done:
-#	move.l	#0,%d7
-#	move.b	%d7,%a2@-		# replace last value with NUL
+	moval	disk_buffer,%r0		# look in cpuinfo buffer
+	matchc	$4,(%r5),$4096,(%r0)	# search for substring r5 (size 4)
+					# in string r0 (size 4096)
+					#  result we want is in r3
 
-done:
-#	rts				# return
+	movl	%r3,%r5			# copy the pointer
 
-	#================================
-	# strcat
-	#================================
-	# value to cat in a1
-	# output buffer in a2
-	# d3 trashed
-strcat:
-#        move.b	%a1@+,%d3		# load a byte, increment pointer 
-#	move.b	%d3,%a2@+		# store a byte, increment pointer
-#	bne	strcat			# loop if not zero
-#	sub	#1,%a2			# point to one less than null 
-#	rts				# return
+find_colon:
+	locc	$':',$65535,(%r5)	# find a colon
+	addl3	%r1,$2,%r5		# copy the pointer and skip space
 	
+store_loop:	 
+	locc	$'\n',$65535,(%r5)	# find size
+	
+	brw	strcat_know_size
+
 
 	#==============================
 	# center_and_print
 	#==============================
-	# string to center in at output_buffer
+	# string to center in out_buffer
+	# %r11 has the end of the string
 
 center_and_print:
-
-#	move.l	#(escape),%a3
-					# we want to output ^[[
-#	bsr	write_stdout
-
-#	move.l	%a6,%a3			# point %a3 to out_buffer
-#	suba.l	%a3,%a2			# get length by subtracting
-					# a2 = a2-a3
-
-#	move.l	%a2,%d3
-#	move.l	#81,%d1
-#	sub.l	%d3,%d1			# subtract! d1=d1-d3
-					# we use 81 to not count ending \n
-
-#	bmi	done_center		# if result negative, don't center
 	
-#	lsr	#1,%d1			# divide by 2
-#	addx.l	%d1,#0     		# round?
+	
+	moval	ESCAPE_OFFSET(%r9),%r3	# we want to output ^[[
+	bsbb	write_stdout	
+	
+	mnegl	%r6,%r3			# get length of string (end-begin)
+	addl2	%r11,%r3		# r3=%r11-%r3
 
-#	move.l	#0,%d0			# print to stdout
-#	bsr	num_to_ascii		# print number of spaces
+	movl	$80,%r1	
 
-#	move.l	#(C),%a3
-					# we want to output C
-#	bsr	write_stdout
+	cmpb	%r3,%r1	    		# is it greater than 80?
+	bgeq	done_center		# if so, branch
 
-#	move.l	%a6,%a3
+	subl3	%r3,%r1,%r3		# subtract size from 80
+	
+	ashl	$-1,%r3,%r2     	# then divide by 2
+	
+	bsbb	num_to_ascii		# print number of spaces
+	movl	%r1,%r3
+	bsbb	write_stdout
 
+	moval	C_OFFSET(%r9),%r3	# tack a 'C' on the end
+	bsbb	write_stdout
+	
 done_center:
+	movl	%r6,%r3			# fall through to write_stdout
+					# it will return for us
+
 
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# a3 has string
-	# d0,d1,d2,d3 trashed
+	# %r3 has string
+
 write_stdout:
-#	moveq.l	#0,%d3				# clear count
 
-str_loop1:
-#	add	#1,%d3
-#	move.b	%a3@(0,%d3),%d2
-#	bne	str_loop1			# repeat till zero
+	
+	locc 	$0,$65535,(%r3)	# look for byte 0, looking at up to 64k chars
+				# r0=bytes remaining, r1=address located
+				
+	subl3	%r3,%r1,-(%sp)	# get the string length by subtracting
+				# and store it on the stack
+				# argument 3 (length)
+	pushl   %r3		# argument 2 (string)
+	pushl   $STDOUT	     	# argument 1 (stdout) 
+	movzbl	$SYSCALL_WRITE,%r0
+	calls	$3,syscall	# call the syscall
 
-write_stdout_we_know_size:
-#	move.l	%a3,%d2
-#	moveq.l	#STDOUT,%d1			# print to stdout
-#	moveq.l	#SYSCALL_WRITE,%d0		# load the write syscall
-#	trap	#0				# actually run syscall
-#	rts					# return
-
+	rsb		  	# return
 
 	##############################
 	# num_to_ascii
 	##############################
-	# d1 = value to print
-	# d0 = 0=stdout, 1=strcat
+	# r2 has number to convert
+	# result is pointed to by r1
 	
 num_to_ascii:
-#	move.l	#(ascii_buffer+10),%a3
-				# point to end of our buffer
-
+	moval	ascii_buffer+8,%r1
+	clrl	%r3		# clear top half of the quadword
+	
 div_by_10:
-#	divu.w	#10,%d1		# divide by 10.  Q in lower, R in upper
-#	bfextu	%d1,0:16,%d2	# copy remainder to %d2
-#	bfextu	%d1,16:16,%d1	# mask out quotient into %d1
-
-#	bl	divide		@ Q=r7,$0, R=r8,$1
-#	add	#0x30,%d2	# convert to ascii
-#	move.b	%d2,%a3@-	# store a byte, decrement pointer
-#	cmp	#0,%d1		#
-#	bne	div_by_10	# if Q not zero, loop
+	ediv	$10,%r2,%r4,%r5	# divide r2 by 10, Q->%r4, R->%r5
+				# grrrr, the dividend is actually a quadword
+				# so r3 must be 0 or hilarity ensues
 	
 write_out:
+	addl2	$0x30,%r5	# convert to ASCII
+	movb	%r5,-(%r1)	# store to the buffer
+
+	movl	%r4,%r2		# copy quotient to dividend
+	bneq	div_by_10	# branch if quotient not zero
+
+	rsb			# return
+
+	#===============================
+	# syscall handler
+	#===============================
+	# syscall to call in r0
+	
+syscall:
+	.word   0x0			# entry mask
+	chmk	%r0			# do the syscall
+	ret				# return
 
 
-#	cmp	#0,%d0
-#	beq	ascii_stdout
-#	move.l	%a3,%a1
-#	jmp	(%a5)		# if 1, strcat
-		
-ascii_stdout:
-#	jmp 	write_stdout	# else, fallthrough to stdout
 
-
-							
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
 data_begin:
-hello_string:   .ascii "Hello World\n\0"
+.equ VER_OFFSET,0x0
 ver_string:	.ascii	" Version \0"
+.equ COMP_OFFSET,0xa
 compiled_string:	.ascii	", Compiled \0"
-one:	.ascii	"One \0"
-processor:	.ascii	" Processor, \0"
+.equ ONE_OFFSET,0x16
+one:			.ascii  "One \0"
+.equ PROC_OFFSET,0x1b
+processor_string:	.ascii	" Processor, \0"
+.equ RAM_OFFSET,0x28
 ram_comma:	.ascii	"M RAM, \0"
+.equ TOTAL_OFFSET,0x30
 bogo_total:	.ascii	" Bogomips Total\n\0"
 
+.equ COLORS_OFFSET,0x41
 default_colors:	.ascii "\033[0m\n\n\0"
+.equ ESCAPE_OFFSET,0x48
 escape:		.ascii "\033[\0"
+.equ C_OFFSET,0x4b
 C:		.ascii "C\0"
-		
+
+.equ TYPE_OFFSET,0x4d
+type_string:	.ascii  "type"
+.equ BOGO_OFFSET,0x51
+bogo_string:	.ascii  "Bogo"
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
-
+.equ LOGO_OFFSET, 0x63
 .include	"logo.lzss_new"
-
 
 #============================================================================
 #	section .bss
 #============================================================================
 #.bss
-bss_begin:
-.lcomm uname_info,(65*6)
-.lcomm sysinfo_buff,(64)
-.lcomm ascii_buffer,10
-.lcomm  text_buf, (N+F-1)
 
+.lcomm  text_buf, (N+F-1)
+.lcomm ascii_buffer,9
+	# see /usr/src/linux/include/linux/kernel.h
+.lcomm sysinfo_buff,(64)
+.lcomm uname_info,(65*6)
 .lcomm	disk_buffer,4096	# we cheat!!!!
 .lcomm	out_buffer,16384
-
-
-	# see /usr/src/linux/include/linux/kernel.h
-

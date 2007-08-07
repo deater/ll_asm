@@ -30,10 +30,11 @@ Some Statistics
      arm		1218 bytes   (as 2.17)
      PPC		1206 bytes   (as 2.17.50)     
      s390	        1096 bytes   (as 2.17)
-     m68k		1014 bytes
-     x86_64		1001 bytes   (as 2.17.50.0.5)
+     x86_64		1036 bytes   (as 2.17.50.0.5)     
+     m68k		1014 bytes   (as 2.17)
+     vax		1010 bytes   (as 2.16.1)
      arm_thumb		 989 bytes   (as 2.17)
-     x86                 937 bytes   (as 2.17.50)
+     x86                 976 bytes   (as 2.17.50)
      avr32		 914 bytes   (as 2.16.1)
 
      The various implementations have varying functunality and often
@@ -155,6 +156,20 @@ arm:	no integer division routine
 	  we could probably beat x86 even with 32 bit instructions.
 
 
+vax:
+    	vax is crazy CISC.  
+	Some of the CISC instructions:
+	   + can operate on variable sized bit-fields
+	   + an asm instruction that implements switch/case statements
+	   + a fp instruction that calculates polynomials
+	   + special instructionss for handling queues
+	   + various opcodes to accelerate COBOL (edit, etc)
+	   + xfc - extended function call, create your own opcodes
+        You can do strlen with essentially one instruction, though it's
+	 a long one.  vax could easily beat x86 if it had a few one-byte
+	 instructions.
+
+
 m68k:   is even more CISC than x86 if such a thing is possible
            (if you don't count Vector instructions).  In addition
 	   to BCD instructions it also has a wide variety of
@@ -234,6 +249,8 @@ avr32:  They specifically designed the arch to have compact assemley.
 
         The new champion for size ;)  And there's probably a few
 	  bytes lurking that can be removed still.
+
+
 
 Features:
 --------

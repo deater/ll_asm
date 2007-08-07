@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 assembler 0.18
+#  linux_logo in x86_64 assembler 0.29
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -263,6 +263,7 @@ done_bogo:
 	mov	$' ',%al		# print a space
 	stosb
 
+	push %rbx
 	push %rdx			# store strcat pointer
 
 	#=========
@@ -291,17 +292,25 @@ chip_name:
 	mov	$('e'<<24+'m'<<16+'a'<<8+'n'),%ebx     	
 					# find 'name\t: ' and grab up to \n
 					# we are little endian
-	mov	$0xa,%ah
+	mov	$' ',%ah
 	call	*%rdx	   		# call find_string
-
-	mov	$0x202c,%ax		# ', '
-	stosw
+	stosb
+	call 	skip_spaces
 	
-	# if we were being clever here we could have saved 'bx' from
-	# the bogomips count and then add an 's' to make the chip
-	# plural.  Sadly this doesn't look right with any of the chips
-	# I have (yet another feature from Stephan Walter)
-		
+	pop     %rdx
+	pop     %rbx                    # restore chip count
+	pop     %rsi
+				
+	call    *%rdx                   # ' Processor'
+	cmpb    $2,%bl
+	jne     print_s
+	inc     %rsi   			# if singular, skip the s
+print_s:
+        call    *%rdx                   # 's, '
+	
+        push    %rsi                    # restore the values
+	push    %rdx
+			
 	#========
 	# RAM
 	#========
@@ -415,8 +424,11 @@ store_loop:
 	je	done
 	cmp	%ah,%al			# is it end string?
 	je 	almost_done		# if so, finish
+	cmp	$'\n',%al
+	je	almost_done
 	stosb				# if not store and continue
 	lodsb
+	
 	jmp	store_loop
 	 
 almost_done:	 
@@ -544,6 +556,8 @@ write_out:
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
+processor:		.ascii  " Processor\0"
+s_comma:		.ascii  "s, \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
 

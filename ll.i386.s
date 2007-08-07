@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.21
+#  linux_logo in ix86 assembler 0.29
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -237,7 +237,7 @@ bogo_loop:
 	jne	bogo_loop		# if not equal, keep going
 	
 	inc	%ebx			# otherwise, we have a bogo
-	inc	%ebx			# times too for future magic
+	inc	%ebx			# times two for future magic
 	jmp	bogo_loop
 
 done_bogo:
@@ -258,7 +258,7 @@ done_bogo:
 	mov	$' ',%al		# print a space
 	stosb
 
-
+	push %ebx			# store cpu count
 	push %edx			# store strcat pointer
 
 	#=========
@@ -284,20 +284,33 @@ print_mhz:
 	# Chip Name
 	#=========
 chip_name:	
+
+	# because of ugly newer cpuinfos from intel I had to hack this
+	# now we grab the first two words in the name field and use that
+	# it works on all recent Intel and AMD chips.  Older things
+	# might choke
+
 	mov	$('e'<<24+'m'<<16+'a'<<8+'n'),%ebx     	
 					# find 'name\t: ' and grab up to \n
 					# we are little endian
-	mov	$0xa,%ah
-	call	*%edx	   		# call find_string
+	mov	$' ',%ah
+	call	*%edx	   		# print first word
+	stosb				# store a space
+	call	skip_spaces		# print next word
 
-	mov	$0x202c,%ax		# ', '
-	stosw
+	pop	%edx
+	pop	%ebx			# restore chip count
+	pop	%esi
 	
-	# if we were being clever here we could have saved 'bx' from
-	# the bogomips count and then add an 's' to make the chip
-	# plural.  Sadly this doesn't look right with any of the chips
-	# I have (yet another feature from Stephan Walter)
-	
+	call	*%edx			# ' Processor'
+	cmpb	$2,%bl	
+	jne	print_s
+	inc	%esi   			# if singular, skip the s
+print_s:	
+	call	*%edx			# 's, '
+
+	push	%esi			# restore the values
+	push 	%edx
 	
 	#========
 	# RAM
@@ -399,15 +412,20 @@ find_colon:
 	cmp	$':',%al
 	jne	find_colon
 
-	lodsb				# skip a char [should be space]
-	
+skip_spaces:
+        lodsb                           # skip spaces
+	cmp     $0x20,%al               # Loser new intel chips have lots??
+        je      skip_spaces
+
 store_loop:	 
-	lodsb				# load value
 	cmp	$0,%al
 	je	done
 	cmp	%ah,%al			# is it end string?
 	je 	almost_done		# if so, finish
+	cmp	$'\n',%al		# also end if linefeed
+	je	almost_done
 	stosb				# if not store and continue
+	lodsb				# load value	
 	jmp	store_loop
 	 
 almost_done:	 
@@ -536,6 +554,8 @@ write_out:
 
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
+processor:		.ascii " Processor\0"
+s_comma:		.ascii "s, \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
 

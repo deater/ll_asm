@@ -202,3 +202,21 @@ RELEASE 0.27 (there was no 0.26)
   the "new" lzss format and all have a similar code base.
 
 RELEASE 0.28
+
+3 August 2007
++ Update x86 to work with modern cpuinfos.  Also properly prints
+  plurals like other SMP supporting archs.  This added ~30 bytes
+  to the executable.  This potentially broke older (as in 386 and 486)
+  support, but it fixes core duo and other newer machines.
+  I wish Intel would stop coming up with stupid cpu name fields.
++ Update x86_64 to match the changes in x86
+
+6 August 2007
++ Got vax fully working
+
+7 August 2007
++ Optimized vax
+
+RELEASE 0.29
+
+  

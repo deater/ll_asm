@@ -72,19 +72,20 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
 
     /* Compare the file's class and endianness with the program's.
      */
+ 
 #ifndef __sparc__
     if (ehdr->e_ident[EI_DATA] != ELF_DATA) {
-	return err("ELF file has different endianness.");
+       err("ELF file has different endianness.");
     }
 
     if (ehdr->e_ident[EI_CLASS] != ELF_CLASS) {
-	return err("ELF file has different word size.");
+       err("ELF file has different word size.");
     }
 
     /* Check the target architecture.
      */
     if (ehdr->e_machine != ELF_ARCH) {
-	return err("ELF file created for different architecture.");
+       err("ELF file created for different architecture.");
     }
 #endif
     /* Verify the sizes of the ELF header and the program segment
