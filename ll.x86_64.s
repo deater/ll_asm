@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 assembler 0.29
+#  linux_logo in x86_64 assembler 0.30
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -354,9 +354,6 @@ print_s:
 
 	mov	%ebp,%ecx		# point ecx to out_buffer
 
-	mov	$0xa,%ax		# and line feed and zero
-	stosw
-
 	push	%rcx
 	call	center_and_print	# center and print
 
@@ -559,7 +556,7 @@ compiled_string:	.ascii	", Compiled \0"
 processor:		.ascii  " Processor\0"
 s_comma:		.ascii  "s, \0"
 ram_comma:	.ascii	"M RAM, \0"
-bogo_total:	.ascii	" Bogomips Total\0"
+bogo_total:	.ascii	" Bogomips Total\n\0"
 
 default_colors:	.ascii "\033[0m\n\n\0"
 

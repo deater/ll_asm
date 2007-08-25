@@ -1,5 +1,5 @@
 #
-#  linux_logo in alpha assembler    0.21
+#  linux_logo in alpha assembler    0.30
 #
 #  by Vince Weaver <vince _at_ deater.net>
 #
@@ -30,8 +30,6 @@
 #   + Assembly is OP src1,src2,dest
 #   + Alpha has no integer division routine.
 
-# FIXME: we should break out objdump and try to optimize some more	
-			
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -542,6 +540,11 @@ done_ascii:
 	#  $16 =numerator $17=denominator
 	#  $0 =quotient  $1=remainder
 	#  $2,$3 = scratch
+	
+	# multiplying by 0xcccc cccd (2^34+1)/5
+	# using umulh and then shifting left by 3
+	# to divide by 10 is faster, but takes more bytes!
+	
 divide:
 	clr	$0			# zero out quotient
 divide_loop:

@@ -13,7 +13,7 @@
 .include "logo.include"
 
 # ARM has 31 registers, (only lower 16 visible to userspace)
-#  r0-r7 are unbanked, alwas the same.  r8-r14 change depending on mode
+#  r0-r7 are unbanked, always the same.  r8-r14 change depending on mode
 # + r0-r12 are general purpose
 # + r13 = stack pointer
 # + r14 = link register

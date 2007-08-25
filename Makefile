@@ -63,6 +63,13 @@ lzss.o:	   lzss.c
 lzss_new.o:    lzss_new.c
 	$(CC) $(CFLAGS) -c lzss_new.c
 
+
+#ll_c.o:	ll_c.c
+#	$(CC) $(CFLAGS) -c -g ll_c.c
+	
+#ll_c:	ll_c.o logo.lzss_new.h
+#	$(CC) $(LDFLAGS) -o ll_c ll_c.o
+
 #
 # The -N option avoids padding the .text segment, at least on x86_64
 #
@@ -90,7 +97,7 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
 clean:
-	rm -f ll *.o *~ ll.s ll_thumb ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc
+	rm -f ll ll_c *.o *~ ll.s ll_thumb ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc a.out
 	cd sstrip && make clean
 
 

@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
     }
       
     rewind(ansi);
-    byte_count=lzss_encode_better(ansi,header,output,'\0',1024,2,0);
+    byte_count=lzss_encode_better(ansi,header,output,'\0',1024,2,NORMAL_ASM);
 
 
     printf("Size of LZSS-NEW version: %i\n",byte_count);
@@ -316,10 +316,22 @@ int main(int argc, char **argv) {
        return 1;
     }
     rewind(ansi);
-    lzss_encode_better(ansi,header,output,'\0',1024,2,1);
+    lzss_encode_better(ansi,header,output,'\0',1024,2,PARISC);
 
     fclose(output);
     fclose(header);
+   
+       /* C header lzss */
+    output=fopen("logo.lzss_new.h","w");
+    if (output==NULL) {
+       printf("Could not open \"logo.lzss_new.h\"\n");
+       return 1;
+    }   
+
+    rewind(ansi);
+    lzss_encode_better(ansi,output,output,'\0',1024,2,C);
+
+    fclose(output);
     rewind(ansi);
 
     

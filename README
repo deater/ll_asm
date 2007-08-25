@@ -30,11 +30,12 @@ Some Statistics
      arm		1218 bytes   (as 2.17)
      PPC		1206 bytes   (as 2.17.50)     
      s390	        1096 bytes   (as 2.17)
-     x86_64		1036 bytes   (as 2.17.50.0.5)     
+     x86_64		1033 bytes   (as 2.17.50.0.5)     
      m68k		1014 bytes   (as 2.17)
      vax		1010 bytes   (as 2.16.1)
+     sh3		 994 bytes   (as 2.17.50.0.5)
      arm_thumb		 989 bytes   (as 2.17)
-     x86                 976 bytes   (as 2.17.50)
+     x86                 969 bytes   (as 2.17.50)
      avr32		 914 bytes   (as 2.16.1)
 
      The various implementations have varying functunality and often
@@ -103,17 +104,6 @@ alpha:
 	
 	There is no native integer division routine on alpha.
 
-s390:   This is the most CISC architecture I've ever seen.  If only it had
-	   a "load byte" opcode it would definitely beat out x86.  I am sure
-	   it can be optimized even smaller than x86 by a s390 expert.
-	   Being able to do "strcat" in 2 or 3 op-codes and strlen in not
-	   more than 5 is a big plus.
-	+ fact all opcodes are often 16-bit and often 32-bit is annoying
-	+ not having 3-operand opcodes also hurts
-	+ crazy CISC operations are amazing, but often don't do what I need
-	+ would be nice if offsets could be negative
-	+ would be nice if there was a relative branch shorter than 32-bits
-
 parisc:	+ really hurt by its short immediate field.  Most addresses
 	  require 2 instructions to load, even if try to use relative-data add.
 	+ no integer divide, have to code it up... not so bad in loop form
@@ -141,6 +131,12 @@ mips:   Recent binutils has made mips come in line with the
 	On the plus side, it has hardware support for unaligned loads,
 	plus hardware integer divide, which help a lot.
 
+arm:	no integer division routine
+	Really painful to load constants > 8 bits that aren't powers of two or
+	  else 8-bit values shifted by power of two.
+	If we had integer divide, saner constant support, and  unaligned loads 
+	  we could probably beat x86 even with 32 bit instructions.
+
 ppc:	The PowerPC has very CISC-like opcodes as well.
         Despite being load-store with 3 operand instructions, you almost
 	wouldn't know it was considered RISC.  I also think I could
@@ -149,41 +145,16 @@ ppc:	The PowerPC has very CISC-like opcodes as well.
 	The big help is auto-incrementing load/store byte instructions.
 
 
-arm:	no integer division routine
-	Really painful to load constants > 8 bits that aren't powers of two or
-	  else 8-bit values shifted by power of two.
-	If we had integer divide, saner constant support, and  unaligned loads 
-	  we could probably beat x86 even with 32 bit instructions.
-
-
-vax:
-    	vax is crazy CISC.  
-	Some of the CISC instructions:
-	   + can operate on variable sized bit-fields
-	   + an asm instruction that implements switch/case statements
-	   + a fp instruction that calculates polynomials
-	   + special instructionss for handling queues
-	   + various opcodes to accelerate COBOL (edit, etc)
-	   + xfc - extended function call, create your own opcodes
-        You can do strlen with essentially one instruction, though it's
-	 a long one.  vax could easily beat x86 if it had a few one-byte
-	 instructions.
-
-
-m68k:   is even more CISC than x86 if such a thing is possible
-           (if you don't count Vector instructions).  In addition
-	   to BCD instructions it also has a wide variety of
-	   bit-field manipulation instructions, plus full ALU complement.
-
-	   bizzarrely, m68k assembly is very similar to THUMB.
-
-	   weird having separate address and data registers.
-
-	   can't shift by an immediate more than 8?
-	   can't add carry with immediate?
-	   have to clear upper parts of words when doing byte math;
-	      no equivelant of the mips "lbu" instruction.
-	      
+s390:   This is the most CISC architecture I've ever seen.  If only it had
+	   a "load byte" opcode it would definitely beat out x86.  I am sure
+	   it can be optimized even smaller than x86 by a s390 expert.
+	   Being able to do "strcat" in 2 or 3 op-codes and strlen in not
+	   more than 5 is a big plus.
+	+ fact all opcodes are often 16-bit and often 32-bit is annoying
+	+ not having 3-operand opcodes also hurts
+	+ crazy CISC operations are amazing, but often don't do what I need
+	+ would be nice if offsets could be negative
+	+ would be nice if there was a relative branch shorter than 32-bits
 
 x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
         all of the push %e?? instructions into push %r??, as well as jmp *%edx
@@ -202,6 +173,43 @@ x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
 	handle 4GB of RAM so we lose a few bytes for a 64-bit load.
 
 
+m68k:   is even more CISC than x86 if such a thing is possible
+           (if you don't count Vector instructions).  In addition
+	   to BCD instructions it also has a wide variety of
+	   bit-field manipulation instructions, plus full ALU complement.
+
+	   bizzarrely, m68k assembly is very similar to THUMB.
+
+	   weird having separate address and data registers.
+
+	   can't shift by an immediate more than 8?
+	   can't add carry with immediate?
+	   have to clear upper parts of words when doing byte math;
+	      no equivelant of the mips "lbu" instruction.
+	      
+
+vax:
+    	vax is crazy CISC.  
+	Some of the CISC instructions:
+	   + can operate on variable sized bit-fields
+	   + an asm instruction that implements switch/case statements
+	   + a fp instruction that calculates polynomials
+	   + special instructionss for handling queues
+	   + various opcodes to accelerate COBOL (edit, etc)
+	   + xfc - extended function call, create your own opcodes
+        You can do strlen with essentially one instruction, though it's
+	 a long one.  vax could easily beat x86 if it had a few one-byte
+	 instructions.
+
+sh3:
+    	auto-increment addressing for loads but not for stores?
+	-> yes, auto-incrememnt/decrement set up for stack
+	   accesses so it decrements on store (push) and incs on load (pop)
+	branch delay slots make things difficult
+	could really use a compare-with-zero instruction for reg other than r0
+	pretty compact code, even with lots of wasted branch delay slots
+	Really wish could put the divide instructions in a loop (like parisc)
+	
 arm_thumb:
         I tried by hardest to beat x86, even though the arm port
 	doesn't have to do things x86 does (SMP support for example).
@@ -217,7 +225,7 @@ arm_thumb:
 	 any combination of registers in 16 bits.
 
         The "blx" instruction to branch to a register (even a high one!)
-	 is great.  I cheated a bit by using it as it's an Arm5 instruction.
+	 is great.  I cheated a bit by using the Arm5 instruction subset.
 	 The code wouldn't be anywhere near as small if I had to use
 	 generic arm4 thumb.
 
@@ -249,7 +257,6 @@ avr32:  They specifically designed the arch to have compact assemley.
 
         The new champion for size ;)  And there's probably a few
 	  bytes lurking that can be removed still.
-
 
 
 Features:

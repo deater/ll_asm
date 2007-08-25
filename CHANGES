@@ -114,7 +114,7 @@ RELEASE 0.16
 
 RELEASE 0.17
 
-2 Feburary 2007
+2 February 2007
 + Change the way the Makefile detects architecture
 + x86 ll was crashing on newer machines with really stupid cpuinfo cpu types
   (core2 and newer xeons, I'm looking at you).  The problem was it makes
@@ -176,7 +176,7 @@ RELEASE 0.24
 26 April 2007
 + Initial m68k work
 
-27 Aptil 2007
+27 April 2007
 + m68k version finished
 
 28 April 2007
@@ -219,4 +219,18 @@ RELEASE 0.28
 
 RELEASE 0.29
 
+8 August 2007
++ Shaved a few bytes off of x86 where it was loading a linefeed inefficiently.
++ Made a c version of "ll" under the c subdir.  This is for some
+  experiments I am doing.
   
+23 August 2007
++ Working on sh3 version
++ Found a bug in qemu-sh4 with the implementation of the
+  mov.b @(disp,rm),r0 instruction which I was using.  Sent them a patch
+
+24 August 2007
++ Finish optimizing sh3 support
+
+RELEASE 0.30
+

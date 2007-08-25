@@ -1,0 +1,6 @@
+differences between O3 and Os
+
++ Os uses "div" instruction, O3 uses multiply by constant to divide
++ Os uses string instructions, O3 doesn't.
++ padding
++ inlining

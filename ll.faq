@@ -4,6 +4,7 @@ Q3: Did you code all of these yourself?
 Q4: What resources you use to find out about all the different architectures?
 Q5: Why?
 Q6: What are the most unusual opcodes you've come across?
+Q7: How do you port to a new architecture?
 
 --------------------
 
@@ -102,7 +103,7 @@ A6:    abcd  - m68k
        aaa   - x86
        eieio - ppc
        pea   - m68k
-       bra   - m68k
+       bra   - m68k,sh3
        bras  - s390
        sex   - such an opcode exists, but not in any platforms linux supports.
                Most processors have a "Sign EXtend" instruction but most
@@ -110,4 +111,55 @@ A6:    abcd  - m68k
 	       it's cdq on x86)
        brb   - vax
        spanc - vax
+       shad  - sh3
        
+
+Q7: How do you port to a new architecture?
+
+A7: First step is to find a machine from that architecture capable of
+    running Linux.  For the first few easy ports this was trivial.
+    It got harder and harder to find machines.  Eventually
+    for some of the more obscure I had to use simulators (vax, m68k)
+    and for sh3 I ended up using a user-space only qemu.
+    
+    Second step is getting development tools.  This is pretty easy
+    if you are running a full distribution on actual hardware.
+    It's a bit harder in the obscure cases; you have to build
+    cross-compile tools and that can be tricky.
+    
+    Third step is to find architectural documentation.  The biggest
+    help is the manual the company provides that describes the
+    architecture and all available opcodes.  That gets you most
+    of the way.  There can still be some tricky aspects.  Finding
+    out how to do syscalls properly can be a hurdle (best help
+    is usually the arch-specific unistd.h file that comes with linux.
+    Next is the uclibc code.  Worst case you might have to statically
+    link a binary and dig through a disassembly of the code with
+    objdump).  Another problem can be differences in the assembly
+    gas (the gnu assembler) expects.  The gas info page is a big
+    help here.
+    
+    Fourth step is to start coding.  Usually I start by getting
+    the "exit()" syscall working, as that's one of the easier
+    syscalls and you pass along an exit value that's easy
+    to check with "echo $?".  Once that works, it's time
+    to do a "hello world" which exercises the write() syscall
+    and memory accesses.  After this gradually build up to
+    the system info lines, then to the centering part (division
+    can be tricky).  Last is usually the actual logo decompression.
+    
+    The fifth step is debugging, which can be difficult.  The 
+    best tool to help is "strace" which shows which syscalls
+    are happening and which values.  gdb (if it is working)
+    also can be a big help.  Some of the more obscure
+    architectures you can't have either strace of gdb and
+    have to resort to scattering write() and exit() calls
+    around, plus a lot of commenting out.
+    
+    The sixth and final step is optimizing.  There is no
+    quick guide to this, you just have to find the parts
+    of the code that are excessively big and try to make
+    them smaller.  Using objdump to diassemble the code
+    before and after is a good tactic, especially on
+    architectures with variable-sized instructions.
+    

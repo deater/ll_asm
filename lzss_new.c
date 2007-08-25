@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "lzss.h"
 
 #define num_trees 256
 
@@ -137,7 +138,7 @@ void newDeleteNode(int p, int binary_search_index,
 int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
 		       unsigned char frequent_char,
 		       int ring_buffer_size, int position_length_threshold,
-		       int arch_parisc) {
+		       int output_type) {
 
 //    unsigned char frequent_char='#';
 //    int ring_buffer_size=1024;  /* N */
@@ -199,7 +200,7 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
     r = ring_buffer_size - match_length_limit;
    
     if (header!=NULL) {
-       if (arch_parisc) {
+       if (output_type==PARISC) {
 	  fprintf(header,"FREQUENT_CHAR: .equ %i\n",frequent_char);
           fprintf(header,"N: .equ %i\n",ring_buffer_size);
           fprintf(header,"F: .equ %i\n",match_length_limit);
@@ -207,7 +208,7 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
           fprintf(header,"P_BITS: .equ %i\n",position_bits);
           fprintf(header,"POSITION_MASK: .equ %i\n",(0xff>>(8-(position_bits-8))));
        }
-       else {
+       else if (output_type==NORMAL_ASM) {
          fprintf(header,".equ FREQUENT_CHAR,'%c'\n",frequent_char);
          fprintf(header,".equ N,%i\n",ring_buffer_size);
          fprintf(header,".equ F,%i\n",match_length_limit);
@@ -215,9 +216,23 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
          fprintf(header,".equ P_BITS,%i\n",position_bits);
          fprintf(header,".equ POSITION_MASK,%i\n",(0xff>>(8-(position_bits-8))));
        }
+       else if (output_type==C) {
+//	 fprintf(header,"#define FREQUENT_CHAR '%c'\n",frequent_char);
+         fprintf(header,"#define N %i\n",ring_buffer_size);
+         fprintf(header,"#define F %i\n",match_length_limit);
+         fprintf(header,"#define THRESHOLD %i\n",position_length_threshold);
+         fprintf(header,"#define P_BITS %i\n",position_bits);
+         fprintf(header,"#define POSITION_MASK %i\n",(0xff>>(8-(position_bits-8))));
+       }
     }
-    if (outfile!=NULL) {
+
+    if (outfile==NULL) return 0;
+   
+    if (output_type!=C) {
        fprintf(outfile,"logo:\n");
+    }
+    else {
+       fprintf(outfile,"unsigned char logo[]={\n");  
     }
        /* Clear the buffer with any character that will appear often. */
     for(i=0; i<(ring_buffer_size-match_length_limit); i++) 
@@ -272,11 +287,17 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
 		          		     
        }
        if ((mask <<= 1) == 0) {  /* Shift mask left one bit. */		   
-          if (outfile!=NULL) {
-	  fprintf(outfile,"\t.byte\t");
-	  for(i = 0; i < code_buf_ptr; i++)  { /* Send at most 8 units of */
-	     fprintf(outfile,"%d%c",code_buf[i],(i==code_buf_ptr-1)?'\n':',');
+          if (output_type!=C) {
+	     fprintf(outfile,"\t.byte\t");
+	     for(i=0; i<code_buf_ptr; i++) { /* Send at most 8 units of */
+	        fprintf(outfile,"%d%c",code_buf[i],(i==code_buf_ptr-1)?'\n':',');
+	     }
 	  }
+	  else {
+	     fprintf(outfile,"\t");
+	     for(i=0; i<code_buf_ptr; i++) { /* Send at most 8 units of */
+	        fprintf(outfile,"%d,%c",code_buf[i],(i==code_buf_ptr-1)?'\n':' ');
+	     }
 	  }
 	  codesize += code_buf_ptr;
 	  code_buf[0] = 0;  code_buf_ptr = mask = 1;
@@ -312,16 +333,39 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
     } while (len > 0);	/* until length of string to be processed is zero */
 	
     if (code_buf_ptr > 1) {		/* Send remaining code. */
-       if (outfile!=NULL) {
-       fprintf(outfile,"\t.byte\t");
-       for(i = 0; i < code_buf_ptr; i++) {
-	  fprintf(outfile,"%d%c",code_buf[i],(i==code_buf_ptr-1)?'\n':',');
+       if (output_type!=C) {
+          fprintf(outfile,"\t.byte\t");
        }
+       else {
+	  fprintf(outfile,"\t");
+       }
+	  
+       for(i=0; i<code_buf_ptr; i++) {
+	  fprintf(outfile,"%d",code_buf[i]);
+	  if (output_type!=C) {
+	     if (i==code_buf_ptr-1) {
+		fprintf(outfile,"\n");
+	     } else {
+		fprintf(outfile,",");
+	     }
+	  }
+	  else {
+	     if (i==code_buf_ptr-1) {
+		fprintf(outfile,",\n");
+	     } else {
+		fprintf(outfile,",");
+	     }		
+	  }          
        }
        codesize += code_buf_ptr;
     }
-
-    if (outfile!=NULL) fprintf(outfile,"logo_end:\n");
+    if (output_type!=C) {
+       fprintf(outfile,"logo_end:\n");
+    }
+    else {
+       fprintf(outfile,"};\n");
+    }
+    
     free(text_buf);
     free(lson);
     free(rson);
