@@ -1,0 +1,4 @@
+ll.bas  - proof of concept of output in Applesoft BASIC
+sim.c	- C program that implements hackish 6502 opcodes
+	  used to test program before putting it into real assembly
+	  

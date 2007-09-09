@@ -234,3 +234,8 @@ RELEASE 0.29
 
 RELEASE 0.30
 
+9 September 2007
++ Finish 6502 version.  Took a while.
++ Start looking into Mips16 support.
+
+RELEASE 0.31

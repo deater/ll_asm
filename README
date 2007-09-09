@@ -26,6 +26,7 @@ Some Statistics
      alpha		1957 bytes   (as 2.17.50)
      parisc		1400 bytes   (as 2.17.50)
      SPARC		1397 bytes   (as 2.17.50)
+     6502		1394 bytes   (ca64 2.7.1)
      mips               1292 bytes   (as 2.17.50)
      arm		1218 bytes   (as 2.17)
      PPC		1206 bytes   (as 2.17.50)     
@@ -122,6 +123,26 @@ sparc:
 	SPARC is unfair a bit, because my test machine is a 24-proc
         niagara, so it has extra code to handle that many chips properly.
 
+6502:
+        So obviously this isn't running on Linux.  I was curious
+	how an 8-bit processor would compare.
+	
+	The big problem is that the LZSS algorithm and the ll data
+	set are very much 16-bits in size.  So there is a lot of
+	overhead having to increment 16-bit values on an 8-bit processor.
+	
+	Only having 3 registers is a handicap, but the zero page (the
+	first 256 bytes of memory which can be accesses in one less byte
+	and in fewer cycles) act as almost virtual registers.
+	
+	Some potential useful instructions that would have helped (and
+	that are actually implemented in the later 65C02 version of the
+	chip):
+	   phx/plx (push/pull X directly)
+	   ina/dea (increment/decrement A... otherwise need 2 instructions)
+	   bra (branch always, relative jump.  otherwise need 3-byte 16-bit)
+	   stz (store zero)
+	
 mips:   Recent binutils has made mips come in line with the
         other architectures.
 	

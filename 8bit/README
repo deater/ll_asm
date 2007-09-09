@@ -1,0 +1,21 @@
+This directory contains an implementation of ll in 6502 assembly language
+for the Apple II series of computers.
+
+The same LZSS data from the Linux version is used and decoded.  The resulting
+ ANSI text is converted to HIRES graphics and printed to the screen.
+Some simple system info is detected and printed, though it is of 
+ questionable accuracy.
+
+Building:
+   You need to install the cc65 toolchain
+       http://www.cc65.org/
+   And the dos33fs tools
+       http://www.deater.net/weave/vmwprod/apple/dos33fs.html
+       
+   Run "make"
+   Then run "make disk"
+   Which will copy the executable to the disk image ll_6502.dsk
+   
+   To run, you can copy the executable to an actual Apple II, or else
+     use your favorite Apple II emulator on "ll_6502.dsk"
+     

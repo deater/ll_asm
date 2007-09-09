@@ -36,6 +36,7 @@ endif
 #
 ifneq (,$(findstring mips,$(ARCH)))
    ARCH := mips
+   THUMB := ll_mips16
 endif
 
 
@@ -86,6 +87,12 @@ ll_thumb:	ll.thumb.o
 ll.thumb.o:	ll.thumb.s
 	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s
 
+ll.mips16.o:	ll.mips16.s
+	$(CROSS)$(AS) -mips16 -o ll.mips16.o ll.mips16.s
+	
+ll_mips16:	ll.mips16.o
+	$(CROSS)$(LD) -N -o ll_mips16 ll.mips16.o
+
 ll.s:	
 	rm -f ll.s
 	ln -s ll.$(ARCH).s ll.s
@@ -97,7 +104,7 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
 clean:
-	rm -f ll ll_c *.o *~ ll.s ll_thumb ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc a.out
+	rm -f ll ll_c *.o *~ ll.s ll_thumb ll_mips16 ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc a.out
 	cd sstrip && make clean
 
 
