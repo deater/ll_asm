@@ -112,6 +112,7 @@ A6:    abcd  - m68k
        brb   - vax
        spanc - vax
        shad  - sh3
+       lfsux - ppc
        
 
 Q7: How do you port to a new architecture?

@@ -38,6 +38,7 @@ Some Statistics
      arm_thumb		 989 bytes   (as 2.17)
      x86                 969 bytes   (as 2.17.50)
      avr32		 914 bytes   (as 2.16.1)
+     crisv32		 905 bytes   (as 2.12.1)
 
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -280,6 +281,24 @@ avr32:  They specifically designed the arch to have compact assemley.
 	  bytes lurking that can be removed still.
 
 
+crisv32:
+        mostly 16-bit instructions
+	
+	If constants are > 6bits need longer encoding
+	
+	reg+offset addressing mode only available for acr (r15)
+	register, which increases code size.  This is an improvement
+	on original cris where r15 was the PC.
+	
+	VM usage starts at 0
+	
+	No hw divide instruction
+	Branch delay slot
+
+	branch instructions always 3bytes.  Use jump (register val) instead?
+
+
+
 Features:
 --------
     + Runs in 4 miliseconds, more than twice as fast as the 10 linux_logo 
@@ -313,6 +332,7 @@ HOW TO HELP:
 
 Useful Resources:
 -----------------
+	http://deater.net/weave/vmwprod/asm/ll/ll.html
         http://www.linuxassembly.org
 	http://www.deater.net/weave/vmwprod/asm
 	http://www.deater.net/weave/vmwprod/linux_logo
@@ -325,6 +345,7 @@ Thanks to:
 Special Thanks to:
 ------------------
 	my lovely wife
+	my beautiful daughter
 
 AUTHOR:
 -------

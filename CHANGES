@@ -239,3 +239,8 @@ RELEASE 0.30
 + Start looking into Mips16 support.
 
 RELEASE 0.31
+
+7 January 2009
++ Finish crisv32 support.  Took a while.
+
+RELEASE 0.32

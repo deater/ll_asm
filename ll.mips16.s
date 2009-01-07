@@ -11,6 +11,24 @@
 
 
 #
+# Mips16 differences from MIPS
+#
+# Can do 64-bit ops on 64-bit procs
+#  Has 8 registers
+# 0,1,2,3,4,5,6,7 correpsond to MIPS32 16,17,2,3,4,5,6,7
+#    don't use 0-7 though, use $16,$17,$2 etc
+# MIPS32 reg 24 is used as a condition code register
+# MIPS32 reg 29 is SP and 31 is RA
+#   mips16 mov instruction can access all registers
+# JALX, JR, JALR, JALRC and JRC can switch between 16/32 mode
+# PC relative addressing is added for lw and addi
+# an instruction can be "extended" to have up to a 16-bit immediate
+
+
+
+
+
+#
 # Keep gas from handling branch-delay and load-delay slots automatically
 #
 
@@ -383,11 +401,31 @@ chip_name:
 	#================================
 	# Exit
 	#================================
+	jal	lala2
+
 exit:
      	li	$2, SYSCALL_EXIT	# put exit syscall in v0
-	li	$4, 5			# put exit code in a0
-#        syscall	    			# exit
+#	li	$4, 5			# put exit code in a0
+	jal	do_syscall
 
+
+#.set nomips16
+        #===================
+	# sysall
+	#===================
+do_syscall:	
+        syscall	    			# exit
+	jr    $31
+	
+.set mips16
+
+lala:
+nop
+lala2:
+     li 	$4,7
+     li		$2, SYSCALL_EXIT
+     jr		$31
+     
 
 	#=================================
 	# FIND_STRING 

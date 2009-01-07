@@ -1,7 +1,10 @@
+
 !
-!  linux_logo in sparc assembler    0.20
+!  linux_logo in sparc assembler    0.32
 !
 !  Should in theory work for both sparc32 and sparc64
+!    but actually written as pure SPARCV8 I think
+!    Possible optimizations if we make it v8plus?
 !
 !  by Vince Weaver <vince _at_ deater.net>
 !
@@ -25,6 +28,8 @@
 !	When move up a window, the outs become the ins  SAVE/RESTORE instr
 !       The save and restore instructions can act also as ADD instructions
 !       for the stack... you must save room for at least 16 words on stack.
+!	(this is to hold space for reg window in case of overflow.
+!	(stack also must be double-word aligned.  96 bytes is safe...)
 !     + Call instruction writes to %o7
 !     + %o6 is the stack pointer	
 !     + Condition codes:	 xcc = 64 bit, icc= 32 bit nzvc
@@ -32,7 +37,23 @@
 ! FIXME:	 use register windows
 !		 optimize the divide routine
 !		 use branch delay slots
-		
+
+!
+! %asi alternate access spaces.  Above 0x80 is user-space.
+!    Some useful ones: little-endian accesses, block-memory moves
+! faligndata instruction is VIS (SIMD) instruction.
+!
+! Floating point regs are done a bit odd (and gdb confuses it more)
+!   f0-f31 are single precision
+!   d0-d30 (even only) are double precision.  d0-d15 are equiv
+!         to f0/f1, f2/f3, f4/f5, etc
+!
+! On v9, branches can be against icc or xcc
+!   also {,a} indicates annulled (if taken, always execute delay.
+!        otherwise, annul it
+!   also {,pn,pt} predict not taken or taken
+
+
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65

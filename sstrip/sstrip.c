@@ -9,7 +9,7 @@
 #include	<unistd.h>
 #include	<fcntl.h>
 #include	<elf.h>
-#include	<asm/elf.h>
+#include	"asm_elf.h" /* made local as new distros don't have it */
 
 #ifdef __mips__
 #define ELF_CLASS ELFCLASS32

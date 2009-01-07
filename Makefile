@@ -1,5 +1,7 @@
 ANSI_TO_USE = banner_logo.ansi
 
+#CRIS_EXTRA=--section-start .text=0x80000
+#CRIS_EXTRA=--section-alignment 0x1000
 
 ifeq ($(ARCH),)
    ARCH = $(shell uname -m)
@@ -25,6 +27,14 @@ ifneq (,$(findstring arm,$(ARCH)))
 endif
 
 #
+# Handle CRIS
+#
+ifneq (,$(findstring cris,$(ARCH)))
+   ARCH := crisv32
+   C_EXTRA := --march=v32
+endif
+
+#
 # Handle SPARC
 #
 ifneq (,$(findstring sparc,$(ARCH)))
@@ -42,7 +52,7 @@ endif
 
 CC = gcc
 CFLAGS = -O2 -Wall
-LDFLAGS = 
+LFLAGS = 
 
 all:	ll $(THUMB) ansi_compress ./sstrip/sstrip
 
@@ -69,17 +79,17 @@ lzss_new.o:    lzss_new.c
 #	$(CC) $(CFLAGS) -c -g ll_c.c
 	
 #ll_c:	ll_c.o logo.lzss_new.h
-#	$(CC) $(LDFLAGS) -o ll_c ll_c.o
+#	$(CC) $(LFLAGS) -o ll_c ll_c.o
 
 #
 # The -N option avoids padding the .text segment, at least on x86_64
 #
 
 ll:	ll.o
-	$(CROSS)$(LD) -N -o ll ll.o	
+	$(CROSS)$(LD) $(L_EXTRA) -N -o ll ll.o	
 
 ll.o:	ll.s logo.lzss
-	$(CROSS)$(AS) -o ll.o ll.s
+	$(CROSS)$(AS) $(C_EXTRA) -o ll.o ll.s
 
 ll_thumb:	ll.thumb.o
 	$(CROSS)$(LD) -N --thumb-entry=_start -o ll_thumb ll.thumb.o
@@ -88,10 +98,10 @@ ll.thumb.o:	ll.thumb.s
 	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s
 
 ll.mips16.o:	ll.mips16.s
-	$(CROSS)$(AS) -mips16 -o ll.mips16.o ll.mips16.s
+	$(CROSS)$(AS) -EL -o ll.mips16.o ll.mips16.s
 	
 ll_mips16:	ll.mips16.o
-	$(CROSS)$(LD) -N -o ll_mips16 ll.mips16.o
+	$(CROSS)$(LD) -EL -N -o ll_mips16 ll.mips16.o
 
 ll.s:	
 	rm -f ll.s
