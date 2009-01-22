@@ -8,7 +8,7 @@
 
 #  BUGS:  No Pretty Printing (rounding, cpu-model cleanup)
 #      :  Doesn't print vendor name
-#      :  doesn't count CPU's on SMP systems
+#      :  doesn't count CPUs on SMP systems
 
 
 #  notes ...
@@ -244,7 +244,7 @@ done_logo:
 	sc
 
 	#=============
-	# Number of CPU's
+	# Number of CPUs
 	#=============
 	
 	mr	14,17 			# point output to out_buf

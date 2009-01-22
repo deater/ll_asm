@@ -28,6 +28,7 @@ Some Statistics
      SPARC		1397 bytes   (as 2.17.50)
      6502		1394 bytes   (ca64 2.7.1)
      mips               1292 bytes   (as 2.17.50)
+     m88k		1240 bytes   (as 1.92.3)     
      arm		1218 bytes   (as 2.17)
      PPC		1206 bytes   (as 2.17.50)     
      s390	        1096 bytes   (as 2.17)
@@ -166,6 +167,25 @@ ppc:	The PowerPC has very CISC-like opcodes as well.
 	
 	The big help is auto-incrementing load/store byte instructions.
 
+m88k:	This chip came after m68k and was motorola's first RISC chip.
+	Didn't go well, they moved on to PPC.
+	
+	It's similar to a cross between MIPS and PPC.
+	
+	OpenBSD because there is no Linux port to m88k.
+	Using gxemul.
+	
+	OpenBSD forces syscall error handling by skipping a 
+	jump-to-error-handler instruction on return.  This
+	makes each syscall in effect take 8 bytes.
+	
+	Branch delay slot is optional (for performance only?)
+	
+	Starts at low address space.  This is a huge win as it
+	makes each pointer load 4-bytes instead of 8 assuming
+	we stay smaller than 64k.
+
+	bcnd instruction saves a cmp usually
 
 s390:   This is the most CISC architecture I've ever seen.  If only it had
 	   a "load byte" opcode it would definitely beat out x86.  I am sure

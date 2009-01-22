@@ -244,3 +244,13 @@ RELEASE 0.31
 + Finish crisv32 support.  Took a while.
 
 RELEASE 0.32
+
+16 January 2009
++ Start work on m88k port.
+
+21 January 2009
++ Finish optimizing m88k.
++ Start getting simh and binutils together for pdp-11
+
+RELEASE 0.33
+
