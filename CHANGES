@@ -254,3 +254,19 @@ RELEASE 0.32
 
 RELEASE 0.33
 
+22 January 2009
++ Have simple hello-world working (pdp-11)
+
+23 January 2009
++ Have hello-world working as function call.
++ Found problem with pdp-11 assembler in binutils.
+  Sent in bug-report.  Turns out I don't need
+  the addressing mode after all.
+
+27 January 2009
++ Un-optimized pdp-11 works
+
+28 January 2009
++ Optimized pdp-11
+
+RELEASE 0.34

@@ -1,0 +1,182 @@
+Some quick notes.  Not necessarily complete.
+Use at your own risk.
+
+#################################################
+Using simh to simulate vax:
+
+   Obtain vax kernel and files.
+   Export them over nfs
+   
+      /mnt/redhat/vax_emu/vaxroot     *(rw,sync)
+   in /etc/exports
+      
+   cd simh/src
+   sudo ./BIN/vax ../vax.ini
+
+Where vax.ini is:
+   load -r VAX/ka655x.bin
+   set rq0 ra92
+   att rq0 /home/vince/ll_emulators/vax-linux/simh/vmlinux.dsk.simh
+   att xq mirror0
+   boot cpu
+
+Then type:
+
+   5
+   boot dua0
+   
+    - had to compile with extended string support enabled.  
+      Had to hack afile
+    - compile with USE_NETWORK=1
+    - Use "^E" to break into monitor
+ 
+    - did I need to install mopd?  I forget
+
+
+#################################################
+Using hercules to simulate s390:
+
+apt-get hercules
+
+create disk:
+   dasdinit -bz2 debian.3390 3390 DEBIAN 500
+   
+   download files from:
+   
+
+http://mirrors.kernel.org/debian/dists/Debian4.0r0/main/installer-s390/current/i
+mages/generic
+
+NETWORK
+~~~~~~~
+
+modprobe tun
+sudo tunctl -t tap0 -u vince
+sudo brctl addbr br0
+sudo brctl addif br0 tap0
+/sbin/ifconfig br0 192.168.99.1 netmask 255.255.255.0 up
+/sbin/ifconfig tap0 0.0.0.0
+/sbin/modprobe ip_tables
+/sbin/modprobe iptable_nat
+echo "1" > /proc/sys/net/ipv4/ip_forward
+iptables -A FORWARD -i eth0 -o br0 -m \
+state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -i br0 -o eth0 -j ACCEPT
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+INSTALLING
+~~~~~~~
+
+cd generic
+hercules -f ../hercules.cnf
+
+"ipl c"
+.1
+.1
+.2  (????)
+.2
+.192.168.10.2
+.192.168.10.1
+.128.84.224.10
+.hercules
+.csl.cornell.edu
+.blah
+.blah
+
+(in seperate window)
+ssh installer@192.168.99.2
+
+Installed:
+~~~~~~~~~~
+
+ipl 0300
+
+
+
+#################################################
+Using aranym to simulate m68k
+
+  modprobe tun
+  sudo tunctl -t tap0 -u vince
+  sudo brctl addbr br0
+  sudo brctl addif br0 tap0
+  /sbin/ifconfig br0 192.168.99.1 netmask 255.255.255.0 up
+  /sbin/ifconfig tap0 0.0.0.0
+  /sbin/modprobe ip_tables
+  /sbin/modprobe iptable_nat
+  echo "1" > /proc/sys/net/ipv4/ip_forward
+  iptables -A FORWARD -i eth0 -o br0 -m state --state ESTABLISHED,RELATED -j \
+  ACCEPT
+  iptables -A FORWARD -i br0 -o eth0 -j ACCEPT
+  iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+To start:
+  ./aranym-0.9.4beta2/src/UNIX/aranym -l
+
+Inside:
+  /sbin/route add default gw 192.168.99.1
+
+
+
+#################################################
+Using gxemul to simulate m88k
+
+http://gavare.se/gxemul/gxemul-current/doc/machines/machine_mvme187.html
+
+dd if=/dev/zero of=obsd_mvme88k.img bs=1024 count=1 seek=1900000
+wget -np -l 0 -r ftp://ftp.se.openbsd.org/pub/OpenBSD/4.4/mvme88k/
+mkisofs -o openbsd_mvme88k_4.4.iso -U ftp.se.openbsd.org/pub/OpenBSD/
+cp ftp.se.openbsd.org/pub/OpenBSD/4.4/mvme88k/bsd .
+rm -rf ftp.se.openbsd.org
+
+gxemul -e mvme187 -d obsd_mvme88k.img -d b:openbsd_mvme88k_4.4.iso -j
+4.4/mvme88k/bsd.rd
+
+(answer Qs)
+
+gxemul -e mvme187 -d obsd_mvme88k.img bsd
+
+When asked about root disk, enter sd0.
+
+dd if=/dev/zero of=ll_image.dsk bs=1024k count=10
+losetup /dev/loop0 ll_image.dsk
+dd if=ll_0.32.tar.gz of=/dev/loop0
+
+./gxemul-0.4.7.x/gxemul -e mvme187 -d obsd_mvme88k.img -d ll_image.dsk bsd
+
+Outside:
+sudo tar -cvf /dev/loop0 ll.m88k.s ; sync
+
+Inside:
+
+sync ; sudo tar -xvf /dev/sd1c
+as -o ll.o ll.m88k.s ; ld -o ll ll.o
+
+
+
+#################################################
+Using simh to simulate pdp-11:
+
+obtain "unix_v7_rl.dsk"
+copy above to "data.dsk"
+sudo losetup /dev/loop0 data.dsk
+
+run "pdp11"
+
+  set cpu u18
+  set tto 7b
+  attach rl0 unix_v7_rl.dsk
+  attach rl1 data.dsk
+  boot rl0
+  boot
+  rl(0,0)rl2unix
+
+boots into single user mode.  Can setup for user, then ^D to login.
+
+  /etc/mknod /dev/rl1 b 8 1
+
+To send file into simulator:
+   sudo tar -cvf /dev/loop0 ll ; sync
+To get file inside of simulator
+   tar -xvf /dev/rl1
+   

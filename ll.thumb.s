@@ -477,7 +477,7 @@ div_by_10:
 
 
 	@===================================================
-	@ Divide - because AEM has no hardware int divide
+	@ Divide - because ARM has no hardware int divide
 	@ yes this is an awful algorithm, but simple
 	@  and uses few registers
 	@==================================================
