@@ -49,10 +49,19 @@ ifneq (,$(findstring mips,$(ARCH)))
    THUMB := ll_mips16
 endif
 
+#
+# Handle z80
+#
+
+ifneq (,$(findstring z80,$(ARCH)))
+   ARCH := z80
+   L_EXTRA := 
+else
+   L_EXTRA := -N
+endif
 
 CC = gcc
 CFLAGS = -O2 -Wall
-LFLAGS = 
 
 all:	ll $(THUMB) ansi_compress ./sstrip/sstrip
 
@@ -86,7 +95,7 @@ lzss_new.o:    lzss_new.c
 #
 
 ll:	ll.o
-	$(CROSS)$(LD) $(L_EXTRA) -N -o ll ll.o	
+	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o	
 
 ll.o:	ll.s logo.lzss
 	$(CROSS)$(AS) $(C_EXTRA) -o ll.o ll.s

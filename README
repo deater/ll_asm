@@ -38,6 +38,7 @@ Some Statistics
      sh3		 994 bytes   (as 2.17.50.0.5)
      arm_thumb		 989 bytes   (as 2.17)
      x86                 969 bytes   (as 2.17.50)
+     z80		 920 bytes   (as 2.19)
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
      pdp-11		 890 bytes   (as 2.19)
@@ -286,6 +287,23 @@ x86:    The x86 code is currently the smallest, mainly because I had a
 	easier, as you can store 16 and 32 bit values w/o having to worry
 	if the string is properly aligned.
 
+
+z80:
+    		could really use a 16-bit dec that updated flags
+      		could also use more useful 16-bit arithmatic insns
+      		could use reg+reg addressing mode		
+		nice if we could do ALU ops on other than 8-bit accumulator
+
+		z80 is nice for pascal-type strings, not C-type
+		
+		Need 16-bit shifts.  And shifts by more than 1
+		Need better way to set regs to zero. 		
+
+		Some extra bytes taken to handle CR/LF instead of just LF
+
+		The string copy routines are almost useless, having almost
+		as many bytes to set up as doing things discretely.
+
 avr32:  They specifically designed the arch to have compact assemley.
 
         The "ret" return instruction is the most useful ever.  It 
@@ -337,6 +355,8 @@ pdp-11:	       Despite wealth of addressing modes, some critical ones
 	       extensive use of "adb"	         
 	       
 	       the a.out executable format makes for small binaries
+
+
 
 Features:
 --------

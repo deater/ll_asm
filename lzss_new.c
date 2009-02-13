@@ -209,7 +209,12 @@ int lzss_encode_better(FILE *infile,FILE *header,FILE *outfile,
           fprintf(header,"POSITION_MASK: .equ %i\n",(0xff>>(8-(position_bits-8))));
        }
        else if (output_type==NORMAL_ASM) {
-         fprintf(header,".equ FREQUENT_CHAR,'%c'\n",frequent_char);
+	 if (frequent_char<32) {
+            fprintf(header,".equ FREQUENT_CHAR,%d\n",frequent_char);
+	 }
+	 else {
+	    fprintf(header,".equ FREQUENT_CHAR,'%c'\n",frequent_char);
+	 }
          fprintf(header,".equ N,%i\n",ring_buffer_size);
          fprintf(header,".equ F,%i\n",match_length_limit);
          fprintf(header,".equ THRESHOLD,%i\n",position_length_threshold);

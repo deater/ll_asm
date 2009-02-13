@@ -114,6 +114,7 @@ A6:    abcd  - m68k
        shad  - sh3
        lfsux - ppc
        sob   - pdp-11
+       doze/nap/sleep/rvwinkle - power6
        
 
 Q7: How do you port to a new architecture?

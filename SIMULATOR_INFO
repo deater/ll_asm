@@ -180,3 +180,28 @@ To send file into simulator:
 To get file inside of simulator
    tar -xvf /dev/rl1
    
+########################################
+
+Using yaze for z80/cp-m
+
+Compile binutils 2.19 for z80-unknown-coff
+
+Compile yaze
+
+"sys quit" quits
+
+sys umount l
+sys mount l /fusion/home/vince/vmw/ll/ll.blah
+L:
+
+make CROSS=z80-unknown-coff- ARCH=z80 ; cp ll ../ll.blah/ll.com
+
+make CROSS=z80-unknown-coff- ARCH=z80 ; z80-unknown-coff-ld -N -o ll.debug
+ll.o ; cp ll ../ll.blah/ll.com
+
+to redirect console output to file, do
+  PUT CONSOLE OUTPUT TO FILE N:BLAH
+  ll
+Then use ./cdm on the disk image and
+  cp xout u:xout
+  

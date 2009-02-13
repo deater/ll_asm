@@ -5,3 +5,6 @@ make CROSS=avr32-linux- ARCH=avr32
 make CROSS=/usr/local/cris/crisv32-axis-linux-gnu/bin/ ARCH=crisv32
 
 make CROSS=pdp11-dec-aout- ARCH=pdp11
+
+make CROSS=z80-unknown-coff- ARCH=z80
+

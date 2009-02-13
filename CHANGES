@@ -270,3 +270,20 @@ RELEASE 0.33
 + Optimized pdp-11
 
 RELEASE 0.34
+
+10 February 2009
++ Start work on z80
++ Fix new_lzss.c to generate proper FREQUENT_CHAR value in logo.inc
+  The z80 assembler complained about it being '^@' instead of 0
+  
+11 February 2009
++ Logo works, as does part of the system info
+
+12 February 2009
++ Entire thing works
+
+13 February 2009
++ Optimized
++ Special birthday release!
+
+RELEASE 0.35

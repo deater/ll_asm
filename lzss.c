@@ -141,7 +141,12 @@ int lzss_encode(FILE *infile,FILE *outfile) {
     s = 0;  
     r = N - F;
    
-    fprintf(outfile,".equ FREQUENT_CHAR,'%c'\n",FREQUENT_CHAR);
+    if (FREQUENT_CHAR < 32) {
+       fprintf(outfile,".equ FREQUENT_CHAR,'\\0%d'\n",FREQUENT_CHAR);
+    }
+    else {
+       fprintf(outfile,".equ FREQUENT_CHAR,'%c'\n",FREQUENT_CHAR);
+    }
     fprintf(outfile,".equ N,%i\n",N);
     fprintf(outfile,".equ F,%i\n",F);
     fprintf(outfile,".equ THRESHOLD,%i\n",THRESHOLD);
