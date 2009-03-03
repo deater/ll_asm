@@ -15,8 +15,8 @@
 unsigned int r,shift_count,bit_set;
 unsigned short out_count,pos;
 unsigned char mask,out_byte;
-unsigned char *logo_pointer,*out_pointer,*disk_pointer;
-unsigned char out_buffer[16384],text_buf[(N+F)-1],disk_buffer[4096];
+char *logo_pointer,*out_pointer,*disk_pointer;
+char out_buffer[16384],text_buf[(N+F)-1],disk_buffer[4096];
 
 struct utsname uname_info;
 struct sysinfo sysinfo_buff;
@@ -25,7 +25,7 @@ int fd,cpu_count,temp;
 char ordinal[4][6]={"One","Two","Three","Four"};
 
    /* Write a string to stdout */
-void write_stdout(unsigned char *string) {
+static void write_stdout(char *string) {
    
       /* stdout is fd 1 */
    write(1,string,strlen(string));
@@ -34,7 +34,7 @@ void write_stdout(unsigned char *string) {
      /* find the 4 ascii bytes in pattern.  Then skip to : then skip spaces */
      /* then copy the string found to the end of out_pointer, stopping at   */
      /* the stop character or \n                                            */
-void find_string(unsigned int pattern,unsigned char stop,int skip_spaces) {
+static void find_string(unsigned int pattern,unsigned char stop,int skip_spaces) {
 
    unsigned char ch;
 
@@ -69,11 +69,11 @@ void find_string(unsigned int pattern,unsigned char stop,int skip_spaces) {
    
 }
 
-unsigned char ascii_buff[8];
-unsigned char *ascii_pointer;
+char ascii_buff[8];
+char *ascii_pointer;
 
    /* convert an integer to an ascii string */
-char *num_to_ascii(unsigned int num) {
+static char *num_to_ascii(unsigned int num) {
 
    unsigned int q,r,temp;
 
@@ -85,7 +85,7 @@ char *num_to_ascii(unsigned int num) {
       q=temp/10;
       r=temp%10;
       
-      *--ascii_pointer=r+0x30;      /* convert to ASCII */
+      *--ascii_pointer=(unsigned char)(r+0x30);      /* convert to ASCII */
       temp=q;
    } while(temp);
 
@@ -93,7 +93,7 @@ char *num_to_ascii(unsigned int num) {
 }
 
    /* center and print a string */
-void center_and_print() {
+static void center_and_print() {
    int length;
    
    length=strlen(out_buffer);
@@ -111,17 +111,17 @@ int main(int argc, char **argv) {
    /* do LZSS decryption */
    
    r=(N-F);
-   logo_pointer=logo;
+   logo_pointer=(char *)logo;
    out_pointer=out_buffer;
    
-   while(logo_pointer<(logo+sizeof(logo)) ) {
+   while(logo_pointer<((char *)logo+sizeof(logo)) ) {
             
       shift_count=0;
       mask=(*logo_pointer++);
 
       while(shift_count<8) {
       
-	 if (logo_pointer>=(logo+sizeof(logo)) ) break;
+	 if (logo_pointer>=((char *)logo+sizeof(logo)) ) break;
 	 
          bit_set=mask&1;
          mask>>=1;   
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
              /* Litle Endian assumption */   
             pos=* ((short *)logo_pointer);
             logo_pointer+=2;
-	    out_count=(pos>>P_BITS)+(THRESHOLD+1);
+	    out_count=(unsigned short)((pos>>P_BITS)+(THRESHOLD+1));
          }
    
 	 while(out_count) {
@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
    strcat(out_buffer,uname_info.version);
    strcat(out_buffer,"\n");
    
-   center_and_print(out_buffer);
+   center_and_print();
    
    /* middle line */
    fd=open("/proc/cpuinfo",0,0);
@@ -199,12 +199,12 @@ int main(int argc, char **argv) {
    strcat(out_buffer,"M RAM, ");
    find_string(('s'<<24)+('p'<<16)+('i'<<8)+'m','\n',0);
    strcat(out_buffer," Bogomips Total\n");
-   center_and_print(out_buffer);
+   center_and_print();
    
    /* last line */
    out_buffer[0]=0;
    strcat(out_buffer,uname_info.nodename);
-   center_and_print(out_buffer);
+   center_and_print();
    
    /* restore colors */
    out_buffer[0]=0;

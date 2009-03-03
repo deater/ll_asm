@@ -287,3 +287,9 @@ RELEASE 0.34
 + Special birthday release!
 
 RELEASE 0.35
+
+3 March 2009
++ Clean out the "c" directory as it has some un-needed binaries that were
+  inflating the size of the download.
+  
+RELEASE 0.36

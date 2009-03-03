@@ -4,3 +4,7 @@ differences between O3 and Os
 + Os uses string instructions, O3 doesn't.
 + padding
 + inlining
+
+
+
+gcc4.2 results taken on chocovic with gcc-4.2 (GCC) 4.2.4 (Debian 4.2.4-6)
