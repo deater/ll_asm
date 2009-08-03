@@ -597,7 +597,11 @@ strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
 ver_string:	.asciz	" Version "
 compiled_string:.asciz	", Compiled "
 linefeed:	.asciz	"\n"
+.ifdef FAKE_PROC
+cpuinfo:	.asciz  "proc/cpui.arm"
+.else
 cpuinfo:	.asciz	"/proc/cpuinfo"
+.endif
 one:		.asciz	"One "
 processor:	.asciz	" Processor, "
 ram_comma:	.asciz	"M RAM, "

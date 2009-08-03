@@ -631,8 +631,11 @@ default_colors:		.ascii	"\033[0m\n\n\0"
 escape:         	.ascii "\033[\0"
 C:              	.ascii "C\0"
 
-;;cpuinfo:		.ascii	"/proc/cpuinfo\0"
-cpuinfo:		.ascii	"cpuinfo_m88k\0\0"
+.ifdef FAKE_PROC
+cpuinfo:		.ascii	"proc/cpu.m88k\0"
+.else
+cpuinfo:		.ascii	"/proc/cpuinfo\0"
+.endif
 
 .include "logo.lzss_new"
 

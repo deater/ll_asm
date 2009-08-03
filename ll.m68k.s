@@ -578,8 +578,12 @@ bogo_total:	.ascii	" Bogomips Total\n\0"
 default_colors:	.ascii "\033[0m\n\n\0"
 escape:		.ascii "\033[\0"
 C:		.ascii "C\0"
-		
+
+.ifdef FAKE_PROC
+cpuinfo:	.ascii	"proc/cpu.m68k\0"
+.else
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
+.endif
 
 .include	"logo.lzss_new"
 

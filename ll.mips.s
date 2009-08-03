@@ -301,7 +301,12 @@ print_mhz:
 	# Chip Name
 	#=========
 chip_name:	
-   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')     	
+
+.ifdef LITTLE_ENDIAN
+   	li	$4,('l'<<24+'e'<<16+'d'<<8+'o')
+.else
+   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')
+.endif
 					# find 'odel\t: ' and grab up to ' '
 
 	jal	find_string
@@ -340,7 +345,11 @@ chip_name:
 	# Bogomips
 	#========
 	
-	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')      	
+.ifdef LITTLE_ENDIAN
+	li	$4, ('S'<<24+'P'<<16+'I'<<8+'M')      	
+.else	
+	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')      		
+.endif	
 					# find 'mips\t: ' and grab up to \n
 
 	jal	find_string
@@ -608,7 +617,15 @@ default_colors:	.ascii "\033[0m\n\n\0"
 escape:		.ascii "\033[\0"
 c:		.ascii "C\0"
 
+.ifdef FAKE_PROC
+.ifdef LITTLE_ENDIAN
+cpuinfo:	.ascii  "proc/c.mipsel\0"
+.else
+cpuinfo:	.ascii  "proc/cpu.mips\0"
+.endif
+.else
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
+.endif
 
 one:	.ascii	"One MIPS \0"
 processor:	.ascii " Processor, \0"

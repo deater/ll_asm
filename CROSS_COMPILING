@@ -8,3 +8,9 @@ make CROSS=pdp11-dec-aout- ARCH=pdp11
 
 make CROSS=z80-unknown-coff- ARCH=z80
 
+make CROSS=mb- ARCH=microblaze
+
+make CROSS=mipsel-linux- ARCH=mipsel
+
+make CROSS=sh3-linux- ARCH=sh3
+

@@ -293,3 +293,18 @@ RELEASE 0.35
   inflating the size of the download.
   
 RELEASE 0.36
+
+29 July 2009
++ Working on the microblaze port.  Qemu is having issues.
+
+1 August 2009
++ Minor fix on SPARC version for single-cpu answer.  SPARC read
+  address is weird on qemu.
++ Add "fakeproc" versions so can test on non-native machines.
++ Ugh, hackery in the Makefile to get the ARCH stuff working.
+  Was it really broken?
++ Add support for mipsel
++ Make sstrip handle cross-endian (non-native) stripping.
+  Seems to work for x86->m68k case
+
+RELEASE 0.37

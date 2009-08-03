@@ -103,7 +103,7 @@ A6:    abcd  - m68k
        aaa   - x86
        eieio - ppc
        pea   - m68k
-       bra   - m68k,sh3
+       bra   - m68k,sh3,microblaze
        bras  - s390
        sex   - such an opcode exists, but not in any platforms linux supports.
                Most processors have a "Sign EXtend" instruction but most
@@ -115,6 +115,8 @@ A6:    abcd  - m68k
        lfsux - ppc
        sob   - pdp-11
        doze/nap/sleep/rvwinkle - power6
+       blei  - microblaze
+       brad,braid,bald - microblaze
        
 
 Q7: How do you port to a new architecture?

@@ -1,5 +1,6 @@
 /* sstrip: Copyright (C) 1999-2001 by Brian Raiter, under the GNU
  * General Public License. No warranty. See COPYING for details.
+ *  Various changes by Vince Weaver
  */
 
 #include	<stdio.h>
@@ -9,16 +10,9 @@
 #include	<unistd.h>
 #include	<fcntl.h>
 #include	<elf.h>
-#include	"asm_elf.h" /* made local as new distros don't have it */
-
-#ifdef __mips__
-#define ELF_CLASS ELFCLASS32
-#endif
-
-#ifdef __sparc__
-#define ELF_CLASS ELFCLASS32
-#endif
-
+#include        <endian.h>
+#include        <byteswap.h>
+#include	ARCHITECTURE /* made local as new distros don't have it */
 
 #if ELF_CLASS == ELFCLASS32
 #define	Elf_Ehdr	Elf32_Ehdr
@@ -27,6 +21,15 @@
 #define	Elf_Ehdr	Elf64_Ehdr
 #define	Elf_Phdr	Elf64_Phdr
 #endif
+
+/* Endianess of the host */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+static int little_endian=1;
+#else
+static int little_endian=0;
+#endif
+
+static int swap_bytes=0;
 
 /* The name of the program.
  */
@@ -72,8 +75,33 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
 
     /* Compare the file's class and endianness with the program's.
      */
- 
-#ifndef __sparc__
+
+   if (ELF_DATA == ELFDATA2LSB) {         /* 2's complement, little endian */
+      if (!little_endian) {
+         fprintf(stderr,"Warning!  Host and target endianess don't match!\n");
+	 swap_bytes=1;
+      }
+   }
+   else if (ELF_DATA == ELFDATA2MSB) {    /* 2's complement, big endian */
+      if (little_endian) {
+         fprintf(stderr,"Warning!  Host and target endianess don't match!\n");
+	 swap_bytes=1;
+      }
+   }
+   else {
+      err("Unknown endianess type.");
+   }
+   
+   if (ELF_CLASS == ELFCLASS64) {
+      if (sizeof(void *)!=8) err("host!=elf word size not supported");
+   }
+   else if (ELF_CLASS == ELFCLASS32) {
+      if (sizeof(void *)!=4) err("host!=elf word size not supported");
+   }
+   else {
+      err("Unknown word size");
+   }
+   
     if (ehdr->e_ident[EI_DATA] != ELF_DATA) {
        err("ELF file has different endianness.");
     }
@@ -84,26 +112,54 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
 
     /* Check the target architecture.
      */
-    if (ehdr->e_machine != ELF_ARCH) {
-       err("ELF file created for different architecture.");
-    }
-#endif
+     { unsigned short machine;
+       machine=ehdr->e_machine;
+       if (swap_bytes) machine=bswap_16(machine);
+	
+       if (machine != ELF_ARCH) {
+          fprintf(stderr, "Warning!  "
+	       "ELF file created for different architecture: %d\n",
+	       ehdr->e_machine);
+       }
+     }
+
     /* Verify the sizes of the ELF header and the program segment
      * header table entries.
      */
-    if (ehdr->e_ehsize != sizeof(Elf_Ehdr)) {
-	return err("unrecognized ELF header size.");
-    }
-    if (ehdr->e_phentsize != sizeof(Elf_Phdr)) {
-	return err("unrecognized program segment header size.");
-    }
-
+     { short ehsize;
+	ehsize=ehdr->e_ehsize;
+	if (swap_bytes) ehsize=bswap_16(ehsize);
+    
+	if (ehsize != sizeof(Elf_Ehdr)) {
+           fprintf(stderr,"Warning! "
+	       "unrecognized ELF header size: %d != %ld\n",
+	       ehdr->e_ehsize,(long)sizeof(Elf_Ehdr));
+	}
+     }
+   
+     {
+	short phentsize;
+	phentsize=ehdr->e_phentsize;
+	if (swap_bytes) phentsize=bswap_16(phentsize);
+	
+        if (phentsize != sizeof(Elf_Phdr)) {
+           fprintf(stderr,"Warning! "
+	      "unrecognized program segment header size: %d != %ld\n",
+	      ehdr->e_phentsize,(long)sizeof(Elf_Phdr));
+	}
+     }
+   
     /* Finally, check the file type.
      */
-    if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
+     {short e_type;
+      e_type=ehdr->e_type;
+      if (swap_bytes) e_type=bswap_16(e_type);
+	
+      if (e_type != ET_EXEC && e_type != ET_DYN) {
 	return err("not an executable or shared-object library.");
-    }
-
+      }
+     }
+   
     return 1;
 }
 
@@ -112,12 +168,18 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
 static int readphdrtable(int fd, Elf_Ehdr const *ehdr, Elf_Phdr **phdrs) {
 
     size_t	size;
-
+    
+    short e_phnum;
+   
+    /* should be endian safe, as zero is the same in all endianesses */
     if (!ehdr->e_phoff || !ehdr->e_phnum) {
 	return err("ELF file has no program header table.");
     }
 
-    size = ehdr->e_phnum * sizeof **phdrs;
+    e_phnum=ehdr->e_phnum;
+    if (swap_bytes) e_phnum=bswap_16(e_phnum);
+   
+    size = e_phnum * sizeof **phdrs;
 
     if (!(*phdrs = malloc(size))) {
 	return err("Out of memory!");
@@ -144,10 +206,26 @@ static int getmemorysize(Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
     unsigned long	size, n ,end=0;
     int			i;
 
+    unsigned long e_phoff;
+    short e_phnum;
+
+    unsigned long p_offset,p_filesz;
+   
+    e_phoff=ehdr->e_phoff;
+   
+#if (ELF_CLASS==ELFCLASS64)
+    if (swap_bytes) e_phoff=bswap_64(e_phoff);
+#else
+    if (swap_bytes) e_phoff=bswap_32(e_phoff);
+#endif
+   
+    e_phnum=ehdr->e_phnum;
+    if (swap_bytes) e_phnum=bswap_16(e_phnum);
+   
     /* Start by setting the size to include the ELF header and the
      * complete program segment header table.
      */
-    size = ehdr->e_phoff + ehdr->e_phnum * sizeof *phdrs;
+    size = e_phoff + e_phnum * sizeof *phdrs;
 
     if (size < sizeof *ehdr) {
 	size = sizeof *ehdr;
@@ -157,10 +235,25 @@ static int getmemorysize(Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
     /* Then keep extending the size to include whatever data the
      * program segment header table references.
      */
-    for (i = 0, phdr = phdrs ; i < ehdr->e_phnum ; ++i, ++phdr) {
+    for (i = 0, phdr = phdrs ; i < e_phnum ; ++i, ++phdr) {
+           /* endian safe as PT_NULL is zero */
 	if (phdr->p_type != PT_NULL) {
-
-	    n = phdr->p_offset + phdr->p_filesz;
+	   
+	   p_offset=phdr->p_offset;
+	   p_filesz=phdr->p_filesz;
+#if (ELF_CLASS==ELFCLASS64)
+    if (swap_bytes) {
+       p_offset=bswap_64(p_offset);
+       p_filesz=bswap_64(p_filesz);
+    }
+#else
+    if (swap_bytes) {
+       p_offset=bswap_32(p_offset);
+       p_filesz=bswap_32(p_filesz);
+    }
+#endif
+	   
+	    n = p_offset + p_filesz;
 	    if (n > size)
 		size = n;
             end=size;
@@ -211,12 +304,31 @@ static int modifyheaders(Elf_Ehdr *ehdr, Elf_Phdr *phdrs,
 {
     Elf_Phdr *phdr;
     int		i;
-
+   
+    unsigned long e_shoff;
+    short         e_phnum;
+    unsigned long p_offset,p_filesz;
+   
+    e_shoff=ehdr->e_shoff;
+#if (ELF_CLASS==ELFCLASS64)
+    if (swap_bytes) {
+       e_shoff=bswap_64(e_shoff);
+    }
+#else
+    if (swap_bytes) {
+       e_shoff=bswap_32(e_shoff);
+    }
+#endif   
+   
+    e_phnum=ehdr->e_phnum;
+    if (swap_bytes) e_phnum=bswap_16(e_phnum);
+   
+   
     /* If the section header table is gone, then remove all references
      * to it in the ELF header.
      */
-    if (ehdr->e_shoff >= newsize) {
-	ehdr->e_shoff = 0;
+    if (e_shoff >= newsize) {
+        ehdr->e_shoff = 0;        /* all OK because 0 is endian neutral */
 	ehdr->e_shnum = 0;
 	ehdr->e_shentsize = 0;
 	ehdr->e_shstrndx = 0;
@@ -226,12 +338,46 @@ static int modifyheaders(Elf_Ehdr *ehdr, Elf_Phdr *phdrs,
      * truncated. The case of a segment being completely stripped out
      * is handled separately.
      */
-    for (i = 0, phdr = phdrs ; i < ehdr->e_phnum ; ++i, ++phdr) {
-	if (phdr->p_offset >= newsize) {
-	    phdr->p_offset = newsize;
+    for (i = 0, phdr = phdrs ; i < e_phnum ; ++i, ++phdr) {
+       
+        p_offset=phdr->p_offset;
+	p_filesz=phdr->p_filesz;
+#if (ELF_CLASS==ELFCLASS64)
+        if (swap_bytes) {
+           p_offset=bswap_64(p_offset);
+           p_filesz=bswap_64(p_filesz);
+        }
+#else
+        if (swap_bytes) {
+           p_offset=bswap_32(p_offset);
+           p_filesz=bswap_32(p_filesz);
+        }
+#endif       
+       
+	if (p_offset >= newsize) {
+	    p_offset = newsize;
+#if (ELF_CLASS==ELFCLASS64)
+        if (swap_bytes) {
+           phdr->p_offset=bswap_64(p_offset);
+        }
+#else
+        if (swap_bytes) {
+           phdr->p_offset=bswap_32(p_offset);
+        }
+#endif       	   	   
 	    phdr->p_filesz = 0;
-	} else if (phdr->p_offset + phdr->p_filesz > newsize) {
-	    phdr->p_filesz = newsize - phdr->p_offset;
+	} else if (p_offset + p_filesz > newsize) {
+	    p_filesz = newsize - p_offset;
+#if (ELF_CLASS==ELFCLASS64)
+        if (swap_bytes) {
+           phdr->p_filesz=bswap_64(p_filesz);
+        }
+#else
+        if (swap_bytes) {
+           phdr->p_filesz=bswap_32(p_filesz);
+        }
+#endif       	   
+	    
 	}
     }
 
@@ -245,7 +391,24 @@ static int commitchanges(int fd, Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 			 unsigned long newsize)
 {
     size_t	n;
-
+    unsigned long e_phoff;
+    short e_phnum;
+   
+    e_phnum=ehdr->e_phnum;
+    if (swap_bytes) e_phnum=bswap_16(e_phnum);
+   
+    e_phoff=ehdr->e_phoff;
+#if (ELF_CLASS==ELFCLASS64)
+        if (swap_bytes) {
+           e_phoff=bswap_64(e_phoff);
+        }
+#else
+        if (swap_bytes) {
+           e_phoff=bswap_32(e_phoff);
+        }
+#endif       	   
+   
+   
     /* Save the changes to the ELF header, if any.
      */
     if (lseek(fd, 0, SEEK_SET))
@@ -256,11 +419,11 @@ static int commitchanges(int fd, Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 
     /* Save the changes to the program segment header table, if any.
      */
-    if (lseek(fd, ehdr->e_phoff, SEEK_SET) == (off_t)-1) {
+    if (lseek(fd, e_phoff, SEEK_SET) == (off_t)-1) {
 	err("could not seek in file.");
 	goto warning;
     }
-    n = ehdr->e_phnum * sizeof *phdrs;
+    n = e_phnum * sizeof *phdrs;
     if (write(fd, phdrs, n) != (ssize_t)n) {
 	err("could not write to file");
 	goto warning;
@@ -269,8 +432,8 @@ static int commitchanges(int fd, Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
     /* Eleventh-hour sanity check: don't truncate before the end of
      * the program segment header table.
      */
-    if (newsize < ehdr->e_phoff + n)
-	newsize = ehdr->e_phoff + n;
+    if (newsize < e_phoff + n)
+	newsize = e_phoff + n;
 
     /* Chop off the end of the file.
      */

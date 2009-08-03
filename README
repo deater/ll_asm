@@ -23,21 +23,21 @@ Some Statistics
      Processor        lzss executable
      ---------        ---------------
      ia64		2874 bytes   (as 2.17)
-     alpha		1957 bytes   (as 2.17.50)
+     alpha		1957 bytes   (as 2.18.0.20080103)
      parisc		1400 bytes   (as 2.17.50)
-     SPARC		1397 bytes   (as 2.17.50)
+     SPARC		1397 bytes   (as 2.19.51.20090714)
      6502		1394 bytes   (ca64 2.7.1)
-     mips               1292 bytes   (as 2.17.50)
-     m88k		1240 bytes   (as 1.92.3)     
-     arm		1218 bytes   (as 2.17)
+     mips               1292 bytes   (as 2.19.51.20090714)
+     m88k		1240 bytes   (as 1.92.3)
      PPC		1206 bytes   (as 2.17.50)     
+     arm		1186 bytes   (as 2.18.0.20080103)     
      s390	        1096 bytes   (as 2.17)
-     x86_64		1033 bytes   (as 2.17.50.0.5)     
-     m68k		1014 bytes   (as 2.17)
+     x86_64		1033 bytes   (as 2.19.51.20090723)
      vax		1010 bytes   (as 2.16.1)
      sh3		 994 bytes   (as 2.17.50.0.5)
-     arm_thumb		 989 bytes   (as 2.17)
-     x86                 969 bytes   (as 2.17.50)
+     m68k		 982 bytes   (as 2.18.0.20080103)     
+     x86                 969 bytes   (as 2.19.51.20090723)
+     arm_thumb		 957 bytes   (as 2.18.0.20080103)     
      z80		 920 bytes   (as 2.19)
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
@@ -108,6 +108,12 @@ alpha:
 	The immediate field for ALU ops of only 8 bits really hurts
 	
 	There is no native integer division routine on alpha.
+
+microblaze:
+	   no addressing modes at all?  Only register+register
+	   
+	   some advantage from optional branch delay
+	   
 
 parisc:	+ really hurt by its short immediate field.  Most addresses
 	  require 2 instructions to load, even if try to use relative-data add.

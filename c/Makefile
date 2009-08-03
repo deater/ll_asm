@@ -6,7 +6,8 @@ all:	llc_glibc_static_gcc42_O3 llc_glibc_static_gcc42_Os \
 	llc_glibc_dynamic_gcc42_O3.sstrip llc_glibc_dynamic_gcc42_Os.sstrip \
 	llc_raw_gcc42_O3 llc_raw_gcc42_Os \
 	llc_raw_gcc42_O3.strip llc_raw_gcc42_Os.strip \
-	llc_raw_gcc42_O3.sstrip llc_raw_gcc42_Os.sstrip 
+	llc_raw_gcc42_O3.sstrip llc_raw_gcc42_Os.sstrip \
+	llc_raw_gcc42_Os_nofp.sstrip
 	
 icc:	llc_glibc_static_icc_O3 llc_glibc_static_icc_Os \
 	llc_glibc_static_icc_O3.strip llc_glibc_static_icc_Os.strip \
@@ -47,6 +48,8 @@ CFLAGS_Os_INTEL = -Os -Wall
 CFLAGS_O3_INTEL = -O3 -Wall
 CFLAGS_Os_SUN = -Os -m32
 CFLAGS_O3_SUN = -O3 -m32
+
+CFLAGS_NOFP = -fomit-frame-pointer -funit-at-a-time -finline-functions-called-once -mrtd -mno-align-stringops -mregparm=3
 
 LFLAGS = -m32
 
@@ -105,7 +108,11 @@ llc_raw_gcc42_O3.o:  ll_raw.c ../logo.lzss_new.h
 	
 llc_raw_gcc42_Os.o:  ll_raw.c ../logo.lzss_new.h
 	$(GCC42) $(CFLAGS_Os) -ffreestanding -o llc_raw_gcc42_Os.o -c ll_raw.c	
-	
+
+llc_raw_gcc42_Os_nofp.o:  ll_raw.c ../logo.lzss_new.h
+	$(GCC42) $(CFLAGS_Os) $(CFLAGS_NOFP) -ffreestanding -o llc_raw_gcc42_Os_nofp.o -c ll_raw.c	
+
+
 #####################################################
 # .o files for llc_raw_icc                          #
 #####################################################
@@ -396,6 +403,9 @@ llc_raw_gcc42_O3:    llc_raw_gcc42_O3.o
 	      
 llc_raw_gcc42_Os:    llc_raw_gcc42_Os.o
 	      $(GCC42) -o llc_raw_gcc42_Os -nostdlib -nodefaultlibs -static llc_raw_gcc42_Os.o
+	      
+llc_raw_gcc42_Os_nofp:    llc_raw_gcc42_Os_nofp.o
+	      $(GCC42) -o llc_raw_gcc42_Os_nofp -nostdlib -nodefaultlibs -static llc_raw_gcc42_Os_nofp.o
 
 
 ###############################################
@@ -421,6 +431,16 @@ llc_raw_gcc42_Os.sstrip:	llc_raw_gcc42_Os
 	cp llc_raw_gcc42_Os llc_raw_gcc42_Os.sstrip
 	$(SSTRIP) llc_raw_gcc42_Os.sstrip	
 	
+	
+###############################################
+# raw, gcc42, Os, nofp, sstripped             #
+###############################################
+	
+llc_raw_gcc42_Os_nofp.sstrip:	llc_raw_gcc42_Os_nofp
+	cp llc_raw_gcc42_Os_nofp llc_raw_gcc42_Os_nofp.sstrip
+	$(SSTRIP) llc_raw_gcc42_Os_nofp.sstrip	
+
+
 ###############################################
 # raw, icc                                    #
 ###############################################

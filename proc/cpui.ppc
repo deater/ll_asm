@@ -1,0 +1,16 @@
+processor	: 0
+cpu		: 745/755
+temperature 	: 11-13 C (uncalibrated)
+clock		: 600.000000MHz
+revision	: 51.17 (pvr 0008 3311)
+bogomips	: 49.79
+timebase	: 24960000
+platform	: PowerMac
+model		: PowerBook4,1
+machine		: PowerBook4,1
+motherboard	: PowerBook4,1 MacRISC2 MacRISC Power Macintosh
+detected as	: 257 (iBook 2)
+pmac flags	: 0000001b
+L2 cache	: 256K unified
+pmac-generation	: NewWorld
+Memory		: 640 MB

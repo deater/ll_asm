@@ -111,9 +111,10 @@ Using aranym to simulate m68k
   iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 To start:
-  ./aranym-0.9.4beta2/src/UNIX/aranym -l
+  ./aranym-0.9.4beta2/src/Unix/aranym -l
 
 Inside:
+  sudo /sbin/ifconfig eth0 192.168.99.2
   /sbin/route add default gw 192.168.99.1
 
 

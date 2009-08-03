@@ -14,7 +14,7 @@ endif
 #
 ifneq (,$(findstring 86,$(ARCH)))
    ifeq (,$(findstring x86_64,$(ARCH)))
-      ARCH := i386
+      SOURCE_ARCH := i386
    endif
 endif
 
@@ -22,15 +22,15 @@ endif
 # Handle various ARM variants
 #
 ifneq (,$(findstring arm,$(ARCH)))
-   ARCH := arm
-   THUMB := ll_thumb
+   SOURCE_ARCH := arm
+   THUMB := ll.thumb ll.thumb.stripped ll.thumb.fakeproc ll.thumb.fakeproc.stripped
 endif
 
 #
 # Handle CRIS
 #
 ifneq (,$(findstring cris,$(ARCH)))
-   ARCH := crisv32
+   SOURCE_ARCH := crisv32
    C_EXTRA := --march=v32
 endif
 
@@ -38,37 +38,55 @@ endif
 # Handle SPARC
 #
 ifneq (,$(findstring sparc,$(ARCH)))
-   ARCH := sparc
+   SOURCE_ARCH := sparc
 endif
 
 #
 # Handle MIPS
 #
 ifneq (,$(findstring mips,$(ARCH)))
-   ARCH := mips
-   THUMB := ll_mips16
+   SOURCE_ARCH := mips
+   THUMB := ll.mips16
 endif
+
+#
+# Handle MIPSEL
+#
+ifneq (,$(findstring mipsel,$(ARCH)))
+   LITTLE_ENDIAN := -defsym LITTLE_ENDIAN=1
+endif
+
+
 
 #
 # Handle z80
 #
 
 ifneq (,$(findstring z80,$(ARCH)))
-   ARCH := z80
+   SOURCE_ARCH := z80
    L_EXTRA := 
 else
    L_EXTRA := -N
 endif
 
+ifeq ($(SOURCE_ARCH),)
+   SOURCE_ARCH = $(ARCH)
+endif
+
 CC = gcc
 CFLAGS = -O2 -Wall
 
-all:	ll $(THUMB) ansi_compress ./sstrip/sstrip
+all:	ll ll.$(ARCH) \
+	ll.$(ARCH).fakeproc \
+	$(THUMB) ansi_compress ./sstrip/sstrip \
+	ll.$(ARCH).stripped ll.$(ARCH).fakeproc.stripped
 
 sstrip_ll: ll ./sstrip/sstrip
 	./sstrip/sstrip ll
 
-./sstrip/sstrip:
+export ARCH
+
+./sstrip/sstrip:	./sstrip/sstrip.c
 	cd sstrip && make
        
 ansi_compress:  ansi_compress.o lzss.o lzss_new.o 
@@ -97,24 +115,55 @@ lzss_new.o:    lzss_new.c
 ll:	ll.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o	
 
-ll.o:	ll.s logo.lzss
-	$(CROSS)$(AS) $(C_EXTRA) -o ll.o ll.s
+ll.$(ARCH).stripped:  ll.$(ARCH) sstrip/sstrip
+	cp ll.$(ARCH) ll.$(ARCH).stripped
+	sstrip/sstrip ll.$(ARCH).stripped
+	
+ll.$(ARCH).fakeproc.stripped:		 ll.$(ARCH).fakeproc sstrip/sstrip
+	cp ll.$(ARCH).fakeproc ll.$(ARCH).fakeproc.stripped
+	sstrip/sstrip ll.$(ARCH).fakeproc.stripped
 
-ll_thumb:	ll.thumb.o
-	$(CROSS)$(LD) -N --thumb-entry=_start -o ll_thumb ll.thumb.o
+ll.$(ARCH):	ll.o
+	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH) ll.o	
+	
+ll.$(ARCH).fakeproc:	ll.fakeproc.o
+	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH).fakeproc ll.fakeproc.o
+
+ll.o:	ll.$(SOURCE_ARCH).s logo.lzss
+	$(CROSS)$(AS) $(C_EXTRA) $(LITTLE_ENDIAN) -o ll.o ll.$(SOURCE_ARCH).s
+	
+ll.fakeproc.o:	ll.s logo.lzss
+	$(CROSS)$(AS) $(C_EXTRA) $(LITTLE_ENDIAN) -defsym FAKE_PROC=1 -o ll.fakeproc.o ll.s
+
+ll.thumb.stripped:  ll.thumb sstrip/sstrip
+	cp ll.thumb ll.thumb.stripped
+	sstrip/sstrip ll.thumb.stripped
+
+ll.thumb:	ll.thumb.o
+	$(CROSS)$(LD) -N --thumb-entry=_start -o ll.thumb ll.thumb.o
 
 ll.thumb.o:	ll.thumb.s
-	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s
+	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s	
+
+ll.thumb.fakeproc.stripped:  ll.thumb.fakeproc sstrip/sstrip
+	cp ll.thumb.fakeproc ll.thumb.fakeproc.stripped
+	sstrip/sstrip ll.thumb.fakeproc.stripped
+
+ll.thumb.fakeproc:	ll.thumb.fakeproc.o
+	$(CROSS)$(LD) -N --thumb-entry=_start -o ll.thumb.fakeproc ll.thumb.fakeproc.o
+
+ll.thumb.fakeproc.o:	ll.thumb.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mthumb-interwork -o ll.thumb.fakeproc.o ll.thumb.s
 
 ll.mips16.o:	ll.mips16.s
 	$(CROSS)$(AS) -EL -o ll.mips16.o ll.mips16.s
 	
-ll_mips16:	ll.mips16.o
-	$(CROSS)$(LD) -EL -N -o ll_mips16 ll.mips16.o
+ll.mips16:	ll.mips16.o
+	$(CROSS)$(LD) -EL -N -o ll.mips16 ll.mips16.o
 
 ll.s:	
 	rm -f ll.s
-	ln -s ll.$(ARCH).s ll.s
+	ln -s ll.$(SOURCE_ARCH).s ll.s
 		   
 logo.inc:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
@@ -123,7 +172,10 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
 clean:
-	rm -f ll ll_c *.o *~ ll.s ll_thumb ll_mips16 ansi_compress logo.inc logo.lzss logo.lzss_new core logo.include logo_optimize logo.include.parisc logo.lzss_new.parisc a.out
+	rm -f ll ll_c ll.$(ARCH) *.fakeproc *.stripped *.o *~ ll.s ll.thumb \
+	ll.mips16 ansi_compress logo.inc logo.lzss logo.lzss_new \
+	core logo.include logo_optimize logo.include.parisc \
+	logo.lzss_new.parisc a.out
 	cd sstrip && make clean
 
 

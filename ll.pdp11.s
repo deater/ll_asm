@@ -577,8 +577,12 @@ default_colors:	.asciz "\033[0m\n\n"
 escape:		.asciz "\033["
 C:		.asciz "C"
 
-# cpuinfo:	.asciz	"/proc/cpuinfo"
-cpuinfo:	.asciz  "cpuinfo_pdp11"
+.ifdef FAKE_PROC
+cpuinfo:	.asciz  "proc/cp.pdp11"
+.else
+cpuinfo:	.asciz	"/proc/cpuinfo"
+.endif
+
 
 .include	"logo.lzss_new"
 

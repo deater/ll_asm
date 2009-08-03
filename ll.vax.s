@@ -618,7 +618,11 @@ C:		.ascii "C\0"
 type_string:	.ascii  "type"
 .equ BOGO_OFFSET,0x51
 bogo_string:	.ascii  "Bogo"
+.ifdef FAKE_PROC
+cpuinfo:	.ascii	"proc/cpui.vax\0"
+.else
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
+.endif
 .equ LOGO_OFFSET, 0x63
 .include	"logo.lzss_new"
 

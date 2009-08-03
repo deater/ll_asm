@@ -278,7 +278,7 @@ middle_line:
 					! print "One, "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(processor-one),%o0
+	add	%g2,(one-data_begin),%o0
 	
 	ba	print_mhz
 	# BRANCH DELAY SLOT
@@ -612,8 +612,12 @@ default_colors:		.ascii "\033[0m\n\n\0"
 escape:			.ascii "\033[\0"
 c:			.ascii "C\0"
 
+.ifdef FAKE_PROC
+cpuinfo:		.ascii	"proc/cp.sparc\0"
+.else
 cpuinfo:	        .ascii  "/proc/cpuinfo\0"	
-		
+.endif
+
 one:	.ascii	"One \0"
 processor:	.ascii " Processor\0"
 comma:		.ascii "s, \0"

@@ -683,7 +683,11 @@ num_all_done:
 ver_string:		.asciz  " Version "
 compiled_string:	.asciz  ", Compiled "
 linefeed:		.asciz  "\n"
+.ifdef FAKE_PROC
+cpuinfo:		.asciz  "proc/cpu.ia64"
+.else
 cpuinfo:		.asciz  "/proc/cpuinfo"
+.endif
 megahertz:		.asciz	"MHz "	
 processor:		.asciz  " Processor, "
 ram_comma:		.asciz  "M RAM, "
