@@ -23,15 +23,16 @@ Some Statistics
      Processor        lzss executable
      ---------        ---------------
      ia64		2874 bytes   (as 2.17)
-     alpha		1957 bytes   (as 2.18.0.20080103)
+     alpha		1821 bytes   (as 2.19.51.20090723)
      parisc		1400 bytes   (as 2.17.50)
      SPARC		1397 bytes   (as 2.19.51.20090714)
      6502		1394 bytes   (ca64 2.7.1)
-     mips               1292 bytes   (as 2.19.51.20090714)
+     microblaze		1298 bytes   (as 2.16)     
+     mips               1276 bytes   (as 2.19.51.20090714)
      m88k		1240 bytes   (as 1.92.3)
-     PPC		1206 bytes   (as 2.17.50)     
      arm		1186 bytes   (as 2.18.0.20080103)     
-     s390	        1096 bytes   (as 2.17)
+     PPC		1165 bytes   (as 2.19.51.20090805)     
+     s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1033 bytes   (as 2.19.51.20090723)
      vax		1010 bytes   (as 2.16.1)
      sh3		 994 bytes   (as 2.17.50.0.5)
@@ -108,12 +109,9 @@ alpha:
 	The immediate field for ALU ops of only 8 bits really hurts
 	
 	There is no native integer division routine on alpha.
-
-microblaze:
-	   no addressing modes at all?  Only register+register
-	   
-	   some advantage from optional branch delay
-	   
+	
+	The GOT section is a huge space-sink.  It has 64-bit constants,
+	  which most of the time you shouldn't really need.
 
 parisc:	+ really hurt by its short immediate field.  Most addresses
 	  require 2 instructions to load, even if try to use relative-data add.
@@ -128,7 +126,8 @@ parisc:	+ really hurt by its short immediate field.  Most addresses
 sparc:  
 	Condition codes make for tighter code.
 	register/register load address calcs also help.
-	13-bit immdediate hurts a bit.
+        13-bit immdediate hurts a bit.
+        Crazy register windows a bit hard to understand
 
 	SPARC is unfair a bit, because my test machine is a 24-proc
         niagara, so it has extra code to handle that many chips properly.
@@ -152,7 +151,23 @@ sparc:
 	   ina/dea (increment/decrement A... otherwise need 2 instructions)
 	   bra (branch always, relative jump.  otherwise need 3-byte 16-bit)
 	   stz (store zero)
+
+microblaze:
+        Similar to MIPS.
 	
+	Branch delay slot is optional, which helps.
+	
+	Only register+register and register+immediate address modes.
+	
+	The branch+link instruction returns to the same instruction
+	  that left from, so for the return you have to specify
+	  to add 4 or 8?  Very weird.
+	  
+	The signed 16-bit immediate makes it impossible (I think) to load
+	  0xff00 into a register w/o two instructions.
+
+        Can't get the assembler to do pointer math into an immediate.
+
 mips:   Recent binutils has made mips come in line with the
         other architectures.
 	
@@ -161,19 +176,6 @@ mips:   Recent binutils has made mips come in line with the
 	
 	On the plus side, it has hardware support for unaligned loads,
 	plus hardware integer divide, which help a lot.
-
-arm:	no integer division routine
-	Really painful to load constants > 8 bits that aren't powers of two or
-	  else 8-bit values shifted by power of two.
-	If we had integer divide, saner constant support, and  unaligned loads 
-	  we could probably beat x86 even with 32 bit instructions.
-
-ppc:	The PowerPC has very CISC-like opcodes as well.
-        Despite being load-store with 3 operand instructions, you almost
-	wouldn't know it was considered RISC.  I also think I could
-	optimize the code a bit more and challenge x86.
-	
-	The big help is auto-incrementing load/store byte instructions.
 
 m88k:	This chip came after m68k and was motorola's first RISC chip.
 	Didn't go well, they moved on to PPC.
@@ -198,6 +200,19 @@ m88k:	This chip came after m68k and was motorola's first RISC chip.
 	cmp quite elaborate, setting 16-bits of comparison info in
 	a reg, not in flags.  a more powerful version of the equivelant
 	Alpha instruction.
+
+arm:	no integer division routine
+	Really painful to load constants > 8 bits that aren't powers of two or
+	  else 8-bit values shifted by power of two.
+	If we had integer divide, saner constant support, and  unaligned loads 
+	  we could probably beat x86 even with 32 bit instructions.
+
+ppc:	The PowerPC has very CISC-like opcodes as well.
+        Despite being load-store with 3 operand instructions, you almost
+	wouldn't know it was considered RISC.  I also think I could
+	optimize the code a bit more and challenge x86.
+	
+	The big help is auto-incrementing load/store byte instructions.
 
 s390:   This is the most CISC architecture I've ever seen.  If only it had
 	   a "load byte" opcode it would definitely beat out x86.  I am sure
@@ -226,22 +241,6 @@ x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
         (gratuitous spaces on some cpuinfos).  Also we have to
 	handle 4GB of RAM so we lose a few bytes for a 64-bit load.
 
-
-m68k:   is even more CISC than x86 if such a thing is possible
-           (if you don't count Vector instructions).  In addition
-	   to BCD instructions it also has a wide variety of
-	   bit-field manipulation instructions, plus full ALU complement.
-
-	   bizzarrely, m68k assembly is very similar to THUMB.
-
-	   weird having separate address and data registers.
-
-	   can't shift by an immediate more than 8?
-	   can't add carry with immediate?
-	   have to clear upper parts of words when doing byte math;
-	      no equivelant of the mips "lbu" instruction.
-	      
-
 vax:
     	vax is crazy CISC.  
 	Some of the CISC instructions:
@@ -263,7 +262,34 @@ sh3:
 	could really use a compare-with-zero instruction for reg other than r0
 	pretty compact code, even with lots of wasted branch delay slots
 	Really wish could put the divide instructions in a loop (like parisc)
+
+
+m68k:   is even more CISC than x86 if such a thing is possible
+           (if you don't count Vector instructions).  In addition
+	   to BCD instructions it also has a wide variety of
+	   bit-field manipulation instructions, plus full ALU complement.
+
+	   bizzarrely, m68k assembly is very similar to THUMB.
+
+	   weird having separate address and data registers.
+
+	   can't shift by an immediate more than 8?
+	   can't add carry with immediate?
+	   have to clear upper parts of words when doing byte math;
+	      no equivelant of the mips "lbu" instruction.
+	      
+	      
+x86:    The x86 code is currently the smallest, mainly because I had a
+        running contest for a while with Stephan Walter until
+	we got it below 1k.  It does help that there are a lot of
+	useful 1-byte instructions in the x86 command set, which give
+	it an instant advantage over all of the RISC chips.
 	
+	Lack of alignment makes string manipulating programs (like ll) a lot
+	easier, as you can store 16 and 32 bit values w/o having to worry
+	if the string is properly aligned.
+
+
 arm_thumb:
         I tried by hardest to beat x86, even though the arm port
 	doesn't have to do things x86 does (SMP support for example).
@@ -282,16 +308,6 @@ arm_thumb:
 	 is great.  I cheated a bit by using the Arm5 instruction subset.
 	 The code wouldn't be anywhere near as small if I had to use
 	 generic arm4 thumb.
-
-x86:    The x86 code is currently the smallest, mainly because I had a
-        running contest for a while with Stephan Walter until
-	we got it below 1k.  It does help that there are a lot of
-	useful 1-byte instructions in the x86 command set, which give
-	it an instant advantage over all of the RISC chips.
-	
-	Lack of alignment makes string manipulating programs (like ll) a lot
-	easier, as you can store 16 and 32 bit values w/o having to worry
-	if the string is properly aligned.
 
 
 z80:
@@ -401,6 +417,15 @@ Useful Resources:
         http://www.linuxassembly.org
 	http://www.deater.net/weave/vmwprod/asm
 	http://www.deater.net/weave/vmwprod/linux_logo
+
+Publications using ll:
+----------------------
+    * V.M. Weaver, S.A. McKee. "Code Density Concerns for New Architectures", 
+      27th IEEE International Conference on Computer Design (ICCD 2009), 
+      Lake Tahoe, California, October 2009 (to appear).
+    * V.M. Weaver, S.A. McKee. "Optimizing for Size: Exploring the Limits of
+      Code Density" (Poster), Architectural Support for Programming Languages 
+      and Operating Systems (ASPLOS '09), Washington DC, March 2009.
 
 Thanks to:
 ----------

@@ -1,5 +1,5 @@
 #
-#  linux_logo in mips assembler 0.20
+#  linux_logo in mips assembler 0.38
 #
 #  By 
 #       Vince Weaver <vince _at_ deater.net>
@@ -8,7 +8,6 @@
 #  link with         "ld -o ll ll.o"
 
 .include "logo.include"
-
 
 #
 # Keep gas from handling branch-delay and load-delay slots automatically
@@ -121,8 +120,7 @@ decompression_loop:
 test_flags:
 	beq	$12, $9, done_logo	# have we reached the end?
 					# if so, exit
-	nop
-
+	# BRANCH DELAY SLOT
         andi	$13,$11,0x1	# test to see if discrete char
 
 
@@ -138,8 +136,6 @@ offset_length:
 	addiu	$9,$9,2	 	# increment source pointer	
 	sll	$24,$24,8
 	or	$24,$24,$10
-	
-
 	
 	srl $15,$24,P_BITS	# get the top bits, which is length
 	
@@ -238,7 +234,8 @@ first_line:
 	addiu	$5,$18,((uname_info-bss_begin)+U_VERSION)	
 
 	jal	center_and_print	# center and print
-	nop				# branch delay
+	# BRANCH DELAY SLOT
+	nop
  	
 	#===============================
 	# Middle-Line
@@ -313,7 +310,7 @@ chip_name:
 	# BRANCH DELAY SLOT
 	li	$6,' '	
 	
-					# printf "Processor, "
+					# print "Processor, "
 	jal	strcat
 	# BRANCH DELAY SLOT
 	addiu	$5,$17,(processor-data_begin)
@@ -337,9 +334,9 @@ chip_name:
 	
 					# print 'M RAM, '
 	jal	strcat			# call strcat
+	# BRANCH_DELAY_SLOT
 	addiu	$5,$17,(ram_comma-data_begin)
 
-	
 
 	#========
 	# Bogomips
@@ -364,6 +361,7 @@ chip_name:
 
 
 	jal	center_and_print	# center and print
+	# BRANCH DELAY SLOT
 	nop
 	
 	#=================================
@@ -435,10 +433,10 @@ find_colon:
 	# BRANCH DELAY SLOT
 	nop
 	
-	li	$1,':'
+
 	bne	$11,$1,find_colon
 	# BRANCH DELAY SLOT
-	nop
+	li	$1,':'
 
 	addiu   $5,$5,2			# skip a char [should be space]
 	
@@ -463,28 +461,6 @@ done:
 	jr	$31			# return
 	# BRANCH DELAY SLOT
 	nop
-
-	#================================
-	# strcat
-	#================================
-	# output_buffer_offset = $16 (s0)
-	# string to cat = $5         (a1)
-	# destroys t0 ($8)
-
-strcat:
-	lbu 	$8,0($5)		# load byte from string
-	# LOAD DELAY SLOT	
-	addiu	$5,$5,1			# increment string	
-	sb  	$8,0($16)		# store byte to output_buffer
-
-	bne 	$8,$0,strcat		# if zero, we are done
-	# BRANCH DELAY SLOT
-	addiu	$16,$16,1		# increment output_buffer
-
-done_strcat:
-	jr	$31			# return
-	# BRANCH DELAY SLOT
-	addiu	$16,$16,-1		# correct pointer	
 
 
 	#==============================
@@ -570,9 +546,9 @@ str_loop1:
 	# BRANCH DELAY SLOT
 	nop
 	
-	##############################
+	#=============================
 	# num_to_ascii
-	##############################	
+	#=============================
 	# a0 ($4)  = value to print
 	# a1 ($5)  = output buffer	
 	# s3 ($19) = 0=stdout, 1=strcat
@@ -598,9 +574,35 @@ div_by_10:
 	
 write_out:
 	beq	$19,$0,write_stdout
+	# BRANCH DELAY SLOT
 	nop			# if write stdout, go there 
-    	j	strcat		# else, strcat will return for us
-	nop
+
+				# fall through to strcat
+
+	#================================
+	# strcat
+	#================================
+	# output_buffer_offset = $16 (s0)
+	# string to cat = $5         (a1)
+	# destroys t0 ($8)
+
+strcat:
+	lbu 	$8,0($5)		# load byte from string
+	# LOAD DELAY SLOT	
+	addiu	$5,$5,1			# increment string	
+	sb  	$8,0($16)		# store byte to output_buffer
+
+	bne 	$8,$0,strcat		# if zero, we are done
+	# BRANCH DELAY SLOT
+	addiu	$16,$16,1		# increment output_buffer
+
+done_strcat:
+	jr	$31			# return
+	# BRANCH DELAY SLOT
+	addiu	$16,$16,-1		# correct pointer	
+
+
+
 
 #===========================================================================
 #	section .data

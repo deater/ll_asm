@@ -1,25 +1,21 @@
-cpu			: Alpha
-cpu model		: EV6
-cpu variation		: 7
-cpu revision		: 0
-cpu serial number	: 
-system type		: Tsunami
-system variation	: DP264
-system revision		: 0
-system serial number	: 
-cycle frequency [Hz]	: 500000000 
-timer frequency [Hz]	: 1024.00
-page size [bytes]	: 8192
-phys. address bits	: 44
-max. addr. space #	: 255
-BogoMIPS		: 996.00
-kernel unaligned acc	: 0 (pc=0,va=0)
-user unaligned acc	: 22 (pc=20000222c10,va=11fdaf484)
-platform string		: AlphaPC 264DP 500 MHz
-cpus detected		: 1
-cpus active		: 1
-cpu active mask		: 0000000000000001
-L1 Icache		: 64K, 2-way, 64b line
-L1 Dcache		: 64K, 2-way, 64b line
-L2 cache		: 4096K, 1-way, 64b line
-L3 cache		: n/a
+cpu                     : Alpha
+cpu model               : EV6
+cpu variation           : 7
+cpu revision            : 0
+cpu serial number       :
+system type             : Tsunami
+system variation        : Goldrush
+system revision         : 0
+system serial number    : ay91560403
+cycle frequency [Hz]    : 500000000
+timer frequency [Hz]    : 1024.00
+page size [bytes]       : 8192
+phys. address bits      : 44
+max. addr. space #      : 255
+BogoMIPS                : 998.56
+kernel unaligned acc    : 0 (pc=0,va=0)
+user unaligned acc      : 0 (pc=0,va=0)
+platform string         : AlphaServer DS20 500 MHz
+cpus detected           : 2
+cpus active             : 2
+cpu active mask         : 0000000000000003

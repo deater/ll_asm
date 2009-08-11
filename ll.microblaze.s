@@ -1,5 +1,5 @@
 #
-#  linux_logo in microblaze assembler 0.37
+#  linux_logo in microblaze assembler 0.38
 #
 #  By 
 #       Vince Weaver <vince _at_ deater.net>
@@ -32,17 +32,16 @@
 #  r16 = return address for debug/breaks
 #  r17 = exception return address
 #  r18 = reserved for compiler
+#  r19-r31 = general use?
 
 # has (optional) branch-delay slots
 # aligned memory accesses (can be configured otherwise v3.0 and later)
-
-
 
 #  HW multiply (post Virtex-II)
 
 # System Calls
 #   syscall number in r12
-#   params in r5-r?
+#   params in r5-r10
 # brki r14, 0x08 
 # nop   
 
@@ -87,8 +86,19 @@
 #   wdc, wic [write to data, instruction cache]
 #   xor, xori [xor]
 
-
-
+# Optimization
+#  + 1671 bytes - original version, ported from MIPS
+#  + 1518 bytes - remove extraneous alignment of data segment
+#  + 1490 bytes - make r20 be the "out_buffer" register
+#  + 1334 bytes - make data loads use r19 and an offset
+#                 eliminate as many empty branch delay slots as possible
+#                 either by filling or replacing branch with no-delay version.
+#                 Had to be careful not to have a 32-bit load immediate 
+#		  in a delay slot.
+#  + 1318 bytes - Put text_buf into a reg and use ra+rb addressing
+#  + 1314 bytes - remove un-needed register move
+#  + 1310 bytes - re-optimize write_stdout
+#  + 1298 bytes - have find_string use 3 bytes, not 4
 
 .include "logo.include"
 
@@ -103,11 +113,27 @@
 # offset into the results returned by the sysinfo syscall
 .equ S_TOTALRAM,16
 
+# Offsets into the data segment
+# Wish I could get the assembler to do this automatically
+.equ VER_OFFSET, 0
+.equ COMPILED_OFFSET, 10
+.equ RAM_OFFSET,22
+.equ BOGO_OFFSET,30
+.equ LINEFEED_OFFSET,46
+.equ DEFAULT_COLORS_OFFSET,48
+.equ ESCAPE_OFFSET,54
+.equ C_OFFSET,57
+.equ CPUINFO_OFFSET,59
+.equ ONE_OFFSET,73
+.equ MHZ_OFFSET,78
+.equ PROCESSOR_OFFSET,94
+.equ LOGO_OFFSET,107
+
 # Sycscalls
 .equ SYSCALL_EXIT,	1
 .equ SYSCALL_READ,	3
 .equ SYSCALL_WRITE,	4
-.equ SYSCALL_OPEN,	5    # openat?
+.equ SYSCALL_OPEN,	5
 .equ SYSCALL_CLOSE,	6
 .equ SYSCALL_SYSINFO,	116
 .equ SYSCALL_UNAME,	122
@@ -123,190 +149,173 @@ _start:
 	# PRINT LOGO
 	#=========================
 
-	bri test
-	nop
-	
 # LZSS decompression algorithm implementation
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	#addi	r19,r0,data_begin	# point r19 at .data segment begin
-	#addi	r20,r0,bss_begin	# point r20 at .bss segment begin
+	addi	r19,r0,data_begin	# point r19 at .data segment begin
+	addi	r20,r0,out_buffer	# point r20 at out_buffer
 
-	#addi    r8,r0,(N-F)   	     	# R
+	addi    r8,r0,(N-F)   	     	# R
 		
-	#addi  	r9,r0,logo		# r9 points to logo 
-	#addi	r12,r0,logo_end		# r12 points to end of logo
-	#addi	r21,r0,out_buffer	# point r21 to out_buffer
+	addi  	r9,r19,LOGO_OFFSET	# r9 points to logo 
+	addi	r12,r0,logo_end		# r12 points to end of logo
+	add	r21,r0,r20		# point r21 to out_buffer
+
+	addi	r26,r0,text_buf		# point r26 to text_buf
 
 decompression_loop:
 
-	#lbu	r10,r0,r9       # load in a byte
-	#addi	r9,r9,1		# increment source pointer
+	lbu	r22,r0,r9       # load in a byte
+	addi	r9,r9,1		# increment source pointer
 
-#	move 	$11, $10	# move in the flags
-#	ori 	$11,$11,0xff00  # put 0xff in top as a hackish 8-bit counter
+	ori 	r22,r22,0xff00  # put 0xff in top as a hackish 8-bit counter
+				# ugh this expands to two instructions
+				# because the 16-bit immediate is sign-extended
 
 test_flags:
-	#cmp	r18, r12, r9
-	#beqi	r18, done_logo	# have we reached the end?
-				# if so, exit
+	cmp	r18, r12, r9	# have we reached the end?
+	beqi	r18, done_logo	# if so, exit
+				
+        andi	r23,r22,0x1	# test to see if discrete char
 
-#        andi	$13,$11,0x1	# test to see if discrete char
-
-
-#	bne	$13,$0,discrete_char	# if set, we jump to discrete char
+	bneid	r23,discrete_char	# if set, we jump to discrete char
 	
 	# BRANCH DELAY SLOT
-#	srl	$11,$11,1  	# shift	
+	srl	r22,r22  	# shift	right logical by 1
 
 
 offset_length:
-#	lbu     $10,0(r9)	# load 16-bit length and match_position combo
-#	lbu	$24,1(r9)	# can't use lhu because might be unaligned
-#	addiu	r9,r9,2	 	# increment source pointer	
-#	sll	$24,$24,8
-#	or	$24,$24,$10
+	lbu     r10,r0,r9	# load 16-bit length and match_position combo
+	lbui	r24,r9,1	# can't use lhu because might be unaligned
+	addi	r9,r9,2	 	# increment source pointer	
+	bslli	r24,r24,8
+	or	r24,r24,r10
+		
+	bsrli r25,r24,P_BITS	# get the top bits, which is length
 	
-
-	
-#	srl $15,$24,P_BITS	# get the top bits, which is length
-	
-#	addiu $15,$15,THRESHOLD+1 
+	addi r25,r25,THRESHOLD+1 
 	      			# add in the threshold?
 		
 output_loop:
- #       andi 	$24,$24,(POSITION_MASK<<8+0xff)  	
+        andi 	r24,r24,(POSITION_MASK<<8+0xff)  	
 					# get the position bits
-#	addiu	$10,r20,(text_buf-bss_begin)
-#	addu	$10,$10,$24
-#	lbu	$10,0($10)		# load byte from text_buf[]
-					# should have been able to do
-					# in 2 not 3 instr
-#	addiu	$24,$24,1	    	# advance pointer in text_buf
-store_byte:	
- #       sb      $10,0(r21)
-#	addiu	r21,r21,1      		# store byte to output buffer
+	lbu	r10,r26,r24		# load byte from text_buf[]
+			
+	addi	r24,r24,1	    	# advance pointer in text_buf
 
-#	addiu	$1,r20,(text_buf-bss_begin)
-##	addu	$1,$1,r8	
-#	sb      $10, 0($1)		# store also to text_buf[r]
-#	addi 	r8,r8,1        		# r++
+store_byte:
+	sb      r10,r0,r21		# store byte to output buffer
+	addi	r21,r21,1      		# increment pointer
 
+	sb      r10,r8,r26		# store also to text_buf[r]
+	addi 	r8,r8,1        		# r++
 
-#	addiu	$15,$15,-1		# decrement count
-#	bne	$15,$0,output_loop	# repeat until k>j
+	addi	r25,r25,-1		# decrement count
+	bneid	r25,output_loop		# repeat until k>j
 	#BRANCH DELAY SLOT
-#	andi 	r8,r8,(N-1)		# wrap r if we are too big
+	andi 	r8,r8,(N-1)		# wrap r if we are too big
 
-#	andi	$13,$11,0xff00		# if 0 we shifted through 8 and must
-#	bne	$13,$0,test_flags	# re-load flags
-	# BRANCH DELAY SLOT
-#	nop
+	andi	r23,r22,0xff00		# if 0 we shifted through 8 and must
+	bnei	r23,test_flags		# re-load flags
 	
-#	j 	decompression_loop
-#	# BRANCH DELAY SLOT
-#	nop
+	bri 	decompression_loop
+
 
 discrete_char:
-#	lbu     $10,0(r9)
-#	addiu	r9,r9,1		       	# load a byte
- #       j     store_byte		# and store it
-#	# BRANCH DELAY SLOT
-#	li   	$15,1			# force a one-byte output
+	lbu     r10,r0,r9		# load a byte
+	addi	r9,r9,1		       	# increment pointer
+	brid     store_byte		# and store it
+	# BRANCH DELAY SLOT
+	addi   	r25,r0,1		# force a one-byte output
 
 # end of LZSS code
 
 done_logo:
-	#addi	r5,r0,out_buffer		# point r5 to out_buffer
 
-        #brlid	r15,write_stdout		# print the logo
+        brlid	r15,write_stdout	# print the logo
 	# BRANCH DELAY SLOT
-	#nop
+	add	r6,r0,r20		# point r6 to out_buffer	
 	
-
-
-
 first_line:	
 	#==========================
 	# PRINT VERSION
 	#==========================
 
-#	li	$2, SYSCALL_UNAME		# uname syscall in $2
-#	addiu	$4, r20,(uname_info-bss_begin)	# destination of uname in $4
-#	syscall					# do syscall
+	addi	 r24,r0,uname_info 	# r24 holds uname_info
 
-#	addiu	r21,r20,(out_buffer-bss_begin)	# point r21 to out_buffer
+uname_call:
+        addi	 r12,r0, SYSCALL_UNAME	# put exit syscall in r12
+	add	 r5,r0,r24		# destination struct
+        brki	 r14, 0x08	      	# syscall
+
+	add	 r21,r0,r20		# point r21 to out_buffer
 		
-
-					# os-name from uname "Linux"
-#	jal	strcat
+os_name:
+		 			# os-name from uname "Linux"
+	brlid	 r15,strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r20,((uname_info-bss_begin)+U_SYSNAME)	
+	addi	 r5,r24,U_SYSNAME
 
-
-					# source is " Version "	
- #      	jal	strcat			# call strcat
+version:
+					# source is " Version "
+       	brlid	r15,strcat     		# call strcat	
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(ver_string-data_begin)
-
+	addi	r5,r19,VER_OFFSET
 
 					# version from uname, ie "2.6.20"
-#	jal	strcat			# call strcat
+	brlid	r15,strcat		# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r20,((uname_info-bss_begin)+U_RELEASE)
+	addi	r5,r24,U_RELEASE	
 
-
-
+compiled:
 					# source is ", Compiled "
-#	jal	strcat			# call strcat
+	brlid	r15,strcat		# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(compiled_string-data_begin)
+	addi	r5,r19,COMPILED_OFFSET
 	     
-
 					# compiled date
-#	jal	strcat			# call strcat
+	brlid	r15,strcat		# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r20,((uname_info-bss_begin)+U_VERSION)	
+	addi	r5,r24,U_VERSION
 
-#	jal	center_and_print	# center and print
-#	nop				# branch delay
+	brlid	r15,center_and_print	# center and print
+	# BRANCH DELAY SLOT
+	nop	       	   		# no such instruction as brli
+					# without a delay :(
  	
 	#===============================
 	# Middle-Line
 	#===============================
 middle_line:
 	
-#	addiu	r21,r20,(out_buffer-bss_begin)	# point r21 to out_buffer
+	add	r21,r0,r20		# point r21 to out_buffer
 	
 	#=========
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-#	li	$2, SYSCALL_OPEN	# OPEN Syscall
-	
-#	addiu	$4,r19,(cpuinfo-data_begin)
-					# '/proc/cpuinfo'
-#	li	$5, 0			# 0 = O_RDONLY <bits/fcntl.h>
+	addi	r12,r0,SYSCALL_OPEN	# OPEN Syscall	
+	addi	r5,r19,CPUINFO_OFFSET	# '/proc/cpuinfo'
+	add	r6,r0,r0		# 0 = O_RDONLY <bits/fcntl.h>
 
-#	syscall				# syscall.  fd in v0  
+	brki	r14,0x08		# syscall.  fd in v0  
 					# we should check that 
-					# return v0>=0
+					# return r3>=0
 						
-#	move	$4,$2			# copy $2 (the result) to $4
+	add	r5,r3,r0		# copy r3 (the result) to r5
 	
-#	li	$2, SYSCALL_READ	# read()
-	
-#	addiu	$5, r20,(disk_buffer-bss_begin)
-					# point $5 to the buffer
+	addi	r12,r0,SYSCALL_READ	# read()
+	addi	r6,r0,disk_buffer
+					# point r6 to the buffer
 
-#	li	$6, 4096		# 4096 is maximum size of proc file ;) 
-					# we load sneakily by knowing
-#	syscall
+	addi	r7,r0,4096		# we assume cpuinfo file is <4096bytes
+				      
+	brki	r14,0x08
 
-#	li	$2, SYSCALL_CLOSE	# close (to be correct)
-		    			# fd should still be in a0
-#	syscall
+	addi	r12,r0,SYSCALL_CLOSE	# close (to be correct)
+		    			# fd should still be in r5
+	brki	r14,0x08
 
 	#=============
 	# Number of CPUs
@@ -314,332 +323,326 @@ middle_line:
 number_of_cpus:
 
 	# we cheat here and just assume 1.  
-	# besides, I don't have a SMP Mips machine to test on
+	# I don't know if SMP microblaze machines exist
 
-#	jal	strcat
+	brlid	r15,	strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(one-data_begin)		# print "One"	
-
+	addi	r5,r19,ONE_OFFSET		# print "One"
 
 	#=========
 	# MHz
 	#=========
 print_mhz:
 
-	# Mips /proc/cpuinfo does not indicate MHz
+   	addi	r5,r0,('M'<<16+'H'<<8+'z')     	
+					# find '-MHz' and grab up to '.'
 
+	brlid	r15,find_string
+	# BRANCH DELAY SLOT
+	addi	r6,r0,'.'		# find up to "."
+	
+					# print "MHz"
+	brlid	r15,strcat
+	# BRANCH DELAY SLOT
+	addi	r5,r19,MHZ_OFFSET
 
    	#=========
 	# Chip Name
 	#=========
 chip_name:	
-#   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')     	
-					# find 'odel\t: ' and grab up to ' '
+   	addi	r5,r0,('r'<<16+'c'<<8+'h')     	
+					# find 'Arch' and grab up to '\n'
 
-#	jal	find_string
+	brlid	r15	find_string
 	# BRANCH DELAY SLOT
-#	li	$6,' '	
+	addi	r6,r0,'\n' 		# find up to "\n"
 	
-					# printf "Processor, "
-#	jal	strcat
+					# print "Processor, "
+	brlid	r15,strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(processor-data_begin)
+	addi	r5,r19,PROCESSOR_OFFSET
+
 	
 	#========
 	# RAM
 	#========
+ram:	
+	addi	r12,r0,SYSCALL_SYSINFO	# sysinfo() syscall
+	addi	r5,r0,sysinfo_buff
+	brki	r14,0x08
 	
-#	li	$2, SYSCALL_SYSINFO	# sysinfo() syscall
-##	addiu	$4, r20,(sysinfo_buff-bss_begin)
-#	syscall
-	
-#	lw	$4, S_TOTALRAM($4)	# size in bytes of RAM
-	# LOAD DELAY SLOT
-#	li	$19,1			# print to strcat, not stderr
-			
-#	jal     num_to_ascii
+	lwi	r5,r5,S_TOTALRAM	# size in bytes of RAM
+	add	r7,r0,r0		# print to strcat, not stderr
+
+	brlid	r15,num_to_ascii
 	# BRANCH DELAY SLOT
-#	srl	$4,$4,20		# divide by 1024*1024 to get M
+	bsrli	r5,r5,20		# divide by 1024*1024 to get M
 
 	
 					# print 'M RAM, '
-#	jal	strcat			# call strcat
-#	addiu	$5,r19,(ram_comma-data_begin)
+	brlid	r15,strcat     		# call strcat
+	# BRANCH DELAY SLOT
+	addi	r5,r19,RAM_OFFSET
 
-	
 
 	#========
 	# Bogomips
 	#========
-	
-#	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')      	
-					# find 'mips\t: ' and grab up to \n
-
-#	jal	find_string
+bogomips:	
+	addi	r5,r0,('i'<<16+'p'<<8+'s')      	
+					# find 'Mips' and grab up to \n
+	brlid	r15,find_string
 	# BRANCH DELAY SLOT
-#	li	$6, 0xa	
+	addi	r6,r0,'\n'		# find up to "\n"
 
 	
 					# bogo total follows RAM 
-#	jal 	strcat			# call strcat
+	brlid	r15,strcat     		# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(bogo_total-data_begin)
+	addi	r5,r19,BOGO_OFFSET
 
-
-#	jal	center_and_print	# center and print
-#	nop
+	brlid	r15,center_and_print	# center and print
+	# BRANCH DELAY SLOT
+	nop	       	   		# no such thing as brli :(
 	
 	#=================================
 	# Print Host Name
 	#=================================
-
-#	addiu	r21,r20,(out_buffer-bss_begin)  
-					# point r21 to out_buffer
-
+last_line:
+	add	r21,r0,r20		# point r21 to out_buffer
 
 					# host name from uname()
-#	jal	strcat			# call strcat
+	brlid	r15,strcat		# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,r20,(uname_info-bss_begin)+U_NODENAME    	
+	addi	r5,r24,U_NODENAME	
 	
-#	jal	center_and_print	# center and print
+	brlid	r15,center_and_print	# center and print
 	# BRANCH DELAY SLOT
-#	nop
+	nop	       	   		# brli doesn't exist :(
 	
 					# (.txt) pointer to default_colors
-#	jal	write_stdout
+
+	brlid	r15,write_stdout
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(default_colors-data_begin)	
+	addi	r6,r19,DEFAULT_COLORS_OFFSET
 	
 
 	#================================
 	# Exit
 	#================================
-test:
-	addi r12, r0, SYSCALL_WRITE
-	addi r5, r0, STDOUT
-	addi r6, r0, hello
-	addi r7,r0, 13
-	brki r14, 0x08			# syscall
-	nop
-
+	
 exit:
-        addi r12, r0, SYSCALL_EXIT	# put exit syscall in r12
-	addi r5, r0,5			# return value 
-        brki r14, 0x08			# syscall
-	nop   	   			# branch delay slot
+        addi	 r12, r0, SYSCALL_EXIT	# put exit syscall in r12
+	addi	 r5, r0,5		# return value 
+        brki	 r14, 0x08	      	# syscall
 
 
 	#=================================
 	# FIND_STRING 
 	#=================================
-	#   $6 (a2) is char to end at
-	#   $4 (a0) is 4-char ascii string to look for
-	#   r19 (s1) is the output buffer
-	
-	#   $5 is destroyed
-	#   $11 (t3) is destroyed
+	#   r5 is 3-char ascii string to look for	
+	#   r6 is char to end at
 
 find_string:					
-#	addiu	$5, r20,(disk_buffer-bss_begin)-1	
+	addi	r11,r0,disk_buffer	
 					# look in cpuinfo buffer
 find_loop:
+	  				# load unaligned 3 bytes into reg
 
-#	ulw	$11,1($5)		# load un-aligned 32 bits
-#	beq	$11,$0,done		# are we at EOF?
-					# if so, done
-	# BRANCH DELAY SLOT
-#	addiu   $5,$5,1		        # increment pointer
-
+	lbui	r22,r11,0		# load first byte
+	add	r23,r22,r0		# move
+	bslli	r23,r23,8		# shift
+	lbui	r22,r11,1		# load second byte
+	add	r23,r22,r23		# move
+	bslli	r23,r23,8		# shift
+	lbui	r22,r11,2		# load third byte
+	add	r23,r22,r23		# move
 	
-#	bne	$4,$11, find_loop	# do the strings match?
+	beqi	r23,done		# are we at EOF?
+					# if so, done
+	addi    r11,r11,1		# increment pointer
+
+	cmp	r22,r23,r5
+	bnei	r22, find_loop		# do the strings match?
 					# if not, loop
 	
 					# if we get this far, we matched
-	# BRANCH DELAY SLOT
-#	nop
-	
-find_colon:
-#	lbu	$11,1($5)		# repeat till we find colon
-	# LOAD DELAY SLOT
-#	addiu	$5,$5,1
-#	beq	$11,$0,done		# not found? then done
-	# BRANCH DELAY SLOT
-#	nop
-	
-#	li	$1,':'
-#	bne	$11,$1,find_colon
-	# BRANCH DELAY SLOT
-#	nop
+					
+	addi	r11,r11,4		# skip to spacing				
+					
+skip_spaces:
+	lbui	r22,r11,1		# repeat till we find non-space
+	addi	r11,r11,1
 
-#	addiu   $5,$5,2			# skip a char [should be space]
-	
-store_loop:	 
-#	lbu	$11,0($5)		# load value
-	# LOAD DELAY SLOT
-#	addiu	$5,$5,1			# increment
-#	beq	$11,$0,done		# off end, then stop
-	# BRANCH DELAY SLOT
-#	nop
-	
-#	beq	$11,$6,done      	# is it end char?
-	# BRANCH DELAY SLOT
-#	nop				# if so, finish
-	
-#	sb	$11,0(r21)		# if not store and continue
-#	j	store_loop		# loop
-#	# BRANCH DELAY SLOT
-#	addiu	r21,r21,1		# increment output pointer
+	beqi	r22,done		# if 0, at end
 
+	addi	r23,r0,' '
+	cmp	r23,r23,r22
+	blei	r23,skip_spaces
+	
+store_loop:
+	lbu	r22,r0,r11		# load value
+	addi	r11,r11,1		# increment
+	beqi	r22,done		# off end, then stop
+
+	cmp	r23,r22,r6
+	beqi	r23,done      		# is it end char?
+	
+	sb	r22,r0,r21		# if not store and continue
+	
+	brid	store_loop		# loop
+	# BRANCH DELAY SLOT
+	addi	r21,r21,1		# increment output pointer	
+
+	
 done:
-#	jr	$31			# return
+
+	rtsd	r15,8			# return (delay slot version)
 	# BRANCH DELAY SLOT
-#	nop
-
-	#================================
-	# strcat
-	#================================
-	# output_buffer_offset = r21 (s0)
-	# string to cat = $5         (a1)
-	# destroys t0 (r8)
-
-strcat:
-#	lbu 	r8,0($5)		# load byte from string
-#	# LOAD DELAY SLOT	
-#	addiu	$5,$5,1			# increment string	
-#	sb  	r8,0(r21)		# store byte to output_buffer
-
-#	bne 	r8,$0,strcat		# if zero, we are done
-#	# BRANCH DELAY SLOT
-#	addiu	r21,r21,1		# increment output_buffer
-
-done_strcat:
-#	jr	$31			# return
-	# BRANCH DELAY SLOT
-#	addiu	r21,r21,-1		# correct pointer	
+	nop
 
 
 	#==============================
 	# center_and_print
 	#==============================
-	# string is in r21 (s0) output_buffer
-	# s3 $19= stdout or strcat
-        # $20, $21, $22 trashed
-       
+	# string is in output_buffer (r21 points to end of string)
+	# r31 trashed (backup of return address)
+	
 center_and_print:
 
-#	move	$21,$31				# save return address
-#	move	$20,r21				# $20 is the end of our string
-#	addiu	r21,r20,(out_buffer-bss_begin)	# point r21 to beginning 
-	
+	add	r31,r0,r15		# save return address
+       
+	add	r23,r0,r20              # point r23 to beginning 
+				        # end is in r21
 
-#	subu	$4, $20,r21		# subtract end pointer from start
+	rsub	r5,r23,r21		# subtract end pointer from start
        		    			# (cheaty way to get size of string)
 
-#	slti	$1,$4,81
-#	beq	$1,$0, done_center	# don't center if > 80
+	rsubi	r5,r5,80
+	blti	r5,done_center		# don't center if > 80
+
+	srl	r23,r5			# divide by 2, store for later
+
+	brlid	r15,write_stdout	# print ESCAPE char
 	# BRANCH DELAY SLOT
-#	li    	$19,0 			# print to stdout	
-
-#	neg	$4,$4  			# negate length
-#	addiu	$4,$4,80		# add to 80 
-
-#	srl	$22,$4,1		# divide by 2 
-
-#	jal	write_stdout		# print ESCAPE char
+	addi	r6,r19,ESCAPE_OFFSET
+	
+	addi	r7,r0,1			# print to stdout
+	brlid	r15,num_to_ascii       	# print number of spaces
 	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(escape-data_begin)
+	add	r5,r0,r23      		# how much to shift to right
 
-
-#	jal	num_to_ascii		# print number of spaces
+	brlid	r15,write_stdout
 	# BRANCH DELAY SLOT
-#	move	$4,$22			# how much to shift to right
-
-#	jal	write_stdout
-	# BRANCH DELAY SLOT
-#	addiu	$5,r19,(c-data_begin)	# print "C"
+	addi	r6,r19,C_OFFSET		# print "C"
 
 
 done_center:
-					# point to the string to print
-#	jal 	write_stdout
+
+	brlid	r15,write_stdout
 	# BRANCH DELAY SLOT
-#	addiu	$5,r20,(out_buffer-bss_begin)
+	add	r6,r0,r20		# point to the string to print
+
+	addi	r6,r19,LINEFEED_OFFSET	# print linefeed at end of line
+	
+	add 	r15,r0,r31		# restore return address
+
+					# fall through to write_stdout
 
 
-#	addiu	$5,r19,(linefeed-data_begin)
-					# print linefeed at end of line
-	
-#	move 	$31,$21 		# restore saved pointer
-	     				# so we'll return to
-					# where we were called from 
-					# at the end of the write_stdout
-	
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# $5 (a1) has string
-	# $24,$25 (t8,t9) destroyed
-	
+	# r6 has string
+	# r9,r12 destroyed
+
 write_stdout:
-#	li      $2, SYSCALL_WRITE       # Write syscall in $2
-#	li	$4, STDOUT		# 1 in $4 (stdout)
-	
-#	li	$6, 0			# 0 (count) in $6
-	
-#	move	$25,$5			# copy string to $25
-	
+
+	addi 	r12, r0, SYSCALL_WRITE	# Write syscall in r12
+	addi	r5, r0, STDOUT		# STDOUT in r5
+	add	r7,r0,r0		# count in r7
+		
 str_loop1:
-#	lbu	$24,1($25)		# load byte at (t9)
-#	addi	$25,$25,1		# LOAD DELAY SLOT	
-#	bnez	$24,str_loop1		# if not nul, repeat
+	lbu	r9,r6,r7		# load byte at r10
+	beqi	r9,str_done		# if nul, done
+	brid	str_loop1		# loop
 	# BRANCH DELAY SLOT
-#	addi	$6,$6,1			# increment a2
-#	syscall  			# run the syscall
+	addi	r7,r7,1			# increment count
 
-	br	r15 			# return
+str_done:
+	brki r14, 0x08			# run the syscall
+
+	rtsd	r15,8 			# return (branch delayed version)
 	# BRANCH DELAY SLOT
+	nop
 
 	
-	##############################
+	#=======================
 	# num_to_ascii
-	##############################	
-	# a0 ($4)  = value to print
-	# a1 ($5)  = output buffer	
-	# s3 ($19) = 0=stdout, 1=strcat
-	# destroys t2 ($10)
-	# destroys t3 ($11)
-	# destroys a0 ($4)
+	#=======================
+	# r5 = value to print
+	# r6 = pointer to output 
+	# r7 = 1 if stdout, 0 if strcat
+	# r8,r11,r22 trashed
 	
 num_to_ascii:
 
-#	addiu	 $5,(ascii_buffer-bss_begin)+10	
+	addi	 r6,r0,ascii_buffer+10	
 				# point to end of ascii_buffer
 
 div_by_10:
-#	addiu	$5,$5,-1	# point back one
-#	li	$1,10
-#	divu	$10,$4,$1	# divide.  hi= remainder, lo=quotient
-#	mfhi	$11		# remainder into t3 ($11)
-#	addiu	$11,$11,0x30	# convert to ascii
-#	sb	$11,0($5)	# store to buffer
-#	bne	$10,$0, div_by_10
-	# BRANCH DELAY SLOT
-#	move	$4,$10		# move old result into next divide	
+	addi	r6,r6,-1	# point back one
 	
+	addi	r11,r0,10	# divide by 10
+
+	idiv	r22,r11,r5	# quotient in r22
+	
+	muli	r8,r22,10	# calculate remainder
+	rsub	r8,r8,r5	# remainder is in r7
+
+	addi	r8,r8,0x30	# convert to ascii
+	sb	r8,r0,r6	# store to buffer
+	add	r5,r22,r0      	# move old result into next divide
+	bnei	r22, div_by_10
+
 write_out:
-#	beq	$19,$0,write_stdout
-#	nop			# if write stdout, go there 
- #   	j	strcat		# else, strcat will return for us
-#	nop
+
+	bnei	r7,write_stdout	# if write_stdout, go there
+	
+	# else fall through to strcat
+	
+	add    r5,r6,r0
+
+
+
+	#================================
+	# strcat
+	#================================
+	# output_buffer_offset = r21
+	# string to cat = r5
+	# destroys r11
+
+strcat:
+	lbu 	r11,r0,r5		# load byte from string
+	addi	r5,r5,1			# increment string	
+	sb  	r11,r0,r21		# store byte to output_buffer
+
+	bneid 	r11,strcat		# if zero, we are done
+	# BRANCH DELAY SLOT
+	addi	r21,r21,1		# increment output_buffer
+
+done_strcat:
+	rtsd	r15,8			# return
+	# BRANCH DELAY SLOT
+	addi	r21,r21,-1		# correct pointer	
+
 
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
-.align 8	# needed?
 
-hello:	.ascii "Hello World!\n\0"
+
 
 data_begin:	
 ver_string:	.ascii	" Version \0"
@@ -647,13 +650,18 @@ compiled_string:	.ascii	", Compiled \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
 linefeed:	.ascii  "\n\0"
-default_colors:	.ascii "\033[0m\n\n\0"
+default_colors:	.ascii "\033[0m\n\0"
 escape:		.ascii "\033[\0"
 c:		.ascii "C\0"
 
+.ifdef FAKE_PROC
+cpuinfo:	.ascii	"proc/c.ublaze\0"
+.else
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
+.endif
 
-one:	.ascii	"One MIPS \0"
+one:	.ascii	"One \0"
+mhz:	.ascii  "MHz Microblaze \0"
 processor:	.ascii " Processor, \0"
 
 .include	"logo.lzss_new"
@@ -663,9 +671,8 @@ processor:	.ascii " Processor, \0"
 #============================================================================
 .bss
 bss_begin:	
-.lcomm  text_buf, (N+F-1)
 .lcomm	out_buffer,16384
-
+.lcomm  text_buf, (N+F-1)
 .lcomm	disk_buffer,4096	# we cheat!!!!
 
 .lcomm  ascii_buffer,10		# 32 bit can't be > 9 chars

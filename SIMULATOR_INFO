@@ -68,7 +68,7 @@ INSTALLING
 ~~~~~~~
 
 cd generic
-hercules -f ../hercules.cnf
+sudo hercules -f ../hercules.cnf
 
 "ipl c"
 .1
@@ -206,3 +206,13 @@ to redirect console output to file, do
 Then use ./cdm on the disk image and
   cp xout u:xout
   
+
+###########################################
+
+ Microblaze
+ 
+   Use qemu
+   
+   Toolchain from:
+     http://www.monstr.eu
+     

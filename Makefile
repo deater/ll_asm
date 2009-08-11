@@ -79,7 +79,8 @@ CFLAGS = -O2 -Wall
 all:	ll ll.$(ARCH) \
 	ll.$(ARCH).fakeproc \
 	$(THUMB) ansi_compress ./sstrip/sstrip \
-	ll.$(ARCH).stripped ll.$(ARCH).fakeproc.stripped
+	ll.$(ARCH).stripped ll.$(ARCH).fakeproc.stripped \
+	ll.$(ARCH).dis ll.$(ARCH).output
 
 sstrip_ll: ll ./sstrip/sstrip
 	./sstrip/sstrip ll
@@ -111,6 +112,12 @@ lzss_new.o:    lzss_new.c
 #
 # The -N option avoids padding the .text segment, at least on x86_64
 #
+
+ll.$(ARCH).dis:	ll.$(ARCH)
+	$(CROSS)objdump --disassemble-all ll.$(ARCH) > ll.$(ARCH).dis
+	
+ll.$(ARCH).output:	ll.$(ARCH).fakeproc
+	./ll.$(ARCH).fakeproc > ll.$(ARCH).output
 
 ll:	ll.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o	
@@ -175,7 +182,7 @@ clean:
 	rm -f ll ll_c ll.$(ARCH) *.fakeproc *.stripped *.o *~ ll.s ll.thumb \
 	ll.mips16 ansi_compress logo.inc logo.lzss logo.lzss_new \
 	core logo.include logo_optimize logo.include.parisc \
-	logo.lzss_new.parisc a.out
+	logo.lzss_new.parisc a.out *.dis *.output
 	cd sstrip && make clean
 
 

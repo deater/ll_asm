@@ -1,6 +1,6 @@
 
 !
-!  linux_logo in sparc assembler    0.32
+!  linux_logo in sparc assembler    0.38
 !
 !  Should in theory work for both sparc32 and sparc64
 !    but actually written as pure SPARCV8 I think
@@ -34,9 +34,8 @@
 !     + %o6 is the stack pointer	
 !     + Condition codes:	 xcc = 64 bit, icc= 32 bit nzvc
 			
-! FIXME:	 use register windows
+! FIXME:
 !		 optimize the divide routine
-!		 use branch delay slots
 
 !
 ! %asi alternate access spaces.  Above 0x80 is user-space.
@@ -62,7 +61,9 @@
 .equ U_MACHINE,(65*4)
 .equ U_DOMAINNAME,65*5
 
-.equ S_TOTALRAM,16
+! struct sysinfo {
+! long uptime,loads[3],totalram,...;
+.equ S_TOTALRAM,4*4
 	
 ! offset into the results returned by the stat syscall
 .equ S_SIZE,32
@@ -245,7 +246,9 @@ middle_line:
 	mov	SYSCALL_READ,%g1	! read()
 	mov	%l0,%o0			! copy fd
 	add	%g3,(disk_buffer-bss_begin),%o1
-	mov	4096,%o2	 	! 4096 is max size of procfile ; )
+	mov	4095,%o2	 	! assume less than 4kB cpuinfo file
+					! one less to fit in 13-bit signed
+					! immediate
 	ta	0x10
 
 	mov	%l0,%o0			! restore fd
@@ -326,7 +329,7 @@ print_mhz:
 	!========
 	! RAM
 	!========
-
+ram:
 	set	SYSCALL_SYSINFO,%g1	! sysinfo() syscall
 	add	%g3,(sysinfo_buff-bss_begin),%o0
 					! point to sysinfo buffer
@@ -335,7 +338,7 @@ print_mhz:
 	add	%g3,(sysinfo_buff-bss_begin),%o0	
 	ld	[%o0+S_TOTALRAM],%o0
 
-	srl	%o0,7,%o0		! divide by 2**7 to get amount
+	srl	%o0,20,%o0		! divide by 2**20 to get amount
 	
 	call	num_to_ascii
 	# BRANCH DELAY SLOT

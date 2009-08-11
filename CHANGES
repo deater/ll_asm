@@ -1,3 +1,9 @@
+?? 2001
++ Got interested in linux-assembley when working at Frontpath.
++ First x86 version written in this time frame.
++ The assembly code was distributed as part of the linux_logo
+  code at first.
+
 5 March 2002
 + Start work on the ppc version
 
@@ -308,3 +314,28 @@ RELEASE 0.36
   Seems to work for x86->m68k case
 
 RELEASE 0.37
+
+5 August 2009
++ Re-optimize Alpha code.  Shave another 130 bytes off.
+
+6 August 2009
++ Got un-optimized microblaze version going.
+  Thanks to Edgar Iglesias for pointing me to a working toolchain.
++ Optimized MIPS slightly, by filling a few branch delay slots,
+  as well as moving strcat
+
+9 August 2009
++ Fix SPARC to properly load the cpuinfo file.  It was setting
+  the length to read as 4096 which was silently changed to -4096
+  which made qemu unhappy.
++ Sparc was shifting the RAM by the wrong amount for some reason.  Fix.
++ Some PPC fixes.  Was arith shifting the RAM instead of logical shift
+
+10 August 2009
++ Finish optimizing the microblaze version.
++ Optimize PPC some more
+
+11 August 2009
++ Re-compile s390 with new binutils.
+
+RELEASE 0.38
