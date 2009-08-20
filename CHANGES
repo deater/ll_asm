@@ -339,3 +339,8 @@ RELEASE 0.37
 + Re-compile s390 with new binutils.
 
 RELEASE 0.38
+
+20 August 2009
++ Make 8086 port
+
+RELEASE 0.39

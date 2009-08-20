@@ -16,6 +16,7 @@ ifneq (,$(findstring 86,$(ARCH)))
    ifeq (,$(findstring x86_64,$(ARCH)))
       SOURCE_ARCH := i386
    endif
+   THUMB := ll_8086.com
 endif
 
 #
@@ -168,6 +169,15 @@ ll.mips16.o:	ll.mips16.s
 ll.mips16:	ll.mips16.o
 	$(CROSS)$(LD) -EL -N -o ll.mips16 ll.mips16.o
 
+ll_8086.com:	      ll.8086.o.o
+		      dd if=ll.8086.o.o of=ll_8086.com bs=256 skip=1
+		      
+ll.8086.o.o:	      ll.8086.o
+		      objcopy -O binary ll.8086.o ll.8086.o.o
+
+ll.8086.o:	      ll.8086.s
+		      as -R -o ll.8086.o ll.8086.s
+
 ll.s:	
 	rm -f ll.s
 	ln -s ll.$(SOURCE_ARCH).s ll.s
@@ -182,7 +192,7 @@ clean:
 	rm -f ll ll_c ll.$(ARCH) *.fakeproc *.stripped *.o *~ ll.s ll.thumb \
 	ll.mips16 ansi_compress logo.inc logo.lzss logo.lzss_new \
 	core logo.include logo_optimize logo.include.parisc \
-	logo.lzss_new.parisc a.out *.dis *.output
+	logo.lzss_new.parisc a.out *.dis *.output *.com
 	cd sstrip && make clean
 
 

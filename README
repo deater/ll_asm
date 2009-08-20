@@ -43,7 +43,8 @@ Some Statistics
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
      pdp-11		 890 bytes   (as 2.19)
-
+     8086		 793 bytes   (as 2.19.51.20090723)
+     
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
      comparisons between the architectures can be made.
@@ -378,7 +379,24 @@ pdp-11:	       Despite wealth of addressing modes, some critical ones
 	       
 	       the a.out executable format makes for small binaries
 
-
+8086:	       This port targets a DOS COM file.
+               
+	       A COM file basically has zero overhead, which is why
+	         things are very small.
+		 
+	       A COM file only has one 16-bit segment, so pointers are
+	         all less than 16-bits which helps size.
+		 
+	       8086 support is simpler than the x86 support which has
+	         to handle more complicated cpu_info files, plus some
+		 things DOS doesn't support like hostname.
+		 
+	       8086 was a direct port of the 386 code, with 32-bit
+	         registers switched to 16.  Some changes had to be
+		 made, as the 16-bit instruction set isn't as orthogonal
+		 as the 32-bit one so some register combinations
+		 (especially in effective address calculation) aren't allowed.
+		 
 
 Features:
 --------

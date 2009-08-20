@@ -216,3 +216,13 @@ Then use ./cdm on the disk image and
    Toolchain from:
      http://www.monstr.eu
      
+
+############################################
+
+ 8086
+ 
+   apt-get install dosbox
+   dosbox
+   
+   mount c: /path/to/executable/dir
+   
