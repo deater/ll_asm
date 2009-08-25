@@ -1,0 +1,24 @@
+1573 bytes RAW
+
+BUT!  let's drop things that the other's don't need:
+  save_zp =        0x16-0x0      =    22
+  draw graphics =  0x137-0xbc    =   123
+  restore_zp =     0x1d5-0x1bf   =    22
+  keypressed =     0x1de-0x1d8   =     6
+  y_to_addr  =     0x220-0x1de   =    66
+  flush_line =     0x23c-0x22a   =    18
+  hplot      =	   0x2a0-0x23c   =   100
+  div7       =     0x2dd-0x2a0   =    61
+  clear_screen =   0x2f6-0x2dd   =    25
+#                                   ======
+				     443 bytes
+				     
+				    1130 adjusted total!
+  
+LZSS =  bc-3e = 0x7e = 126  (+inc16(8) = 134
+
+strcat = 35b-348 = 0x13 = 19 + inc16(8) = 27
+
+findstring = 3a8-35b = 4d = 77 + inc16(8) = 85
+
+num_to_ascii =31f-2f6= 0x29= 41 + div10 (348-2f6) 0x52 = 82 = 123

@@ -1,5 +1,5 @@
 ;
-;  ll_6502.s  -- Linux Logo in 6502 Assembly for the Apple II v0.31
+;  ll_6502.s  -- Linux Logo in 6502 Assembly for the Apple II v0.40
 ;
 ;		by Vince Weaver  <vince _at_ deater.net>
 ;
@@ -8,6 +8,9 @@
 ;
 ;     Also prints some rough system info for Apple II class
 ;     computers, though not for the IIgs
+;
+;     File I/O routines based on sample code in
+;       "Beneath Apple DOS" by Don Worth and Pieter Lechner
 
 
 .define EQU =
@@ -36,7 +39,6 @@ EFFECTRH  EQU $F7
 EFFECTRL  EQU $F6
 MSELECT   EQU $F5
 COUNT     EQU $F4
-OUT_COUNT EQU $F3
 
 ;; for the graphics code
 
@@ -63,15 +65,39 @@ HGRPNTH   EQU $EC
 HGRPNTL   EQU $EB
 
 ;; for the sysinfo code
-STRCATH   EQU $F9
-STRCATL   EQU $F8
 RAMSIZE   EQU $F7
 NUM2      EQU $F3
 NUM1      EQU $F2
 NUM0      EQU $F1
-TYPE      EQU $F0
-CPU       EQU $EF
+CHAR1	  EQU $F0
+CHAR2	  EQU $EF
+ENDCHAR	  EQU $EE
+FINDH	  EQU $ED
+FINDL	  EQU $EC
+STRCATH   EQU $EB
+STRCATL   EQU $EA
 
+;; For the disk-read code
+RWTSH	  EQU $F1
+RWTSL	  EQU $F0
+DOSBUFH	  EQU $EF
+DOSBUFL   EQU $EE
+FILEMH    EQU $ED
+FILEML	  EQU $EC
+
+;; DOS Constants
+OPEN     EQU $01
+CLOSE    EQU $02
+READ     EQU $03
+WRITE    EQU $04
+DELETE   EQU $05
+CATALOG  EQU $06
+LOCK     EQU $07
+UNLOCK   EQU $08
+RENAME   EQU $09
+POSITION EQU $0A
+INIT     EQU $0B
+VERIFY   EQU $0C
 
 ;; 
 OUTPUT	  EQU $4000	     	       ;; hgr page2, should be unused
@@ -81,6 +107,9 @@ BASIC 	 EQU $3D0		       ;; VECTOR for return to Applesoft
 KEYPRESS EQU $C000
 KEYRESET EQU $C010
 
+LOCATE_FILEM_PARAM EQU $3DC
+LOCATE_RWTS_PARAM  EQU $3E3
+FILEMANAGER        EQU $3D6
 
 ;; SOFT SWITCHES
 GR      EQU $C050
@@ -97,8 +126,9 @@ PRBL2	EQU $F94A		       ;; Print Blanks monitor routine
 BASCALC	EQU $FBC1
 HOME    EQU $FC58		       ;; Clear the text screen
 SETNORM EQU $FE84		       ;; NORMAL
+COUT	EQU $FDED
 COUT1   EQU $FDF0		       ;; output A to screen
-CROUT    EQU $FD8E		       ;; char out monitor routine
+CROUT   EQU $FD8E		       ;; char out monitor routine
 
 ;; LZSS Parameters
 
@@ -109,6 +139,18 @@ P_BITS	      EQU 10
 POSITION_MASK EQU 3
 
 
+;; OPTIMIZATION
+;; 1651 - original
+;; 1649 - change jmps branches (-1 byte each)
+;; 1647 - remove unneeded branch
+;; 1640 - share some code
+;; 1639 - another branch adjust
+;; 1611 - remove extraneous address loads
+;; 1600 - rearrange find string
+;; 1595 - inline strlen
+;; 1575 - hack up RAM detection
+;; 1573 - more JMP elimination
+
 ;==========================================================
 ; MAIN()
 ;==========================================================
@@ -116,7 +158,7 @@ POSITION_MASK EQU 3
         ; save zero page
 	; otherwise we can't return to BASIC
 	
-	ldx	#$e8   	     	       	 ; we save $E8-$F8
+	ldx	#$e8   	     	       	 ; we save $E8-$FF
 	ldy	#0
 	lda	#>zp_save
 	sta	OUTPUTH
@@ -127,7 +169,7 @@ save_zp_loop:
 	sta	(OUTPUTL),Y
 	inx
 	iny
-	cpy	#$10			; save 16 bytes
+	cpy	#$17			; save 16 bytes
 	bne	save_zp_loop
 
   ;==========================
@@ -178,28 +220,29 @@ test_flags:
 
 	lda	LOGOL
 	cmp	#<LOGO_END
-        bcc	not_match
 		        
-	jmp	done_logo 		; if so, we are done
+	bcs	done_logo 		; if so, we are done
+					; bcs one byte less than jmp
 			   
 not_match:			   
         lsr	MSELECT		   	; shift byte mask into carry flag
      
-        bcs	discrete_char		; if set we have discrete char
-	
-offset_length:   
 	lda	(LOGOL),Y               ; load byte
       
         ldx	#LOGOL                  ; 16-bit increrment
 	jsr	inc16
-	       
+
+        bcs	discrete_char		; if set we have discrete char
+
+offset_length:   
+
 	sta	LOADRL			; bottom of R offset
 		     
 	lda	(LOGOL),Y               ; load another byte
 			
-	ldx	#LOGOL                  ; 16 bit increment
-	jsr	inc16
-			         
+	ldx	#LOGOL                  ; 
+	jsr	inc16			; 16 bit increment
+
 	sta	LOADRH			; top of R offset
 				       
 	lsr	A
@@ -207,7 +250,8 @@ offset_length:
 	
    	clc
 	adc	#3			; add threshold+1 (3)
-        sta	OUT_COUNT		; store to OUT_COUNT
+
+	tax				; store out count in X
 	 
 output_loop:
 
@@ -225,15 +269,19 @@ output_loop:
 				          
         lda	(EFFECTRL),Y		; Load byte R[LOADR]
   
-        ldx	#LOADRL			; 16 bit increment
-	jsr	inc16
-
+  	inc     LOADRL			; increment address
+        bne	load_carry1
+        inc	LOADRH	 		; handle overflow
+load_carry1:
+  
 store_byte:   
 
 	sta     (OUTPUTL),Y		 ; store byte to output
 
-        jsr	inc_pointer
-
+	inc     OUTPUTL			 ; increment address
+        bne	sb_carry
+        inc	OUTPUTH	 		 ; handle overflow
+sb_carry:
 	pha	     			 ; calculate R+STORER
 	clc
         lda	STORERL
@@ -251,29 +299,24 @@ store_byte:
 	
 	sta	(EFFECTRL),Y		 ; store A there too
 	   
-      	ldx	#STORERL		 ; 16 bit increment
-        jsr	inc16
-	    
-	dec	OUT_COUNT		 ; count down the out counter
+	inc     STORERL			 ; increment address
+        bne	store_carry2
+        inc	STORERH	 		 ; handle overflow
+store_carry2:
+
+	dex  			         ; count down the out counter
 	bne	output_loop		 ; loop to output_loop if not 0
 		     
 	dec	COUNT			 ; count down the mask counter
 	bne	test_flags		 ; loop to test_flags if not zero
 			      
-	jmp	decompression_loop	 ; restart whole process
+	beq	decompression_loop	 ; restart whole process
 				 
 discrete_char:	
-	lda	(LOGOL),Y		 ; load byte
-		   		      
-        ldx	#LOGOL			 ; 16-bit increment
-	jsr	inc16
-
 	ldx	#1   			 ; want to write a single byte
-	stx	OUT_COUNT
       
-        jmp	store_byte		 ; go and store it
-	    
-	    
+        bne	store_byte		 ; go and store it (1 byte less than jmp)
+
 done_logo:
 
 	;==========================
@@ -381,6 +424,35 @@ not_linefeed:
 							  
 rle_done:   
 
+	;================================
+	; read from disk
+	;================================
+	
+	jsr     LOCATE_FILEM_PARAM  	; load file manager param list
+					; Y=low A=high
+		
+	sta	FILEMH
+	sty	FILEML
+
+	ldy    #7	 		; file type offset = 7
+	lda    #0			; 0 = text
+	sta    (FILEML),y
+
+	iny    				; filename ptr offset = 8
+	lda    #<filename
+	sta    (FILEML),y
+	iny
+	lda    #>filename
+	sta    (FILEML),y
+	
+	ldx    #1	 		; open existing file
+	
+	jsr    open			; open file
+
+	jsr    read			; read buffer
+
+	jsr    close			; close file
+
 	;=================================
 	; print the system info
 	;=================================
@@ -392,11 +464,14 @@ rle_done:
 	sta	CV			;                 the graphics)
 	jsr	BASCALC			; update output pointers
 
-	jsr 	get_sysinfo		; get some system info
-   
+	jsr 	detect_ram		; get some system info
+
+	;=========================
         ; print version info
-         
+        ;=========================
+	 
 	jsr 	reset_output
+	
 	lda	#>VERSION
 	sta	STRCATH
 	lda	#<VERSION
@@ -405,66 +480,57 @@ rle_done:
 	
 	jsr	center_and_print	; print it to screen
 			
+	;==========================
 	; print middle line
+	;==========================
 	
 	jsr	reset_output		; reset output pointer
 	
-	lda	#>ONE			; point to the "One 1.02MHz" line
-	sta	STRCATH
-	lda	#<ONE
-	sta	STRCATL
+		       			; STCATL/H should auto point to "One "
 	jsr	strcat 			; concatenate it
-					       
-	lda	CPU			; what kind of CPU do we have?
-	bne	cmos
-nmos:
-	lda	#>NMOS			; we have 6502 CPU, so print that
-	sta	STRCATH
-	lda	#<NMOS
-	sta	STRCATL
-	jmp	done_cpu
-
-cmos:
-    	lda	#>CMOS			; we have 65C02 CPU, so print that
-	sta	STRCATH
-	lda	#<CMOS
-	sta    	STRCATL
-
-done_cpu:
-	jsr	strcat
 	
-	lda	#>PROCESSOR		; add Processor string
-	sta	STRCATH
-	lda	#<PROCESSOR
-	sta    	STRCATL
+	lda	#('H'+$80)
+	sta	CHAR1
+	lda	#('Z'+$80)		; search for HZ
+	sta	CHAR2
+	lda	#('M'+$80)
+	sta	ENDCHAR			; and get to \M
+	jsr	find_string
+	
+			   		; STRCATL/H already points to "MHz"
+	jsr	strcat 			; concatenate it	
+		
+	lda	#('P'+$80)
+	sta	CHAR1
+	lda	#('U'+$80)		; search for CPU
+	sta	CHAR2
+	lda	#$8d
+	sta	ENDCHAR			; and get to \r
+	jsr	find_string		
+			
+				        ; STRCATL/H already points to "Processor"
 	jsr	strcat
 			      
 	jsr	num_to_ascii		; add the amount of RAM
 
-	lda	#>RAM			; add the RAM related string
-	sta	STRCATH
-	lda	#<RAM
-	sta	STRCATL
-	jsr	strcat
+	jsr	strcat 			; STRCATL/H points to "kB RAM"
     
 	jsr	center_and_print	; center and print
 
+	;====================
         ; print last line
+	;====================
 	     
 	jsr    	reset_output		; reset output pointer
-	
-	lda	#>APPLE			; print Apple II
-	sta	STRCATH
-	lda	#<APPLE
-	sta    	STRCATL
-	jsr	strcat
-			    
-	lda	TYPE  			; add type to the end
-	sta	(OUTPUTL),Y
-        jsr	inc_pointer
-	tya
-	sta	(OUTPUTL),Y
-	       
+
+	lda	#('E'+$80)
+	sta	CHAR1
+	lda	#('L'+$80)		; search for CPU
+	sta	CHAR2
+		     			; ENDCHAR already is $8D
+
+	jsr	find_string		
+
 	jsr	center_and_print	; center and print
 
 	jsr	wait_until_keypressed	; wait until a key is pressed
@@ -477,7 +543,7 @@ done_cpu:
 exit:
         ; restore zero page
 	
-	ldx	#$e8   	   		; restore $e8-$f8
+	ldx	#$e8   	   		; restore $e8-$ff
 	ldy	#$0
 	lda	#>zp_save
 	sta	OUTPUTH
@@ -488,7 +554,7 @@ restore_zp_loop:
 	sta	0,X
 	inx
 	iny
-	cpy	#$10
+	cpy	#$17
 	bne	restore_zp_loop
 
      	jmp 	BASIC		       ; return to BASIC
@@ -503,18 +569,9 @@ wait_until_keypressed:
         lda     KEYPRESS                 ; check if keypressed
 	bpl     wait_until_keypressed    ; if not, loop
 	rts
-		
-;==================================================
-; inc16 - increments a 16-bit pointer in zero page 
-;==================================================
 
-inc16:
-        inc     0,X                	 ; increment address
-	bne     no_carry
-	inx
-	inc     0,X			 ; handle overflow
-no_carry: 
-	rts
+
+
 	       
 ;==================================================
 ; y_to_addr - convert y value to address in mem
@@ -539,7 +596,7 @@ less_than_64:
 	cmp	#64
 	bcs	less_than_128
         ldx	#0
-	jmp	ready_to_add
+	beq	ready_to_add
 					  
 less_than_128:
 	cmp     #128
@@ -590,11 +647,21 @@ no_bottom_add:
 ;============================================
 
 inc_pointer:
-	inc     OUTPUTL			 ; increment address
-        bne	no_carry2
-        inc	OUTPUTH	 		 ; handle overflow
-no_carry2:
+	ldx	#OUTPUTL
+
+;==================================================
+; inc16 - increments a 16-bit pointer in zero page 
+;==================================================
+
+inc16:
+        inc     0,X                	 ; increment address
+	bne     no_carry
+	inx
+	inc     0,X			 ; handle overflow
+no_carry: 
 	rts
+
+
 	   
 ;===================================================
 ; flush_line - flush out an RLE pair to graphics mem
@@ -634,7 +701,7 @@ make_mask:
 	beq	done_mask
 	asl	A
 	dex
-	jmp make_mask
+	bne 	make_mask
 					  
 done_mask:
 	sta	MASK			; mask saved
@@ -662,7 +729,7 @@ odd:
     	lda	#2			; load odd mask
 	bit	COLOR			; see if our color has this bit set
         bne	set_bit			; if so, set it
-	jmp	clear_bit		; otherwise, clear it
+	beq	clear_bit		; otherwise, clear it
 	    
 even:
 	lda	#1			; load even mask
@@ -800,8 +867,13 @@ store_loop:				; now copy from zero page to output
         sta	(OUTPUTL),Y
 	cpx	#(NUM2+1)
 	beq	done_ntoa
-	jsr	inc_pointer
-	jmp	store_loop
+	
+	inc     OUTPUTL			 ; increment address
+        bne	ntoa_carry
+        inc	OUTPUTH	 		 ; handle overflow
+ntoa_carry:	
+	
+	bne	store_loop		 ; save a byte.  OutputH never in zero page
 done_ntoa:
 	rts
 
@@ -848,23 +920,111 @@ less_than_10:
 ;====================================
 
 strcat:
-        lda	(STRCATL),Y
-	sta	(OUTPUTL),Y
-        beq	strcat_done
-	ldx	#STRCATL
-	jsr	inc16
-	jsr	inc_pointer
-	jmp	strcat
+        lda	(STRCATL),Y		; load byte into A
+	sta	(OUTPUTL),Y		; store A out
+	pha	
+	ldx	#STRCATL		; increment STRCAT pointer
+	jsr	inc16			;  we do this first, so that we point
+					;  past null which lets us avoid
+					;  reloading in consecutive strcat's
+ 	pla
+        beq	strcat_done		; if zero, then done			
+  
+	jsr	inc_pointer		; increment output pointer
+	bne	strcat	   		; we know OUTPUTH is never in zeor page
+					; so same as jmp
 strcat_done:
 	rts
+	
+;====================================
+; find_string - 
+;====================================
+; CHAR1,2 = chars to find
+; ENDCHAR = end char
+
+find_string:
+	lda 	#<disk_buff
+	sta	FINDL
+	lda	#>disk_buff
+	sta	FINDH
+
+	clc	     			; set return value
+
+find_loop1:
+	jsr	find_loop		; find first 2 chars
+	bcc	find_string_done	; exit if error
+
+find_colon:
+	lda	#(':'+$80)		; find a colon
+	sta	CHAR1
+	lda	#(' '+$80)		; followed by a space
+	sta	CHAR2
+	jsr find_loop
+	bcc find_string_done
+
+out_loop:	
+        lda	(FINDL),Y			; load byte
+	beq	find_string_done		; quit if zero
+	
+	cmp	ENDCHAR				; quit if endhcar matched
+	beq	find_string_done
+	
+	sta	(OUTPUTL),Y			; store to output
+	ldx	#FINDL
+	jsr	inc16				; increment FIND pointer
+	jsr	inc_pointer			; increment OUT pointer
+	bne	out_loop			; loop (OUT is never in page 0)
+	
+find_string_done:
+	tya					; null terminate (y is 0)
+	sta	(OUTPUTL),Y
+	rts	
+
+find_loop:	
+        lda	(FINDL),Y			; load byte
+	beq	find_loop_done			; if zero, we're done
+
+	ldx	#FINDL				; 
+	jsr	inc16				; increment pointer
+	
+	cmp	CHAR1	
+	bne	find_loop			; jmp. disk buffer never in 0 page
+	
+	lda	(FINDL),Y			; load byte
+	cmp	CHAR2				; compare 2nd char
+	bne	find_loop
+	
+found_it:
+	ldx	#FINDL
+	jsr	inc16				; increment pointer	
+	sec					; set that we were correct
+find_loop_done:	
+	rts
+
 
 ;=============================================
 ; center_and_print - centers and prints string
 ;=============================================
 
 center_and_print:
-	jsr	strlen			; get length of string
-  
+
+        ;================================
+	; inlined strlen - count length of string
+	;================================
+
+strlen:
+        jsr	reset_output		; reset the output pointer
+
+	sty	COUNT			; set count to zero
+strlen_loop:
+        lda 	(OUTPUTL),Y
+       	beq	strlen_done
+	inc	COUNT	   		; if not zero, increment count
+	jsr	inc_pointer
+        bne	strlen_loop		; same as jmp, pointer never in 0 page
+
+strlen_done:
+	  
 	sec
         lda	#40			; width of screen
 	sbc	COUNT
@@ -883,9 +1043,13 @@ no_center:
 	ldx	COUNT
 print_loop:
       	lda	(OUTPUTL),Y
-        jsr	COUT1
+        jsr	COUT	   		 ; output a char
 
-	jsr	inc_pointer
+	inc     OUTPUTL			 ; increment address
+        bne	cap_carry
+        inc	OUTPUTH	 		 ; handle overflow
+cap_carry:
+	
 	dex
 	bne	print_loop
 		  
@@ -893,23 +1057,6 @@ print_loop:
 		     
 	rts
 
-;================================
-; strlen - count length of string
-;================================
-
-strlen:
-        jsr	reset_output		; reset the output pointer
-
-	sty	COUNT			; set count to zero
-strlen_loop:
-        lda 	(OUTPUTL),Y
-       	beq	strlen_done
-	inc	COUNT	   		; if not zero, increment count
-	jsr	inc_pointer
-        jmp	strlen_loop
-strlen_done:
-	rts		     
-		     
 ;=========================================
 ; reset_output - reset OUTPUT H&L pointers
 ;=========================================
@@ -922,79 +1069,218 @@ reset_output:
 	rts	    
 
 ;=================================
-; get_sysinfo
+; detect_ram
 ;=================================
-
-; uses lookup table from 
+;
+; uses lookup table from
 ;    http://web.pdx.edu/~heiss/technotes/misc/tn.misc.07.html
 ; to get model type.
-; Then make some intelligent guesses about chip/memory
-; This is just a simple hack, and doesn't support IIgs
+; Then make some intelligent guesses about RAM size
 
-get_sysinfo:
-	lda 	#64			; first set some defaults
-      	sta	RAMSIZE
-        lda	#('e'+$80)
-	sta	TYPE
-	lda	#0
-	sta	CPU
-		        
-	lda	$FBB3
-	cmp	#$38
+detect_ram:
+	ldx 	#64			; set default ram to 64 bytes
+	
+	lda	$FBB3			; this address
+	cmp	#$38			; is $38 on an original apple ii
 	bne	apple_iiplus
 apple_ii:
-	lda	#(' '+$80)		; we're an original Apple II
-	sta	TYPE
-	jmp	done_detecting
+	beq	done_detecting		; we were apple II, done
 					  
 apple_iiplus:
-	cmp  	#$EA
-      	bne	apple_iie
-      
-        lda	$FB1E
-	cmp	#$8A
-	beq	apple_iii
-	       
-	lda	#48	 		; we're an Apple II+
+	cmp  	#$EA			; are we an apple iie
+      	bne	apple_iie		; if so keep going
 	
-	sta	RAMSIZE			; not always true
+	; if we get here we're a ii+ or iii in emulation mode
+	       
+	ldx	#48	 		; we're an Apple II+	
+					; we assume 48k even though it can be
 		     			; 64k if language card
 					; too lazy to detect that
 					
-	lda	#('+'+$80)
-	sta	TYPE
-	jmp	done_detecting
+	beq	done_detecting
 	
-apple_iii:
-   	lda	#('I'+$80)		; we're an Apple III in emulation
-      	sta	TYPE
-        lda	#48
-	sta	RAMSIZE
-	jmp	done_detecting
-	       
 apple_iie:
 	lda	$FBC0
-	beq	apple_iic
+	beq	apple_iic		; check for apple iic
 		     
-        cmp	#$E0	 		; we're an Apple IIe (original)
-	bne	done_detecting
+        cmp	#$E0	    		; if we're an Apple IIe (original)
+	bne	done_detecting		; then use 64K and finish
 			   
 apple_iie_enhanced:
-	lda	#1 			; we're an Apple IIe (enhanced)
-	sta	CPU
-	lda	#128
-	sta	RAMSIZE
-				       
-	jmp	done_detecting
-					  
 apple_iic:
-   	lda	#('c'+$80)		; we're an Apple IIc
-      	sta	TYPE
-        lda	#128
-	sta	RAMSIZE
+	ldx	#128
 	    
 done_detecting:
+	stx     RAMSIZE
 	rts
+
+
+error:
+      	jmp	exit
+
+;=================================
+; get_dos_buffer
+;=================================
+;
+; Dos buffer format
+; 0x000-0x0ff = data buffer
+; 0x100-0x1ff = t/s list buffer
+; 0x200-0x22c = file manager workarea (45 bytes)
+; 0x22d-0x24a = file name buffer
+
+; 0x24b-0x24c = address of file manager workarea
+; 0x24d-0x24e = address of t/s list buffer
+; 0x24f-0x250 = adress of data sector buffer
+; 0x251-0x252 = address of file name field for the next buffer
+
+; In DOS, $3D2 points to 0x22d of first buffer
+;    add 0x24 to get chain pointer
+
+
+open:
+	; allocate one of the DOS buffers so we don't have to set them up
+	
+allocate_dos_buffer:
+	lda     $3D2			; DOS load point
+	sta	DOSBUFH
+	ldy	#0
+	sty	DOSBUFL
+	
+buf_loop:
+	lda	(DOSBUFL),Y		; locate next buffer
+	pha				; push on stack
+					; we need this later
+					; to test validity
+					
+	iny				; increment y
+	lda	(DOSBUFL),Y		; load next byte
+	sta	DOSBUFH			; store to buffer pointerl
+
+	pla				; restore value from stack
+	
+	sta	DOSBUFL			; store to buffer pointerh
+	
+	bne	found_buffer		; if not zero, found a buffer
+	
+	lda	DOSBUFH			; also if not zero, found a buffer
+	beq     error			; no buffer found, exit
+
+found_buffer:
+	ldy  	#0			; get filename
+	lda	(DOSBUFL),Y		; get first byte
+	beq	good_buffer		; if zero, good buffer
+	
+					; in use
+	ldy	#$24	   		; point to next 
+	bne	buf_loop		; and loop
+	
+good_buffer:
+	lda 	#$78
+	sta	(DOSBUFL),Y		; mark as in use (can be any !0)
+
+keep_opening:
+	ldy	#0	
+	lda	#OPEN			; set operation code to OPEN
+	sta	(FILEML),y
+	
+	ldy	#2	  		; point to record length
+	lda	#0			; set it to zero (16-bits)
+	sta	(FILEML),y
+	iny
+	sta	(FILEML),y
+	
+	iny		  		; point to volume num (0=any)
+	sta	(FILEML),y
+	
+	jsr	LOCATE_RWTS_PARAM	; get current RWTS parameters
+					; so we can get disk/slot info
+					
+	sty	RWTSL
+	sta	RWTSH
+	
+	ldy	#1
+	lda	(RWTSL),y		; get slot*16
+	lsr	a
+	lsr	a
+	lsr	a
+	lsr	a			; divide by 16
+	
+	ldy	#6			; address of slot
+	sta	(FILEML),y		; store it
+	
+	ldy	#2
+	lda	(RWTSL),y		; get drive
+	ldy	#5			; address of drive
+	sta	(FILEML),y
+	
+filemanager_interface:
+
+	ldy 	#$1E
+dbuf_loop:	
+	lda	(DOSBUFL),y		; get three buffer pointers
+	pha				; push onto stack
+	iny				; increment pointer
+	cpy	#$24			; have we incremented 6 times?
+	bcc	dbuf_loop		; if not, loop
+	
+	ldy	#$11			; point to the end of the same struct
+					; in file manager
+fmgr_loop:					
+	pla				; pop value
+	sta	(FILEML),Y		; store it
+	dey				; work backwards
+	cpy	#$c			; see if we are done
+	bcs	fmgr_loop		; loop
+	
+	jmp	FILEMANAGER		; run filemanager
+	
+
+;====================
+; close DOS file
+;====================
+
+close:
+        ldy    #0    			; command offset
+	lda    #CLOSE			; load close
+	sta    (FILEML),y		
+		     
+	jsr    filemanager_interface
+	
+	ldy    #0		    	; mark dos buffer as free again
+	tya
+	sta    (DOSBUFL),y
+	
+	rts
+
+;=========================
+; read from dos file
+;=========================
+
+read:
+        ldy   #0			; command offset
+	lda   #READ
+	sta   (FILEML),y
+	
+	iny   				; point to sub-opcode
+	lda   #2			; "range of bytes"
+	sta   (FILEML),y
+	
+	ldy   #6			; point to number of bytes to read
+	lda   #$ff
+	sta   (FILEML),y		; we want to read 255 bytes
+	iny
+	lda   #$00
+	sta   (FILEML),y
+
+	ldy   #8			; buffer address
+	lda   #<disk_buff
+	sta   (FILEML),y
+	iny
+	lda   #>disk_buff
+	sta   (FILEML),y
+	
+	bne   filemanager_interface     ; same as JMP
+
 
 	
 ;; *********************
@@ -1004,12 +1290,20 @@ done_detecting:
 
 R:  		  .res (N-F)
 zp_save:	  .res 32
+disk_buff:	  .res 256
 
 
 ;; *********************
 ;; DATA
 ;; *********************
 .data
+
+filename:
+; CPUINFO__6502 (padded to be 30 chars long)
+.byte $C3,$D0,$D5,$C9,$CE,$C6,$CF,$DF
+.byte $DF,$B6,$B5,$B0,$B2,$A0,$A0,$A0
+.byte $A0,$A0,$A0,$A0,$A0,$A0,$A0,$A0
+.byte $A0,$A0,$A0,$A0,$A0,$A0
 
 VERSION:
 ; "Linux Version 2.6.22.6, Compiled 2007"
@@ -1018,16 +1312,12 @@ VERSION:
 .byte	$A0,$B2,$B0,$B0,$B7,$00
 
 ONE:
-; "One 1.02MHz "
-.byte	$CF,$EE,$E5,$A0,$B1,$AE,$B0,$B2,$CD,$C8,$FA,$A0,$00
+; "One "
+.byte	$CF,$EE,$E5,$A0,$00
 
-NMOS:
-; "6502"
-.byte   $B6,$B5,$B0,$B2,$00
-
-CMOS:
-; "65C02"
-.byte	$B6,$B5,$C3,$B0,$B2,$00
+MHZ:
+; "MHz "
+.byte $CD,$C8,$FA,$A0,$00
 
 PROCESSOR:
 ; " Processor, "
@@ -1036,10 +1326,6 @@ PROCESSOR:
 RAM:	
 ; "kB RAM"
 .byte	$EB,$C2,$A0,$D2,$C1,$CD,$00
-
-APPLE:
-; "Apple II";
-.byte 	$C1,$F0,$F0,$EC,$E5,$A0,$C9,$C9,$00
 
 
 LOGO:
@@ -1063,3 +1349,14 @@ LOGO:
 .byte	0,198,80,178,121,145,74,112,49,248,81,243,40,221,23,255,23
 .byte	8,2,54,3,36,229,66,10
 LOGO_END:
+
+
+
+
+
+
+	
+
+
+
+

@@ -26,24 +26,27 @@ Some Statistics
      alpha		1821 bytes   (as 2.19.51.20090723)
      parisc		1400 bytes   (as 2.17.50)
      SPARC		1397 bytes   (as 2.19.51.20090714)
-     6502		1394 bytes   (ca64 2.7.1)
-     microblaze		1298 bytes   (as 2.16)     
+     microblaze		1298 bytes   (as 2.16)
      mips               1276 bytes   (as 2.19.51.20090714)
      m88k		1240 bytes   (as 1.92.3)
-     arm		1186 bytes   (as 2.18.0.20080103)     
-     PPC		1165 bytes   (as 2.19.51.20090805)     
+     arm		1186 bytes   (as 2.18.0.20080103)
+     PPC		1165 bytes   (as 2.19.51.20090805)
+     6502		1130*bytes   (ca64 2.12.0)
      s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1033 bytes   (as 2.19.51.20090723)
      vax		1010 bytes   (as 2.16.1)
      sh3		 994 bytes   (as 2.17.50.0.5)
-     m68k		 982 bytes   (as 2.18.0.20080103)     
+     m68k		 982 bytes   (as 2.18.0.20080103)
      x86                 969 bytes   (as 2.19.51.20090723)
-     arm_thumb		 957 bytes   (as 2.18.0.20080103)     
+     arm_thumb		 957 bytes   (as 2.18.0.20080103)
      z80		 920 bytes   (as 2.19)
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
      pdp-11		 890 bytes   (as 2.19)
      8086		 793 bytes   (as 2.19.51.20090723)
+     
+     * the 6502 results were adjusted to match the code present in other
+       architectures (i.e., not counting the graphical routines)
      
      The various implementations have varying functunality and often
      use different methods to get system info.  Still, some gross
@@ -153,6 +156,12 @@ sparc:
 	   bra (branch always, relative jump.  otherwise need 3-byte 16-bit)
 	   stz (store zero)
 
+        The 6502 code uses high-res graphics to approximate the color
+	ascii art.  When calculating total image size, we don't count
+	the overly-large graphics code and instead only count the code
+	that would be used to print the text, say, out over a serial port
+	to an ANSI capable term client.
+	
 microblaze:
         Similar to MIPS.
 	

@@ -344,3 +344,13 @@ RELEASE 0.38
 + Make 8086 port
 
 RELEASE 0.39
+
+22 August 2009
++ Finish making the 6502 port more similar to the other architectures,
+  with File I/O
++ Optimize the 6502 port some
++ Recalculate the 6502 total to not count the graphics routines, to aid
+  comparisons with the other architectures
+  
+RELEASE 0.40
+
