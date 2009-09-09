@@ -63,14 +63,15 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
     if (read(fd, ehdr, sizeof *ehdr) != sizeof *ehdr) {
 	return ferr("missing or incomplete ELF header.");
     }
-
+   
     /* Check the ELF signature.
      */
     if (!(ehdr->e_ident[EI_MAG0] == ELFMAG0 &&
 	  ehdr->e_ident[EI_MAG1] == ELFMAG1 &&
 	  ehdr->e_ident[EI_MAG2] == ELFMAG2 &&
 	  ehdr->e_ident[EI_MAG3] == ELFMAG3)) {
-	return err("missing ELF signature.");
+	printf("missing ELF signature.");
+        exit(0);
     }
 
     /* Compare the file's class and endianness with the program's.

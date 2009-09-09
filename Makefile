@@ -70,11 +70,21 @@ else
    L_EXTRA := -N
 endif
 
+#
+# Handle RiSC
+#
+
+ifneq (,$(findstring RiSC,$(ARCH)))
+      SIM = RiSC-sim
+endif
+
+
 ifeq ($(SOURCE_ARCH),)
    SOURCE_ARCH = $(ARCH)
 endif
 
 CC = gcc
+STRIP = strip
 CFLAGS = -O2 -Wall
 
 all:	ll ll.$(ARCH) \
@@ -118,17 +128,19 @@ ll.$(ARCH).dis:	ll.$(ARCH)
 	$(CROSS)objdump --disassemble-all ll.$(ARCH) > ll.$(ARCH).dis
 	
 ll.$(ARCH).output:	ll.$(ARCH).fakeproc
-	./ll.$(ARCH).fakeproc > ll.$(ARCH).output
+	$(SIM) ./ll.$(ARCH).fakeproc > ll.$(ARCH).output
 
 ll:	ll.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o	
 
 ll.$(ARCH).stripped:  ll.$(ARCH) sstrip/sstrip
 	cp ll.$(ARCH) ll.$(ARCH).stripped
+	$(CROSS)$(STRIP) ll.$(ARCH).stripped	
 	sstrip/sstrip ll.$(ARCH).stripped
 	
 ll.$(ARCH).fakeproc.stripped:		 ll.$(ARCH).fakeproc sstrip/sstrip
 	cp ll.$(ARCH).fakeproc ll.$(ARCH).fakeproc.stripped
+	$(CROSS)$(STRIP) ll.$(ARCH).fakeproc.stripped
 	sstrip/sstrip ll.$(ARCH).fakeproc.stripped
 
 ll.$(ARCH):	ll.o

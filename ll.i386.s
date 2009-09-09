@@ -38,7 +38,7 @@
 # offset into the results returned by the sysinfo syscall
 .equ S_TOTALRAM,16
 
-# Sycscalls
+# Syscalls
 .equ SYSCALL_EXIT,     1
 .equ SYSCALL_READ,     3
 .equ SYSCALL_WRITE,    4

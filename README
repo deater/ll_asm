@@ -24,6 +24,7 @@ Some Statistics
      ---------        ---------------
      ia64		2874 bytes   (as 2.17)
      alpha		1821 bytes   (as 2.19.51.20090723)
+     RiSC		1418 bytes   (RiSC-as 0.0.2)
      parisc		1400 bytes   (as 2.17.50)
      SPARC		1397 bytes   (as 2.19.51.20090714)
      microblaze		1298 bytes   (as 2.16)
@@ -55,7 +56,6 @@ Some Statistics
 
 Individual architectural comments, in descending order of executable size:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 
 ia64:   ia64 is VLIW.
      
@@ -116,6 +116,29 @@ alpha:
 	
 	The GOT section is a huge space-sink.  It has 64-bit constants,
 	  which most of the time you shouldn't really need.
+
+RiSC:
+	This is a 16-bit architecture used in my undergrad
+	computer courses I took at University of Maryland.
+		 http://www.ece.umd.edu/~blj/RiSC/
+		 
+	No logic instructions besides nand.  This means
+	masking with an "and" takes at least 2 instructions 
+	(because there is no immediate form).
+	
+	16-bit memory acesses only.  It is quite complicated to load a byte.
+	
+	Only 7 registers, one of which is always 0, and one of which
+	is the stack pointer.
+	
+	No shift instructions.  Left shift can be done with add, but
+	right shift takes a fairly complicated routine.
+
+        Only able to branch +/- 64 instructions, which can be a limit.
+	
+	Only a 6-bit immediate, though the lui instruction helps.
+
+
 
 parisc:	+ really hurt by its short immediate field.  Most addresses
 	  require 2 instructions to load, even if try to use relative-data add.
