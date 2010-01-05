@@ -1,5 +1,5 @@
 //
-//  linux_logo in ia64 assembler    0.24
+//  linux_logo in ia64 assembler    0.42
 //
 //  by Vince Weaver <vince _at_ deater.net>
 //
@@ -55,7 +55,7 @@
 // GR32-127 are stacked registers.		
 // 128 fp registers, FR0-FR127
 // FR0-FR31 always visible.
-//  FR0 always reads as 0.0, FR1 always reads as 1.0.  can't read them	
+//  FR0 always reads as 0.0, FR1 always reads as 1.0.  can't write them	
 // 64 predicate registers, PR0-PR63 (1 bit each)
 //   PR0-PR15 always available.  PR0 is always 1
 //   PR16-PR63 are rotating (for loop unrolling)	

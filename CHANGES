@@ -358,3 +358,11 @@ RELEASE 0.40
 + Finish updating RiSC port to be a full-featured port.
 
 RELEASE 0.41
+
+12 December 2009
++ Some minor changes to ia64 port
+
+4 January 2010
++ Add ARM EABI version
+
+RELEASE 0.42

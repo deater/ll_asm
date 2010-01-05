@@ -22,7 +22,7 @@ Some Statistics
 
      Processor        lzss executable
      ---------        ---------------
-     ia64		2874 bytes   (as 2.17)
+     ia64		2826 bytes   (as 2.18.0.20080103)
      alpha		1821 bytes   (as 2.19.51.20090723)
      RiSC		1418 bytes   (RiSC-as 0.0.2)
      parisc		1400 bytes   (as 2.17.50)
