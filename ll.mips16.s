@@ -1,5 +1,5 @@
 #
-#  linux_logo in mips16 assembler 0.31
+#  linux_logo in mips16 assembler 0.43
 #
 #  By 
 #       Vince Weaver <vince _at_ deater.net>
@@ -8,7 +8,6 @@
 #  link with         "ld -o ll_mips16 ll.mips16.o"
 
 .include "logo.include"
-
 
 #
 # Mips16 differences from MIPS
@@ -24,6 +23,61 @@
 # PC relative addressing is added for lw and addi
 # an instruction can be "extended" to have up to a 16-bit immediate
 
+# Instructions (64-bit instructions only avail on 64-bit CPU)
+# + load instructions : lb/lbu/ld/lh/lhu/lw/lwu
+#   * lb ry, offset(rx)  -- offset=5bits (extnd to 16-bits)
+#   * lw can also be SP or PC relative
+# + store instructions: sb/sd/sh/sw
+# + stack frame       
+#   * restore ra,s0,s1,framesize - optinally copy ra,s0,s1 off stack
+#                                  then update stack with 4-bit imm
+#     extended version can also restore other registers
+#   * save is like restore, but in reverse
+# + ALU 
+#   * addiu rx, imm : rx=rx+8-bit immediate  (extensible to 16-bit)
+#   * addiu ry, rx, imm : ry=rx+4-bit immediate (extensible to 15 bit)
+#   * addiu rx,pc, imm : generate pc relative address (8bit extend to 16bit)
+#   * addiu sp, imm    : adjust stack pointer (8bit extnd to 16bit) 
+#   * addiu rx,sp, imm    : generate sp relative address (8bit extnd to 16bit) 
+#   * addu rz,rx,ry    : rz = rx + ry
+#   * and  rx,ry       : rx = rx & ry
+#   * cmp  rx,ry       : T = rx ^ ry
+#   * cmpi rx,imm      : T = rx ^ zero-extend 8-bit imm (extnd to 16bit)
+#   * li rx,imm        : 8-bit, extnd to 16-bit
+#   * move r32,rz      : can be any of the 32 MIPS regs
+#   * neg rx,ry        : rx = 0-ry
+#   * not rx,ry        : rx = ~ry
+#   * or  rx,ry        : rx = rx | ry
+#   * seb/seh/sew      : sign extend
+#   * slt rx,ry        : T = (rx < ry)
+#   * slti rx,imm      : T = (rx < imm) 8-bit, extnd to 16-bi
+#   * sltu/slti/sltiu  : like above
+#   * subu rz,rx,ry    : rx = rx - ry
+#   * xor rx,ry        : rx = rx ^ ry
+#   * zeb/zeh/zew      : zero extend
+#   * daddiu, etc for 64-bit
+# + special           : break/extend
+# + mul/div           : ddiv/ddivu/div/divu/dmult/dmultu/mfhi/mflo/mult/multu
+#   * results in hi/lo like regular MIPS
+# + branch            : b/beqz/bnez/bteqz/btnez/jal/jalr/jalrc/jalx/jr/jrc
+#   * the "T" version checks the special T register (set by cmp)
+#   * jal jumps with 16-bit offset, result in r31
+#   * jalrc has no delay slot
+#   * jalx changes from 16-bit to 32-bit mode
+# + shift (64)        : dsll/dsllv/dsra/dsrav/dsrl/dsrlv
+# + shift (32)
+#   * sll rx,ry,sa    : rx = ry << sa (8-bits, extend to 31)
+#   * sllv ry,rx      : ry = ry << rx
+#   * sra rx,ry,sa    : rx = ry >> sa (8-bits extend to 31)
+#   * srav
+#   * srl
+#   * srlv
+
+# PC relative instructions: lwd,ld,addiu,daddiu
+
+# "Extended" instructions allow making immediate field larger,
+#    for a 32-bit instruction
+#    cannot be in branch delay slots
 
 
 
@@ -44,39 +98,19 @@
 # Register definitions.  Why does't gas know these?
 #
 
-#.equ zero , 0
-#.equ at   , 1  # Assembler Temporary
-#.equ v0   , 2  # Returned value registers
-#.equ v1   , 3
-#.equ a0   , 4  # Argument Registers (Caller Saved)
-#.equ a1   , 5
-#.equ a2   , 6
-#.equ a3   , 7
-#.equ t0   , 8  # Temporary (Caller Saved)
-#.equ t1   , 9
-#.equ t2   ,10
-#.equ t3   ,11
-#.equ t4   ,12
-#.equ t5   ,13
-#.equ t6   ,14
-#.equ t7   ,15
-#.equ s0   ,16  # Callee-Saved
-#.equ s1   ,17
-#.equ s2   ,18
-#.equ s3   ,19
-#.equ s4   ,20
-#.equ s5   ,21
-#.equ s6   ,22
-#.equ s7   ,23
-#.equ t8   ,24
-#.equ t9   ,25
-#.equ k0   ,26  # Kernel Reserved (do not use!)
-#.equ k1   ,27
-#.equ gp   ,28  # Global Pointer
-#.equ sp   ,29  # Stack Pointer
-#.equ fp   ,30  # Frame Pointer (GCC)
-#.equ s8   ,30  # s8 on mips compiler
-#.equ ra   ,31  # return address (of subroutine call)
+# zero  = 0
+# at    = 1     # Assembler Temporary
+# v0-v1 = 2-3   # Returned value registers
+# a0-a3 = 4-7   # Argument Registers (Caller Saved)
+# t0-t7 = 8-15  # Temporary (Caller Saved)
+# s0-s7 = 16-23 # Callee-Saved
+# t8-t9 = 24-25
+# k0-k1 = 26-27 # Kernel Reserved (do not use!)
+# gp    = 28    # Global Pointer
+# sp    = 29    # Stack Pointer
+# fp    = 30    # Frame Pointer (GCC)
+# s8    = 30    # s8 on mips compiler
+# ra    = 31    # return address (of subroutine call)
 
 
 # offsets into the results returned by the uname syscall
@@ -109,8 +143,20 @@
 .equ STDOUT,1
 .equ STDERR,2
 
+
+
 	.globl __start	
+
 __start:	
+
+     jal start16                       # I don't think thise should
+                                       # be necessary, how do I create
+				       # a native mips16 binary?
+     nop
+
+.set mips16
+
+start16:
 	#=========================
 	# PRINT LOGO
 	#=========================
@@ -122,96 +168,88 @@ __start:
 #	la	$17,data_begin		# point $17 at .data segment begin
 #	la	$18,bss_begin		# point $18 at .bss segment begin
 
-#	li      $8,(N-F)   	     	# R
+	li      $6,(N-F)   	     	# R
 	
 #	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo 
 #	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
 #	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
 
+        la      $16,out_buffer
+	la      $17,logo
+
 decompression_loop:
 
-#	lbu	$10,0($9)       # load in a byte
-#	addiu	$9,$9,1		# increment source pointer
+	lbu	$2,0($17)       # load in a byte
+	addiu	$17,$17,1	# increment source pointer
 
-#	move 	$11, $10	# move in the flags
-#	ori 	$11,$11,0xff00  # put 0xff in top as a hackish 8-bit counter
+        move 	$3, $2	        # move in the flags
+	li      $7,0xff00
+	or 	$3,$7           # put 0xff in top as a hackish 8-bit counter
 
 test_flags:
-#	beq	$12, $9, done_logo	# have we reached the end?
+        la      $7, logo_end
+	beq	$7, $17, done_logo	# have we reached the end?
 					# if so, exit
-#	nop
+        li      $7,1
+        and     $7,$3	                # test to see if discrete char
 
-#        andi	$13,$11,0x1	# test to see if discrete char
-
-
-#	bne	$13,$0,discrete_char	# if set, we jump to discrete char
+	srl	$3,1  	                # shift	
+	bnez	$7,discrete_char	# if set, we jump to discrete char
 	
-	# BRANCH DELAY SLOT
-#	srl	$11,$11,1  	# shift	
-
-
 offset_length:
-#	lbu     $10,0($9)	# load 16-bit length and match_position combo
-#	lbu	$24,1($9)	# can't use lhu because might be unaligned
-#	addiu	$9,$9,2	 	# increment source pointer	
-#	sll	$24,$24,8
-#	or	$24,$24,$10
+	lbu     $2,0($17)	# load 16-bit length and match_position combo
+	lbu	$4,1($17)	# can't use lhu because might be unaligned
+	addiu	$17,2           # increment source pointer	
+	sll	$4,8
+	or	$4,$2           # $4 now has 16-bit value
 	
-
+	srl $5,$4,P_BITS	# get the top bits, which is length
 	
-#	srl $15,$24,P_BITS	# get the top bits, which is length
-	
-#	addiu $15,$15,THRESHOLD+1 
+	addiu $5,$5,THRESHOLD+1 
 	      			# add in the threshold?
 		
 output_loop:
-#        andi 	$24,$24,(POSITION_MASK<<8+0xff)  	
+        li      $7,(POSITION_MASK<<8+0xff)
+        and 	$4,$7
 					# get the position bits
-#	addiu	$10,$18,(text_buf-bss_begin)
-#	addu	$10,$10,$24
-#	lbu	$10,0($10)		# load byte from text_buf[]
+        la      $7,text_buf
+	addu	$4,$7
+	lbu	$2,0($4)		# load byte from text_buf[]
 					# should have been able to do
 					# in 2 not 3 instr
-#	addiu	$24,$24,1	    	# advance pointer in text_buf
-store_byte:	
-#        sb      $10,0($16)
-#	addiu	$16,$16,1      		# store byte to output buffer
+	addiu	$4,$4,1	    	# advance pointer in text_buf
+store_byte:
+        sb      $2,0($16)
+	addiu	$16,1      		# store byte to output buffer
 
-#	addiu	$1,$18,(text_buf-bss_begin)
-#	addu	$1,$1,$8	
-#	sb      $10, 0($1)		# store also to text_buf[r]
-#	addi 	$8,$8,1        		# r++
+        la      $7,text_buf
+	addu	$7,$6
+#	sb      $2, 0($7)		# store also to text_buf[r]
+	addiu 	$6,$6,1        		# r++
 
 
-#	addiu	$15,$15,-1		# decrement count
-#	bne	$15,$0,output_loop	# repeat until k>j
-#	#BRANCH DELAY SLOT
-#	andi 	$8,$8,(N-1)		# wrap r if we are too big
+	addiu	$5,$5,-1		# decrement count
+	li      $7,(N-1)
+	and 	$6,$7		        # wrap r if we are too big	
+	bnez	$5,output_loop	        # repeat until k>j
 
-#	andi	$13,$11,0xff00		# if 0 we shifted through 8 and must
-#	bne	$13,$0,test_flags	# re-load flags
-#	# BRANCH DELAY SLOT
-#	nop
+	cmpi	$3,0x100		# if 0 we shifted through 8 and must
+	btnez	test_flags	        # re-load flags
 	
-#	j 	decompression_loop
-	# BRANCH DELAY SLOT
-#	nop
+	b 	decompression_loop
+
 
 discrete_char:
-#	lbu     $10,0($9)
-#	addiu	$9,$9,1		       	# load a byte
-#       j     store_byte		# and store it
-	# BRANCH DELAY SLOT
-#	li   	$15,1			# force a one-byte output
+	lbu     $2,0($17)
+	addiu	$17,1		        # load a byte
+	li   	$5,1			# force a one-byte output	
+        b       store_byte		# and store it
 
 # end of LZSS code
 
 done_logo:
-
- #       jal	write_stdout			# print the logo
-	# BRANCH DELAY SLOT
-#	addiu	$5,$18,(out_buffer-bss_begin)	# point $5 to out_buffer
-
+	la	$5,out_buffer	                # point $5 to out_buffer
+        jal	write_stdout			# print the logo
 
 first_line:	
 	#==========================
@@ -401,31 +439,27 @@ chip_name:
 	#================================
 	# Exit
 	#================================
-	jal	lala2
+        lw      $5, hello_addr
+
+        jal     write_stdout
 
 exit:
      	li	$2, SYSCALL_EXIT	# put exit syscall in v0
-#	li	$4, 5			# put exit code in a0
-	jal	do_syscall
+	li	$4, 5			# put exit code in a0
+	jalx    do_syscall
 
 
-#.set nomips16
+
+.align 2
+.set nomips16
         #===================
-	# sysall
+	# syscall
 	#===================
 do_syscall:	
         syscall	    			# exit
-	jr    $31
+	j    $31
 	
 .set mips16
-
-lala:
-nop
-lala2:
-     li 	$4,7
-     li		$2, SYSCALL_EXIT
-     jr		$31
-     
 
 	#=================================
 	# FIND_STRING 
@@ -580,25 +614,25 @@ done_center:
 	
 
 write_stdout:
-#	li      $2, SYSCALL_WRITE       # Write syscall in $2
-#	li	$4, STDOUT		# 1 in $4 (stdout)
 	
-#	li	$6, 0			# 0 (count) in $6
-	
-#	move	$25,$5			# copy string to $25
+        save    $31,8
+
+        move    $4,$5                   # copy string pointer to $4
+	li      $6, 0                   # 0 (count) in $6
 	
 str_loop1:
-#	lbu	$24,1($25)		# load byte at (t9)
-#	addi	$25,$25,1		# LOAD DELAY SLOT	
-#	bnez	$24,str_loop1		# if not nul, repeat
-	# BRANCH DELAY SLOT
-#	addi	$6,$6,1			# increment a2
-#	syscall  			# run the syscall
+	lbu	$2,1($4)		# load byte at (4)
+	addiu	$4,1		
+	addiu	$6,1			# increment a2	
+	bnez	$2,str_loop1		# if not nul, repeat
 
-#	jr	$31 			# return
-	# BRANCH DELAY SLOT
-#	nop
-	
+	li      $2, SYSCALL_WRITE       # Write syscall in $2
+	li	$4, STDOUT		# 1 in $4 (stdout)	
+	jalx    do_syscall
+	restore $31,8
+	jr      $31
+
+
 	##############################
 	# num_to_ascii
 	##############################	
@@ -634,9 +668,10 @@ write_out:
 #===========================================================================
 #	section .data
 #===========================================================================
-.data
 
 data_begin:	
+hello_addr:      .int hello
+hello:          .ascii "Hello\n\0"
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 ram_comma:	.ascii	"M RAM, \0"
@@ -657,7 +692,6 @@ processor:	.ascii " Processor, \0"
 #	section .bss
 #============================================================================
 .bss
-bss_begin:	
 .lcomm  text_buf, (N+F-1)
 .lcomm	out_buffer,16384
 

@@ -132,7 +132,7 @@ done_logo:
 	pop 	%ebp			# get out_buffer and keep in bp
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
-	call	write_stdout		# print the logo
+	call 	write_stdout		# print the logo
 
 	#
 	#  Setup

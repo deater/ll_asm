@@ -366,3 +366,11 @@ RELEASE 0.41
 + Add ARM EABI version
 
 RELEASE 0.42
+
+13 October 2010
++ Fix 8086 port to actually be 8086 (and not 286)
+  8086 can't push immediate or shift right immediate
+  (noticed by Terje Mathisen).
++ optimize 8086 target some more, now down to 780 bytes
+
+RELEASE 0.43

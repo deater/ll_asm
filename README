@@ -44,7 +44,7 @@ Some Statistics
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
      pdp-11		 890 bytes   (as 2.19)
-     8086		 793 bytes   (as 2.19.51.20090723)
+     8086		 780 bytes   (as 2.20.1-system.20100303)
      
      * the 6502 results were adjusted to match the code present in other
        architectures (i.e., not counting the graphical routines)
@@ -472,7 +472,7 @@ Publications using ll:
 ----------------------
     * V.M. Weaver, S.A. McKee. "Code Density Concerns for New Architectures", 
       27th IEEE International Conference on Computer Design (ICCD 2009), 
-      Lake Tahoe, California, October 2009 (to appear).
+      Lake Tahoe, California, October 2009.
     * V.M. Weaver, S.A. McKee. "Optimizing for Size: Exploring the Limits of
       Code Density" (Poster), Architectural Support for Programming Languages 
       and Operating Systems (ASPLOS '09), Washington DC, March 2009.

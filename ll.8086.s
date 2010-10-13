@@ -1,5 +1,5 @@
 #
-#  linux_logo in 8086 assembler 0.39
+#  linux_logo in 8086 assembler 0.43
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -15,7 +15,7 @@
 #     *fun fact* Ralf Brown's sister was a baby-sitter for my family
 #
 
-#  assemble with     "as -R -o ll.8086.o ll.8086.s"
+#  assemble with     "as --32 -R -o ll.8086.o ll.8086.s"
 #  link with         "objcopy -O binary ll.8086.o ll.8086.o.o"
 #                    "dd if=ll.8086.o.o of=ll_8086.com bs=256 skip=1"
 
@@ -26,19 +26,25 @@
 #     the dd skips the first 0x100 bytes, as gas's .org directive
 #         fills it with useless zeros
 
-#  dump with  "objdump --disassemble-all -mi8086 ./ll.8086.o"
+#  dump with  "objdump -bbinary --disassemble-all -mi8086 ./ll_8086.com"
 
 # OPTIMIZATIONS
-# + TODO
-# + See if we really need to save %si all the time
 # + Check to see if the contant opts done for 386 actually help on 8086
-# + I removed the strcat->find_string switch opts.  Check that
+#   (answer = no)
 
+# Sizes
+# + 793 bytes -- original port
+# + 794 bytes -- fix to be 8086 (not 286) code.
+#                gained a byte because can't do shr IMM
+# + 786 bytes -- remove some unnecessary saving of %si
+# + 780 bytes -- save %si around find_print, no need to save/restore at all
+	
 .include "logo.include"
 
 .text
 
 # generate only 8086 code
+.arch i8086
 .code16	 	    
 # COM file is loaded at 0x100 offset
 .org 0x100 	    
@@ -83,8 +89,9 @@ offset_length:
 	mov %ax,%bx		# copy to bx
 	    			# no need to mask bx, as we do it
 				# by default in output_loop
-	
-	shr $(P_BITS),%ax	
+
+	mov $(P_BITS),%cl
+	shr %cl,%ax
 	add $(THRESHOLD+1),%al
 	mov %al,%cl             # cl = (ax >> P_BITS) + THRESHOLD + 1
 				#                       (=match_length)
@@ -92,12 +99,9 @@ offset_length:
 output_loop:
 	and 	$POSITION_MASK,%bh  	# mask it
 	mov 	text_buf(%bx), %al	# load byte from text_buf[]
-			       		# illegal!
-					
 	inc 	%bx	    		# advance pointer in text_buf
 store_byte:	
-	stosb				# store it
-	
+	stosb				# store it	
 	mov     %al, text_buf(%bp)	# store also to text_buf[r]
 	inc 	%bp 			# r++
 	and 	$(N-1), %bp		# mask r
@@ -111,8 +115,7 @@ store_byte:
 
 discrete_char:
 	lodsb				# load a byte
-	xor	%cx,%cx
-	inc	%cx			# we set ecx to one so byte
+	mov	$1,%cx			# we set ecx to one so byte
 					# will be output once
 					
 	jmp     store_byte              # and cleverly store it
@@ -127,15 +130,15 @@ done_logo:
 	pop 	%bp			# get out_buffer and keep in bp
 	mov	%bp,%dx			# move out_buffer to dx
 
-	push	%bp			# needed?
+#	push	%bp			# needed?
 	call	write_stdout		# print the logo
-	pop	%bp			# needed?
+#	pop	%bp			# needed?
 
 	#
 	#  Setup
 	#
 setup:
-	mov	$strcat,%cx		# use dx as call pointer
+	mov	$strcat,%cx		# use cx as call pointer
 	
 	#==========================
 	# PRINT VERSION
@@ -148,7 +151,6 @@ setup:
 
 	mov	$ver_string,%si		# source is " Version "
 	call 	*%cx			# call strcat
-	push	%si  			# save our .txt pointer
 
 	# Get DOS version
 	
@@ -171,10 +173,8 @@ setup:
 	
 	call	num_to_ascii		# print minor version
 
-	pop	%si  			# restore .txt pointer
-					# source is ", Compiled "
+					# si points to ", Compiled "
 	call 	*%cx			# call strcat
-	push	%si  			# store for later
 
 	# We fake compiled date
 	# because DOS doesn't have such a notion
@@ -225,11 +225,9 @@ middle_line:
 number_of_cpus:
 
 	# We assume only one CPU
-	
-	pop	%si			# restore input pointer (points to One)
-	call	*%cx			# copy it (call strcat)
 
-	push	%si
+					# si points to One
+	call	*%cx			# copy it (call strcat)
 
 	#=========
 	# MHz
@@ -244,11 +242,9 @@ print_mhz:
 
 	call	find_string		# call find string
 
-	pop	%si			# restore input pointer (points to MHz)
+					# si points to MHz
 	call	*%cx			# copy it (call strcat)
 
-	push	%si
-	
 	#=========
 	# Chip Name
 	#=========
@@ -261,10 +257,7 @@ chip_name:
 	mov	$'\n',%ah
 	call	find_string
 
-
-	pop	%si
-	call	*%cx			# ' Processor'
-	push	%si			# restore the values
+	call	*%cx			# si points to ' Processor'
 
 	
 	#========
@@ -280,9 +273,8 @@ chip_name:
 	
 	pop  %cx	 		# restore strcat pointer
 	
-	pop     %si	 		# print 'M RAM, '
+					# si points to 'M RAM, '
 	call	*%cx			# call strcat
-	push	%si
 	
 
 	#========
@@ -295,9 +287,8 @@ chip_name:
 	mov	$'\n',%ah
 	call	find_string
 
-	pop	%si	   		# bogo total follows RAM 
+					# si points to bogo total
 	call 	*%cx			# call strcat
-	push	%si
 
 	mov	%bp,%dx			# point dx to out_buffer
 
@@ -309,14 +300,12 @@ chip_name:
 
 	mov     %bp,%di		  	# point to output_buffer
 
-	pop	%si			# host name (hardcoded) 
+					# si points to host name (hardcoded) 
 	call    *%cx			# call strcat
-	push	%si			#
-	
-		      			# ecx is unchanged
+
 	call	center_and_print	# center and print
-	
-	pop	%dx			# (.txt) pointer to default_colors
+
+	mov	%si,%dx			# si now points to default_colors
 	
 	call	write_stdout
 	
@@ -336,8 +325,11 @@ exit:
 	#   ah is char to end at
 	#   bx/dx is 4-char ascii string to look for
 	#   di points at output buffer
+	#
+	#   si = saved
 
 find_string:
+	push	%si
 					
 	mov	$disk_buffer-1,%si	# look in cpuinfo buffer
 find_loop:
@@ -381,6 +373,7 @@ almost_done:
 
 	movb	 $0, (%di)	        # replace last value with NUL 
 done:
+	pop	%si
 	ret
 
 
@@ -399,7 +392,12 @@ strcat:
 	#==============================
 	# center_and_print
 	#==============================
-	# string to center in dx
+	# string to center in dx (saved)
+	#
+	# cx,dx = saved
+	# di incremented
+	# ax,bx trashed
+	
 
 center_and_print:
 	push    %dx			# save the string pointer
@@ -419,14 +417,13 @@ str_loop2:				# find end of string
 	cmpb	$0,(%bx)		# repeat till we find zero	
 	jne	str_loop2
 	
-	push	$80	 		# assume 80 columns
-	pop	%ax
+	mov	$80,%ax	 		# assume 80 columns
 	
 	cmp	%ax,%dx			# see if we are >=80
 	jl	not_too_big		# if so, don't center
 
-	push	$80			# don't center by setting
-	pop	%dx			# size to 80
+	mov	$80,%dx			# don't center by setting
+					# size to 80
 	
 not_too_big:
 	sub	%dx,%ax			# subtract size from 80
@@ -471,17 +468,20 @@ write_stdout:
 	#==============================
 	# num_to_ascii
 	#==============================
-	# ax = value to print
+	# ax = value to print (trashed)
 	# di points to where we want it
+	#
+	# cx = saved
+	# di = incremented
+	# ax,bx,dx = trashed
 	
 num_to_ascii:
 	push 	%cx
-	push    $10		# set bx to 10
-	pop     %bx
+	mov     $10,%bx		# set bx to 10
 	xor     %cx,%cx         # clear cx
 div_by_10:
 	cdq                     # clear dx
-	div     %bx             # divide
+	div     %bx             # divide dx:ax by 10, dx=R ax=Q
 	push    %dx             # save for later
 	inc     %cx             # add to length counter
 	or      %ax,%ax         # was Q zero?

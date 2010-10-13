@@ -102,7 +102,7 @@ export ARCH
 
 ./sstrip/sstrip:	./sstrip/sstrip.c
 	cd sstrip && make
-       
+
 ansi_compress:  ansi_compress.o lzss.o lzss_new.o 
 	$(CC) $(LDFLAFS) -o ansi_compress ansi_compress.o lzss.o lzss_new.o
 
@@ -118,7 +118,7 @@ lzss_new.o:    lzss_new.c
 
 #ll_c.o:	ll_c.c
 #	$(CC) $(CFLAGS) -c -g ll_c.c
-	
+
 #ll_c:	ll_c.o logo.lzss_new.h
 #	$(CC) $(LFLAGS) -o ll_c ll_c.o
 
@@ -128,7 +128,7 @@ lzss_new.o:    lzss_new.c
 
 ll.$(ARCH).dis:	ll.$(ARCH)
 	$(CROSS)objdump --disassemble-all ll.$(ARCH) > ll.$(ARCH).dis
-	
+
 ll.$(ARCH).output:	ll.$(ARCH).fakeproc
 	$(SIM) ./ll.$(ARCH).fakeproc > ll.$(ARCH).output
 
@@ -139,7 +139,7 @@ ll.$(ARCH).stripped:  ll.$(ARCH) sstrip/sstrip
 	cp ll.$(ARCH) ll.$(ARCH).stripped
 	$(CROSS)$(STRIP) ll.$(ARCH).stripped	
 	sstrip/sstrip ll.$(ARCH).stripped
-	
+
 ll.$(ARCH).fakeproc.stripped:		 ll.$(ARCH).fakeproc sstrip/sstrip
 	cp ll.$(ARCH).fakeproc ll.$(ARCH).fakeproc.stripped
 	$(CROSS)$(STRIP) ll.$(ARCH).fakeproc.stripped
@@ -147,13 +147,13 @@ ll.$(ARCH).fakeproc.stripped:		 ll.$(ARCH).fakeproc sstrip/sstrip
 
 ll.$(ARCH):	ll.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH) ll.o	
-	
+
 ll.$(ARCH).fakeproc:	ll.fakeproc.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH).fakeproc ll.fakeproc.o
 
 ll.o:	ll.$(SOURCE_ARCH).s logo.lzss
 	$(CROSS)$(AS) $(C_EXTRA) $(LITTLE_ENDIAN) -o ll.o ll.$(SOURCE_ARCH).s
-	
+
 ll.fakeproc.o:	ll.s logo.lzss
 	$(CROSS)$(AS) $(C_EXTRA) $(LITTLE_ENDIAN) -defsym FAKE_PROC=1 -o ll.fakeproc.o ll.s
 
@@ -176,8 +176,7 @@ ll.thumb.fakeproc:	ll.thumb.fakeproc.o
 
 ll.thumb.fakeproc.o:	ll.thumb.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mthumb-interwork -o ll.thumb.fakeproc.o ll.thumb.s
-	
-	
+
 ll.arm.eabi.stripped:  ll.arm.eabi sstrip/sstrip
 	cp ll.arm.eabi ll.arm.eabi.stripped
 	sstrip/sstrip ll.arm.eabi.stripped
@@ -197,27 +196,26 @@ ll.arm.eabi.fakeproc:	ll.arm.eabi.fakeproc.o
 
 ll.arm.eabi.fakeproc.o:	ll.arm.eabi.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -o ll.arm.eabi.fakeproc.o ll.arm.eabi.s
-	
-	
+
 ll.mips16.o:	ll.mips16.s
-	$(CROSS)$(AS) -EL -o ll.mips16.o ll.mips16.s
-	
+	$(CROSS)$(AS) -mips32r2 -o ll.mips16.o ll.mips16.s
+
 ll.mips16:	ll.mips16.o
-	$(CROSS)$(LD) -EL -N -o ll.mips16 ll.mips16.o
+	$(CROSS)$(LD) -N -o ll.mips16 ll.mips16.o
 
 ll_8086.com:	      ll.8086.o.o
 		      dd if=ll.8086.o.o of=ll_8086.com bs=256 skip=1
-		      
+
 ll.8086.o.o:	      ll.8086.o
 		      objcopy -O binary ll.8086.o ll.8086.o.o
 
 ll.8086.o:	      ll.8086.s
-		      as -R -o ll.8086.o ll.8086.s
+		      as --32 -R -o ll.8086.o ll.8086.s
 
 ll.s:	
 	rm -f ll.s
 	ln -s ll.$(SOURCE_ARCH).s ll.s
-		   
+
 logo.inc:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
