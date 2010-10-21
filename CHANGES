@@ -374,3 +374,11 @@ RELEASE 0.42
 + optimize 8086 target some more, now down to 780 bytes
 
 RELEASE 0.43
+
+19 October 2010
++ Re-optimize z80 target based on suggestions by Mikael Tillenius.  
+
+21 October 2010
++ More z80 work.  Down to 896 bytes.
+
+RELEASE 0.44

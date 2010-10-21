@@ -1,5 +1,5 @@
 ;
-;  linux_logo in z80 assembler 0.35
+;  linux_logo in z80 assembler 0.44
 ;
 ;       Vince Weaver <vince _at_ deater.net>
 ;
@@ -102,7 +102,7 @@
 ; + 2 byte
 ; LDI  -- (HL) moved to (DE).  Both incremented, BC decremented
 ; LDIR -- like LDI, but repeats until BC is zero
-; LDD -- like LDI but decremeng instead of increment
+; LDD -- like LDI but decrement instead of increment
 ; LDDR -- like LDD but repeat
 
 ; String Compare instructions
@@ -247,9 +247,14 @@
 ; + 932 bytes - make write_stdout fallthrough for center_and_print
 ; + 925 bytes - re-write strcat to not use ldir
 ; + 920 bytes - move FCB to BSS.  Didn't save much as had to clear BSS to 0
+; + 917 bytes - optimize strcat (thanks to Mikael Tillenius)
+; + 916 bytes - turn a call/ret sequence into jump (Mikael Tillenius)
+; + 915 bytes - use an immediate 0 to nul-terminate (Mikael Tillenius)
+; + 903 bytes - re-write num_to_ascii
+; + 896 bytes - misc cleanups.  Can't seem to optimize find_string at all
 
 ; + rethink use of IX/IY for pointers
-; + change CALL to stdout to jr
+
 
 
 .equ  BOOT, 0x0000
@@ -443,22 +448,22 @@ first_line:
         call 	BDOS			; call OS	
 					; H=00 is CP/M, H=01 is MP/M
 					; L=20 for CP/M 2.0
-	
-	ld	A,'C'
-	dec	H			; test if H is zero
-	jr	NZ,not_mpm		; if was zero, skip
-	ld	A,'M'			; handle MP/M case
-	
-not_mpm:	
+
+print_os_version:
+	ld	A,H			; move H (version) into A
+	dec	A			; make A 0xff (cp/m) or 0x00 (mp/m) 
+	and	'C'-'M'			; difference in the ascii codes
+	add	A,'M'			; adjust to right string
 	ld	(DE),A			; store byte
 	inc	DE			; increment pointer
-					
-	push	HL
-	
+
+print_pm_string:
+	push	HL			; save syscall result	
 	ld	HL,ver_string		; source is "P/M Version "
 	call	strcat
-	
 	pop	HL    			; restore result from version call
+	
+print_version_number:	
 	ld	A,L			; move the version number
 	rra
 	rra
@@ -482,7 +487,8 @@ not_mpm:
 	
 	ld	HL,compiled_string	; source is ", Compiled "
 	call	strcat			; we fake the date
-	
+	push	HL			; save for later	
+
 	call	center_and_print	; center and print
 
 	;===============================
@@ -537,7 +543,9 @@ clear_fcb:
 	ld	C,CLOSE			; read info 128 byte buffer at 0x80
 	call	BDOS			; which is default DMA address	
 
-	pop	DE
+	pop	HL			; restore string pointer
+
+	pop	DE			;
 	push	DE			; set DE to output buffer
 	
 	;=============
@@ -545,7 +553,8 @@ clear_fcb:
 	;=============
 number_of_cpus:
 
-	ld	HL,one			; Assume one processor
+					; Assume one processor
+					; HL points to "One"
 	call	strcat
 	
 	;=========
@@ -553,9 +562,10 @@ number_of_cpus:
 	;=========
 print_mhz:
 	
-	ld	IX,mhz_search		; find the MHz
+	push    HL
+	ld	HL,mhz_search		; find the MHz
 	call	find_string
-	
+
 	ld	A,' '	   		; store a space
 	ld	(DE),A
 	inc	DE
@@ -565,10 +575,10 @@ print_mhz:
 	;=========
 chip_name:
 	
-	ld	IX,type_search
+	ld	HL,type_search
 	call	find_string
 
-			   	       ; HL is points to the right place
+	pop     HL		       ; HL is points to the right place
 				       ; for " Processor, "
 	call	strcat
 
@@ -598,15 +608,18 @@ print_ram:
 	pop	HL			; HL points to 'K RAM, '
 	call	strcat			; call strcat
 
+	push HL
+
 	;========
 	; Bogomips
 	;========
 print_bogomips:
 
-	ld      IX,mips_search
+	ld      HL,mips_search
 	call    find_string   		; search for "MIPS"
 
-	call	strcat			; HP points to Bogomips Total
+	pop	HL
+	call	strcat			; HL points to Bogomips Total
 
 	call	center_and_print	; center and print
 
@@ -631,79 +644,10 @@ last_line:
 	; Exit
 	;================================
 exit:
-     	JP BOOT  			; Return to the OS.
+     	jp BOOT  			; Return to the OS.
 
-
-	;=================================
-	; FIND_STRING 
-	;=================================
-	; IX is the string to find
-	; HL is preserved
-	
-find_string:
-	push	HL			; save HL across function call
-	
-	push	DE			; save DE for our loop here
-	
-	ld	DE,0x79			; look in cpuinfo buffer
-					; one less so that we can inc first
-					; thing inside loop
-					
-	push	IX			; move string to find from IX
-	pop	HL			; to HL
-
-	push	DE			; save HL for later
-	push	HL			; save DE for later
-
-no_match:
-	pop	HL			; restore old find_pointer	
-	pop	DE			; restore old disk pointer
-	inc	DE			; increment disk pointer
 
 	
-	ld	A,D			; check to see if we've gone
-	or	A			; past 128-byte buffer
-	jr	NZ,done
-
-	push	DE	
-	push	HL     			; save for next loop
-
-	ld	B,4			; how many chars to compare
-find_loop:
-	
-	ld	A,(DE)			; load in disk value
-	cp	(HL)			; compare it with string
-	inc	DE			; increment pointer
-	inc	HL			; increment pointer
-	jr	NZ,no_match		; if not match, move on
-	djnz	find_loop		; check up to 4 characters
-
-					; if we get here, we matched
-	
-	pop	HL			; throw away string pointer
-	pop	HL			; move disk pointer to HL
-
-	pop	DE			; restore output pointer
-
-find_colon:
-	ld 	A,':'			; looking for a colon
-	ld	BC,0x80			; we want to search length of buffer
-	cpir				; repeat until we find colon
-	
-	inc	HL			; skip the space
-		
-store_loop:	
-	ld	A,(HL)			; load in a char
-	cp	13			; is it carriage-return?
-	jr	Z,done			; if so, we are done
-	ldi				; otherwise load (HL) store (DE)
-					; incrementing both, decrement BC
-	jr  	store_loop		; loop
-	
-done:
-     	pop	HL
-     	ret				; return
-
 
 	;==============================
 	; center_and_print
@@ -761,9 +705,7 @@ done_center:
 write_stdout:
 
         ld    	C,PRINTST		; print string syscall
-        call 	BDOS			; call OS
-
-	ret				; return
+        jp 	BDOS			; call OS, returns for us
 
 	
 	;=============================
@@ -772,79 +714,85 @@ write_stdout:
 	; HL = value to print
 	; CF = 1, stdout
 	; CF = 0, strcat
-	; AF,BC,DE,IX,IY   trashed
+	; AF,BC,DE,IX   trashed
+	
+	; this code roughly based on code by Milos Bazelides
+	;    http://baze.au.com/misc/z80bits.html
+	
 num_to_ascii:
 
-	push 	AF			; save flags value for later	
-	push	DE			; save DE in case we are strcat
-	
-	ld   	D,0			; which digit we are on
 	ld	IX,ascii_buffer		; point to output value
-	ld	IY,decimal_values	; point to our table of constants
+	push	IX			; save for later
+
+	push 	AF			; save flags value for later	
+
+	xor	A			; clear A' (non-leading zero)
+	ex 	AF,AF'
 	    
-looper:
-	xor 	A			; clear A
-	ld 	B,(IY+0)		; load high byte of decimal const
-	ld 	C,(IY+1)		; load low byte of decimal const
-comp_loop:
-	sbc 	HL,BC       		; subtract to see if more
-	jp	M,negative       	; is positive, keep going
-positive:
-        inc 	A           		; increment value of digit
-        jr 	comp_loop    		; and loop
-
-negative:
-	add 	HL,BC			; if negative, undo subtraction
-	add	A,0x30			; convert to ASCII
-	ld	(IX+0),A		; store to output
-	inc	IX			; increment pointer
-	inc	IY
-	inc	IY			; increment decimal value pointer
-	inc	D			; increment digits
-	ld	A,5                     
-	cp	D			; is D==5?
-	jr	NZ,looper		; if not, loop
+	ld	BC,-10000		; -10000 BC = 0xd8f0
+	call	handle_digit
+	ld	BC,-1000		;  -1000 BC = 0xfab8
+	call	handle_digit
+	ld	BC,-100			;   -100 BC = 0xff9c
+	call	handle_digit
+	ld	C,0xf6			;    -10 BC = 0xfff6
+	call	handle_digit
+	ld	C,0xff			;     -1 BC = 0xffff
 	
+					; fall through on -1 case
+
+handle_digit:
+	ld	A,'0'-1			; start 1 under '0'
+digit_loop:
+	inc	A			; move to next digit
+	add	HL,BC			; subtract off power of 10
+	jr	c,digit_loop		; if no overflow, then keep
+					;  subtracting
+	
+	
+	sbc	HL,BC			; we went too far, so adjust back
+	
+	ld	(IX+0),A		; write out the digit we found
+
+	and	0xf			; if not a zero, write it out
+	jr      NZ,write_digit
+
+	; leading zero suppression
+
+	xor	A			; clear A
+	ex	AF,AF'			; get non-leading zero indicator
+	or	C			; if low bit of C is 1, it means 
+	and	1			;   we are on last digit so always
+					;   print zero
+
+	ret	Z			; otherwise suppress the zero
+
+
+write_digit:	
+	inc	IX			; move pointer (effectively writing)
+	
+	ld	A,1			; turn off zero suppression
+	ex	AF,AF'
+
+	bit    0,C			; are we done with the number?
+	ret    Z			; if not, return for more
+
+done_converting:
+
 	; done converting
-	
-	; skip leading zeros
 
-	ld	HL,ascii_buffer		; point to beginning of output
-	ld	A,'0'			; looking for ASCII '0'
-	ld	BC,4			; or at most, count of 4
-cpi_loop:
-	cpi				; compare A with (HL)
-					; increment HL
-					; decrement BC
-					; set Z if A==(HL)
-					; set P if BC!=0
-	jr	NZ,done_leadz					
-	jp 	PO,done_leadz_zero
-	jr	cpi_loop
-done_leadz:
-     	dec	HL			; decrement to point to actual begin
-
-done_leadz_zero:	
-	pop	DE			; restore out pointer in case of strcat
 	pop	AF			; restore flags value from earlier
-
 	jr	NC,num_to_strcat	; if C==0, strcat
 
 num_to_stdout:
-	push	HL			; move out pointer to DE
-	pop	DE
-	
-	ld	A,'$'			; CP/M terminating CHAR
-	ld	(IX+0),A		; store it
-	
+	pop	DE			; move buffer pointer to DE	
+	ld	(IX+0),'$'		; CP/M terminating CHAR
 	jr	write_stdout
 
 
 num_to_strcat:
-
-	ld	A,0			; nul terminate string
-	ld	(IX+0),A		; store it
-	
+	pop	HL			; move buffer pointer to HL
+	ld	(IX+0),0		; nul terminate string
 		     			; fall through to strcat
 
 
@@ -857,25 +805,87 @@ strcat:
 
         ; orig calculated strlen so we can use ldir
 	; but ldir only useful for pascal strings
-	; converted to just load/store/compare
 
-	; even just using "ldi" and a loop is one byte more
-	; than the discrete instructions
+	; Mikael Tillenius provided a version using "ldi" 
+	; that was 3-bytes smaller than the one I came up with
+	; that used discrete instructions
+
 
 	ld	A,(HL) 	    	        ; load in a byte
-	ld	(DE),A			; store out the byte
-	or	A			; compare to zero
-	jr	Z,done_strcat		; if equal we are done
-	inc	HL			; increment pointer
+	ldi				; (HL) moved to (DE), both incremented
+	or      A			; compare to zero
+	jr      NZ,strcat		; if not zero, loop
+	dec     DE			; point output to before NUL termination
+	ret				; return
+	
+	;=================================
+	; FIND_STRING 
+	;=================================
+	; HL is the string to find
+	; DE is output pointer
+	
+find_string:
+	
+	push	DE			; save DE for our loop here  +1
+	
+	ld	DE,0x79			; look in cpuinfo buffer
+					; one less so that we can inc first
+					; thing inside loop
+
+	push	DE			; save disk pointer for later  +2
+	push	HL			; save find string for later  +3
+
+no_match:
+	pop	HL			; restore old find_pointer  +2	
+	pop	DE			; restore old disk pointer  +1
+	inc	DE			; increment disk pointer
+
+	
+	ld	A,D			; check to see if we've gone
+	or	A			; past 128-byte buffer
+	jr NZ,error
+
+	push	DE	                ;                           +2
+	push	HL     			; save for next loop        +3
+
+	ld	B,4			; how many chars to compare
+find_loop:
+	
+	ld	A,(DE)			; load in disk value
+	cp	(HL)			; compare it with string
 	inc	DE			; increment pointer
-	jr	strcat			; loop
+	inc	HL			; increment pointer
+	jr	NZ,no_match		; if not match, move on
+	djnz	find_loop		; check up to 4 characters
+
+					; if we get here, we matched
 	
-done_strcat:	
-	inc	HL			; adjust pointer to help out
-					; with printing many strings
-					; in a row
-	ret
+	pop	HL			; throw away string pointer  +2
+	pop	HL			; move disk pointer to HL    +1
+;
+error:
+	pop	DE			; restore output pointer     +0
+
+find_colon:
+	ld 	A,':'			; looking for a colon
+	ld	BC,0x80			; we want to search length of buffer
+	cpir				; repeat until we find colon
+	ret	NZ
 	
+	inc	HL			; skip the space
+
+	ld 	A,13			; carriage return value
+store_loop:	
+
+	cp 	(HL)			; is value a carriage-return?
+
+	ret	Z			; if so, we are done
+
+	ldi				; otherwise load (HL) store (DE)
+					; incrementing both, decrement BC
+	jr  	store_loop		; loop
+	
+
 
 
 
@@ -905,9 +915,6 @@ mips_search:	.ascii "MIPS"
 type_search:	.ascii "type"
 
 cpuinfo:	.ascii "CPUINFO Z80"	; the filename "cpuinfo.z80"
-
-decimal_values:    ; 10000     1000      100       10        1
-	       .byte 0x27,0x10,0x03,0xe8,0x00,0x64,0x00,0x0a,0x00,0x01
 
 .include	"logo.lzss_new"
 
