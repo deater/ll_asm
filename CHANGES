@@ -382,3 +382,11 @@ RELEASE 0.43
 + More z80 work.  Down to 896 bytes.
 
 RELEASE 0.44
+
+6 November 2010
++ Start work on 8051 port
+
+9 November 2010
++ z80 down to 891 bytes!
+
+RELEASE 0.45

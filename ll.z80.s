@@ -1,5 +1,5 @@
 ;
-;  linux_logo in z80 assembler 0.44
+;  linux_logo in z80 assembler 0.45
 ;
 ;       Vince Weaver <vince _at_ deater.net>
 ;
@@ -252,6 +252,13 @@
 ; + 915 bytes - use an immediate 0 to nul-terminate (Mikael Tillenius)
 ; + 903 bytes - re-write num_to_ascii
 ; + 896 bytes - misc cleanups.  Can't seem to optimize find_string at all
+; + 894 bytes - clever cleanup of strcat so it can be reused by
+;               findstring (Mikael Tillenius)
+; + 893 bytes - even more clever code to allow fallthrough of findstring
+;               by having the call to strcat be a jump into an
+;		instruction (Mikael Tillenius)
+; + 891 bytes - optimize disk overflow checking (Mikael Tillenius)
+
 
 ; + rethink use of IX/IY for pointers
 
@@ -793,30 +800,8 @@ num_to_stdout:
 num_to_strcat:
 	pop	HL			; move buffer pointer to HL
 	ld	(IX+0),0		; nul terminate string
-		     			; fall through to strcat
+	jr	strcat	     			
 
-
-	;================================
-	; strcat
-	;================================
-	; value to cat in HL
-	; output buffer in DE
-strcat:
-
-        ; orig calculated strlen so we can use ldir
-	; but ldir only useful for pascal strings
-
-	; Mikael Tillenius provided a version using "ldi" 
-	; that was 3-bytes smaller than the one I came up with
-	; that used discrete instructions
-
-
-	ld	A,(HL) 	    	        ; load in a byte
-	ldi				; (HL) moved to (DE), both incremented
-	or      A			; compare to zero
-	jr      NZ,strcat		; if not zero, loop
-	dec     DE			; point output to before NUL termination
-	ret				; return
 	
 	;=================================
 	; FIND_STRING 
@@ -828,7 +813,7 @@ find_string:
 	
 	push	DE			; save DE for our loop here  +1
 	
-	ld	DE,0x79			; look in cpuinfo buffer
+	ld	DE,0x7f			; look in cpuinfo buffer
 					; one less so that we can inc first
 					; thing inside loop
 
@@ -838,12 +823,10 @@ find_string:
 no_match:
 	pop	HL			; restore old find_pointer  +2	
 	pop	DE			; restore old disk pointer  +1
-	inc	DE			; increment disk pointer
-
-	
-	ld	A,D			; check to see if we've gone
-	or	A			; past 128-byte buffer
-	jr NZ,error
+	inc	E			; increment disk pointer
+					; if it overflows to 0, 
+					; we've gone past the end of the
+	jr	Z,error			; 128-byte buffer
 
 	push	DE	                ;                           +2
 	push	HL     			; save for next loop        +3
@@ -875,17 +858,44 @@ find_colon:
 	inc	HL			; skip the space
 
 	ld 	A,13			; carriage return value
-store_loop:	
 
-	cp 	(HL)			; is value a carriage-return?
-
-	ret	Z			; if so, we are done
-
-	ldi				; otherwise load (HL) store (DE)
-					; incrementing both, decrement BC
-	jr  	store_loop		; loop
+					; pass on to strcat to handle
+					; the copy
+					
+;	jr  	rep			;
 	
+	.byte 0x6			; first byte of "ld b,0xaf"
+					; more or less turns the
+					; xor on the next line into
+					; a nop
 
+					
+
+
+	;================================
+	; strcat
+	;================================
+	; value to cat in HL
+	; output buffer in DE
+strcat:
+
+        ; orig calculated strlen so we can use ldir
+	; but ldir only useful for pascal strings
+
+	; Mikael Tillenius provided a version using "ldi" 
+	; that was 3-bytes smaller than the one I came up with
+	; that used discrete instructions
+	
+	; Later he made the good suggestion to have the comparison
+	; value in A, allowing other routines to use things from "rep" on
+
+	xor	A			; compare against 0
+rep:
+	cp	(hl)			; compare value in A against (HL)
+	ldi				; (HL) moved to (DE), both incremented
+	jr      NZ,rep			; if not equal, loop
+	dec     DE			; point output to before NUL termination
+	ret				; return
 
 
 

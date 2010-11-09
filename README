@@ -42,7 +42,7 @@ Some Statistics
      arm_thumb		 957 bytes   (as 2.18.0.20080103)
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
-     z80		 896 bytes   (as 2.20.1.20100303)
+     z80		 891 bytes   (as 2.20.1.20100303)
      pdp-11		 890 bytes   (as 2.19)
      8086		 780 bytes   (as 2.20.1-system.20100303)
      
