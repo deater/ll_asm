@@ -1,5 +1,5 @@
 #
-#  linux_logo in mips16 assembler 0.43
+#  linux_logo in mips16 assembler 0.46
 #
 #  By 
 #       Vince Weaver <vince _at_ deater.net>
@@ -50,7 +50,7 @@
 #   * or  rx,ry        : rx = rx | ry
 #   * seb/seh/sew      : sign extend
 #   * slt rx,ry        : T = (rx < ry)
-#   * slti rx,imm      : T = (rx < imm) 8-bit, extnd to 16-bi
+#   * slti rx,imm      : T = (rx < imm) 8-bit, extend to 16-bit
 #   * sltu/slti/sltiu  : like above
 #   * subu rz,rx,ry    : rx = rx - ry
 #   * xor rx,ry        : rx = rx ^ ry
@@ -137,6 +137,7 @@
 .equ SYSCALL_CLOSE,     SYSCALL_LINUX+6
 .equ SYSCALL_SYSINFO,   SYSCALL_LINUX+116
 .equ SYSCALL_UNAME,     SYSCALL_LINUX+122
+.equ SYSCALL_SYNC,	SYSCALL_LINUX+36
 
 #
 .equ STDIN, 0
@@ -149,10 +150,15 @@
 
 __start:	
 
-     jal start16                       # I don't think thise should
+#     jal start16                       # I don't think thise should
                                        # be necessary, how do I create
 				       # a native mips16 binary?
-     nop
+
+#la	$16,start16
+#jr	$16
+#     nop
+
+
 
 .set mips16
 
@@ -174,32 +180,46 @@ start16:
 #	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
 #	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
 
+#	la	$16,blah_buffer
+
         la      $16,out_buffer
 	la      $17,logo
+
 
 decompression_loop:
 
 	lbu	$2,0($17)       # load in a byte
 	addiu	$17,$17,1	# increment source pointer
 
+
         move 	$3, $2	        # move in the flags
-	li      $7,0xff00
+	li      $7,0xff00	# 32-bit, zero extended
 	or 	$3,$7           # put 0xff in top as a hackish 8-bit counter
+
+
 
 test_flags:
         la      $7, logo_end
-	beq	$7, $17, done_logo	# have we reached the end?
+
+	slt	$17, $7
+	bteqz	done_logo
+
+#	beq	$7, $17, done_logo	# have we reached the end?
 					# if so, exit
+
         li      $7,1
         and     $7,$3	                # test to see if discrete char
 
-	srl	$3,1  	                # shift	
+	srl	$3,$3,1  	        # shift	
+
 	bnez	$7,discrete_char	# if set, we jump to discrete char
 	
 offset_length:
 	lbu     $2,0($17)	# load 16-bit length and match_position combo
 	lbu	$4,1($17)	# can't use lhu because might be unaligned
+
 	addiu	$17,2           # increment source pointer	
+
 	sll	$4,8
 	or	$4,$2           # $4 now has 16-bit value
 	
@@ -207,34 +227,49 @@ offset_length:
 	
 	addiu $5,$5,THRESHOLD+1 
 	      			# add in the threshold?
+
 		
 output_loop:
         li      $7,(POSITION_MASK<<8+0xff)
         and 	$4,$7
 					# get the position bits
+
+
         la      $7,text_buf
-	addu	$4,$7
-	lbu	$2,0($4)		# load byte from text_buf[]
+	addu	$7,$4
+	lbu	$2,0($7)		# load byte from text_buf[]
 					# should have been able to do
 					# in 2 not 3 instr
+
+
+
 	addiu	$4,$4,1	    	# advance pointer in text_buf
+
 store_byte:
         sb      $2,0($16)
 	addiu	$16,1      		# store byte to output buffer
 
         la      $7,text_buf
+
 	addu	$7,$6
-#	sb      $2, 0($7)		# store also to text_buf[r]
+
+#	jalx	dump_registers
+#	nop
+
+	sb      $2, 0($7)		# store also to text_buf[r]
 	addiu 	$6,$6,1        		# r++
 
-
-	addiu	$5,$5,-1		# decrement count
 	li      $7,(N-1)
 	and 	$6,$7		        # wrap r if we are too big	
+
+	addiu	$5,$5,-1		# decrement count
+
 	bnez	$5,output_loop	        # repeat until k>j
 
-	cmpi	$3,0x100		# if 0 we shifted through 8 and must
-	btnez	test_flags	        # re-load flags
+
+
+	sltiu	$3,0x100		# if 0 we shifted through 8 and must
+	bteqz	test_flags	        # re-load flags
 	
 	b 	decompression_loop
 
@@ -439,28 +474,98 @@ chip_name:
 	#================================
 	# Exit
 	#================================
-        lw      $5, hello_addr
+#        lw      $5, hello_addr
 
-        jal     write_stdout
+#        jal     write_stdout
 
 exit:
      	li	$2, SYSCALL_EXIT	# put exit syscall in v0
 	li	$4, 5			# put exit code in a0
+
 	jalx    do_syscall
 
 
 
-.align 2
 .set nomips16
+.align 2
+
         #===================
 	# syscall
 	#===================
 do_syscall:	
-        syscall	    			# exit
-	j    $31
+        syscall	    			# 
+
+	jr    $31
+
+
+	#===================
+	# dump registers
+	#===================
+dump_registers:
+
+	move	$18,$2
+	move	$19,$3
+	move	$20,$4
+	move	$21,$5
+	move	$22,$6
+
+	la	$8,register_buffer
+	
+	sw	$0,0($8)
+.set noat
+	sw	$1,4($8)
+.set at
+	sw	$2,8($8)
+	sw	$3,12($8)
+	sw	$4,16($8)
+	sw	$5,20($8)
+	sw	$6,24($8)
+	sw	$7,28($8)
+	sw	$8,32($8)
+	sw	$9,36($8)
+	sw	$10,40($8)
+	sw	$11,44($8)
+	sw	$12,48($8)
+	sw	$13,52($8)
+	sw	$14,56($8)
+	sw	$15,60($8)
+	sw	$16,64($8)
+	sw	$17,68($8)
+	sw	$18,72($8)
+	sw	$19,76($8)
+	sw	$20,80($8)
+	sw	$21,84($8)
+	sw	$22,88($8)
+	sw	$23,92($8)
+	sw	$24,96($8)
+	sw	$25,100($8)
+	sw	$26,104($8)
+	sw	$27,108($8)
+	sw	$28,112($8)
+	sw	$29,116($8)
+	sw	$30,120($8)
+	sw	$21,124($8)
+
+	li	$2,	SYSCALL_WRITE
+	li	$4,2			# stderr
+	la	$5,register_buffer
+	li	$6,128
+	syscall
+
+	li	$2, SYSCALL_SYNC
+	syscall
+
+	move	$2,$18
+	move	$3,$19
+	move	$4,$20
+	move	$5,$21
+	move	$6,$22
+
+
+	jr      $31
 	
 .set mips16
-
+.align 1
 	#=================================
 	# FIND_STRING 
 	#=================================
@@ -610,16 +715,15 @@ done_center:
 	# WRITE_STDOUT
 	#================================
 	# $5 (a1) has string
-	# $24,$25 (t8,t9) destroyed
 	
 
 write_stdout:
 	
         save    $31,8
 
-        move    $4,$5                   # copy string pointer to $4
+        move    $4, $5                   # copy string pointer to $4
 	li      $6, 0                   # 0 (count) in $6
-	
+
 str_loop1:
 	lbu	$2,1($4)		# load byte at (4)
 	addiu	$4,1		
@@ -628,8 +732,11 @@ str_loop1:
 
 	li      $2, SYSCALL_WRITE       # Write syscall in $2
 	li	$4, STDOUT		# 1 in $4 (stdout)	
-	jalx    do_syscall
+
+	jalx 	do_syscall
+
 	restore $31,8
+
 	jr      $31
 
 
@@ -692,7 +799,18 @@ processor:	.ascii " Processor, \0"
 #	section .bss
 #============================================================================
 .bss
+
+bss_start:
+
+.lcomm blah_buffer,1024		# UGH!  There is some sort
+				# of bug in the assembler
+				# that points the first bss entry
+				# to __start for some reason.
+				# That took a while to debug.
+				# Thank goodness for objdump
+
 .lcomm  text_buf, (N+F-1)
+
 .lcomm	out_buffer,16384
 
 .lcomm	disk_buffer,4096	# we cheat!!!!
@@ -702,3 +820,5 @@ processor:	.ascii " Processor, \0"
    # see /usr/src/linux/include/linux/kernel.h
 .lcomm sysinfo_buff,(64)
 .lcomm uname_info,(65*6)
+
+.lcomm register_buffer,128
