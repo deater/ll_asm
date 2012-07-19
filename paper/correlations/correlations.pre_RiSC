@@ -1,0 +1,20 @@
+min_ins_len   0.9381    Minimum possible instruction size
+int_regs      0.9116	Number of integer registers
+vliw	      0.8616	VLIW processor
+vm_addr	      0.7823    Offset of VM beginning (log2)
+0reg	      0.6607	Architecture has a zero register
+predication   0.6160	Predicated instructions
+bits	      0.6159	Bit-width
+args          0.4982	Number of operands in each instruction
+year          0.3129	Year the architecture was introduced
+max_ins_len   0.0126	Maximum possible instruction size
+branch_delay -0.0021	Has branch delay slot
+endian	     -0.0809	Little or Big endian
+auto_inc     -0.2121	Auto-incrementing addressing scheme
+8bit	     -0.2177	8 or 16-bit processor
+RISC          0.2478	Is the chip self-described as RISC
+status_flags -0.2521	Hardware status flags (zero/overflow/etc)
+CISC	     -0.2572	CISC processor
+embedded     -0.3008	Embedded chip	
+unaligned    -0.3653	Unaligned load/store available
+hw_div       -0.3854	Hardware divide in ALU

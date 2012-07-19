@@ -1,0 +1,54 @@
+#  A.V = VLIW, B.R = RISC, C.E = Embedded, D.C = CISC, E.8=8/16bit
+#  F.Year = year introduced
+#  G.E = Endian.  0=little, 1=big
+#  H.bt = bits
+#  I.mi = size of smallest instruction
+#  J.mx = size of largest instruction
+#  K.A = number of arguments to typical assembly statement
+#  L.GPR = # of int general purpose registers
+#  M.0 = has a 0 register
+#  N.U = has unaligned memory accesses
+#  O.A = auto-incrementing addressing mode
+#  P.Div = Hardware divide instruction  1=full, 0.7=no remainder, 0.3=pipelined
+#  Q.F = has status flags register
+#  R.B = has branch delay slot
+#  S.P = has predication
+#  virt_addr = virtual address of first instruction
+#
+# 6502 results for total subtract off the graphics-output extras
+# RiSC results lzss=(lzss+stack_usage+read_byte+shift_left_8+shift_right)*2
+#              strcat = (strcat+read_byte+shift_right+write_byte+shift_left)*2
+#              find = (find_string+read_byte+shift_right+write_byte+shift_left)*2
+#              n2a  = (n2a+write_byte+shift_left)*2
+
+#
+# lzss = done_logo - decompression_loop
+#   sc = (whatever_after) - strcat
+#  fnd = (whatever_after) - find_string
+#  n2a = (whatever_after) - num_to_ascii  + any divide routine
+
+#                             A B C D E      F G  H  I  J K   L M N O   P Q R S  va virt
+# arch tot lzss sc fnd n2a |  V R E C 8 | year E bt mi mx A GPR 0 U A Div F B P log addr
+ia64   2874 272  64 288 288   1 0 0 0 0   2001 0 64 16 16 3 128 1 0 1   0 1 0 1  62.00 4611686018427388080
+alpha  1821 224  56 140 108   0 1 0 0 0   1992 0 64  4  4 3  32 1 0 0   0 0 0 0  32.17 4831838328
+RiSC   1418 316 200 246 192   0 1 0 0 0   1998 1 16  2  2 3   8 1 0 0   0 0 0 0   0.0   0
+parisc 1400 152  28 104 176   0 1 0 0 0   1989 1 32  4  4 3  32 1 0 0 0.3 0 1 0  16.00 65620
+mips   1276 152  28 100  56   0 1 0 0 0   1985 1 32  4  4 3  34 1 1 0   1 0 1 0  22.00 4194420
+sparc  1397 148  32 136  84   0 1 0 0 0   1985 1 32  4  4 3  64 1 0 0 0.7 1 1 0  16.00 65620
+ublaze 1298 136  28 124  52   0 1 0 0 0   2000 1 32  4  4 3  32 1 0 0 0.7 0 1 0  28.00 268435572 
+m88k   1230 128  28 116  84   0 1 0 0 0   1988 1 32  4  4 3  32 1 0 0 0.7 0 0 0  12.00 4128
+arm    1186 124  24  88  92   0 1 0 0 0   1986 0 32  4  4 3  16 0 0 1   0 1 0 1  15.00 32884
+ppc    1165 108  24  88  68   0 1 0 0 0   1991 1 32  4  4 3  32 0 1 1 0.7 1 0 0  28.00 268435540
+thumb   957  84  18  58  54   0 0 1 0 0   1995 0 32  2  2 2  16 0 0 1   0 1 0 0  15.00 32884
+avr32   914  80  12  44  28   0 0 1 0 0   2006 1 32  2  2 2  16 0 1 1   1 1 0 0  12.04 4212
+sh3     994  76  14  58  76   0 0 1 0 0   1992 0 32  2  2 2  17 0 0 1 0.3 1 1 0  22.00 4194388
+crisv32 905  66  10  48  40   0 0 1 0 0   2000 0 32  2  6 2  17 0 1 1 0.3 1 1 0  0 0
+s390   1064 122  12  42  36   0 0 0 1 0   1964 1 32  2  6 2  16 0 1 0   1 1 0 0  22.00 4194420
+vax    1010  96  21  51  26   0 0 0 1 0   1977 1 32  1 54 3  16 0 1 1   1 1 0 0  16.00 65652
+m68k    982  88  12  58  48   0 0 0 1 0   1979 1 32  2 22 2  16 0 1 1   1 1 0 0  31.00 2147483764
+x86_64 1033  66   9  50  22   0 0 0 1 0   2000 0 64  1 15 2  16 0 1 1   1 1 0 0  22.00 4194424
+i386    969  63   8  49  21   0 0 0 1 0   1978 0 32  1 15 2   8 0 1 1   1 1 0 0  27.00 134512724
+6502   1130 134  27  85 123   0 0 0 0 1   1975 0  8  1  3 1   3 0 1 0   0 1 0 0  11.58 3072
+pdp-11  890 108   8  62  40   0 0 0 0 1   1970 0 16  2  6 2   8 0 0 1   1 1 0 0  0 0
+z80     891  96   8  45  78   0 0 0 0 1   1976 0  8  1  4 2  18 0 0 1   0 1 0 0  0 0
+8086    780  58   8  54  23   0 0 0 0 1   1978 0 16  1 15 2   8 0 1 1   1 1 0 0  8.0   256

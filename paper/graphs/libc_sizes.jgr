@@ -1,0 +1,132 @@
+(* by hand -- vmw *)
+
+newgraph
+
+X 11
+Y 3.5
+
+legend custom
+
+yaxis size 2.0 min 0 max 8500
+no_auto_hash_labels no_auto_hash_marks 
+grid_lines grid_gray 0.8 
+label font Helvetica fontsize 14 : Size (bytes)
+hash_labels font Helvetica fontsize 14
+hash_at 1024
+hash_at 2048
+hash_at 4096
+hash_at 6144
+hash_at 8192
+hash_label at 1024 : 1024
+hash_label at 2048 : 2048
+hash_label at 4096 : 4096
+hash_label at 6144 : 6144
+hash_label at 8192 : 8192
+
+
+xaxis size 10 min -0.5 max 20
+no_draw_hash_marks no_auto_hash_labels
+hash_labels hjc vjt font Helvetica fontsize 10
+
+hash_label at 0 : O3\
+gcc42
+hash_label at 1 : Os\
+gcc42
+hash_label at 2 : O3,Os\
+intel9
+hash_label at 3 : O3,Os\
+sun12
+hash_label at 5 : O3\
+gcc41
+hash_label at 6 : Os\
+gcc41
+hash_label at 8 : O3\
+gcc42
+hash_label at 9 : Os\
+gcc42
+hash_label at 10 : O3,Os\
+intel9
+hash_label at 11 : O3,Os\
+sun12
+hash_label at 12 : O3,Os\
+gcc41
+hash_label at 14 : O3\
+gcc42
+hash_label at 15 : Os\
+gcc42
+hash_label at 16 : O3,Os\
+intel9
+hash_label at 17 : O3,Os\
+sun12
+hash_label at 19 : hand\
+optimized
+
+
+newstring x 0 y 10000 hjc font Helvetica fontsize 10 : 473kB
+newstring x 1 y 10000 hjc font Helvetica fontsize 10 : 473kB
+newstring x 2 y 10000 hjc font Helvetica fontsize 10 : 473kB
+newstring x 3 y 10000 hjc font Helvetica fontsize 10 : 473kB
+
+newstring x 17 y 64 hjc font Helvetica fontsize 10 : N/A
+
+newstring x 1.5 y -2500 hjc font Helvetica fontsize 12 : GLIBC
+newstring x 5.5 y -2500 hjc font Helvetica fontsize 12 : uCLIBC
+
+newstring x 3 y -4000 hjc font Helvetica fontsize 14 : STATICALLY LINKED
+
+newstring x 10 y -4000 hjc font Helvetica fontsize 14 : DYNAMICALLY LINKED
+
+newstring x 15.5 y -4000 hjc font Helvetica fontsize 14 : SYSCALL ONLY
+
+newstring x 19 y -4000 hjc font Helvetica fontsize 14 : ASM
+
+newcurve 
+marktype xbar marksize 0.5 color 1.0 0.0 0.0
+pts
+0  9500 (* 473184 *)	   (* glibc,gcc42,O3,static *)
+1  9500 (* 473152 *)	   (* glibc,gcc42,Os,static *)
+2  9500 (* 473216 *)	   (* glibc,intel9.1,O3 and Os,static *)
+3  9500 (* 473158 *)	   (* glibc,sunstudio12,O3 *)
+
+newcurve 
+marktype none marksize 0.5 color 1.0 1.0 1.0 linetype solid linethickness 5
+pts
+-0.5 9100
+0.5  8500
+0.5 9100
+1.5  8500
+1.5 9100
+2.5  8500
+2.5 9100
+3.5  8500
+
+newcurve 
+marktype xbar marksize 0.5 color 0.0 0.0 1.0
+pts
+5 5501   (* uclibc,gcc41,O3,static *)
+6 4765   (* uclibc,gcc41,Os,static *)
+
+newcurve 
+marktype xbar marksize 0.5 color 0.0 1.0 0.0
+pts
+8 5041   	   (* glibc,gcc42,O3,dynamic *)
+9 4694             (* glibc,gcc42,Os,dynamic *)
+10 8594   	   (* glibc,intel0.1,O3,dynamic *)
+11 4462   	   (* glibc,sunstudio12,O3,dynamic *)
+12 4657   	   (* uclibc,gcc41,O3,dynamic *)
+
+newcurve 
+marktype xbar marksize 0.5 color 0.5 0.5 0.25
+pts
+14 4401   (* raw,gcc42,O3 *)
+15 1778	  (* raw,gcc42,Os *)
+16 4402   (* none,intel,O3,static *)
+          (* raw,sun,O3 *)
+
+
+newcurve 
+marktype xbar marksize 0.5 color 1.0 0.0 1.0
+pts
+19 969   (* pure assembly,static *)
+
+

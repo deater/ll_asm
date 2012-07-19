@@ -1,0 +1,156 @@
+(* Made by Hand -vmw5 *)
+
+newgraph
+clip
+
+(* title font Helvetica fontsize 14 y 72 vjt : Size of String Concatenation Code *)
+
+(* legend defaults font Helvetica fontsize 12 *)
+
+legend custom
+
+yaxis size 1.25 min 0 max 74 hash 16 grid_lines grid_gray 0.8
+label font Helvetica fontsize 12 : bytes
+hash_labels font Helvetica fontsize 12
+
+xaxis size 9 min -1 max 23
+no_draw_hash_marks no_auto_hash_labels
+hash_labels hjr vjc rotate 45 font Helvetica fontsize 12
+hash_label at 0 : RiSC
+hash_label at 1 : ia64
+hash_label at 2 : alpha
+hash_label at 3 : sparc
+hash_label at 4 : mips
+hash_label at 5 : parisc
+hash_label at 6 : m88k
+hash_label at 7 : mblaze
+hash_label at 8 : 6502
+hash_label at 9 : arm
+hash_label at 10 : ppc
+hash_label at 11 : vax
+hash_label at 12 : thumb
+hash_label at 13 : sh3
+hash_label at 14 : avr32
+hash_label at 15 : m68k
+hash_label at 16 : s390
+hash_label at 17 : crisv32
+hash_label at 18 : x86_64
+hash_label at 19 : i386
+hash_label at 20 : pdp-11
+hash_label at 21 : z80
+hash_label at 22 : 8086
+
+
+newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1
+label vjc hjl font Helvetica fontsize 12 label x 20 y 68 : VLIW
+pts
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3 
+label vjc hjl font Helvetica fontsize 12 label x 20 y 60 : RISC
+pts
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9 
+label vjc hjl font Helvetica fontsize 12 label x 20 y 52 : CISC
+pts
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8 
+label vjc hjl font Helvetica fontsize 12 label x 20 y 44 : embedded
+pts
+
+newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
+label vjc hjl font Helvetica fontsize 12 label x 20 y 36 : 8/16-bit
+pts
+
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3 
+pts
+0  200 (* RiSC *)
+
+newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1
+pts
+1 64 (* ia64 *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3 
+pts
+2  56 (* alpha *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+3 32  (* sparc *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+4 28  (* mips *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+5 28  (* parisc *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+6 28  (* m88k *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+7 28  (* microblaze *)
+
+newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
+pts
+8 27 (* 6502 *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+9 24 (* arm *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+10 24  (* ppc *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
+pts
+11  21 (* vax *)
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8 
+pts
+12  18  (* thumb *)
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
+pts
+13 14 (* sh3 *)
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
+pts
+14 12 (* avr32 *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
+pts
+15 12  (* m68k *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9 
+pts
+16 12  (* s390 *)
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
+pts
+17 10 (* crisv32 *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
+pts
+18  9 (* x86_64 *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
+pts
+19 8 (* i386 *)
+
+newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
+pts
+20 8 (* pdp-11 *)
+
+newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
+pts
+21 8 (* z80 *)
+
+newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
+pts
+22 8 (* 8086 *)
+

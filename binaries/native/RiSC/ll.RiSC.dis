@@ -1,0 +1,888 @@
+# Found blj-RiSC executable type VMW
+# Found 3 sections
+# Found 104 symbols
+
+_start:
+	0000 : 7c 0a : lui 	7,640
+	0001 : 3f b2 : addi	7,7,50
+decompression_loop:
+	0002 : b7 80 : lw  	5,7,0
+	0003 : b3 83 : lw  	4,7,3
+	0004 : a7 ff : lw  	1,7,-1
+	0005 : f8 80 : jalr	6,1
+	0006 : 8f 86 : sw  	3,7,6
+	0007 : 97 80 : sw  	5,7,0
+	0008 : 93 83 : sw  	4,7,3
+	0009 : 24 01 : addi	1,0,1
+	000a : 87 87 : sw  	1,7,7
+test_flags:
+	000b : a7 80 : lw  	1,7,0
+	000c : 68 0a : lui 	2,640
+	000d : 29 23 : addi	2,2,35
+	000e : 29 7f : addi	2,2,-1
+	000f : c5 22 : beq 	1,2,done_logo_jump
+not_done:
+	0010 : a7 86 : lw  	1,7,6
+	0011 : ab 87 : lw  	2,7,7
+	0012 : 44 82 : nand	1,1,2
+	0013 : 44 81 : nand	1,1,1
+	0014 : 09 02 : add 	2,2,2
+	0015 : 8b 87 : sw  	2,7,7
+	0016 : c4 09 : beq 	1,0,offset_length
+discrete_char:
+	0017 : b7 80 : lw  	5,7,0
+	0018 : b3 83 : lw  	4,7,3
+	0019 : a7 ff : lw  	1,7,-1
+	001a : f8 80 : jalr	6,1
+	001b : 97 80 : sw  	5,7,0
+	001c : 93 83 : sw  	4,7,3
+	001d : 24 01 : addi	1,0,1
+	001e : 87 89 : sw  	1,7,9
+	001f : c0 28 : beq 	0,0,store_byte
+offset_length:
+	0020 : b7 80 : lw  	5,7,0
+	0021 : b3 83 : lw  	4,7,3
+	0022 : a7 ff : lw  	1,7,-1
+	0023 : f8 80 : jalr	6,1
+	0024 : 08 03 : add 	2,0,3
+	0025 : f8 80 : jalr	6,1
+	0026 : 97 80 : sw  	5,7,0
+	0027 : 93 83 : sw  	4,7,3
+	0028 : a7 fb : lw  	1,7,-5
+	0029 : f8 80 : jalr	6,1
+	002a : 09 82 : add 	2,3,2
+	002b : 8b 88 : sw  	2,7,8
+	002c : 6c 10 : lui 	3,1024
+	002d : a7 fc : lw  	1,7,-4
+	002e : f8 80 : jalr	6,1
+	002f : 24 83 : addi	1,1,3
+	0030 : 87 89 : sw  	1,7,9
+	0031 : c0 03 : beq 	0,0,output_loop
+done_logo_jump:
+	0032 : c0 33 : beq 	0,0,done_logo
+test_flags_jump:
+	0033 : c0 57 : beq 	0,0,test_flags
+decompression_jump:
+	0034 : c0 4d : beq 	0,0,decompression_loop
+output_loop:
+	0035 : 64 0f : lui 	1,960
+	0036 : 24 bf : addi	1,1,63
+	0037 : ab 88 : lw  	2,7,8
+	0038 : 48 82 : nand	2,1,2
+	0039 : 49 02 : nand	2,2,2
+	003a : 8b 88 : sw  	2,7,8
+	003b : 2c 02 : addi	3,0,2
+	003c : a7 fc : lw  	1,7,-4
+	003d : f8 80 : jalr	6,1
+	003e : b7 fd : lw  	5,7,-3
+	003f : 16 81 : add 	5,5,1
+	0040 : ab 88 : lw  	2,7,8
+	0041 : 24 01 : addi	1,0,1
+	0042 : 51 01 : nand	4,2,1
+	0043 : 52 04 : nand	4,4,4
+	0044 : a7 ff : lw  	1,7,-1
+	0045 : f8 80 : jalr	6,1
+	0046 : 29 01 : addi	2,2,1
+	0047 : 8b 88 : sw  	2,7,8
+store_byte:
+	0048 : b7 81 : lw  	5,7,1
+	0049 : b3 84 : lw  	4,7,4
+	004a : a7 fe : lw  	1,7,-2
+	004b : f8 80 : jalr	6,1
+	004c : 93 84 : sw  	4,7,4
+	004d : 97 81 : sw  	5,7,1
+	004e : ab fd : lw  	2,7,-3
+	004f : b7 82 : lw  	5,7,2
+	0050 : 15 05 : add 	5,2,5
+	0051 : b3 85 : lw  	4,7,5
+	0052 : a7 fe : lw  	1,7,-2
+	0053 : f8 80 : jalr	6,1
+	0054 : 93 85 : sw  	4,7,5
+	0055 : 45 02 : nand	1,2,2
+	0056 : 24 81 : addi	1,1,1
+	0057 : 06 81 : add 	1,5,1
+	0058 : 68 07 : lui 	2,448
+	0059 : 29 3f : addi	2,2,63
+	005a : 44 82 : nand	1,1,2
+	005b : 44 81 : nand	1,1,1
+	005c : 87 82 : sw  	1,7,2
+	005d : a7 89 : lw  	1,7,9
+	005e : 24 ff : addi	1,1,-1
+	005f : 87 89 : sw  	1,7,9
+	0060 : c4 01 : beq 	1,0,done_count
+	0061 : c0 53 : beq 	0,0,output_loop
+done_count:
+	0062 : a7 87 : lw  	1,7,7
+	0063 : 68 04 : lui 	2,256
+	0064 : c5 4f : beq 	1,2,decompression_jump
+	0065 : c0 4d : beq 	0,0,test_flags_jump
+done_logo:
+	0066 : b7 81 : lw  	5,7,1
+	0067 : b3 84 : lw  	4,7,4
+	0068 : 2c 0a : addi	3,0,10
+	0069 : ab fe : lw  	2,7,-2
+	006a : f9 00 : jalr	6,2
+	006b : af fa : lw  	3,7,-6
+	006c : b3 f9 : lw  	4,7,-7
+	006d : fa 00 : jalr	6,4
+first_line:
+	006e : b7 fa : lw  	5,7,-6
+	006f : 10 00 : add 	4,0,0
+	0070 : 64 01 : lui 	1,64
+	0071 : 24 ba : addi	1,1,58
+	0072 : ab f7 : lw  	2,7,-9
+	0073 : e0 10 : sys	0
+	0074 : 0d 00 : add 	3,2,0
+	0075 : 08 00 : add 	2,0,0
+	0076 : a7 f8 : lw  	1,7,-8
+	0077 : f8 80 : jalr	6,1
+	0078 : 6c 07 : lui 	3,448
+	0079 : 2d 9f : addi	3,3,31
+	007a : a7 f8 : lw  	1,7,-8
+	007b : f8 80 : jalr	6,1
+	007c : af f7 : lw  	3,7,-9
+	007d : 2d a0 : addi	3,3,32
+	007e : a7 f8 : lw  	1,7,-8
+	007f : f8 80 : jalr	6,1
+	0080 : 6c 07 : lui 	3,448
+	0081 : 2d a4 : addi	3,3,36
+	0082 : a7 f8 : lw  	1,7,-8
+	0083 : f8 80 : jalr	6,1
+	0084 : af f7 : lw  	3,7,-9
+	0085 : 2d b0 : addi	3,3,48
+	0086 : a7 f8 : lw  	1,7,-8
+	0087 : f8 80 : jalr	6,1
+	0088 : a7 f6 : lw  	1,7,-10
+	0089 : f8 80 : jalr	6,1
+middle_line:
+	008a : 24 05 : addi	1,0,5
+	008b : 68 08 : lui 	2,512
+	008c : 29 08 : addi	2,2,8
+	008d : 0c 00 : add 	3,0,0
+	008e : e0 10 : sys	0
+	008f : 08 80 : add 	2,1,0
+	0090 : 24 03 : addi	1,0,3
+	0091 : af f3 : lw  	3,7,-13
+	0092 : 70 08 : lui 	4,512
+	0093 : e0 10 : sys	0
+	0094 : 24 06 : addi	1,0,6
+	0095 : e0 10 : sys	0
+	0096 : b7 fa : lw  	5,7,-6
+	0097 : 10 00 : add 	4,0,0
+number_of_cpus:
+	0098 : 6c 07 : lui 	3,448
+	0099 : 2d aa : addi	3,3,42
+	009a : 08 00 : add 	2,0,0
+	009b : a7 f8 : lw  	1,7,-8
+	009c : f8 80 : jalr	6,1
+print_mhz:
+	009d : 69 99 : lui 	2,26176
+	009e : 29 32 : addi	2,2,50
+	009f : a7 f5 : lw  	1,7,-11
+	00a0 : f8 80 : jalr	6,1
+	00a1 : 6c 07 : lui 	3,448
+	00a2 : 2d ad : addi	3,3,45
+	00a3 : a7 f8 : lw  	1,7,-8
+	00a4 : f8 80 : jalr	6,1
+chip_name:
+	00a5 : 69 c1 : lui 	2,28736
+	00a6 : 29 35 : addi	2,2,53
+	00a7 : a7 f5 : lw  	1,7,-11
+	00a8 : f8 80 : jalr	6,1
+	00a9 : 6c 07 : lui 	3,448
+	00aa : 2d ae : addi	3,3,46
+	00ab : a7 f8 : lw  	1,7,-8
+	00ac : f8 80 : jalr	6,1
+ram:
+	00ad : 64 01 : lui 	1,64
+	00ae : 24 b4 : addi	1,1,52
+	00af : 68 5a : lui 	2,5760
+	00b0 : 29 29 : addi	2,2,41
+	00b1 : e0 10 : sys	0
+	00b2 : a9 03 : lw  	2,2,3
+	00b3 : a7 f1 : lw  	1,7,-15
+	00b4 : f8 80 : jalr	6,1
+	00b5 : 6c 07 : lui 	3,448
+	00b6 : 2d b4 : addi	3,3,52
+	00b7 : 08 00 : add 	2,0,0
+	00b8 : a7 f8 : lw  	1,7,-8
+	00b9 : f8 80 : jalr	6,1
+bogomips:
+	00ba : 69 09 : lui 	2,16960
+	00bb : 29 2f : addi	2,2,47
+	00bc : a7 f5 : lw  	1,7,-11
+	00bd : f8 80 : jalr	6,1
+	00be : 6c 07 : lui 	3,448
+	00bf : 2d b8 : addi	3,3,56
+	00c0 : a7 f8 : lw  	1,7,-8
+	00c1 : f8 80 : jalr	6,1
+	00c2 : a7 f6 : lw  	1,7,-10
+	00c3 : f8 80 : jalr	6,1
+last_line:
+	00c4 : b7 fa : lw  	5,7,-6
+	00c5 : 10 00 : add 	4,0,0
+	00c6 : af f7 : lw  	3,7,-9
+	00c7 : 2d 90 : addi	3,3,16
+	00c8 : 08 00 : add 	2,0,0
+	00c9 : a7 f8 : lw  	1,7,-8
+	00ca : f8 80 : jalr	6,1
+	00cb : a7 f6 : lw  	1,7,-10
+	00cc : f8 80 : jalr	6,1
+	00cd : 6c 08 : lui 	3,512
+	00ce : 2d 81 : addi	3,3,1
+	00cf : a7 f9 : lw  	1,7,-7
+	00d0 : f8 80 : jalr	6,1
+exit:
+	00d1 : 24 01 : addi	1,0,1
+	00d2 : 08 00 : add 	2,0,0
+	00d3 : e0 10 : sys	0
+	00d4 : e0 00 : halt
+read_byte:
+	00d5 : 3f 90 : addi	7,7,16
+	00d6 : 9b 86 : sw  	6,7,6
+	00d7 : 8b 82 : sw  	2,7,2
+	00d8 : 87 81 : sw  	1,7,1
+	00d9 : 6c 04 : lui 	3,256
+	00da : aa 80 : lw  	2,5,0
+	00db : d0 06 : beq 	4,0,read_even
+read_odd:
+	00dc : 2d ff : addi	3,3,-1
+	00dd : 4d 03 : nand	3,2,3
+	00de : 4d 83 : nand	3,3,3
+	00df : 10 00 : add 	4,0,0
+	00e0 : 36 81 : addi	5,5,1
+	00e1 : c0 05 : beq 	0,0,done_read
+read_even:
+	00e2 : 64 04 : lui 	1,256
+	00e3 : 24 8a : addi	1,1,10
+	00e4 : f8 80 : jalr	6,1
+	00e5 : 0c 01 : add 	3,0,1
+	00e6 : 30 01 : addi	4,0,1
+done_read:
+	00e7 : bb 86 : lw  	6,7,6
+	00e8 : ab 82 : lw  	2,7,2
+	00e9 : a7 81 : lw  	1,7,1
+	00ea : 3f f0 : addi	7,7,-16
+	00eb : e3 00 : jalr	0,6
+write_byte:
+	00ec : 3f 90 : addi	7,7,16
+	00ed : 9b 86 : sw  	6,7,6
+	00ee : 8f 83 : sw  	3,7,3
+	00ef : 8b 82 : sw  	2,7,2
+	00f0 : 87 81 : sw  	1,7,1
+	00f1 : a6 80 : lw  	1,5,0
+	00f2 : 6b fc : lui 	2,65280
+	00f3 : d0 07 : beq 	4,0,write_even
+write_odd:
+	00f4 : 44 82 : nand	1,1,2
+	00f5 : 44 81 : nand	1,1,1
+	00f6 : 04 83 : add 	1,1,3
+	00f7 : 86 80 : sw  	1,5,0
+	00f8 : 10 00 : add 	4,0,0
+	00f9 : 36 81 : addi	5,5,1
+	00fa : c0 09 : beq 	0,0,done_write
+write_even:
+	00fb : 49 02 : nand	2,2,2
+	00fc : 48 82 : nand	2,1,2
+	00fd : 49 02 : nand	2,2,2
+	00fe : 64 04 : lui 	1,256
+	00ff : 24 9b : addi	1,1,27
+	0100 : f8 80 : jalr	6,1
+	0101 : 09 03 : add 	2,2,3
+	0102 : 8a 80 : sw  	2,5,0
+	0103 : 30 01 : addi	4,0,1
+done_write:
+	0104 : bb 86 : lw  	6,7,6
+	0105 : af 83 : lw  	3,7,3
+	0106 : ab 82 : lw  	2,7,2
+	0107 : a7 81 : lw  	1,7,1
+	0108 : 3f f0 : addi	7,7,-16
+	0109 : e3 00 : jalr	0,6
+shift_right:
+	010a : 3f 90 : addi	7,7,16
+	010b : 97 85 : sw  	5,7,5
+	010c : 93 84 : sw  	4,7,4
+	010d : 04 00 : add 	1,0,0
+	010e : 34 01 : addi	5,0,1
+shift_loop:
+	010f : 51 03 : nand	4,2,3
+	0110 : 52 04 : nand	4,4,4
+	0111 : d0 01 : beq 	4,0,no_add
+	0112 : 04 85 : add 	1,1,5
+no_add:
+	0113 : 0d 83 : add 	3,3,3
+	0114 : 16 85 : add 	5,5,5
+	0115 : cc 01 : beq 	3,0,done_shift
+	0116 : c0 78 : beq 	0,0,shift_loop
+done_shift:
+	0117 : b7 85 : lw  	5,7,5
+	0118 : b3 84 : lw  	4,7,4
+	0119 : 3f f0 : addi	7,7,-16
+	011a : e3 00 : jalr	0,6
+shift_left_8:
+	011b : 24 08 : addi	1,0,8
+left_loop:
+	011c : 0d 83 : add 	3,3,3
+	011d : 24 ff : addi	1,1,-1
+	011e : c4 01 : beq 	1,0,left_done
+	011f : c0 7c : beq 	0,0,left_loop
+left_done:
+	0120 : e3 00 : jalr	0,6
+strcat:
+	0121 : 3f 90 : addi	7,7,16
+	0122 : 9b 86 : sw  	6,7,6
+strcat_loop:
+	0123 : 97 85 : sw  	5,7,5
+	0124 : 93 84 : sw  	4,7,4
+	0125 : 15 80 : add 	5,3,0
+	0126 : 11 00 : add 	4,2,0
+	0127 : a7 ef : lw  	1,7,-17
+	0128 : f8 80 : jalr	6,1
+	0129 : 97 83 : sw  	5,7,3
+	012a : 0a 00 : add 	2,4,0
+	012b : b7 85 : lw  	5,7,5
+	012c : b3 84 : lw  	4,7,4
+	012d : a7 ee : lw  	1,7,-18
+	012e : f8 80 : jalr	6,1
+	012f : 05 80 : add 	1,3,0
+	0130 : af 83 : lw  	3,7,3
+	0131 : c4 01 : beq 	1,0,done_strcat
+	0132 : c0 70 : beq 	0,0,strcat_loop
+done_strcat:
+	0133 : b7 85 : lw  	5,7,5
+	0134 : b3 84 : lw  	4,7,4
+	0135 : 08 00 : add 	2,0,0
+	0136 : bb 86 : lw  	6,7,6
+	0137 : 3f f0 : addi	7,7,-16
+	0138 : e3 00 : jalr	0,6
+center_and_print:
+	0139 : 3f 90 : addi	7,7,16
+	013a : 9b 86 : sw  	6,7,6
+	013b : 6c 08 : lui 	3,512
+	013c : 2d 85 : addi	3,3,5
+	013d : a7 e9 : lw  	1,7,-23
+	013e : f8 80 : jalr	6,1
+	013f : b7 ea : lw  	5,7,-22
+	0140 : a7 e4 : lw  	1,7,-28
+	0141 : f8 80 : jalr	6,1
+	0142 : 64 01 : lui 	1,64
+	0143 : 24 90 : addi	1,1,16
+	0144 : 52 04 : nand	4,4,4
+	0145 : 32 01 : addi	4,4,1
+	0146 : 0a 01 : add 	2,4,1
+	0147 : 2c 02 : addi	3,0,2
+	0148 : a7 ec : lw  	1,7,-20
+	0149 : f8 80 : jalr	6,1
+	014a : 08 80 : add 	2,1,0
+	014b : b7 e2 : lw  	5,7,-30
+	014c : 10 00 : add 	4,0,0
+	014d : a7 e1 : lw  	1,7,-31
+	014e : f8 80 : jalr	6,1
+	014f : af e2 : lw  	3,7,-30
+	0150 : a7 e9 : lw  	1,7,-23
+	0151 : f8 80 : jalr	6,1
+	0152 : 6c 08 : lui 	3,512
+	0153 : 2d 87 : addi	3,3,7
+	0154 : a7 e9 : lw  	1,7,-23
+	0155 : f8 80 : jalr	6,1
+	0156 : af ea : lw  	3,7,-22
+	0157 : a7 e9 : lw  	1,7,-23
+	0158 : f8 80 : jalr	6,1
+	0159 : 6c 08 : lui 	3,512
+	015a : 2d 80 : addi	3,3,0
+	015b : bb 86 : lw  	6,7,6
+	015c : 3f f0 : addi	7,7,-16
+write_stdout:
+	015d : 9b 80 : sw  	6,7,0
+	015e : 14 03 : add 	5,0,3
+	015f : 64 05 : lui 	1,320
+	0160 : 24 a7 : addi	1,1,39
+	0161 : f8 80 : jalr	6,1
+	0162 : 24 04 : addi	1,0,4
+	0163 : 28 01 : addi	2,0,1
+	0164 : e0 10 : sys	0
+	0165 : bb 80 : lw  	6,7,0
+	0166 : e3 00 : jalr	0,6
+strlen:
+	0167 : 30 00 : addi	4,0,0
+strlen_loop:
+	0168 : aa 80 : lw  	2,5,0
+	0169 : 67 fc : lui 	1,65280
+	016a : 44 82 : nand	1,1,2
+	016b : 44 81 : nand	1,1,1
+	016c : c4 06 : beq 	1,0,strlen_done
+	016d : 32 01 : addi	4,4,1
+	016e : aa 80 : lw  	2,5,0
+	016f : c5 03 : beq 	1,2,strlen_done
+	0170 : 32 01 : addi	4,4,1
+	0171 : 36 81 : addi	5,5,1
+	0172 : c0 75 : beq 	0,0,strlen_loop
+strlen_done:
+	0173 : e3 00 : jalr	0,6
+num_to_ascii:
+	0174 : 3f 90 : addi	7,7,16
+	0175 : 9b 86 : sw  	6,7,6
+	0176 : 97 85 : sw  	5,7,5
+	0177 : 93 84 : sw  	4,7,4
+	0178 : 83 88 : sw  	0,7,8
+	0179 : 74 08 : lui 	5,512
+	017a : 36 94 : addi	5,5,20
+div_loop:
+	017b : ba 80 : lw  	6,5,0
+	017c : d8 28 : beq 	6,0,done_div
+	017d : 0c 00 : add 	3,0,0
+sub_loop:
+	017e : 07 00 : add 	1,6,0
+	017f : 44 81 : nand	1,1,1
+	0180 : 24 81 : addi	1,1,1
+	0181 : 04 82 : add 	1,1,2
+	0182 : 72 00 : lui 	4,32768
+	0183 : 44 84 : nand	1,1,4
+	0184 : 44 81 : nand	1,1,1
+	0185 : c4 01 : beq 	1,0,not_less
+	0186 : c0 04 : beq 	0,0,done_sub
+not_less:
+	0187 : 2d 81 : addi	3,3,1
+	0188 : a6 80 : lw  	1,5,0
+	0189 : 1b 01 : add 	6,6,1
+	018a : c0 73 : beq 	0,0,sub_loop
+done_sub:
+	018b : 04 06 : add 	1,0,6
+	018c : 44 81 : nand	1,1,1
+	018d : 24 81 : addi	1,1,1
+	018e : 09 01 : add 	2,2,1
+	018f : a6 80 : lw  	1,5,0
+	0190 : 09 01 : add 	2,2,1
+	0191 : cc 01 : beq 	3,0,we_have_a_zero
+	0192 : c0 04 : beq 	0,0,write_char
+we_have_a_zero:
+	0193 : 24 ff : addi	1,1,-1
+	0194 : c4 02 : beq 	1,0,write_char
+	0195 : a7 88 : lw  	1,7,8
+	0196 : c4 0c : beq 	1,0,skip_write
+write_char:
+	0197 : 2d b0 : addi	3,3,48
+	0198 : 97 89 : sw  	5,7,9
+	0199 : b7 85 : lw  	5,7,5
+	019a : b3 84 : lw  	4,7,4
+	019b : 64 03 : lui 	1,192
+	019c : 24 ac : addi	1,1,44
+	019d : f8 80 : jalr	6,1
+	019e : 97 85 : sw  	5,7,5
+	019f : 93 84 : sw  	4,7,4
+	01a0 : b7 89 : lw  	5,7,9
+	01a1 : 24 01 : addi	1,0,1
+	01a2 : 87 88 : sw  	1,7,8
+skip_write:
+	01a3 : 36 ff : addi	5,5,-1
+	01a4 : c0 56 : beq 	0,0,div_loop
+done_div:
+	01a5 : 0c 00 : add 	3,0,0
+	01a6 : b7 85 : lw  	5,7,5
+	01a7 : b3 84 : lw  	4,7,4
+	01a8 : 64 03 : lui 	1,192
+	01a9 : 24 ac : addi	1,1,44
+	01aa : f8 80 : jalr	6,1
+	01ab : b7 85 : lw  	5,7,5
+	01ac : b3 84 : lw  	4,7,4
+	01ad : bb 86 : lw  	6,7,6
+	01ae : 3f f0 : addi	7,7,-16
+	01af : e3 00 : jalr	0,6
+find_string:
+	01b0 : 3f 90 : addi	7,7,16
+	01b1 : 9b 86 : sw  	6,7,6
+	01b2 : 97 85 : sw  	5,7,5
+	01b3 : 93 84 : sw  	4,7,4
+	01b4 : b7 e3 : lw  	5,7,-29
+	01b5 : 10 00 : add 	4,0,0
+find_loop:
+	01b6 : a7 ef : lw  	1,7,-17
+	01b7 : f8 80 : jalr	6,1
+	01b8 : 97 88 : sw  	5,7,8
+	01b9 : 93 89 : sw  	4,7,9
+	01ba : cc 20 : beq 	3,0,done_with_find
+	01bb : a7 eb : lw  	1,7,-21
+	01bc : f8 80 : jalr	6,1
+	01bd : 8f 83 : sw  	3,7,3
+	01be : a7 ef : lw  	1,7,-17
+	01bf : f8 80 : jalr	6,1
+	01c0 : a7 83 : lw  	1,7,3
+	01c1 : 0c 83 : add 	3,1,3
+	01c2 : b7 88 : lw  	5,7,8
+	01c3 : b3 89 : lw  	4,7,9
+	01c4 : cd 01 : beq 	3,2,found_match
+	01c5 : c0 70 : beq 	0,0,find_loop
+found_match:
+	01c6 : 64 00 : lui 	1,0
+	01c7 : 24 ba : addi	1,1,58
+find_colon:
+	01c8 : ab ef : lw  	2,7,-17
+	01c9 : f9 00 : jalr	6,2
+	01ca : c5 81 : beq 	1,3,found_colon
+	01cb : c0 7c : beq 	0,0,find_colon
+found_colon:
+	01cc : f9 00 : jalr	6,2
+write_loop:
+	01cd : f9 00 : jalr	6,2
+	01ce : 97 88 : sw  	5,7,8
+	01cf : 93 89 : sw  	4,7,9
+	01d0 : b7 85 : lw  	5,7,5
+	01d1 : b3 84 : lw  	4,7,4
+	01d2 : 24 0a : addi	1,0,10
+	01d3 : c5 87 : beq 	1,3,done_with_find
+	01d4 : a7 ee : lw  	1,7,-18
+	01d5 : f8 80 : jalr	6,1
+	01d6 : 97 85 : sw  	5,7,5
+	01d7 : 93 84 : sw  	4,7,4
+	01d8 : b7 88 : lw  	5,7,8
+	01d9 : b3 89 : lw  	4,7,9
+	01da : c0 72 : beq 	0,0,write_loop
+done_with_find:
+	01db : 08 00 : add 	2,0,0
+	01dc : bb 86 : lw  	6,7,6
+	01dd : 3f f0 : addi	7,7,-16
+	01de : e3 00 : jalr	0,6
+ver_string:
+	01df : 20 56 : addi	0,0,-42
+	01e0 : 65 72 : lui 	1,23680
+	01e1 : 73 69 : lui 	4,55872
+	01e2 : 6f 6e : lui 	3,56192
+	01e3 : 20 00 : addi	0,0,0
+compiled_string:
+	01e4 : 2c 20 : addi	3,0,32
+	01e5 : 43 6f : nand	0,6,7
+	01e6 : 6d 70 : lui 	3,23552
+	01e7 : 69 6c : lui 	2,23296
+	01e8 : 65 64 : lui 	1,22784
+	01e9 : 20 00 : addi	0,0,0
+one:
+	01ea : 4f 6e : nand	3,6,6
+	01eb : 65 20 : lui 	1,18432
+	01ec : 00 00 : add 	0,0,0
+mhz:
+	01ed : 20 00 : addi	0,0,0
+processor:
+	01ee : 20 50 : addi	0,0,-48
+	01ef : 72 6f : lui 	4,39872
+	01f0 : 63 65 : lui 	0,55616
+	01f1 : 73 73 : lui 	4,56512
+	01f2 : 6f 72 : lui 	3,56448
+	01f3 : 20 00 : addi	0,0,0
+ram_comma:
+	01f4 : 4b 20 : nand	2,6,0
+	01f5 : 52 41 : nand	4,4,1
+	01f6 : 4d 2c : nand	3,2,4
+	01f7 : 20 00 : addi	0,0,0
+bogo_total:
+	01f8 : 20 42 : addi	0,0,-62
+	01f9 : 6f 67 : lui 	3,55744
+	01fa : 6f 6d : lui 	3,56128
+	01fb : 69 70 : lui 	2,23552
+	01fc : 73 20 : lui 	4,51200
+	01fd : 54 6f : nand	5,0,7
+	01fe : 74 61 : lui 	5,6208
+	01ff : 6c 00 : lui 	3,0
+linefeed:
+	0200 : 0a 00 : add 	2,4,0
+default_colors:
+	0201 : 1b 5b : add 	6,6,3
+	0202 : 30 6d : addi	4,0,-19
+	0203 : 0a 0a : add 	2,4,2
+	0204 : 00 00 : add 	0,0,0
+escape:
+	0205 : 1b 5b : add 	6,6,3
+	0206 : 00 00 : add 	0,0,0
+c:
+	0207 : 43 00 : nand	0,6,0
+cpuinfo:
+	0208 : 70 72 : lui 	4,7296
+	0209 : 6f 63 : lui 	3,55488
+	020a : 2f 63 : addi	3,6,-29
+	020b : 70 75 : lui 	4,7488
+	020c : 2e 52 : addi	3,4,-46
+	020d : 69 53 : lui 	2,21696
+	020e : 43 00 : nand	0,6,0
+tens:
+	020f : 00 00 : add 	0,0,0
+	0210 : 00 01 : add 	0,0,1
+	0211 : 00 0a : add 	0,0,2
+	0212 : 00 64 : add 	0,0,4
+	0213 : 03 e8 : add 	0,7,0
+ten_thousand:
+	0214 : 27 10 : addi	1,6,16
+logo:
+	0215 : ff 1b : jalr	7,6
+	0216 : 5b 30 : nand	6,6,0
+	0217 : 3b 31 : addi	6,6,49
+	0218 : 3b 33 : addi	6,6,51
+	0219 : 37 9f : addi	5,7,31
+	021a : 3b 34 : addi	6,6,52
+	021b : 37 6d : addi	5,6,-19
+	021c : 23 cc : addi	0,7,-52
+	021d : f7 c0 : jalr	5,7
+	021e : 07 33 : add 	1,6,3
+	021f : 8d 30 : sw  	3,2,48
+	0220 : c8 1b : beq 	2,0,27
+	0221 : 1b 5b : add 	6,6,3
+	0222 : c4 07 : beq 	1,0,7
+	0223 : cb 1f : beq 	2,6,31
+	0224 : 1c 0c : add 	7,0,4
+	0225 : 3b 0f : addi	6,6,15
+	0226 : 34 30 : addi	5,0,48
+	0227 : 6d 0a : lui 	3,17024
+	0228 : c0 f7 : beq 	0,1,-9
+	0229 : 01 60 : add 	0,2,0
+	022a : 1a 38 : add 	6,4,0
+	022b : 2c 9c : addi	3,1,28
+	022c : 1f 1b : add 	7,6,3
+	022d : 5b 33 : nand	6,6,3
+	022e : 31 6d : addi	4,2,-19
+	022f : cc 04 : beq 	3,0,4
+	0230 : 41 ac : nand	0,3,4
+	0231 : 0d 24 : add 	3,2,4
+	0232 : 02 1c : add 	0,4,4
+	0233 : 10 4f : add 	4,0,7
+	0234 : 0d 20 : add 	3,2,0
+	0235 : 10 41 : add 	4,0,1
+	0236 : 93 98 : sw  	4,7,24
+	0237 : 83 34 : sw  	0,6,52
+	0238 : 1c 34 : add 	7,0,4
+	0239 : cc 10 : beq 	3,0,16
+	023a : 10 0c : add 	4,0,4
+	023b : 24 6f : addi	1,0,-17
+	023c : 39 ec : addi	6,3,-20
+	023d : a7 1c : lw  	1,6,28
+	023e : 08 33 : add 	2,0,3
+	023f : 16 14 : add 	5,4,4
+	0240 : 89 55 : sw  	2,2,-43
+	0241 : 2c 60 : addi	3,0,-32
+	0242 : 00 2b : add 	0,0,3
+	0243 : 61 d6 : lui 	0,30080
+	0244 : 71 e2 : lui 	4,30848
+	0245 : c8 cb : beq 	2,1,-53
+	0246 : 08 d4 : add 	2,1,4
+	0247 : 09 d3 : add 	2,3,3
+	0248 : 10 2b : add 	4,0,3
+	0249 : 59 f5 : nand	6,3,5
+	024a : d1 00 : beq 	4,2,0
+	024b : 80 11 : sw  	0,0,17
+	024c : d2 18 : beq 	4,4,24
+	024d : 0d 28 : add 	3,2,0
+	024e : 1c 14 : add 	7,0,4
+	024f : 0d 2c : add 	3,2,4
+	0250 : 1c 1c : add 	7,0,4
+	0251 : f0 4a : jalr	4,0
+	0252 : 1a 5b : add 	6,4,3
+	0253 : 00 0d : add 	0,0,5
+	0254 : 50 5f : nand	4,0,7
+	0255 : 65 87 : lui 	1,25024
+	0256 : 65 2b : lui 	1,19136
+	0257 : 55 f5 : nand	5,3,5
+	0258 : cd cd : beq 	3,3,-51
+	0259 : 28 cd : addi	2,1,-51
+	025a : 14 89 : add 	5,1,1
+	025b : 41 00 : nand	0,2,0
+	025c : 1d 87 : add 	7,3,7
+	025d : 42 4b : nand	0,4,3
+	025e : 72 53 : lui 	4,38080
+	025f : 1c 78 : add 	7,0,0
+	0260 : 0f 62 : add 	3,6,2
+	0261 : 87 6d : sw  	1,6,-19
+	0262 : 55 58 : nand	5,2,0
+	0263 : f7 c1 : jalr	5,7
+	0264 : 00 e8 : add 	0,1,0
+	0265 : 2b f4 : addi	2,7,-12
+	0266 : 97 49 : sw  	5,6,-55
+	0267 : 78 3d : lui 	6,3904
+	0268 : b0 1b : lw  	4,0,27
+	0269 : 5f 97 : nand	7,7,7
+	026a : b0 12 : lw  	4,0,18
+	026b : 2b ab : addi	2,7,43
+	026c : ca 10 : beq 	2,4,16
+	026d : df 16 : beq 	7,6,22
+	026e : 1a f5 : add 	6,5,5
+	026f : 5a f5 : nand	6,5,5
+	0270 : d9 3f : beq 	6,2,63
+	0271 : 33 1b : addi	4,6,27
+	0272 : 56 92 : nand	5,5,2
+	0273 : 5b b0 : nand	6,7,0
+	0274 : 02 00 : add 	0,4,0
+	0275 : 0c 1d : add 	3,0,5
+	0276 : d3 c8 : beq 	4,7,-56
+	0277 : ac 39 : lw  	3,0,57
+	0278 : 17 66 : add 	5,6,6
+	0279 : 32 f6 : addi	4,5,-10
+	027a : 6e 6d : lui 	3,39744
+	027b : ec 44 : jalr	3,0
+	027c : 60 5e : lui 	0,6016
+	027d : 08 af : add 	2,1,7
+	027e : 0a a6 : add 	2,5,6
+	027f : 69 14 : lui 	2,17664
+	0280 : 01 30 : add 	0,2,0
+	0281 : 33 0b : addi	4,6,11
+	0282 : de 1f : beq 	7,4,31
+	0283 : 31 0f : addi	4,2,15
+	0284 : d3 bc : beq 	4,7,60
+	0285 : 00 af : add 	0,1,7
+	0286 : 4f 19 : nand	3,6,1
+	0287 : 56 aa : nand	5,5,2
+	0288 : 45 52 : nand	1,2,2
+	0289 : db 28 : beq 	6,6,stack
+	028a : 52 46 : nand	4,4,6
+	028b : 7f 08 : lui 	7,49664
+	028c : 53 db : nand	4,7,3
+	028d : 23 00 : addi	0,6,0
+	028e : a9 55 : lw  	2,2,-43
+	028f : aa 35 : lw  	2,4,53
+	0290 : 18 21 : add 	6,0,1
+	0291 : 12 68 : add 	4,4,0
+	0292 : 91 2a : sw  	4,2,42
+	0293 : c8 22 : beq 	2,0,34
+	0294 : b2 68 : lw  	4,4,-24
+	0295 : 70 2d : lui 	4,2880
+	0296 : 00 c6 : add 	0,1,6
+	0297 : 50 b2 : nand	4,1,2
+	0298 : 79 91 : lui 	6,25664
+	0299 : 4a 70 : nand	2,4,0
+	029a : 31 f8 : addi	4,3,-8
+	029b : 51 f3 : nand	4,3,3
+	029c : 28 dd : addi	2,1,-35
+	029d : 17 ff : add 	5,7,7
+	029e : 17 08 : add 	5,6,0
+	029f : 02 36 : add 	0,4,6
+	02a0 : 03 24 : add 	0,6,4
+	02a1 : e5 42 : jalr	1,2
+	02a2 : 0a 00 : add 	2,4,0
+logo_end:
+	02a3 : 01 74 : add 	0,2,4
+	02a4 : 16 a5 : add 	5,5,5
+	02a5 : 15 a5 : add 	5,3,5
+	02a6 : 01 67 : add 	0,2,7
+	02a7 : 01 b0 : add 	0,3,0
+	02a8 : 01 39 : add 	0,2,1
+	02a9 : 15 55 : add 	5,2,5
+	02aa : 01 21 : add 	0,2,1
+	02ab : 01 5d : add 	0,2,5
+	02ac : 03 35 : add 	0,6,5
+	02ad : 01 1b : add 	0,2,3
+	02ae : 01 0a : add 	0,2,2
+	02af : 13 35 : add 	4,6,5
+	02b0 : 00 ec : add 	0,1,4
+	02b1 : 00 d5 : add 	0,1,5
+stack:
+	02b2 : 02 15 : add 	0,4,5
+out_ptr:
+	02b3 : 03 35 : add 	0,6,5
+text_ptr:
+	02b4 : 01 e0 : add 	0,3,0
+
+BSS:
+	02b5 : 00 00
+	       ...
+	2b1b : 00 00
+
+Symbols:
+0001	8	SYSCALL_EXIT
+0003	8	SYSCALL_READ
+0004	8	SYSCALL_WRITE
+0005	8	SYSCALL_OPEN
+0006	8	SYSCALL_CLOSE
+0074	8	SYSCALL_SYSINFO
+007a	8	SYSCALL_UNAME
+0000	8	STDIN
+0001	8	STDOUT
+0002	8	STDERR
+0000	8	FREQUENT_CHAR
+0400	8	N
+0040	8	F
+0002	8	THRESHOLD
+000a	8	P_BITS
+0003	8	POSITION_MASK
+0000	1	_start
+0002	1	decompression_loop
+000b	1	test_flags
+0010	1	not_done
+0017	1	discrete_char
+0020	1	offset_length
+0032	1	done_logo_jump
+0033	1	test_flags_jump
+0034	1	decompression_jump
+0035	1	output_loop
+0048	1	store_byte
+0062	1	done_count
+0066	1	done_logo
+006e	1	first_line
+008a	1	middle_line
+0098	1	number_of_cpus
+009d	1	print_mhz
+00a5	1	chip_name
+00ad	1	ram
+00ba	1	bogomips
+00c4	1	last_line
+00d1	1	exit
+00d5	1	read_byte
+00dc	1	read_odd
+00e2	1	read_even
+00e7	1	done_read
+00ec	1	write_byte
+00f4	1	write_odd
+00fb	1	write_even
+0104	1	done_write
+010a	1	shift_right
+010f	1	shift_loop
+0113	1	no_add
+0117	1	done_shift
+011b	1	shift_left_8
+011c	1	left_loop
+0120	1	left_done
+0121	1	strcat
+0123	1	strcat_loop
+0133	1	done_strcat
+0139	1	center_and_print
+015d	1	write_stdout
+0167	1	strlen
+0168	1	strlen_loop
+0173	1	strlen_done
+0174	1	num_to_ascii
+017b	1	div_loop
+017e	1	sub_loop
+0187	1	not_less
+018b	1	done_sub
+0193	1	we_have_a_zero
+0197	1	write_char
+01a3	1	skip_write
+01a5	1	done_div
+01b0	1	find_string
+01b6	1	find_loop
+01c6	1	found_match
+01c8	1	find_colon
+01cc	1	found_colon
+01cd	1	write_loop
+01db	1	done_with_find
+01df	1	ver_string
+01e4	1	compiled_string
+01ea	1	one
+01ed	1	mhz
+01ee	1	processor
+01f4	1	ram_comma
+01f8	1	bogo_total
+0200	1	linefeed
+0201	1	default_colors
+0205	1	escape
+0207	1	c
+0208	1	cpuinfo
+020f	1	tens
+0214	1	ten_thousand
+0215	1	logo
+02a3	1	logo_end
+02b2	1	stack
+02b2	1	logo_ptr
+02b3	1	out_ptr
+02b4	1	text_ptr
+0000	4	zeroed_stack
+0080	4	out_buffer
+1080	4	text_buffer
+12a0	4	uname_info
+12f0	4	disk_buffer
+13f0	4	ascii_buffer
+13f4	4	sysinfo_buff

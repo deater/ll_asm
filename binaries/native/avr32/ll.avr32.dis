@@ -1,0 +1,481 @@
+
+./ll:     file format elf32-avr32
+
+Disassembly of section .text:
+
+00001074 <_start>:
+    1074:	e0 61 29 c0 	mov r1,10688
+    1078:	e0 62 03 c0 	mov r2,960
+    107c:	e0 63 12 77 	mov r3,4727
+    1080:	e0 64 13 92 	mov r4,5010
+    1084:	e0 6c 15 80 	mov r12,5504
+
+00001088 <decompression_loop>:
+    1088:	30 08       	mov r8,0
+    108a:	07 38       	ld.ub r8,r3++
+    108c:	e8 18 ff 00 	orl r8,0xff00
+
+00001090 <test_flags>:
+    1090:	08 33       	cp.w r3,r4
+    1092:	c2 34       	brge 10d8 <done_logo>
+    1094:	a1 98       	lsr r8,0x1
+    1096:	c1 d3       	brcs 10d0 <discrete_char>
+
+00001098 <offset_length>:
+    1098:	07 30       	ld.ub r0,r3++
+    109a:	07 39       	ld.ub r9,r3++
+    109c:	a9 69       	lsl r9,0x8
+    109e:	00 49       	or r9,r0
+    10a0:	12 9b       	mov r11,r9
+    10a2:	ab 89       	lsr r9,0xa
+    10a4:	2f d9       	sub r9,-3
+    10a6:	12 9a       	mov r10,r9
+
+000010a8 <output_loop>:
+    10a8:	e0 60 03 ff 	mov r0,1023
+    10ac:	00 6b       	and r11,r0
+    10ae:	f8 0b 07 09 	ld.ub r9,r12[r11]
+    10b2:	2f fb       	sub r11,-1
+
+000010b4 <store_byte>:
+    10b4:	02 c9       	st.b r1++,r9
+    10b6:	f8 02 0b 09 	st.b r12[r2],r9
+    10ba:	2f f2       	sub r2,-1
+    10bc:	e0 60 03 ff 	mov r0,1023
+    10c0:	00 62       	and r2,r0
+    10c2:	20 1a       	sub r10,1
+    10c4:	cf 21       	brne 10a8 <output_loop>
+    10c6:	10 90       	mov r0,r8
+    10c8:	e0 10 ff 00 	andl r0,0xff00
+    10cc:	ce 21       	brne 1090 <test_flags>
+    10ce:	cd d0       	breq 1088 <decompression_loop>
+
+000010d0 <discrete_char>:
+    10d0:	07 39       	ld.ub r9,r3++
+    10d2:	30 1a       	mov r10,1
+    10d4:	fe 9f ff f0 	bral 10b4 <store_byte>
+
+000010d8 <done_logo>:
+    10d8:	e0 6b 29 c0 	mov r11,10688
+    10dc:	16 93       	mov r3,r11
+    10de:	c7 ec       	rcall 11da <done_center>
+
+000010e0 <first_line>:
+    10e0:	e0 6c 13 a0 	mov r12,5024
+    10e4:	18 94       	mov r4,r12
+    10e6:	36 f8       	mov r8,111
+    10e8:	d7 33       	scall
+    10ea:	06 92       	mov r2,r3
+    10ec:	c5 ec       	rcall 11a8 <strcat2>
+    10ee:	e0 61 12 0c 	mov r1,4620
+    10f2:	c5 5c       	rcall 119c <strcat>
+    10f4:	e0 64 14 22 	mov r4,5154
+    10f8:	c5 8c       	rcall 11a8 <strcat2>
+    10fa:	c5 1c       	rcall 119c <strcat>
+    10fc:	e0 64 14 63 	mov r4,5219
+    1100:	c5 4c       	rcall 11a8 <strcat2>
+    1102:	c4 dc       	rcall 119c <strcat>
+    1104:	c5 8c       	rcall 11b4 <center_and_print>
+
+00001106 <middle_line>:
+    1106:	06 92       	mov r2,r3
+    1108:	e0 6c 12 5d 	mov r12,4701
+    110c:	30 0b       	mov r11,0
+    110e:	30 58       	mov r8,5
+    1110:	d7 33       	scall
+    1112:	18 90       	mov r0,r12
+    1114:	e0 6b 19 c0 	mov r11,6592
+    1118:	e0 6a 10 00 	mov r10,4096
+    111c:	30 38       	mov r8,3
+    111e:	d7 33       	scall
+    1120:	00 9c       	mov r12,r0
+    1122:	30 68       	mov r8,6
+    1124:	d7 33       	scall
+
+00001126 <number_of_cpus>:
+    1126:	c3 bc       	rcall 119c <strcat>
+
+00001128 <print_mhz>:
+    1128:	fe f4 01 43 	ld.w r4,pc[323]
+    112c:	c2 2c       	rcall 1170 <find_string>
+    112e:	c3 7c       	rcall 119c <strcat>
+
+00001130 <chip_name>:
+    1130:	fe f4 01 3f 	ld.w r4,pc[319]
+    1134:	c1 ec       	rcall 1170 <find_string>
+    1136:	c3 3c       	rcall 119c <strcat>
+    1138:	e0 6c 15 30 	mov r12,5424
+    113c:	36 b8       	mov r8,107
+    113e:	d7 33       	scall
+    1140:	e0 60 15 30 	mov r0,5424
+    1144:	60 46       	ld.w r6,r0[0x10]
+    1146:	b5 86       	lsr r6,0x14
+    1148:	5c 06       	acr r6
+    114a:	30 1c       	mov r12,1
+    114c:	c5 1c       	rcall 11ee <num_to_ascii>
+    114e:	c2 7c       	rcall 119c <strcat>
+    1150:	fe f4 01 23 	ld.w r4,pc[291]
+    1154:	c0 ec       	rcall 1170 <find_string>
+    1156:	c2 3c       	rcall 119c <strcat>
+    1158:	c2 ec       	rcall 11b4 <center_and_print>
+
+0000115a <last_line>:
+    115a:	06 92       	mov r2,r3
+    115c:	e0 64 13 e1 	mov r4,5089
+    1160:	c2 4c       	rcall 11a8 <strcat2>
+    1162:	c2 9c       	rcall 11b4 <center_and_print>
+    1164:	e0 6b 12 51 	mov r11,4689
+    1168:	c3 9c       	rcall 11da <done_center>
+
+0000116a <exit>:
+    116a:	30 0c       	mov r12,0
+    116c:	30 18       	mov r8,1
+    116e:	d7 33       	scall
+
+00001170 <find_string>:
+    1170:	e0 66 19 bf 	mov r6,6591
+
+00001174 <find_loop>:
+    1174:	2f f6       	sub r6,-1
+    1176:	6c 00       	ld.w r0,r6[0x0]
+    1178:	00 40       	or r0,r0
+    117a:	c1 00       	breq 119a <done>
+    117c:	08 30       	cp.w r0,r4
+    117e:	cf b1       	brne 1174 <find_loop>
+    1180:	2f c6       	sub r6,-4
+
+00001182 <skip_tabs>:
+    1182:	0d 30       	ld.ub r0,r6++
+    1184:	58 90       	cp.w r0,9
+    1186:	cf e0       	breq 1182 <skip_tabs>
+    1188:	2f f6       	sub r6,-1
+
+0000118a <store_loop>:
+    118a:	0d 30       	ld.ub r0,r6++
+    118c:	e0 40 00 21 	cp.w r0,33
+    1190:	c0 35       	brlt 1196 <almost_done>
+    1192:	04 c0       	st.b r2++,r0
+    1194:	cf b4       	brge 118a <store_loop>
+
+00001196 <almost_done>:
+    1196:	30 00       	mov r0,0
+    1198:	0c f0       	st.b --r6,r0
+
+0000119a <done>:
+    119a:	5e fc       	retal r12
+
+0000119c <strcat>:
+    119c:	03 30       	ld.ub r0,r1++
+    119e:	04 c0       	st.b r2++,r0
+    11a0:	00 40       	or r0,r0
+    11a2:	cf d1       	brne 119c <strcat>
+    11a4:	20 12       	sub r2,1
+    11a6:	5e fc       	retal r12
+
+000011a8 <strcat2>:
+    11a8:	09 30       	ld.ub r0,r4++
+    11aa:	04 c0       	st.b r2++,r0
+    11ac:	00 40       	or r0,r0
+    11ae:	cf d1       	brne 11a8 <strcat2>
+    11b0:	20 12       	sub r2,1
+    11b2:	5e fc       	retal r12
+
+000011b4 <center_and_print>:
+    11b4:	d4 01       	pushm lr
+    11b6:	e0 6b 12 58 	mov r11,4696
+    11ba:	c1 0c       	rcall 11da <done_center>
+    11bc:	06 9b       	mov r11,r3
+    11be:	04 96       	mov r6,r2
+    11c0:	16 16       	sub r6,r11
+    11c2:	ec 06 11 51 	rsub r6,r6,81
+    11c6:	c0 a6       	brmi 11da <done_center>
+    11c8:	a1 96       	lsr r6,0x1
+    11ca:	5c 06       	acr r6
+    11cc:	30 0c       	mov r12,0
+    11ce:	c1 0c       	rcall 11ee <num_to_ascii>
+    11d0:	e0 6b 12 5b 	mov r11,4699
+    11d4:	c0 3c       	rcall 11da <done_center>
+    11d6:	06 9b       	mov r11,r3
+    11d8:	d4 02       	popm lr
+
+000011da <done_center>:
+    11da:	30 0a       	mov r10,0
+
+000011dc <str_loop1>:
+    11dc:	2f fa       	sub r10,-1
+    11de:	f6 0a 07 00 	ld.ub r0,r11[r10]
+    11e2:	58 00       	cp.w r0,0
+    11e4:	cf c1       	brne 11dc <str_loop1>
+
+000011e6 <write_stdout_we_know_size>:
+    11e6:	30 1c       	mov r12,1
+    11e8:	30 48       	mov r8,4
+    11ea:	d7 33       	scall
+    11ec:	5e fc       	retal r12
+
+000011ee <num_to_ascii>:
+    11ee:	d4 03       	csrf 0x0
+    11f0:	e0 6b 15 7a 	mov r11,5498
+    11f4:	30 a0       	mov r0,10
+
+000011f6 <div_by_10>:
+    11f6:	ec 00 0d 06 	divu r6,r6,r0
+    11fa:	2d 07       	sub r7,-48
+    11fc:	16 f7       	st.b --r11,r7
+    11fe:	58 06       	cp.w r6,0
+    1200:	cf b1       	brne 11f6 <div_by_10>
+
+00001202 <write_out>:
+    1202:	58 0c       	cp.w r12,0
+    1204:	c0 30       	breq 120a <ascii_stdout>
+    1206:	16 94       	mov r4,r11
+    1208:	cd 02       	brcc 11a8 <strcat2>
+
+0000120a <ascii_stdout>:
+    120a:	ce 82       	brcc 11da <done_center>
+Disassembly of section .data:
+
+0000120c <data_begin>:
+    120c:	20 56       	sub r6,5
+    120e:	65 72       	ld.w r2,r2[0x5c]
+    1210:	73 69       	ld.w r9,r9[0x58]
+    1212:	6f 6e       	ld.w lr,r7[0x58]
+    1214:	20 00       	sub r0,0
+
+00001216 <compiled_string>:
+    1216:	2c 20       	sub r0,-62
+    1218:	43 6f       	lddsp pc,sp[0xd8]
+    121a:	6d 70       	ld.w r0,r6[0x5c]
+    121c:	69 6c       	ld.w r12,r4[0x58]
+    121e:	65 64       	ld.w r4,r2[0x58]
+    1220:	20 00       	sub r0,0
+
+00001222 <linefeed>:
+    1222:	0a 00       	add r0,r5
+
+00001224 <one>:
+    1224:	4f 6e       	lddpc lr,13fc <uname_info+0x5c>
+    1226:	65 20       	ld.w r0,r2[0x48]
+	...
+
+00001229 <space>:
+    1229:	20 00       	sub r0,0
+
+0000122b <processor>:
+    122b:	20 50       	sub r0,5
+    122d:	72 6f       	ld.w pc,r9[0x18]
+    122f:	63 65       	ld.w r5,r1[0x58]
+    1231:	73 73       	ld.w r3,r9[0x5c]
+    1233:	6f 72       	ld.w r2,r7[0x5c]
+    1235:	2c 20       	sub r0,-62
+	...
+
+00001238 <ram_comma>:
+    1238:	4d 20       	lddpc r0,1380 <logo+0x109>
+    123a:	52 41       	stdsp sp[0x90],r1
+    123c:	4d 2c       	lddpc r12,1384 <logo+0x10d>
+    123e:	20 00       	sub r0,0
+
+00001240 <bogo_total>:
+    1240:	20 42       	sub r2,4
+    1242:	6f 67       	ld.w r7,r7[0x58]
+    1244:	6f 6d       	ld.w sp,r7[0x58]
+    1246:	69 70       	ld.w r0,r4[0x5c]
+    1248:	73 20       	ld.w r0,r9[0x48]
+    124a:	54 6f       	stdsp sp[0x118],pc
+    124c:	74 61       	ld.w r1,r10[0x18]
+    124e:	6c 0a       	ld.w r10,r6[0x0]
+	...
+
+00001251 <default_colors>:
+    1251:	1b 5b       	ld.sh r11,--sp
+    1253:	30 6d       	mov sp,6
+    1255:	0a 0a       	add r10,r5
+	...
+
+00001258 <escape>:
+    1258:	1b 5b       	ld.sh r11,--sp
+	...
+
+0000125b <C>:
+    125b:	43 00       	lddsp r0,sp[0xc0]
+
+0000125d <cpuinfo>:
+    125d:	2f 70       	sub r0,-9
+    125f:	72 6f       	ld.w pc,r9[0x18]
+    1261:	63 2f       	ld.w pc,r1[0x48]
+    1263:	63 70       	ld.w r0,r1[0x5c]
+    1265:	75 69       	ld.w r9,r10[0x58]
+    1267:	6e 66       	ld.w r6,r7[0x18]
+    1269:	6f 00       	ld.w r0,r7[0x40]
+
+0000126b <mily>:
+    126b:	6d 69       	ld.w r9,r6[0x58]
+    126d:	6c 79       	ld.w r9,r6[0x1c]
+
+0000126f <type>:
+    126f:	74 79       	ld.w r9,r10[0x1c]
+    1271:	70 65       	ld.w r5,r8[0x18]
+
+00001273 <mips>:
+    1273:	6d 69       	ld.w r9,r6[0x58]
+    1275:	70 73       	ld.w r3,r8[0x1c]
+
+00001277 <logo>:
+    1277:	ff 1b 5b 30 	ld.uh r11,pc[23344]
+    127b:	3b 31       	mov r1,-77
+    127d:	3b 33       	mov r3,-77
+    127f:	37 9f       	mov pc,121
+    1281:	3b 34       	mov r4,-77
+    1283:	37 6d       	mov sp,118
+    1285:	23 cc       	sub r12,60
+    1287:	f7 c0       	*unknown*
+    1289:	07 33       	ld.ub r3,r3++
+    128b:	8d 30       	st.w r6[0xc],r0
+    128d:	c8 1b       	rjmp 118e <store_loop+0x4>
+    128f:	1b 5b       	ld.sh r11,--sp
+    1291:	c4 07       	brpl 1310 <logo+0x99>
+    1293:	cb 1f       	rcall 11f4 <num_to_ascii+0x6>
+    1295:	1c 0c       	add r12,lr
+    1297:	3b 0f       	mov pc,-80
+    1299:	34 30       	mov r0,67
+    129b:	6d 0a       	ld.w r10,r6[0x40]
+    129d:	c0 f7       	brpl 12ba <logo+0x43>
+    129f:	01 60       	ld.uh r0,--r0
+    12a1:	1a 38       	cp.w r8,sp
+    12a3:	2c 9c       	sub r12,-55
+    12a5:	1f 1b       	ld.sh r11,pc++
+    12a7:	5b 33       	cp.w r3,-13
+    12a9:	31 6d       	mov sp,22
+    12ab:	cc 04       	brge 122a <space+0x1>
+    12ad:	41 ac       	lddsp r12,sp[0x68]
+    12af:	0d 24       	ld.uh r4,r6++
+    12b1:	02 1c       	sub r12,r1
+    12b3:	10 4f       	or pc,r8
+    12b5:	0d 20       	ld.uh r0,r6++
+    12b7:	10 41       	or r1,r8
+    12b9:	93 98       	st.w r9[0x24],r8
+    12bb:	83 34       	st.w r1[0xc],r4
+    12bd:	1c 34       	cp.w r4,lr
+    12bf:	cc 10       	breq 1240 <bogo_total>
+    12c1:	10 0c       	add r12,r8
+    12c3:	24 6f       	sub pc,70
+    12c5:	39 ec       	mov r12,-98
+    12c7:	a7 1c       	ld.d r12,--r3
+    12c9:	08 33       	cp.w r3,r4
+    12cb:	16 14       	sub r4,r11
+    12cd:	89 55       	st.w r4[0x14],r5
+    12cf:	2c 60       	sub r0,-58
+    12d1:	00 2b       	rsub r11,r0
+    12d3:	61 d6       	ld.w r6,r0[0x74]
+    12d5:	71 e2       	ld.w r2,r8[0x78]
+    12d7:	c8 cb       	rjmp 11ee <num_to_ascii>
+    12d9:	08 d4       	st.w --r4,r4
+    12db:	09 d3       	ld.ub r3,r4[0x5]
+    12dd:	10 2b       	rsub r11,r8
+    12df:	59 f5       	cp.w r5,31
+    12e1:	d1 00       	acall 0x40
+    12e3:	80 11       	ld.sh r1,r0[0x2]
+    12e5:	d2 18       	*unknown*
+    12e7:	0d 28       	ld.uh r8,r6++
+    12e9:	1c 14       	sub r4,lr
+    12eb:	0d 2c       	ld.uh r12,r6++
+    12ed:	1c 1c       	sub r12,lr
+    12ef:	f0 4a 1a 5b 	cp.w r10,-1041829
+    12f3:	00 0d       	add sp,r0
+    12f5:	50 5f       	stdsp sp[0x14],pc
+    12f7:	65 87       	ld.w r7,r2[0x60]
+    12f9:	65 2b       	ld.w r11,r2[0x48]
+    12fb:	55 f5       	stdsp sp[0x17c],r5
+    12fd:	cd cd       	rcall 16b4 <text_buf+0x134>
+    12ff:	28 cd       	sub sp,-464
+    1301:	14 89       	andn r9,r10
+    1303:	41 00       	lddsp r0,sp[0x40]
+    1305:	1d 87       	ld.ub r7,lr[0x0]
+    1307:	42 4b       	lddsp r11,sp[0x90]
+    1309:	72 53       	ld.w r3,r9[0x14]
+    130b:	1c 78       	tst r8,lr
+    130d:	0f 62       	ld.uh r2,--r7
+    130f:	87 6d       	st.w r3[0x18],sp
+    1311:	55 58       	stdsp sp[0x154],r8
+    1313:	f7 c1       	*unknown*
+    1315:	00 e8       	st.h --r0,r8
+    1317:	2b f4       	sub r4,-65
+    1319:	97 49       	st.w r11[0x10],r9
+    131b:	78 3d       	ld.w sp,r12[0xc]
+    131d:	b0 1b       	st.h r8[0x2],r11
+    131f:	5f 97       	srgt r7
+    1321:	b0 12       	st.h r8[0x2],r2
+    1323:	2b ab       	sub r11,-70
+    1325:	ca 10       	breq 1266 <cpuinfo+0x9>
+    1327:	df 16       	*unknown*
+    1329:	1a f5       	st.b --sp,r5
+    132b:	5a f5       	cp.w r5,-17
+    132d:	d9 3f       	*unknown*
+    132f:	33 1b       	mov r11,49
+    1331:	56 92       	stdsp sp[0x1a4],r2
+    1333:	5b b0       	cp.w r0,-5
+    1335:	02 00       	add r0,r1
+    1337:	0c 1d       	sub sp,r6
+    1339:	d3 c8       	*unknown*
+    133b:	ac 39       	st.h r6[0x6],r9
+    133d:	17 66       	ld.uh r6,--r11
+    133f:	32 f6       	mov r6,47
+    1341:	6e 6d       	ld.w sp,r7[0x18]
+    1343:	ec 44 60 5e 	cp.w r4,811102
+    1347:	08 af       	st.w r4++,pc
+    1349:	0a a6       	st.w r5++,r6
+    134b:	69 14       	ld.w r4,r4[0x44]
+    134d:	01 30       	ld.ub r0,r0++
+    134f:	33 0b       	mov r11,48
+    1351:	de 1f       	*unknown*
+    1353:	31 0f       	mov pc,16
+    1355:	d3 bc       	*unknown*
+    1357:	00 af       	st.w r0++,pc
+    1359:	4f 19       	lddpc r9,151c <uname_info+0x17c>
+    135b:	56 aa       	stdsp sp[0x1a8],r10
+    135d:	45 52       	lddsp r2,sp[0x154]
+    135f:	db 28       	*unknown*
+    1361:	52 46       	stdsp sp[0x90],r6
+    1363:	7f 08       	ld.w r8,pc[0x40]
+    1365:	53 db       	stdsp sp[0xf4],r11
+    1367:	23 00       	sub r0,48
+    1369:	a9 55       	asr r5,0x9
+    136b:	aa 35       	st.h r5[0x6],r5
+    136d:	18 21       	rsub r1,r12
+    136f:	12 68       	and r8,r9
+    1371:	91 2a       	st.w r8[0x8],r10
+    1373:	c8 22       	brcc 1276 <mips+0x3>
+    1375:	b2 68       	st.h r9[0xc],r8
+    1377:	70 2d       	ld.w sp,r8[0x8]
+    1379:	00 c6       	st.b r0++,r6
+    137b:	50 b2       	stdsp sp[0x2c],r2
+    137d:	79 91       	ld.w r1,r12[0x64]
+    137f:	4a 70       	lddpc r0,1418 <uname_info+0x78>
+    1381:	31 f8       	mov r8,31
+    1383:	51 f3       	stdsp sp[0x7c],r3
+    1385:	28 dd       	sub sp,-460
+    1387:	17 ff       	ld.ub pc,r11[0x7]
+    1389:	17 08       	ld.w r8,r11++
+    138b:	02 36       	cp.w r6,r1
+    138d:	03 24       	ld.uh r4,r1++
+    138f:	e5 42 0a 2d 	st.w r2[0],r2
+Disassembly of section .bss:
+
+000013a0 <uname_info>:
+	...
+
+00001530 <sysinfo_buff>:
+	...
+
+00001570 <ascii_buffer>:
+	...
+
+00001580 <text_buf>:
+	...
+
+000019c0 <disk_buffer>:
+	...
+
+000029c0 <out_buffer>:
+	...

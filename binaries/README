@@ -1,0 +1,19 @@
+These are binaries for ll, which are versions of the linux_logo
+programmed in assembly language (and optimized for size).
+
+Native versions, that is versions you'd run on an actual machine that
+read from /proc/cpuinfo natively, are in ./native
+
+Versions that read from proc/* (a local directory instead) are found
+under qemu_test and are suitable for testing simulators that do Linux 
+syscall emulation, such as qemu-linux-user.
+
+For more info on the ll utility, see:
+  http://www.deater.net/weave/vmwprod/asm/ll/ll.html
+
+For more info on the qemu tests see:
+  http://www.deater.net/weave/vmwprod/asm/ll/qemu_tests.html
+  
+Vince Weaver
+vince _at_ deater.net
+18 August 2009

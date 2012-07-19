@@ -1,0 +1,56 @@
+Background
+~~~~~~~~~~
+
+I have translated the same program into assembly language on 20+
+different architectures.  These are all optimized for size, and
+are made as small as possible.  When possible these are tested
+on real hardware, but when that's not available they are tested
+on simulators.
+
+These can be useful for doing quick sanity checks of various Linux
+user-space emulators.  These executables read cpuinfo from a 
+local file, not from /proc/cpuinfo.  That way they can be run under 
+a simulator.
+
+
+Testing QEMU
+~~~~~~~~~~~~
+
+The test_qemu.sh script can be used to quickly test all of the 
+architectures.  Edit the test.include file first to point
+to your copy of qemu.
+
+You can also cd into the various directories and run "test.sh".
+
+Included are all of the architectures currently supported by qemu.
+
+Current status running under git x86_64 qemu (17 September 2009):
+  + alpha       -- works
+  + arm         -- works
+  + arm_thumb   -- works
+  + cris        -- works (toolchain problem causes qemu to error out on mmap?)
+  + i386        -- works
+  + m68k        -- qemu support missing instructions
+  + microblaze  -- works
+  + mips        -- works
+  + mipsel      -- works
+  + ppc         -- works
+  + s390        -- untested, s390 support not merged into qemu yet
+  + sh4         -- works
+  + sparc32plus -- works
+  + x86_64      -- works
+
+
+Testing M5
+~~~~~~~~~~
+
+use the "test_m5.sh" script.
+
+As of 17 September 2009:
+  + Alpha works
+  + ARM works
+  + MIPSEL works
+  + SPARC gets the memory size wrong
+  + X86 works
+  
+  

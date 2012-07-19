@@ -1,0 +1,438 @@
+
+./ll:     file format a.out-pdp11
+
+
+Disassembly of section .text:
+
+00000000 <_start>:
+   0:	15c1 17c2      	mov	$13702, r1
+   4:	1066           	mov	r1, -(sp)
+   6:	15c2 03c0      	mov	$1700, r2
+   a:	15c3 024f      	mov	$1117, r3
+
+0000000e <decompression_loop>:
+   e:	94c0           	movb	(r3)+, r0
+  10:	55c0 ff00      	bis	$-400, r0
+
+00000014 <test_flags>:
+  14:	20d7 036a      	cmp	r3, $1552
+  18:	0330           	beq	7a <done_logo>
+  1a:	0c80           	asr	r0
+  1c:	45c0 8000      	bic	$-100000, r0
+  20:	8728           	bcs	72 <discrete_char>
+
+00000022 <offset_length>:
+  22:	94c4           	movb	(r3)+, r4
+  24:	94c5           	movb	(r3)+, r5
+  26:	45c4 ff00      	bic	$-400, r4
+  2a:	7557 0008      	ash	$10, r5
+  2e:	d105           	bisb	r4, r5
+  30:	1144           	mov	r5, r4
+  32:	7517 fff6      	ash	$-12, r4
+  36:	45c4 ffc0      	bic	$-100, r4
+  3a:	65c4 0003      	add	$3, r4
+  3e:	1137 0328      	mov	r4, $36a <__etext>
+
+00000042 <output_loop>:
+  42:	45c5 fc00      	bic	$-2000, r5
+  46:	1166           	mov	r5, -(sp)
+  48:	65c5 0382      	add	$1602, r5
+  4c:	9344           	movb	(r5), r4
+  4e:	1585           	mov	(sp)+, r5
+  50:	0a85           	inc	r5
+
+00000052 <store_byte>:
+  52:	9111           	movb	r4, (r1)+
+  54:	10a6           	mov	r2, -(sp)
+  56:	65c2 0382      	add	$1602, r2
+  5a:	910a           	movb	r4, (r2)
+  5c:	1582           	mov	(sp)+, r2
+  5e:	0a82           	inc	r2
+  60:	45c2 fc00      	bic	$-2000, r2
+  64:	0af7 0302      	dec	$36a <__etext>
+  68:	02ec           	bne	42 <output_loop>
+  6a:	35c0 0100      	bit	$400, r0
+  6e:	02d2           	bne	14 <test_flags>
+  70:	01ce           	br	e <decompression_loop>
+
+00000072 <discrete_char>:
+  72:	94c4           	movb	(r3)+, r4
+  74:	0ab7 02f2      	inc	$36a <__etext>
+  78:	01ec           	br	52 <store_byte>
+
+0000007a <done_logo>:
+  7a:	08b7 0132      	jsr	r2, 1b0 <write_stdout>
+  7e:	17c2 1381      	mov	*$11601, r2
+
+00000080 <first_line>:
+  80:	1381           	mov	(sp), r1
+  82:	15c0 01cc      	mov	$714, r0
+  86:	08b7 011e      	jsr	r2, 1a8 <strcat>
+  8a:	08b7 011a      	jsr	r2, 1a8 <strcat>
+  8e:	08b7 0116      	jsr	r2, 1a8 <strcat>
+  92:	08b7 0112      	jsr	r2, 1a8 <strcat>
+  96:	08b7 010e      	jsr	r2, 1a8 <strcat>
+  9a:	08b7 00b8      	jsr	r2, 156 <center_and_print>
+
+0000009e <middle_line>:
+  9e:	1381           	mov	(sp), r1
+  a0:	8905           	sys	5
+  a2:	0241           	bne	126 <find_loop+0xa>
+  a4:	0000           	halt
+  a6:	1003           	mov	r0, r3
+  a8:	8903           	sys	3
+  aa:	07c2           	ble	30 <offset_length+0xe>
+  ac:	1000           	mov	r0, r0
+  ae:	10c0           	mov	r3, r0
+  b0:	8906           	sys	6
+
+000000b2 <number_of_cpus>:
+  b2:	15c0 0206      	mov	$1006, r0
+  b6:	08b7 00ee      	jsr	r2, 1a8 <strcat>
+
+000000ba <chip_name>:
+  ba:	15c4 7479      	mov	$72171, r4
+  be:	15c5 7065      	mov	$70145, r5
+  c2:	08b7 0052      	jsr	r2, 118 <find_string>
+  c6:	15c0 020b      	mov	$1013, r0
+  ca:	08b7 00da      	jsr	r2, 1a8 <strcat>
+
+000000ce <print_ram>:
+  ce:	15c4 0001      	mov	$1, r4
+  d2:	0a05           	clr	r5
+  d4:	7717 fff6      	ashc	$-12, r4
+  d8:	15c4 0001      	mov	$1, r4
+  dc:	08b7 00a0      	jsr	r2, 180 <num_to_ascii>
+  e0:	15c0 0218      	mov	$1030, r0
+  e4:	08b7 00c0      	jsr	r2, 1a8 <strcat>
+
+000000e8 <print_bogomips>:
+  e8:	15c4 4d49      	mov	$46511, r4
+  ec:	15c5 5053      	mov	$50123, r5
+  f0:	08b7 0024      	jsr	r2, 118 <find_string>
+  f4:	15c0 0220      	mov	$1040, r0
+  f8:	08b7 00ac      	jsr	r2, 1a8 <strcat>
+  fc:	08b7 0056      	jsr	r2, 156 <center_and_print>
+
+00000100 <last_line>:
+ 100:	1381           	mov	(sp), r1
+ 102:	15c0 0231      	mov	$1061, r0
+ 106:	08b7 009e      	jsr	r2, 1a8 <strcat>
+ 10a:	08b7 0048      	jsr	r2, 156 <center_and_print>
+ 10e:	08b7 009e      	jsr	r2, 1b0 <write_stdout>
+ 112:	0235           	bne	17e <done_center+0x6>
+
+00000114 <exit>:
+ 114:	0a00           	clr	r0
+ 116:	8901           	sys	1
+
+00000118 <find_string>:
+ 118:	15c3 07c2      	mov	$3702, r3
+
+0000011c <find_loop>:
+ 11c:	94f7 024d      	movb	(r3)+, $36d <compare+0x1>
+ 120:	0318           	beq	152 <almost_done>
+ 122:	10e6           	mov	r3, -(sp)
+ 124:	94f7 0244      	movb	(r3)+, $36c <compare>
+ 128:	94f7 0243      	movb	(r3)+, $36f <compare2+0x1>
+ 12c:	94f7 023e      	movb	(r3)+, $36e <compare2>
+ 130:	1583           	mov	(sp)+, r3
+ 132:	211f 036c      	cmp	r4, *$1554
+ 136:	02f2           	bne	11c <find_loop>
+ 138:	215f 036e      	cmp	r5, *$1556
+ 13c:	02ef           	bne	11c <find_loop>
+
+0000013e <find_colon>:
+ 13e:	94c0           	movb	(r3)+, r0
+ 140:	a017 003a      	cmpb	r0, $72
+ 144:	02fc           	bne	13e <find_colon>
+ 146:	0a83           	inc	r3
+
+00000148 <store_loop>:
+ 148:	a2d7 000a      	cmpb	(r3), $12
+ 14c:	0302           	beq	152 <almost_done>
+ 14e:	94d1           	movb	(r3)+, (r1)+
+ 150:	01fb           	br	148 <store_loop>
+
+00000152 <almost_done>:
+ 152:	8a09           	clrb	(r1)
+
+00000154 <done>:
+ 154:	0082           	rts	r2
+
+00000156 <center_and_print>:
+ 156:	08b7 0056      	jsr	r2, 1b0 <write_stdout>
+ 15a:	023c           	bne	1d4 <ver_string+0x2>
+
+0000015c <str_loop2>:
+ 15c:	e5c1 17c2      	sub	$13702, r1
+ 160:	0b01           	neg	r1
+ 162:	65c1 0051      	add	$121, r1
+ 166:	8108           	bmi	178 <done_center>
+ 168:	0c81           	asr	r1
+ 16a:	1045           	mov	r1, r5
+ 16c:	0a04           	clr	r4
+ 16e:	08b7 000e      	jsr	r2, 180 <num_to_ascii>
+ 172:	08b7 003a      	jsr	r2, 1b0 <write_stdout>
+ 176:	023f           	bne	1f6 <compiled_date+0xe>
+
+00000178 <done_center>:
+ 178:	08b7 0034      	jsr	r2, 1b0 <write_stdout>
+ 17c:	17c2 0082      	mov	*$202, r2
+
+00000180 <num_to_ascii>:
+ 180:	1126           	mov	r4, -(sp)
+ 182:	15c3 037b      	mov	$1573, r3
+
+00000186 <div_by_10>:
+ 186:	0a04           	clr	r4
+ 188:	7317 000a      	div	$12, r4
+ 18c:	65c5 0030      	add	$60, r5
+ 190:	9163           	movb	r5, -(r3)
+ 192:	1105           	mov	r4, r5
+ 194:	02f8           	bne	186 <div_by_10>
+
+00000196 <write_out>:
+ 196:	1584           	mov	(sp)+, r4
+ 198:	0206           	bne	1a6 <num_strcat>
+
+0000019a <num_stdout>:
+ 19a:	10f7 0004      	mov	r3, $1a2 <output_val>
+ 19e:	08b7 000e      	jsr	r2, 1b0 <write_stdout>
+
+000001a2 <output_val>:
+ 1a2:	0000           	halt
+ 1a4:	0082           	rts	r2
+
+000001a6 <num_strcat>:
+ 1a6:	10c0           	mov	r3, r0
+
+000001a8 <strcat>:
+ 1a8:	9411           	movb	(r0)+, (r1)+
+ 1aa:	02fe           	bne	1a8 <strcat>
+ 1ac:	0ac1           	dec	r1
+ 1ae:	0082           	rts	r2
+
+000001b0 <write_stdout>:
+ 1b0:	1280           	mov	(r2), r0
+ 1b2:	1037 0010      	mov	r0, $1c6 <write_val>
+
+000001b6 <str_loop>:
+ 1b6:	8bd0           	tstb	(r0)+
+ 1b8:	02fe           	bne	1b6 <str_loop>
+ 1ba:	e480           	sub	(r2)+, r0
+ 1bc:	1037 0008      	mov	r0, $1c8 <write_count>
+ 1c0:	15c0 0001      	mov	$1, r0
+ 1c4:	8904           	sys	4
+
+000001c6 <write_val>:
+	...
+
+000001c8 <write_count>:
+ 1c8:	0002           	rti
+ 1ca:	0082           	rts	r2
+
+000001cc <os_string>:
+ 1cc:	4e55 582a      	bic	*54052(r1), (r5)+
+ 1d0:	0020           	.word	40
+
+000001d2 <ver_string>:
+ 1d2:	6556           	add	(r5)+, (sp)+
+ 1d4:	7372 6f69      	div	67551(r2), r5
+ 1d8:	206e           	cmp	r1, *-(sp)
+ 1da:	0037           	.word	67
+
+000001dc <compiled_string>:
+ 1dc:	202c           	cmp	r0, *-(r4)
+ 1de:	6f43 706d      	add	*70155(r5), r3
+ 1e2:	6c69 6465      	add	62145(r1), *-(r1)
+ 1e6:	0020           	.word	40
+
+000001e8 <compiled_date>:
+ 1e8:	7246           	div	sp, r1
+ 1ea:	2069           	cmp	r1, *-(r1)
+ 1ec:	754a           	ash	(r2), r5
+ 1ee:	206e           	cmp	r1, *-(sp)
+ 1f0:	2038 3031      	cmp	r0, *30061(r0)
+ 1f4:	303a 3a30      	bit	r0, *35060(r2)
+ 1f8:	3030 4520      	bit	r0, 42440(r0)
+ 1fc:	5444           	bis	(r1)+, r4
+ 1fe:	3120           	bit	r4, -(r0)
+ 200:	3739 0039      	bit	*(r4)+, *71(r1)
+
+00000204 <linefeed>:
+ 204:	000a           	.word	12
+
+00000206 <one>:
+ 206:	6e4f 2065      	add	*20145(r1), (pc)
+	...
+
+0000020b <processor>:
+ 20b:	5020           	bis	r0, -(r0)
+ 20d:	6f72 6563 7373 	add	*62543(r5), 71563(r2)
+ 213:	726f           	div	*-(pc), r1
+ 215:	202c           	cmp	r0, *-(r4)
+	...
+
+00000218 <ram_comma>:
+ 218:	204b           	cmp	r1, (r3)
+ 21a:	4152           	bic	r5, (r2)+
+ 21c:	2c4d 0020      	cmp	40(r1), (r5)
+
+00000220 <bogo_total>:
+ 220:	4220           	bic	(r0), -(r0)
+ 222:	676f           	add	*(r5)+, *-(pc)
+ 224:	6d6f 7069      	add	70151(r5), *-(pc)
+ 228:	2073 6f54      	cmp	r1, 67524(r3)
+ 22c:	6174 0a6c      	add	r5, 5154(r4)
+	...
+
+00000231 <host_string>:
+ 231:	7365           	div	-(r5), r5
+ 233:	0077 5b1b      	jmp	5d52 <__end+0x58e>
+
+00000235 <default_colors>:
+ 235:	5b1b           	bis	*-(r4), *(r3)+
+ 237:	6d30 0a0a 1b00 	add	5012(r4), 15400(r0)
+
+0000023c <escape>:
+ 23c:	5b1b           	bis	*-(r4), *(r3)+
+	...
+
+0000023f <C>:
+ 23f:	0043           	jmp	r3
+
+00000241 <cpuinfo>:
+ 241:	7063           	mul	-(r3), r1
+ 243:	6975 666e      	add	-(r5), 63156(r5)
+ 247:	5f6f 6470      	bis	*62160(r5), *-(pc)
+ 24b:	3170 0031      	bit	r5, 61(r0)
+
+0000024f <logo>:
+ 24f:	1bff 305b      	mov	*-(pc), *$32ae <out_buffer+0x1aec>
+ 253:	313b 333b      	bit	r4, *31473(r3)
+ 257:	9f37 343b 6d37 	movb	*32073(r4), $6f94 <__end+0x17d0>
+ 25d:	cc23 c0f7      	bicb	-37411(r0), -(r3)
+ 261:	3307           	bit	(r4), pc
+ 263:	308d           	bit	r2, (r5)
+ 265:	1bc8           	mov	*-(pc), (r0)
+ 267:	5b1b           	bis	*-(r4), *(r3)+
+ 269:	07c4           	ble	1f3 <compiled_date+0xb>
+ 26b:	1fcb 0c1c      	mov	*$e8b <disk_buffer+0x6c9>, (r3)
+ 26f:	0f3b           	.word	7473
+ 271:	3034 0a6d      	bit	r0, 5155(r4)
+ 275:	f7c0           	cmpf	fr0, fr3
+ 277:	6001           	add	r0, r1
+ 279:	381a           	bit	-(r0), *(r2)+
+ 27b:	9c2c 1b1f      	movb	15437(r0), *-(r4)
+ 27f:	335b           	bit	(r5), *(r3)+
+ 281:	6d31 04cc ac41 	add	2314(r4), -51677(r1)
+ 287:	240d           	cmp	(r0)+, (r5)
+ 289:	1c02 4f10      	mov	47420(r0), r2
+ 28d:	200d           	cmp	r0, (r5)
+ 28f:	4110           	bic	r4, (r0)+
+ 291:	9893           	movb	-(r2), (r3)+
+ 293:	3483           	bit	(r2)+, r3
+ 295:	341c           	bit	(r0)+, *(r4)+
+ 297:	10cc           	mov	r3, (r4)
+ 299:	0c10           	ror	(r0)+
+ 29b:	6f24 ec39      	add	*-11707(r4), -(r4)
+ 29f:	1ca7 3308      	mov	31410(r2), -(pc)
+ 2a3:	1416           	mov	(r0)+, (sp)+
+ 2a5:	5589           	bis	(sp)+, (r1)
+ 2a7:	602c           	add	r0, *-(r4)
+ 2a9:	2b00           	cmp	*-(r4), r0
+ 2ab:	d661           	bisb	*(r1)+, -(r1)
+ 2ad:	e271 cbc8      	sub	(r1), -32070(r1)
+ 2b1:	d408           	bisb	(r0)+, (r0)
+ 2b3:	d309           	bisb	(r4), (r1)
+ 2b5:	2b10           	cmp	*-(r4), (r0)+
+ 2b7:	f559           	ldf	*(r1)+, fr1
+ 2b9:	00d1           	swab	(r1)+
+ 2bb:	1180           	mov	sp, r0
+ 2bd:	18d2           	mov	-(r3), (r2)+
+ 2bf:	280d           	cmp	-(r0), (r5)
+ 2c1:	141c           	mov	(r0)+, *(r4)+
+ 2c3:	2c0d 1c1c      	cmp	16034(r0), (r5)
+ 2c7:	4af0 5b1a      	bic	*-(r3), 55432(r0)
+ 2cb:	0d00           	mark	0
+ 2cd:	5f50 8765      	bis	*-74233(r5), (r0)+
+ 2d1:	2b65           	cmp	*-(r5), -(r5)
+ 2d3:	f555           	ldf	(r5)+, fr1
+ 2d5:	cdcd cd28      	bicb	$ffffd001 <__end+0xffff783d>, (r5)
+ 2d9:	8914           	sys	24
+ 2db:	0041           	jmp	r1
+ 2dd:	871d           	bcs	319 <logo+0xca>
+ 2df:	4b42           	bic	*-(r5), r2
+ 2e1:	5372 781c      	bis	(r5), 74034(r2)
+ 2e5:	620f           	add	(r0), (pc)
+ 2e7:	6d87 5855      	add	54125(sp), pc
+ 2eb:	c1f7 e800      	bicb	pc, $ffffeaef <__end+0xffff932b>
+ 2ef:	f42b           	addf	*-(r3), fr0
+ 2f1:	4997 3d78      	bic	-(sp), $36570
+ 2f5:	1bb0 975f      	mov	*-(sp), -64241(r0)
+ 2f9:	12b0 ab2b      	mov	(r2), -52325(r0)
+ 2fd:	10ca           	mov	r3, (r2)
+ 2ff:	16df f51a      	mov	*(r3)+, *$172432
+ 303:	f55a           	ldf	*(r2)+, fr1
+ 305:	3fd9 1b33      	bit	*$1e3c <out_buffer+0x67a>, *(r1)+
+ 309:	9256           	movb	(r1), (sp)+
+ 30b:	b05b           	bitb	r1, *(r3)+
+ 30d:	0002           	rti
+ 30f:	1d0c c8d3      	mov	-33455(r4), (r4)
+ 313:	39ac           	bit	-(sp), *-(r4)
+ 315:	6617 f632      	add	*(r0)+, $-4716
+ 319:	6d6e 44ec      	add	42354(r5), *-(sp)
+ 31d:	5e60 af08      	bis	*-50370(r1), -(r0)
+ 321:	a60a           	cmpb	*(r0)+, (r2)
+ 323:	1469           	mov	(r1)+, *-(r1)
+ 325:	3001           	bit	r0, r1
+ 327:	0b33 1fde      	neg	17736(r3)
+ 32b:	0f31           	.word	7461
+ 32d:	bcd3 af00      	bitb	-50400(r3), (r3)+
+ 331:	194f           	mov	-(r5), (pc)
+ 333:	aa56           	cmpb	*-(r1), (sp)+
+ 335:	5245           	bis	(r1), r5
+ 337:	28db           	cmp	-(r3), *(r3)+
+ 339:	4652           	bic	*(r1)+, (r2)+
+ 33b:	087f db53      	jsr	r1, *ffffde92 <__end+0xffff86ce>
+ 33f:	0023           	.word	43
+ 341:	55a9           	bis	(sp)+, *-(r1)
+ 343:	35aa           	bit	(sp)+, *-(r2)
+ 345:	2118           	cmp	r4, *(r0)+
+ 347:	6812           	add	-(r0), (r2)+
+ 349:	2a91           	cmp	*-(r2), (r1)+
+ 34b:	22c8           	cmp	(r3), (r0)
+ 34d:	68b2 2d70      	add	-(r2), 26560(r2)
+ 351:	c600           	bicb	*(r0)+, r0
+ 353:	b250           	bitb	(r1), (r0)+
+ 355:	9179 704a      	movb	r5, *70112(r1)
+ 359:	f831 f351      	stf	fr0, -6257(r1)
+ 35d:	dd28 ff17      	bisb	-351(r4), *-(r0)
+ 361:	0817 3602      	jsr	r0, $33002
+ 365:	2403           	cmp	(r0)+, r3
+ 367:	42e5           	bic	(r3), -(r5)
+ 369:	
+Disassembly of section .bss:
+
+0000036a <__bss_start>:
+	...
+
+0000036c <compare>:
+	...
+
+0000036e <compare2>:
+     36e:	0000           	halt
+	...
+
+00000372 <ascii_buffer>:
+	...
+
+00000382 <text_buf>:
+	...
+
+000007c2 <disk_buffer>:
+	...
+
+000017c2 <out_buffer>:
+	...

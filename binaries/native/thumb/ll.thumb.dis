@@ -1,0 +1,483 @@
+
+ll.thumb:     file format elf32-littlearm
+
+Disassembly of section .text:
+
+00008054 <_start>:
+    8054:	4977      	ldr	r1, [pc, #476]	(8234 <out_addr>)
+    8056:	4a79      	ldr	r2, [pc, #484]	(823c <R>)
+    8058:	4b6f      	ldr	r3, [pc, #444]	(8218 <logo_addr>)
+    805a:	4870      	ldr	r0, [pc, #448]	(821c <logo_end_addr>)
+    805c:	4680      	mov	r8, r0
+    805e:	4873      	ldr	r0, [pc, #460]	(822c <text_addr>)
+    8060:	4681      	mov	r9, r0
+
+00008062 <decompression_loop>:
+    8062:	781c      	ldrb	r4, [r3, #0]
+    8064:	3301      	adds	r3, #1
+    8066:	25ff      	movs	r5, #255
+    8068:	022d      	lsls	r5, r5, #8
+    806a:	4325      	orrs	r5, r4
+
+0000806c <test_flags>:
+    806c:	4543      	cmp	r3, r8
+    806e:	da22      	bge.n	80b6 <done_logo>
+    8070:	086d      	lsrs	r5, r5, #1
+    8072:	d21c      	bcs.n	80ae <discrete_char>
+
+00008074 <offset_length>:
+    8074:	7818      	ldrb	r0, [r3, #0]
+    8076:	3301      	adds	r3, #1
+    8078:	781c      	ldrb	r4, [r3, #0]
+    807a:	3301      	adds	r3, #1
+    807c:	0224      	lsls	r4, r4, #8
+    807e:	4304      	orrs	r4, r0
+    8080:	1c27      	adds	r7, r4, #0
+    8082:	2003      	movs	r0, #3
+    8084:	0aa4      	lsrs	r4, r4, #10
+    8086:	1826      	adds	r6, r4, r0
+
+00008088 <output_loop>:
+    8088:	486b      	ldr	r0, [pc, #428]	(8238 <pos_mask>)
+    808a:	4007      	ands	r7, r0
+    808c:	4648      	mov	r0, r9
+    808e:	5dc4      	ldrb	r4, [r0, r7]
+    8090:	3701      	adds	r7, #1
+
+00008092 <store_byte>:
+    8092:	700c      	strb	r4, [r1, #0]
+    8094:	3101      	adds	r1, #1
+    8096:	4648      	mov	r0, r9
+    8098:	5484      	strb	r4, [r0, r2]
+    809a:	3201      	adds	r2, #1
+    809c:	4868      	ldr	r0, [pc, #416]	(8240 <NMINUS1>)
+    809e:	4002      	ands	r2, r0
+    80a0:	3e01      	subs	r6, #1
+    80a2:	d1f1      	bne.n	8088 <output_loop>
+    80a4:	20ff      	movs	r0, #255
+    80a6:	0200      	lsls	r0, r0, #8
+    80a8:	4205      	tst	r5, r0
+    80aa:	d1df      	bne.n	806c <test_flags>
+    80ac:	e7d9      	b.n	8062 <decompression_loop>
+
+000080ae <discrete_char>:
+    80ae:	781c      	ldrb	r4, [r3, #0]
+    80b0:	3301      	adds	r3, #1
+    80b2:	2601      	movs	r6, #1
+    80b4:	e7ed      	b.n	8092 <store_byte>
+
+000080b6 <done_logo>:
+    80b6:	495f      	ldr	r1, [pc, #380]	(8234 <out_addr>)
+    80b8:	4862      	ldr	r0, [pc, #392]	(8244 <strcat_addr>)
+    80ba:	4683      	mov	fp, r0
+    80bc:	3808      	subs	r0, #8
+    80be:	4682      	mov	sl, r0
+    80c0:	301a      	adds	r0, #26
+    80c2:	4681      	mov	r9, r0
+    80c4:	3874      	subs	r0, #116
+    80c6:	4680      	mov	r8, r0
+    80c8:	47c8      	blx	r9
+
+000080ca <first_line>:
+    80ca:	4855      	ldr	r0, [pc, #340]	(8220 <uname_addr>)
+    80cc:	1c05      	adds	r5, r0, #0
+    80ce:	277a      	movs	r7, #122
+    80d0:	df00      	svc	0
+    80d2:	4e58      	ldr	r6, [pc, #352]	(8234 <out_addr>)
+    80d4:	47d0      	blx	sl
+    80d6:	4c4e      	ldr	r4, [pc, #312]	(8210 <ver_addr>)
+    80d8:	47d8      	blx	fp
+    80da:	3582      	adds	r5, #130
+    80dc:	47d0      	blx	sl
+    80de:	47d8      	blx	fp
+    80e0:	3541      	adds	r5, #65
+    80e2:	47d0      	blx	sl
+    80e4:	47d8      	blx	fp
+    80e6:	47c0      	blx	r8
+
+000080e8 <middle_line>:
+    80e8:	4e52      	ldr	r6, [pc, #328]	(8234 <out_addr>)
+    80ea:	1c20      	adds	r0, r4, #0
+    80ec:	2100      	movs	r1, #0
+    80ee:	2705      	movs	r7, #5
+    80f0:	df00      	svc	0
+    80f2:	1c03      	adds	r3, r0, #0
+    80f4:	494e      	ldr	r1, [pc, #312]	(8230 <disk_addr>)
+    80f6:	2280      	movs	r2, #128
+    80f8:	0152      	lsls	r2, r2, #5
+    80fa:	2703      	movs	r7, #3
+    80fc:	df00      	svc	0
+    80fe:	1c18      	adds	r0, r3, #0
+    8100:	2706      	movs	r7, #6
+    8102:	df00      	svc	0
+
+00008104 <number_of_cpus>:
+    8104:	340e      	adds	r4, #14
+    8106:	47d8      	blx	fp
+
+00008108 <chip_name>:
+    8108:	2073      	movs	r0, #115
+    810a:	216f      	movs	r1, #111
+    810c:	2272      	movs	r2, #114
+    810e:	2320      	movs	r3, #32
+    8110:	f000 f81d 	bl	814e <find_string>
+    8114:	47d8      	blx	fp
+    8116:	4843      	ldr	r0, [pc, #268]	(8224 <sysinfo_addr>)
+    8118:	1c02      	adds	r2, r0, #0
+    811a:	2774      	movs	r7, #116
+    811c:	df00      	svc	0
+    811e:	3210      	adds	r2, #16
+    8120:	6813      	ldr	r3, [r2, #0]
+    8122:	0d1b      	lsrs	r3, r3, #20
+    8124:	2001      	movs	r0, #1
+    8126:	f000 f841 	bl	81ac <num_to_ascii>
+    812a:	47d8      	blx	fp
+    812c:	2049      	movs	r0, #73
+    812e:	2150      	movs	r1, #80
+    8130:	2253      	movs	r2, #83
+    8132:	230a      	movs	r3, #10
+    8134:	f000 f80b 	bl	814e <find_string>
+    8138:	47d8      	blx	fp
+    813a:	47c0      	blx	r8
+
+0000813c <last_line>:
+    813c:	4e3d      	ldr	r6, [pc, #244]	(8234 <out_addr>)
+    813e:	3d82      	subs	r5, #130
+    8140:	47d0      	blx	sl
+    8142:	47c0      	blx	r8
+    8144:	4933      	ldr	r1, [pc, #204]	(8214 <colors_addr>)
+    8146:	47c8      	blx	r9
+
+00008148 <exit>:
+    8148:	2000      	movs	r0, #0
+    814a:	2701      	movs	r7, #1
+    814c:	df00      	svc	0
+
+0000814e <find_string>:
+    814e:	b5a0      	push	{r5, r7, lr}
+    8150:	4f37      	ldr	r7, [pc, #220]	(8230 <disk_addr>)
+
+00008152 <find_loop>:
+    8152:	783d      	ldrb	r5, [r7, #0]
+    8154:	2d00      	cmp	r5, #0
+    8156:	d016      	beq.n	8186 <done>
+    8158:	3701      	adds	r7, #1
+    815a:	4285      	cmp	r5, r0
+    815c:	d1f9      	bne.n	8152 <find_loop>
+    815e:	783d      	ldrb	r5, [r7, #0]
+    8160:	428d      	cmp	r5, r1
+    8162:	d1f6      	bne.n	8152 <find_loop>
+    8164:	787d      	ldrb	r5, [r7, #1]
+    8166:	4295      	cmp	r5, r2
+    8168:	d1f3      	bne.n	8152 <find_loop>
+
+0000816a <find_colon>:
+    816a:	783d      	ldrb	r5, [r7, #0]
+    816c:	3701      	adds	r7, #1
+    816e:	2d3a      	cmp	r5, #58
+    8170:	d1fb      	bne.n	816a <find_colon>
+    8172:	3701      	adds	r7, #1
+
+00008174 <store_loop>:
+    8174:	783d      	ldrb	r5, [r7, #0]
+    8176:	7035      	strb	r5, [r6, #0]
+    8178:	3701      	adds	r7, #1
+    817a:	3601      	adds	r6, #1
+    817c:	429d      	cmp	r5, r3
+    817e:	d1f9      	bne.n	8174 <store_loop>
+
+00008180 <almost_done>:
+    8180:	2000      	movs	r0, #0
+    8182:	7030      	strb	r0, [r6, #0]
+    8184:	3e01      	subs	r6, #1
+
+00008186 <done>:
+    8186:	bda0      	pop	{r5, r7, pc}
+
+00008188 <center_and_print>:
+    8188:	b518      	push	{r3, r4, lr}
+    818a:	4922      	ldr	r1, [pc, #136]	(8214 <colors_addr>)
+    818c:	2202      	movs	r2, #2
+    818e:	f000 f83a 	bl	8206 <write_stdout_we_know_size>
+
+00008192 <str_loop2>:
+    8192:	4a28      	ldr	r2, [pc, #160]	(8234 <out_addr>)
+    8194:	1b92      	subs	r2, r2, r6
+    8196:	3251      	adds	r2, #81
+    8198:	db05      	blt.n	81a6 <done_center>
+    819a:	0853      	lsrs	r3, r2, #1
+    819c:	2000      	movs	r0, #0
+    819e:	f000 f805 	bl	81ac <num_to_ascii>
+    81a2:	3107      	adds	r1, #7
+    81a4:	47c8      	blx	r9
+
+000081a6 <done_center>:
+    81a6:	4923      	ldr	r1, [pc, #140]	(8234 <out_addr>)
+    81a8:	47c8      	blx	r9
+    81aa:	bd18      	pop	{r3, r4, pc}
+
+000081ac <num_to_ascii>:
+    81ac:	b53e      	push	{r1, r2, r3, r4, r5, lr}
+    81ae:	4a1e      	ldr	r2, [pc, #120]	(8228 <ascii_addr>)
+    81b0:	3209      	adds	r2, #9
+    81b2:	270a      	movs	r7, #10
+
+000081b4 <div_by_10>:
+    81b4:	2500      	movs	r5, #0
+
+000081b6 <divide_loop>:
+    81b6:	1c29      	adds	r1, r5, #0
+    81b8:	4379      	muls	r1, r7
+    81ba:	3501      	adds	r5, #1
+    81bc:	4299      	cmp	r1, r3
+    81be:	ddfa      	ble.n	81b6 <divide_loop>
+    81c0:	3d02      	subs	r5, #2
+    81c2:	1c29      	adds	r1, r5, #0
+    81c4:	4379      	muls	r1, r7
+    81c6:	1a5c      	subs	r4, r3, r1
+    81c8:	3430      	adds	r4, #48
+    81ca:	7014      	strb	r4, [r2, #0]
+    81cc:	3a01      	subs	r2, #1
+    81ce:	1c2b      	adds	r3, r5, #0
+    81d0:	d1f0      	bne.n	81b4 <div_by_10>
+
+000081d2 <write_out>:
+    81d2:	1c51      	adds	r1, r2, #1
+    81d4:	2800      	cmp	r0, #0
+    81d6:	d002      	beq.n	81de <num_stdout>
+    81d8:	1c0d      	adds	r5, r1, #0
+    81da:	47d0      	blx	sl
+    81dc:	bd3e      	pop	{r1, r2, r3, r4, r5, pc}
+
+000081de <num_stdout>:
+    81de:	47c8      	blx	r9
+    81e0:	bd3e      	pop	{r1, r2, r3, r4, r5, pc}
+
+000081e2 <strcat_r5>:
+    81e2:	b510      	push	{r4, lr}
+    81e4:	1c2c      	adds	r4, r5, #0
+    81e6:	47d8      	blx	fp
+    81e8:	bd10      	pop	{r4, pc}
+
+000081ea <strcat_r4>:
+    81ea:	b508      	push	{r3, lr}
+
+000081ec <strcat_loop>:
+    81ec:	7823      	ldrb	r3, [r4, #0]
+    81ee:	3401      	adds	r4, #1
+    81f0:	7033      	strb	r3, [r6, #0]
+    81f2:	3601      	adds	r6, #1
+    81f4:	2b00      	cmp	r3, #0
+    81f6:	d1f9      	bne.n	81ec <strcat_loop>
+    81f8:	3e01      	subs	r6, #1
+    81fa:	bd08      	pop	{r3, pc}
+
+000081fc <write_stdout>:
+    81fc:	2200      	movs	r2, #0
+
+000081fe <str_loop1>:
+    81fe:	3201      	adds	r2, #1
+    8200:	5c8b      	ldrb	r3, [r1, r2]
+    8202:	2b00      	cmp	r3, #0
+    8204:	d1fb      	bne.n	81fe <str_loop1>
+
+00008206 <write_stdout_we_know_size>:
+    8206:	2001      	movs	r0, #1
+    8208:	2704      	movs	r7, #4
+    820a:	df00      	svc	0
+    820c:	4770      	bx	lr
+    820e:	46c0      	nop			(mov r8, r8)
+
+00008210 <ver_addr>:
+    8210:	00008248 	.word	0x00008248
+
+00008214 <colors_addr>:
+    8214:	00008299 	.word	0x00008299
+
+00008218 <logo_addr>:
+    8218:	000082a2 	.word	0x000082a2
+
+0000821c <logo_end_addr>:
+    821c:	000083bd 	.word	0x000083bd
+
+00008220 <uname_addr>:
+    8220:	000083c0 	.word	0x000083c0
+
+00008224 <sysinfo_addr>:
+    8224:	00008548 	.word	0x00008548
+
+00008228 <ascii_addr>:
+    8228:	00008588 	.word	0x00008588
+
+0000822c <text_addr>:
+    822c:	00008598 	.word	0x00008598
+
+00008230 <disk_addr>:
+    8230:	000089d8 	.word	0x000089d8
+
+00008234 <out_addr>:
+    8234:	000099d8 	.word	0x000099d8
+
+00008238 <pos_mask>:
+    8238:	000003ff 	.word	0x000003ff
+
+0000823c <R>:
+    823c:	000003c0 	.word	0x000003c0
+
+00008240 <NMINUS1>:
+    8240:	000003ff 	.word	0x000003ff
+
+00008244 <strcat_addr>:
+    8244:	000081eb 	.word	0x000081eb
+Disassembly of section .data:
+
+00008248 <__data_start>:
+    8248:	72655620 	.word	0x72655620
+    824c:	6e6f6973 	.word	0x6e6f6973
+    8250:	0020      	.short	0x0020
+
+00008252 <compiled_string>:
+    8252:	202c      	.short	0x202c
+    8254:	706d6f43 	.word	0x706d6f43
+    8258:	64656c69 	.word	0x64656c69
+    825c:	0020      	.short	0x0020
+
+0000825e <linefeed>:
+    825e:	000a      	.short	0x000a
+
+00008260 <cpuinfo>:
+    8260:	6f72702f 	.word	0x6f72702f
+    8264:	70632f63 	.word	0x70632f63
+    8268:	666e6975 	.word	0x666e6975
+    826c:	006f      	.short	0x006f
+
+0000826e <one>:
+    826e:	6e4f      	.short	0x6e4f
+    8270:	2065      	.short	0x2065
+	...
+
+00008273 <processor>:
+    8273:	20          	.byte	0x20
+    8274:	636f7250 	.word	0x636f7250
+    8278:	6f737365 	.word	0x6f737365
+    827c:	00202c72 	.word	0x00202c72
+
+00008280 <ram_comma>:
+    8280:	4152204d 	.word	0x4152204d
+    8284:	00202c4d 	.word	0x00202c4d
+
+00008288 <bogo_total>:
+    8288:	676f4220 	.word	0x676f4220
+    828c:	70696d6f 	.word	0x70696d6f
+    8290:	6f542073 	.word	0x6f542073
+    8294:	0a6c6174 	.word	0x0a6c6174
+	...
+
+00008299 <default_colors>:
+    8299:	1b          	.byte	0x1b
+    829a:	305b      	.short	0x305b
+    829c:	000a0a6d 	.word	0x000a0a6d
+
+000082a0 <C>:
+    82a0:	0043      	.short	0x0043
+
+000082a2 <logo>:
+    82a2:	1bff      	.short	0x1bff
+    82a4:	313b305b 	.word	0x313b305b
+    82a8:	9f37333b 	.word	0x9f37333b
+    82ac:	6d37343b 	.word	0x6d37343b
+    82b0:	c0f7cc23 	.word	0xc0f7cc23
+    82b4:	308d3307 	.word	0x308d3307
+    82b8:	5b1b1bc8 	.word	0x5b1b1bc8
+    82bc:	1fcb07c4 	.word	0x1fcb07c4
+    82c0:	0f3b0c1c 	.word	0x0f3b0c1c
+    82c4:	0a6d3034 	.word	0x0a6d3034
+    82c8:	6001f7c0 	.word	0x6001f7c0
+    82cc:	9c2c381a 	.word	0x9c2c381a
+    82d0:	335b1b1f 	.word	0x335b1b1f
+    82d4:	04cc6d31 	.word	0x04cc6d31
+    82d8:	240dac41 	.word	0x240dac41
+    82dc:	4f101c02 	.word	0x4f101c02
+    82e0:	4110200d 	.word	0x4110200d
+    82e4:	34839893 	.word	0x34839893
+    82e8:	10cc341c 	.word	0x10cc341c
+    82ec:	6f240c10 	.word	0x6f240c10
+    82f0:	1ca7ec39 	.word	0x1ca7ec39
+    82f4:	14163308 	.word	0x14163308
+    82f8:	602c5589 	.word	0x602c5589
+    82fc:	d6612b00 	.word	0xd6612b00
+    8300:	cbc8e271 	.word	0xcbc8e271
+    8304:	d309d408 	.word	0xd309d408
+    8308:	f5592b10 	.word	0xf5592b10
+    830c:	118000d1 	.word	0x118000d1
+    8310:	280d18d2 	.word	0x280d18d2
+    8314:	2c0d141c 	.word	0x2c0d141c
+    8318:	4af01c1c 	.word	0x4af01c1c
+    831c:	0d005b1a 	.word	0x0d005b1a
+    8320:	87655f50 	.word	0x87655f50
+    8324:	f5552b65 	.word	0xf5552b65
+    8328:	cd28cdcd 	.word	0xcd28cdcd
+    832c:	00418914 	.word	0x00418914
+    8330:	4b42871d 	.word	0x4b42871d
+    8334:	781c5372 	.word	0x781c5372
+    8338:	6d87620f 	.word	0x6d87620f
+    833c:	c1f75855 	.word	0xc1f75855
+    8340:	f42be800 	.word	0xf42be800
+    8344:	3d784997 	.word	0x3d784997
+    8348:	975f1bb0 	.word	0x975f1bb0
+    834c:	ab2b12b0 	.word	0xab2b12b0
+    8350:	16df10ca 	.word	0x16df10ca
+    8354:	f55af51a 	.word	0xf55af51a
+    8358:	1b333fd9 	.word	0x1b333fd9
+    835c:	b05b9256 	.word	0xb05b9256
+    8360:	1d0c0002 	.word	0x1d0c0002
+    8364:	39acc8d3 	.word	0x39acc8d3
+    8368:	f6326617 	.word	0xf6326617
+    836c:	44ec6d6e 	.word	0x44ec6d6e
+    8370:	af085e60 	.word	0xaf085e60
+    8374:	1469a60a 	.word	0x1469a60a
+    8378:	0b333001 	.word	0x0b333001
+    837c:	0f311fde 	.word	0x0f311fde
+    8380:	af00bcd3 	.word	0xaf00bcd3
+    8384:	aa56194f 	.word	0xaa56194f
+    8388:	28db5245 	.word	0x28db5245
+    838c:	087f4652 	.word	0x087f4652
+    8390:	0023db53 	.word	0x0023db53
+    8394:	35aa55a9 	.word	0x35aa55a9
+    8398:	68122118 	.word	0x68122118
+    839c:	22c82a91 	.word	0x22c82a91
+    83a0:	2d7068b2 	.word	0x2d7068b2
+    83a4:	b250c600 	.word	0xb250c600
+    83a8:	704a9179 	.word	0x704a9179
+    83ac:	f351f831 	.word	0xf351f831
+    83b0:	ff17dd28 	.word	0xff17dd28
+    83b4:	36020817 	.word	0x36020817
+    83b8:	42e52403 	.word	0x42e52403
+    83bc:	0a          	.byte	0x0a
+Disassembly of section .bss:
+
+000083c0 <bss_begin>:
+	...
+
+00008548 <sysinfo_buff>:
+	...
+
+00008588 <ascii_buffer>:
+	...
+
+00008598 <text_buf>:
+	...
+
+000089d8 <disk_buffer>:
+	...
+
+000099d8 <out_buffer>:
+	...
+Disassembly of section .ARM.attributes:
+
+00000000 <.ARM.attributes>:
+   0:	00001341 	andeq	r1, r0, r1, asr #6
+   4:	61656100 	cmnvs	r5, r0, lsl #2
+   8:	01006962 	tsteq	r0, r2, ror #18
+   c:	00000009 	andeq	r0, r0, r9
+  10:	01090406 	tsteq	r9, r6, lsl #8

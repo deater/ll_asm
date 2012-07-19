@@ -1,0 +1,66 @@
+newgraph
+
+X 11
+Y 3.5
+
+clip
+
+yaxis size 2 min 0 grid_lines max 800
+label font Helvetica fontsize 14 : Execution Time \
+(microseconds)
+hash_labels font Helvetica fontsize 14
+hash_at 100
+
+xaxis size 10 min -0.5 max 14
+no_draw_hash_marks no_auto_hash_labels
+hash_labels hjr vjc rotate 33 font Helvetica fontsize 14
+
+
+hash_label at 0 : original,static
+hash_label at 1 : original,dynamic
+
+hash_label at 2 : glibc,gcc,O3,static
+hash_label at 3 :  glibc,gcc,O3,dynamic
+
+hash_label at 4 : glibc,intel,O3,static
+hash_label at 5 : glibc,intel,O3,dynamic
+
+hash_label at 6 :  glibc,sun,O3,dynamic
+
+hash_label at 7 : glibc,gcc,Os,static
+hash_label at 8 :  glibc,gcc,Os,dynamic
+
+hash_label at 9 : uclibc,gcc,O3,static
+hash_label at 10 :  uclibc,gcc,O3,dynamic
+
+hash_label at 11 :  none,intel,O3,static
+hash_label at 12 :  none,gcc,O3,static
+hash_label at 13 :  pure assembly,static
+
+newstring x 0 y 750 font Helvetica : 871
+newstring x 1 y 750 font Helvetica : 1527
+
+
+newcurve 
+marktype xbar marksize 0.5 color 1.0 0.1 0.1
+pts
+0 871  (* original,static *)
+1 1527	(* original,dynamic *)
+
+2 134	(* glibc,gcc,O3,static *)
+3 509	(* glibc,gcc,O3,dynamic *)
+
+4 140  (* glibc,intel,O3,static *)
+5 643	(* glibc,intel,O3,dynamic *)
+
+6 529	(* glibc,sun,O3,dynamic *)
+
+7 156	(* glibc,gcc,Os,static *)
+8 527	(* glibc,gcc,Os,dynamic *)
+
+9 65	(* uclibc,gcc,O3,static *)
+10 425	(* uclibc,gcc,O3,dynamic *)
+
+11 41	(* none,intel,O3,static *)
+12 59	(* none,gcc,O3,static *)
+13 38	(* pure assembly,static *)

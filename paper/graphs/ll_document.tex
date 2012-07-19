@@ -1,0 +1,124 @@
+\documentclass{article}[10pt]
+
+\usepackage{graphicx} % for pdf, bitmapped graphics files
+\usepackage{epsfig} % for postscript graphics files
+\usepackage{multirow}
+\usepackage{fancyhdr}
+\usepackage{fullpage}
+\usepackage{rotating}
+
+\newcommand\T{\rule{0pt}{2.6ex}}
+\newcommand\TT{\rule{0pt}{1.756ex}}
+\newcommand\B{\rule[-1.2ex]{0pt}{0pt}}
+
+\pagestyle{fancy}
+
+\begin{document}
+
+%\chead{This paper appeared in ICCD 2009 --- IEEE Copyright Rules Apply}
+
+%\title{\LARGE \bf
+%Code Density Concerns for New Architectures
+%Optimizing for Size: Exploring the Limits of Code Density
+%}
+
+%\author{ \parbox{3 in}{\centering Vincent M. Weaver\\
+%         \textit{Cornell University}\\
+%         \textit{vince@csl.cornell.edu}}
+%         \hspace*{0.5 in}
+%         \parbox{3 in}{ \centering Sally A. McKee\\
+%         \textit{Chalmers University of Technology}\\
+%         \textit{mckee@chalmers.se}}
+%}
+
+%\maketitle
+%\thispagestyle{empty}
+%\pagestyle{empty}
+
+%\begin{abstract}
+%\end{abstract}
+
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=ll.eps,width=\columnwidth}
+\end{center}
+\caption{Sample output from the {\tt linux\_logo} benchmark}
+\label{figure:ll}
+\end{figure}
+
+%
+% Include the architecture table
+%
+
+\noindent
+\input{architecture_table}
+
+% Include Correlations Table
+\input{correlations_table}
+
+% Figure on total code size
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=ll_total_size.eps,width=\textwidth}
+\end{center}
+\caption{Total size of benchmarks 
+(includes some platform-specific code, so does not
+strictly reflect code density)}
+\label{figure:total}
+\end{figure}
+
+% Decompression Code
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=ll_lzss_size,width=\textwidth}
+\end{center}
+\caption{Size of LZSS decompression code}
+\label{figure:decomp}
+\end{figure}
+
+% String concatenation code
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=ll_strcat_size,width=\textwidth}
+\end{center}
+\caption{Size of string concatenation code (machines with 
+auto-increment addressing modes and dedicated
+string instructions perform better)}
+\label{figure:strcat}
+\end{figure}
+
+% Findstring code
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=ll_findstring_size,width=\textwidth}
+\end{center}
+\caption{Size of string searching code (unaligned load
+instructions help, since four bytes at arbitrary offsets 
+can be compared at once.  CISC architectures as well as avr32 and MIPS
+benefit)
+}
+\label{figure:findstring}
+\end{figure}
+
+% Integer printing code
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=ll_num_ascii.eps,width=\textwidth}
+\end{center}
+\caption{Size of integer printing code (hardware
+divide helps code density)}
+\label{figure:numascii}
+\end{figure}
+
+% Integer printing code
+\begin{figure}[tbp]
+\begin{center}
+\epsfig{file=libc_sizes.eps,width=\textwidth}
+\end{center}
+\caption{Size comparison}
+\label{figure:libc}
+\end{figure}
+
+
+
+\end{document}

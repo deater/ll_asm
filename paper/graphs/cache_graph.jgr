@@ -1,0 +1,140 @@
+
+newgraph
+
+X 11
+Y 3.75
+
+clip
+
+legend custom
+
+yaxis size 2 min 0 max 2500 grid_lines
+label font Helvetica fontsize 14 : Cache Misses
+hash_labels font Helvetica fontsize 14
+
+
+(*
+hash_at 1
+hash_at 64
+hash_at 512
+hash_at 4096
+hash_at 32768
+
+hash_label at 8  : 8
+hash_label at 64  : 64
+hash_label at 512 : 512
+hash_label at 4096 : 4096
+hash_label at 32768 : 32768
+*)
+
+
+xaxis size 10 min -0.5 max 28
+no_draw_hash_marks no_auto_hash_labels
+hash_labels hjr vjc rotate 33 font Helvetica fontsize 14
+
+
+hash_label at 0.5 : original,static
+hash_label at 2.5 : original,dynamic
+
+hash_label at 4.5 : glibc,gcc,O3,static
+hash_label at 6.5 :  glibc,gcc,O3,dynamic
+
+hash_label at 8.5 : glibc,intel,O3,static
+hash_label at 10.5 : glibc,intel,O3,dynamic
+
+hash_label at 12.5 :  glibc,sun,O3,dynamic
+
+hash_label at 14.5 : glibc,gcc,Os,static
+hash_label at 16.5 :  glibc,gcc,Os,dynamic
+
+hash_label at 18.5 : uclibc,gcc,O3,static
+hash_label at 20.5 :  uclibc,gcc,O3,dynamic
+
+hash_label at 22.5 :  none,intel,O3,static
+hash_label at 24.5 :  none,gcc,O3,static
+hash_label at 26.5 :  pure assembly,static
+
+
+
+newstring x -0.25 y 2350 font Helvetica : 2807
+newstring x 1.75 y 2350 font Helvetica : 5458
+
+newstring x 0.75 y 2350 font Helvetica : 3204
+newstring x 2.5 y 2250 font Helvetica : 4573
+
+newstring x 3.4 y 2350 font Helvetica : 3802
+
+
+newcurve 
+marktype xbar marksize 0.5 color 1.0 0.0 0.0
+label hjl x 12 y 2750 fontsize 14 font Helvetica : L2
+pts
+0 2807   (* original,static *)
+2 5458	 (* original,dynamic *)
+
+4 494	 (* glibc,gcc,O3,static *)
+6 2089  (* glibc,gcc,O3,dynamic *)
+
+8 489	 (* glibc,intel,O3,static *)
+10 2434  (* glibc,intel,O3,dynamic *)
+
+12 2059  (* glibc,sun,O3,dynamic *)
+
+14 493	 (* glibc,gcc,Os,static *)
+16 2047  (* glibc,gcc,Os,dynamic *)
+
+18 99     (* uclibc,gcc,O3,static *)
+20 1179  (* uclibc,gcc,O3,dynamic *)
+
+22 82    (* none,intel,O3,static *)
+24 85  (* none,gcc,O3,static  *)
+26 49 (* pure assembly,static *)
+
+
+newcurve marktype xbar marksize 0.5 color 0.0 1.0 0.0 
+label hjl x 15 y 2750 fontsize 14 font Helvetica : L1 I-Cache
+pts
+0.5 3204   (* original,static *)
+2.5 4573   (* original,dynamic *)
+
+4.5 199    (* glibc,gcc,O3,static *)
+6.5 1271  (* glibc,gcc,O3,dynamic *)
+
+8.5 187    (* glibc,intel,O3,static *)
+10.5 1805 (* glibc,intel,O3,dynamic *)
+
+12.5 1336 (* glibc,sun,O3,dynamic *)
+
+14.5 186    (* glibc,gcc,Os,static *)
+16.5 1343 (* glibc,gcc,Os,dynamic *)
+
+18.5 124   (* uclibc,gcc,O3,static *)
+20.5 1430 (* uclibc,gcc,O3,dynamic *)
+
+22.5 78   (* none,intel,O3,static *)
+24.5 84  (* none,gcc,O3,static  *)
+26.5 80 (* pure assembly,static *)
+
+newcurve marktype xbar marksize 0.5 color 0.0 0.0 1.0
+label hjl x 20 y 2750 fontsize 14 font Helvetica : L1 D-Cache 
+pts
+1 1531    (* original,static *)
+3 3802	  (* original,dynamic *)
+
+5 353     (* glibc,gcc,O3,static *)
+7 988    (* glibc,gcc,O3,dynamic *)
+
+9 308     (* glibc,intel,O3,static *)
+11 1425   (* glibc,intel,O3,dynamic *)
+
+13 1026  (* glibc,sun,O3,dynamic *)
+
+15 367     (* glibc,gcc,Os,static *)
+17 1033  (* glibc,gcc,Os,dynamic *)
+
+19 137    (* uclibc,gcc,O3,static *)
+21 505    (* uclibc,gcc,O3,dynamic *)
+
+23 44  	  (* none,intel,O3,static *)
+25 65  	  (* none,gcc,O3,static  *)
+27 30 	  (* pure assembly,static *)

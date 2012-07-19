@@ -1,0 +1,434 @@
+
+./ll:     file format a.out-m88k-openbsd
+
+Disassembly of section .text:
+
+00001020 <start>:
+    1020:	f4 00 58 00 	or          r0,r0,r0
+    1024:	f4 00 58 00 	or          r0,r0,r0
+    1028:	5a 40 24 50 	or          r18,r0,0x2450
+    102c:	f6 12 58 00 	or          r16,r18,r0
+    1030:	5a a0 20 10 	or          r21,r0,0x2010
+    1034:	59 20 13 bd 	or          r9,r0,0x13bd
+    1038:	59 80 14 d8 	or          r12,r0,0x14d8
+    103c:	59 00 03 c0 	or          r8,r0,0x3c0
+
+00001040 <decompression_loop>:
+    1040:	f5 49 0c 00 	ld.bu       r10,r9,r0
+    1044:	61 29 00 01 	addu        r9,r9,0x01
+    1048:	59 6a ff 00 	or          r11,r10,0xff00
+
+0000104c <test_flags>:
+    104c:	f5 4c 7c 09 	cmp         r10,r12,r9
+    1050:	d8 4a 00 1c 	bb1         0x02,r10,10c0 <done_logo>
+    1054:	49 ab 00 01 	mask        r13,r11,0x01
+    1058:	f1 6b 98 01 	extu        r11,r11,0<1>
+    105c:	e9 ad 00 15 	bcnd        ne0,r13,10b0 <discrete_char>
+
+00001060 <offset_length>:
+    1060:	f5 49 0c 00 	ld.bu       r10,r9,r0
+    1064:	0f 09 00 01 	ld.bu       r24,r9,0x01
+    1068:	61 29 00 02 	addu        r9,r9,0x02
+    106c:	f3 18 a0 08 	mak         r24,r24,0<8>
+    1070:	f7 18 58 0a 	or          r24,r24,r10
+    1074:	f1 f8 98 0a 	extu        r15,r24,0<10>
+    1078:	61 ef 00 03 	addu        r15,r15,0x03
+
+0000107c <output_loop>:
+    107c:	4b 18 03 ff 	mask        r24,r24,0x3ff
+    1080:	f5 55 0c 18 	ld.bu       r10,r21,r24
+    1084:	63 18 00 01 	addu        r24,r24,0x01
+
+00001088 <store_byte>:
+    1088:	f5 50 2c 00 	st.b        r10,r16,r0
+    108c:	62 10 00 01 	addu        r16,r16,0x01
+    1090:	f5 55 2c 08 	st.b        r10,r21,r8
+    1094:	61 08 00 01 	addu        r8,r8,0x01
+    1098:	49 08 03 ff 	mask        r8,r8,0x3ff
+    109c:	65 ef 00 01 	subu        r15,r15,0x01
+    10a0:	e9 af ff f7 	bcnd        ne0,r15,107c <output_loop>
+    10a4:	49 ab ff 00 	mask        r13,r11,0xff00
+    10a8:	e9 ad ff e9 	bcnd        ne0,r13,104c <test_flags>
+    10ac:	c3 ff ff e5 	br          1040 <decompression_loop>
+
+000010b0 <discrete_char>:
+    10b0:	f5 49 0c 00 	ld.bu       r10,r9,r0
+    10b4:	61 29 00 01 	addu        r9,r9,0x01
+    10b8:	59 e0 00 01 	or          r15,r0,0x01
+    10bc:	c3 ff ff f3 	br          1088 <store_byte>
+
+000010c0 <done_logo>:
+    10c0:	f4 72 58 00 	or          r3,r18,r0
+    10c4:	c8 00 00 78 	bsr         12a4 <write_stdout>
+    10c8:	f5 d2 58 00 	or          r14,r18,r0
+
+000010cc <first_line>:
+    10cc:	59 60 00 01 	or          r11,r0,0x01
+    10d0:	c8 00 00 7f 	bsr         12cc <run_sysctl_kern>
+    10d4:	5a 00 64 58 	or          r16,r0,0x6458
+    10d8:	c8 00 00 9b 	bsr         1344 <strcat>
+    10dc:	5a 00 13 60 	or          r16,r0,0x1360
+    10e0:	c8 00 00 99 	bsr         1344 <strcat>
+    10e4:	59 60 00 02 	or          r11,r0,0x02
+    10e8:	c8 00 00 79 	bsr         12cc <run_sysctl_kern>
+    10ec:	5a 00 64 58 	or          r16,r0,0x6458
+    10f0:	c8 00 00 95 	bsr         1344 <strcat>
+    10f4:	5a 00 13 6a 	or          r16,r0,0x136a
+    10f8:	c8 00 00 93 	bsr         1344 <strcat>
+    10fc:	59 60 00 1b 	or          r11,r0,0x1b
+    1100:	c8 00 00 73 	bsr         12cc <run_sysctl_kern>
+    1104:	5a 00 64 58 	or          r16,r0,0x6458
+    1108:	c8 00 00 8f 	bsr         1344 <strcat>
+    110c:	5a 00 13 76 	or          r16,r0,0x1376
+    1110:	c8 00 00 8d 	bsr         1344 <strcat>
+    1114:	c8 00 00 55 	bsr         1268 <center_and_print>
+
+00001118 <middle_line>:
+    1118:	f5 d2 58 00 	or          r14,r18,r0
+    111c:	59 a0 00 05 	or          r13,r0,0x05
+    1120:	58 40 13 af 	or          r2,r0,0x13af
+    1124:	f4 60 58 00 	or          r3,r0,r0
+    1128:	f0 00 d0 80 	tb0         0,r0,0x80
+    112c:	c0 00 00 2e 	br          11e4 <exit>
+    1130:	f5 02 58 00 	or          r8,r2,r0
+    1134:	59 a0 00 03 	or          r13,r0,0x03
+    1138:	58 60 65 60 	or          r3,r0,0x6560
+    113c:	58 80 80 00 	or          r4,r0,0x8000
+    1140:	f0 00 d0 80 	tb0         0,r0,0x80
+    1144:	c0 00 00 28 	br          11e4 <exit>
+    1148:	f4 40 58 08 	or          r2,r0,r8
+    114c:	59 a0 00 06 	or          r13,r0,0x06
+    1150:	f0 00 d0 80 	tb0         0,r0,0x80
+    1154:	c0 00 00 24 	br          11e4 <exit>
+
+00001158 <number_of_cpus>:
+    1158:	5a 00 13 78 	or          r16,r0,0x1378
+    115c:	c8 00 00 7a 	bsr         1344 <strcat>
+
+00001160 <print_mhz>:
+    1160:	5c 40 6f 64 	or.u        r2,r0,0x6f64
+    1164:	58 42 65 6c 	or          r2,r2,0x656c
+    1168:	58 60 00 2c 	or          r3,r0,0x2c
+    116c:	58 80 00 4d 	or          r4,r0,0x4d
+    1170:	c8 00 00 20 	bsr         11f0 <find_string>
+    1174:	5a 00 13 7c 	or          r16,r0,0x137c
+    1178:	c8 00 00 73 	bsr         1344 <strcat>
+
+0000117c <chip_name>:
+    117c:	5c 40 6f 64 	or.u        r2,r0,0x6f64
+    1180:	58 42 65 6c 	or          r2,r2,0x656c
+    1184:	58 60 00 3d 	or          r3,r0,0x3d
+    1188:	58 80 00 2c 	or          r4,r0,0x2c
+    118c:	c8 00 00 19 	bsr         11f0 <find_string>
+    1190:	5a 00 13 81 	or          r16,r0,0x1381
+    1194:	c8 00 00 6c 	bsr         1344 <strcat>
+
+00001198 <ram>:
+    1198:	59 40 00 06 	or          r10,r0,0x06
+    119c:	59 60 00 05 	or          r11,r0,0x05
+    11a0:	c8 00 00 4c 	bsr         12d0 <run_sysctl>
+    11a4:	58 60 64 58 	or          r3,r0,0x6458
+    11a8:	f4 43 14 00 	ld          r2,r3,r0
+    11ac:	f0 42 98 14 	extu        r2,r2,0<20>
+    11b0:	f4 a0 58 00 	or          r5,r0,r0
+    11b4:	c8 00 00 55 	bsr         1308 <num_to_ascii>
+    11b8:	5a 00 13 84 	or          r16,r0,0x1384
+    11bc:	c8 00 00 62 	bsr         1344 <strcat>
+
+000011c0 <bogomips>:
+    11c0:	c8 00 00 2a 	bsr         1268 <center_and_print>
+
+000011c4 <last_line>:
+    11c4:	f5 d2 58 00 	or          r14,r18,r0
+    11c8:	59 60 00 0a 	or          r11,r0,0x0a
+    11cc:	c8 00 00 40 	bsr         12cc <run_sysctl_kern>
+    11d0:	5a 00 64 58 	or          r16,r0,0x6458
+    11d4:	c8 00 00 5c 	bsr         1344 <strcat>
+    11d8:	c8 00 00 24 	bsr         1268 <center_and_print>
+    11dc:	58 60 13 a3 	or          r3,r0,0x13a3
+    11e0:	c8 00 00 31 	bsr         12a4 <write_stdout>
+
+000011e4 <exit>:
+    11e4:	f4 40 58 00 	or          r2,r0,r0
+    11e8:	59 a0 00 01 	or          r13,r0,0x01
+    11ec:	f0 00 d0 80 	tb0         0,r0,0x80
+
+000011f0 <find_string>:
+    11f0:	58 a0 65 60 	or          r5,r0,0x6560
+
+000011f4 <find_loop>:
+    11f4:	0c c5 00 00 	ld.bu       r6,r5,0
+    11f8:	f0 e6 a0 08 	mak         r7,r6,0<8>
+    11fc:	0c c5 00 01 	ld.bu       r6,r5,0x01
+    1200:	f4 e7 58 06 	or          r7,r7,r6
+    1204:	f0 e7 a0 08 	mak         r7,r7,0<8>
+    1208:	0c c5 00 02 	ld.bu       r6,r5,0x02
+    120c:	f4 e7 58 06 	or          r7,r7,r6
+    1210:	f0 e7 a0 08 	mak         r7,r7,0<8>
+    1214:	0c c5 00 03 	ld.bu       r6,r5,0x03
+    1218:	f4 e7 58 06 	or          r7,r7,r6
+    121c:	60 a5 00 01 	addu        r5,r5,0x01
+    1220:	e8 46 00 11 	bcnd        eq0,r6,1264 <done>
+    1224:	f4 e2 7c 07 	cmp         r7,r2,r7
+    1228:	d8 67 ff f3 	bb1         0x03,r7,11f4 <find_loop>
+
+0000122c <find_start_char>:
+    122c:	0c c5 00 00 	ld.bu       r6,r5,0
+    1230:	60 a5 00 01 	addu        r5,r5,0x01
+    1234:	e8 46 00 0c 	bcnd        eq0,r6,1264 <done>
+    1238:	f4 e6 7c 03 	cmp         r7,r6,r3
+    123c:	d8 67 ff fc 	bb1         0x03,r7,122c <find_start_char>
+
+00001240 <store_loop>:
+    1240:	f4 c5 0c 00 	ld.bu       r6,r5,r0
+    1244:	60 a5 00 01 	addu        r5,r5,0x01
+    1248:	e8 46 00 07 	bcnd        eq0,r6,1264 <done>
+    124c:	f4 e6 7c 04 	cmp         r7,r6,r4
+    1250:	d8 47 00 04 	bb1         0x02,r7,1260 <almost_done>
+    1254:	f4 ce 2c 00 	st.b        r6,r14,r0
+    1258:	61 ce 00 01 	addu        r14,r14,0x01
+    125c:	c3 ff ff f9 	br          1240 <store_loop>
+
+00001260 <almost_done>:
+    1260:	f4 0e 2c 00 	st.b        r0,r14,r0
+
+00001264 <done>:
+    1264:	f4 00 c0 01 	jmp         r1
+
+00001268 <center_and_print>:
+    1268:	f6 61 58 00 	or          r19,r1,r0
+    126c:	f5 4e 64 12 	subu        r10,r14,r18
+    1270:	7d 6a 00 50 	cmp         r11,r10,0x50
+    1274:	d8 eb 00 0a 	bb1         0x07,r11,129c <done_center>
+    1278:	58 60 13 aa 	or          r3,r0,0x13aa
+    127c:	c8 00 00 0a 	bsr         12a4 <write_stdout>
+    1280:	59 60 00 50 	or          r11,r0,0x50
+    1284:	f5 6b 64 0a 	subu        r11,r11,r10
+    1288:	f0 4b 98 01 	extu        r2,r11,0<1>
+    128c:	58 a0 00 01 	or          r5,r0,0x01
+    1290:	c8 00 00 1e 	bsr         1308 <num_to_ascii>
+    1294:	58 60 13 ad 	or          r3,r0,0x13ad
+    1298:	c8 00 00 03 	bsr         12a4 <write_stdout>
+
+0000129c <done_center>:
+    129c:	f4 72 58 00 	or          r3,r18,r0
+    12a0:	f4 33 58 00 	or          r1,r19,r0
+
+000012a4 <write_stdout>:
+    12a4:	f4 80 58 00 	or          r4,r0,r0
+
+000012a8 <strlen_loop>:
+    12a8:	f4 43 0c 04 	ld.bu       r2,r3,r4
+    12ac:	60 84 00 01 	addu        r4,r4,0x01
+    12b0:	e9 a2 ff fe 	bcnd        ne0,r2,12a8 <strlen_loop>
+    12b4:	64 84 00 01 	subu        r4,r4,0x01
+    12b8:	59 a0 00 04 	or          r13,r0,0x04
+    12bc:	58 40 00 01 	or          r2,r0,0x01
+    12c0:	f0 00 d0 80 	tb0         0,r0,0x80
+    12c4:	c3 ff ff c8 	br          11e4 <exit>
+    12c8:	f4 00 c0 01 	jmp         r1
+
+000012cc <run_sysctl_kern>:
+    12cc:	59 40 00 01 	or          r10,r0,0x01
+
+000012d0 <run_sysctl>:
+    12d0:	58 40 64 50 	or          r2,r0,0x6450
+    12d4:	f5 42 24 00 	st          r10,r2,r0
+    12d8:	25 62 00 04 	st          r11,r2,0x04
+    12dc:	58 60 00 02 	or          r3,r0,0x02
+    12e0:	60 82 00 08 	addu        r4,r2,0x08
+    12e4:	60 a2 01 00 	addu        r5,r2,0x100
+    12e8:	59 40 01 00 	or          r10,r0,0x100
+    12ec:	f5 45 24 00 	st          r10,r5,r0
+    12f0:	f4 c0 58 00 	or          r6,r0,r0
+    12f4:	f4 e0 58 00 	or          r7,r0,r0
+    12f8:	59 a0 00 ca 	or          r13,r0,0xca
+    12fc:	f0 00 d0 80 	tb0         0,r0,0x80
+    1300:	c3 ff ff b9 	br          11e4 <exit>
+    1304:	f4 00 c0 01 	jmp         r1
+
+00001308 <num_to_ascii>:
+    1308:	58 e0 20 09 	or          r7,r0,0x2009
+
+0000130c <div_by_10>:
+    130c:	f4 82 58 00 	or          r4,r2,r0
+    1310:	68 42 00 0a 	divu        r2,r2,0x0a
+    1314:	6d 02 00 0a 	mulu        r8,r2,0x0a
+    1318:	f4 c4 64 08 	subu        r6,r4,r8
+    131c:	60 c6 00 30 	addu        r6,r6,0x30
+    1320:	f4 c7 2c 00 	st.b        r6,r7,r0
+    1324:	64 e7 00 01 	subu        r7,r7,0x01
+    1328:	e9 a2 ff f9 	bcnd        ne0,r2,130c <div_by_10>
+
+0000132c <write_out>:
+    132c:	60 e7 00 01 	addu        r7,r7,0x01
+    1330:	e8 45 00 04 	bcnd        eq0,r5,1340 <strcat_num>
+
+00001334 <stdout_num>:
+    1334:	f4 67 58 00 	or          r3,r7,r0
+    1338:	c3 ff ff db 	br          12a4 <write_stdout>
+    133c:	f4 00 c0 01 	jmp         r1
+
+00001340 <strcat_num>:
+    1340:	f6 07 58 00 	or          r16,r7,r0
+
+00001344 <strcat>:
+    1344:	f5 50 0c 00 	ld.bu       r10,r16,r0
+    1348:	f5 4e 2c 00 	st.b        r10,r14,r0
+    134c:	61 ce 00 01 	addu        r14,r14,0x01
+    1350:	62 10 00 01 	addu        r16,r16,0x01
+    1354:	e9 aa ff fc 	bcnd        ne0,r10,1344 <strcat>
+    1358:	65 ce 00 01 	subu        r14,r14,0x01
+    135c:	f4 00 c0 01 	jmp         r1
+
+00001360 <data_begin>:
+    1360:	20 56 65 72 	st.d        r2,r22,0x6572
+    1364:	73 69 6f 6e 	add         r27,r9,0x6f6e
+    1368:	20 00 2c 20 	st.d        r0,r0,0x2c20
+
+0000136a <compiled_string>:
+    136a:	2c 20 43 6f 	st.d        r0,r0,0x2c20
+    136e:	6d 70 69 6c 	and         r27,r15,0x6d70
+    1372:	65 64 20 00 	divu        r11,r12,0x6564
+
+00001376 <linefeed>:
+    1376:	0a 00 4f 6e 	st.d        r0,r0,0xa00
+
+00001378 <one>:
+    1378:	4f 6e 65 00 	mask.u      r27,r14,0x6500
+
+0000137c <megahertz>:
+    137c:	4d 48 7a 20 	mask.u      r10,r8,0x7a20
+	...
+
+00001381 <comma>:
+    1381:	2c 20 00 4d 	ld.d        x1,r12,0x2000
+
+00001384 <ram_comma>:
+    1384:	4d 20 52 41 	mask.u      r9,r0,0x5241
+    1388:	4d 2c 20 55 	mask.u      r9,r12,0x2055
+
+0000138b <bogo_total>:
+    138b:	55 6e 6b 6e 	mask.u      r9,r12,0x2055
+    138f:	6f 77 6e 20 	mulu        r19,r11,0x6e6f
+    1393:	42 6f 67 6f 	sub         r27,r14,0x2042
+    1397:	6d 69 70 73 	mulu        r27,r7,0x6f6d
+    139b:	20 54 6f 74 	divu        r11,r16,0x7320
+    139f:	61 6c 0a 00 	xor.u       r3,r15,0x7461
+
+000013a3 <default_colors>:
+    13a3:	1b 5b 30 6d 	mulu        r0,r10,0x1b
+    13a7:	0a 0a 00 1b 	or          r25,r16,0x6d0a
+
+000013aa <escape>:
+    13aa:	1b 5b 00 43 	ld.hu       r16,r0,0x1b5b
+
+000013ad <C>:
+    13ad:	43 00 63 70 	ld.d        x2,r3,0x63
+
+000013af <cpuinfo>:
+    13af:	63 70 75 69 	ld.d        x2,r3,0x63
+    13b3:	6e 66 6f 5f 	add         r3,r21,0x696e
+    13b7:	6d 38 38 6b 	subu        r19,r15,0x5f6d
+	...
+
+000013bd <logo>:
+    13bd:	ff 1b 5b 30 	ld.d        x7,r31,0x1b5b
+    13c1:	3b 31 3b 33 	st.d        x1,r27,0x313b
+    13c5:	37 9f 3b 34 	st.d        x25,r23,0x9f3b
+    13c9:	37 6d 23 cc 	st          x1,r23,0x6d23
+    13cd:	f7 c0 07 33 	bsr.n       3df13e8 <_end+0x3de2e88>
+    13d1:	8d 30 c8 1b 	st.d        x28,r13,0x30c8
+    13d5:	1b 5b c4 07 	ld.h        r24,r27,0x5bc4
+    13d9:	cb 1f 1c 0c 	ld          x30,r11,0x1f1c
+    13dd:	3b 0f 34 30 	ld.bu       r1,r27,0xf34
+    13e1:	6d 0a c0 f7 	st.d        x3,r13,0xac0
+    13e5:	01 60 1a 38 	addu        r24,r1,r26
+    13e9:	2c 9c 1f 1b 	st.x        x1,r12,0x9c1f
+    13ed:	5b 33 31 6d 	ld.h        r26,r27,0x3331
+    13f1:	cc 04 41 ac 	mulu        r14,r12,0x441
+    13f5:	0d 24 02 1c 	word	ac0d2402
+    13f9:	10 4f 0d 20 	ld.b        r0,r16,0x4f0d
+    13fd:	10 41 93 98 	st.d        r0,r16,0x4193
+    1401:	83 34 1c 34 	word	9883341c
+    1405:	cc 10 10 0c 	st          x6,r12,0x1010
+    1409:	24 6f 39 ec 	ld.bu       r1,r4,0x6f39
+    140d:	a7 1c 08 33 	bcnd.n      5,r7,842c <disk_buffer+0x1ecc>
+    1411:	16 14 89 55 	st.d        x24,r22,0x1489
+    1415:	2c 60 00 2b 	xor.u       r9,r12,0x6000
+    1419:	61 d6 71 e2 	st.h        r27,r1,0xd671
+    141d:	c8 cb 08 d4 	word	e2c8cb08
+    1421:	09 d3 10 2b 	bb0.n       0,r9,ffff6060 <_end+0xfffe7b00>
+    1425:	59 f5 d1 00 	st.h        r26,r25,0xf5d1
+    1429:	80 11 d2 18 	ld.d        x4,r0,0x11d2
+    142d:	0d 28 1c 14 	ld.h        r0,r13,0x281c
+    1431:	0d 2c 1c 1c 	ld          r0,r13,0x2c1c
+    1435:	f0 4a 1a 5b 	ld.b        r7,r16,0x4a1a
+    1439:	00 0d 50 5f 	or          r24,r0,0xd50
+    143d:	65 87 65 2b 	or.u        r27,r5,0x8765
+    1441:	55 f5 cd cd 	st.h        r26,r21,0xf5cd
+    1445:	28 cd 14 89 	bsr.n       4a34894 <_end+0x4a26334>
+    1449:	41 00 1d 87 	pmul        r10,r1,r29
+    144d:	42 4b 72 53 	word	87424b72
+    1451:	1c 78 0f 62 	xor         r24,r28,0x780f
+    1455:	87 6d 55 58 	addu        r20,r7,0x6d55
+    1459:	f7 c1 00 e8 	or          r7,r23,0xc100
+    145d:	2b f4 97 49 	bcnd        gt0,r11,ffffe6b8 <_end+0xffff0158>
+    1461:	78 3d b0 1b 	mask        r11,r24,0x3db0
+    1465:	5f 97 b0 12 	ld.h        r26,r31,0x97b0
+    1469:	2b ab ca 10 	ld.d        r17,r11,0xabca
+    146d:	df 16 1a f5 	ld.d        r6,r31,0x161a
+    1471:	5a f5 d9 3f 	word	f55af5d9
+    1475:	33 1b 56 92 	ld.x        x25,r19,0x1b56
+    1479:	5b b0 02 00 	word	925bb002
+    147d:	0c 1d d3 c8 	ld.d        x0,r12,0x1dd3
+    1481:	ac 39 17 66 	bsr         2b0f8dc <_end+0x2b0137c>
+    1485:	32 f6 6e 6d 	subu        r17,r18,0xf66e
+    1489:	ec 44 60 5e 	mulu        r15,r12,0x4460
+    148d:	08 af 0a a6 	or.u        r16,r8,0xaf0a
+    1491:	69 14 01 30 	word	a6691401
+    1495:	33 0b de 1f 	st.d        x1,r19,0xbde
+    1499:	31 0f d3 bc 	ld.b        r25,r17,0xfd3
+    149d:	00 af 4f 19 	word	bc00af4f
+    14a1:	56 aa 45 52 	ld.h        r10,r22,0xaa45
+    14a5:	db 28 52 46 	xor         r22,r27,0x2852
+    14a9:	7f 08 53 db 	and.u       r19,r31,0x853
+    14ad:	23 00 a9 55 	bb1         0x19,r3,1750 <_etext+0x278>
+    14b1:	aa 35 18 21 	xor.u       r13,r10,0x3518
+    14b5:	12 68 91 2a 	st.d        r8,r18,0x6891
+    14b9:	c8 22 b2 68 	st.h        r22,r8,0x22b2
+    14bd:	70 2d 00 c6 	divu        r3,r16,0x2d00
+    14c1:	50 b2 79 91 	br.n        f942dea4 <_end+0xf941f944>
+    14c5:	4a 70 31 f8 	word	914a7031
+    14c9:	51 f3 28 dd 	tbnd        r17,0xf328
+    14cd:	17 ff 17 08 	bb1.n       0x08,r23,1128 <middle_line+0x10>
+    14d1:	02 36 03 24 	ld.hu       r0,r2,0x3603
+    14d5:	e5 42 0a 00 	st          r7,r5,0x420a
+
+000014d8 <_etext>:
+	...
+Disassembly of section .bss:
+
+00002000 <bss_begin>:
+	...
+
+00002010 <text_buf>:
+	...
+
+00002450 <out_buffer>:
+	...
+
+00006450 <sysctl_num1>:
+    6450:	00 00 00 00 	ld.d        x0,r0,0
+
+00006454 <sysctl_num2>:
+    6454:	00 00 00 00 	ld.d        x0,r0,0
+
+00006458 <sysctl_info>:
+	...
+
+00006558 <sysctl_info_size>:
+	...
+
+00006560 <disk_buffer>:
+	...

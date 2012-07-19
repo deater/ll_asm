@@ -1,0 +1,4 @@
+cpu             : RiSC
+cpu model	: VMW
+frequency       : 10.0MHz
+BogoMIPS        : 10.0

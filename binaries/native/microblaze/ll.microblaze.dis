@@ -1,0 +1,423 @@
+
+ll.microblaze:     file format elf32-microblaze
+
+Disassembly of section .text:
+
+10000074 <_start>:
+10000074:	b0001000 	imm	4096
+10000078:	2260038c 	addi	r19, r0, 908	// 1000038c <data_begin>
+1000007c:	b0001000 	imm	4096
+10000080:	22800518 	addi	r20, r0, 1304	// 10000518 <bss_begin>
+10000084:	210003c0 	addi	r8, r0, 960
+10000088:	2133006b 	addi	r9, r19, 107
+1000008c:	b0001000 	imm	4096
+10000090:	21800512 	addi	r12, r0, 1298	// 10000512 <__bss_start>
+10000094:	02a0a000 	add	r21, r0, r20
+10000098:	b0001000 	imm	4096
+1000009c:	23404518 	addi	r26, r0, 17688	// 10004518 <text_buf>
+
+100000a0 <decompression_loop>:
+100000a0:	c2c04800 	lbu	r22, r0, r9
+100000a4:	21290001 	addi	r9, r9, 1
+100000a8:	b0000000 	imm	0
+100000ac:	a2d6ff00 	ori	r22, r22, -256
+
+100000b0 <test_flags>:
+100000b0:	164c4801 	cmp	r18, r12, r9
+100000b4:	bc120074 	beqi	r18, 116	// 10000128 <done_logo>
+100000b8:	a6f60001 	andi	r23, r22, 1
+100000bc:	be37005c 	bneid	r23, 92	// 10000118 <discrete_char>
+100000c0:	92d60041 	srl	r22, r22
+
+100000c4 <offset_length>:
+100000c4:	c1404800 	lbu	r10, r0, r9
+100000c8:	e3090001 	lbui	r24, r9, 1
+100000cc:	21290002 	addi	r9, r9, 2
+100000d0:	67180408 	bslli	r24, r24, 8
+100000d4:	83185000 	or	r24, r24, r10
+100000d8:	6738000a 	bsrli	r25, r24, 10
+100000dc:	23390003 	addi	r25, r25, 3
+
+100000e0 <output_loop>:
+100000e0:	a71803ff 	andi	r24, r24, 1023
+100000e4:	c15ac000 	lbu	r10, r26, r24
+100000e8:	23180001 	addi	r24, r24, 1
+
+100000ec <store_byte>:
+100000ec:	d140a800 	sb	r10, r0, r21
+100000f0:	22b50001 	addi	r21, r21, 1
+100000f4:	d148d000 	sb	r10, r8, r26
+100000f8:	21080001 	addi	r8, r8, 1
+100000fc:	2339ffff 	addi	r25, r25, -1
+10000100:	be39ffe0 	bneid	r25, -32	// 100000e0 <output_loop>
+10000104:	a50803ff 	andi	r8, r8, 1023
+10000108:	b0000000 	imm	0
+1000010c:	a6f6ff00 	andi	r23, r22, -256
+10000110:	bc37ffa0 	bnei	r23, -96	// 100000b0 <test_flags>
+10000114:	b800ff8c 	bri	-116	// 100000a0 <decompression_loop>
+
+10000118 <discrete_char>:
+10000118:	c1404800 	lbu	r10, r0, r9
+1000011c:	21290001 	addi	r9, r9, 1
+10000120:	b810ffcc 	brid	-52	// 100000ec <store_byte>
+10000124:	23200001 	addi	r25, r0, 1	// 1 <STDOUT>
+
+10000128 <done_logo>:
+10000128:	b9f401ec 	brlid	r15, 492	// 10000314 <write_stdout>
+1000012c:	00c0a000 	add	r6, r0, r20
+
+10000130 <first_line>:
+10000130:	b0001000 	imm	4096
+10000134:	230059a8 	addi	r24, r0, 22952	// 100059a8 <uname_info>
+
+10000138 <uname_call>:
+10000138:	2180007a 	addi	r12, r0, 122	// 7a <SYSCALL_UNAME>
+1000013c:	00a0c000 	add	r5, r0, r24
+10000140:	b9cc0008 	brki	r14, 8
+10000144:	02a0a000 	add	r21, r0, r20
+
+10000148 <os_name>:
+10000148:	b9f40228 	brlid	r15, 552	// 10000370 <strcat>
+1000014c:	20b80000 	addi	r5, r24, 0
+
+10000150 <version>:
+10000150:	b9f40220 	brlid	r15, 544	// 10000370 <strcat>
+10000154:	20b30000 	addi	r5, r19, 0
+10000158:	b9f40218 	brlid	r15, 536	// 10000370 <strcat>
+1000015c:	20b80082 	addi	r5, r24, 130
+
+10000160 <compiled>:
+10000160:	b9f40210 	brlid	r15, 528	// 10000370 <strcat>
+10000164:	20b3000a 	addi	r5, r19, 10
+10000168:	b9f40208 	brlid	r15, 520	// 10000370 <strcat>
+1000016c:	20b800c3 	addi	r5, r24, 195
+10000170:	b9f40160 	brlid	r15, 352	// 100002d0 <center_and_print>
+10000174:	80000000 	or	r0, r0, r0
+
+10000178 <middle_line>:
+10000178:	02a0a000 	add	r21, r0, r20
+1000017c:	21800005 	addi	r12, r0, 5	// 5 <SYSCALL_OPEN>
+10000180:	20b3003b 	addi	r5, r19, 59
+10000184:	00c00000 	add	r6, r0, r0
+10000188:	b9cc0008 	brki	r14, 8
+1000018c:	00a30000 	add	r5, r3, r0
+10000190:	21800003 	addi	r12, r0, 3	// 3 <POSITION_MASK>
+10000194:	b0001000 	imm	4096
+10000198:	20c04958 	addi	r6, r0, 18776	// 10004958 <disk_buffer>
+1000019c:	20e01000 	addi	r7, r0, 4096
+100001a0:	b9cc0008 	brki	r14, 8
+100001a4:	21800006 	addi	r12, r0, 6	// 6 <SYSCALL_CLOSE>
+100001a8:	b9cc0008 	brki	r14, 8
+
+100001ac <number_of_cpus>:
+100001ac:	b9f401c4 	brlid	r15, 452	// 10000370 <strcat>
+100001b0:	20b30049 	addi	r5, r19, 73
+
+100001b4 <print_mhz>:
+100001b4:	b000004d 	imm	77
+100001b8:	20a0487a 	addi	r5, r0, 18554
+100001bc:	b9f40098 	brlid	r15, 152	// 10000254 <find_string>
+100001c0:	20c0002e 	addi	r6, r0, 46	// 2e <LINEFEED_OFFSET>
+100001c4:	b9f401ac 	brlid	r15, 428	// 10000370 <strcat>
+100001c8:	20b3004e 	addi	r5, r19, 78
+
+100001cc <chip_name>:
+100001cc:	b0000072 	imm	114
+100001d0:	20a06368 	addi	r5, r0, 25448
+100001d4:	b9f40080 	brlid	r15, 128	// 10000254 <find_string>
+100001d8:	20c0000a 	addi	r6, r0, 10	// a <COMPILED_OFFSET>
+100001dc:	b9f40194 	brlid	r15, 404	// 10000370 <strcat>
+100001e0:	20b3005e 	addi	r5, r19, 94
+
+100001e4 <ram>:
+100001e4:	21800074 	addi	r12, r0, 116	// 74 <SYSCALL_SYSINFO>
+100001e8:	b0001000 	imm	4096
+100001ec:	20a05968 	addi	r5, r0, 22888	// 10005968 <sysinfo_buff>
+100001f0:	b9cc0008 	brki	r14, 8
+100001f4:	e8a50010 	lwi	r5, r5, 16
+100001f8:	00e00000 	add	r7, r0, r0
+100001fc:	b9f40140 	brlid	r15, 320	// 1000033c <num_to_ascii>
+10000200:	64a50014 	bsrli	r5, r5, 20
+10000204:	b9f4016c 	brlid	r15, 364	// 10000370 <strcat>
+10000208:	20b30016 	addi	r5, r19, 22
+
+1000020c <bogomips>:
+1000020c:	b0000069 	imm	105
+10000210:	20a07073 	addi	r5, r0, 28787
+10000214:	b9f40040 	brlid	r15, 64	// 10000254 <find_string>
+10000218:	20c0000a 	addi	r6, r0, 10	// a <COMPILED_OFFSET>
+1000021c:	b9f40154 	brlid	r15, 340	// 10000370 <strcat>
+10000220:	20b3001e 	addi	r5, r19, 30
+10000224:	b9f400ac 	brlid	r15, 172	// 100002d0 <center_and_print>
+10000228:	80000000 	or	r0, r0, r0
+
+1000022c <last_line>:
+1000022c:	02a0a000 	add	r21, r0, r20
+10000230:	b9f40140 	brlid	r15, 320	// 10000370 <strcat>
+10000234:	20b80041 	addi	r5, r24, 65
+10000238:	b9f40098 	brlid	r15, 152	// 100002d0 <center_and_print>
+1000023c:	80000000 	or	r0, r0, r0
+10000240:	b9f400d4 	brlid	r15, 212	// 10000314 <write_stdout>
+10000244:	20d30030 	addi	r6, r19, 48
+
+10000248 <exit>:
+10000248:	21800001 	addi	r12, r0, 1	// 1 <STDOUT>
+1000024c:	20a00005 	addi	r5, r0, 5	// 5 <SYSCALL_OPEN>
+10000250:	b9cc0008 	brki	r14, 8
+
+10000254 <find_string>:
+10000254:	b0001000 	imm	4096
+10000258:	21604958 	addi	r11, r0, 18776	// 10004958 <disk_buffer>
+
+1000025c <find_loop>:
+1000025c:	e2cb0000 	lbui	r22, r11, 0
+10000260:	02f60000 	add	r23, r22, r0
+10000264:	66f70408 	bslli	r23, r23, 8
+10000268:	e2cb0001 	lbui	r22, r11, 1
+1000026c:	02f6b800 	add	r23, r22, r23
+10000270:	66f70408 	bslli	r23, r23, 8
+10000274:	e2cb0002 	lbui	r22, r11, 2
+10000278:	02f6b800 	add	r23, r22, r23
+1000027c:	bc17004c 	beqi	r23, 76	// 100002c8 <done>
+10000280:	216b0001 	addi	r11, r11, 1
+10000284:	16d72801 	cmp	r22, r23, r5
+10000288:	bc36ffd4 	bnei	r22, -44	// 1000025c <find_loop>
+1000028c:	216b0004 	addi	r11, r11, 4
+
+10000290 <skip_spaces>:
+10000290:	e2cb0001 	lbui	r22, r11, 1
+10000294:	216b0001 	addi	r11, r11, 1
+10000298:	bc160030 	beqi	r22, 48	// 100002c8 <done>
+1000029c:	22e00020 	addi	r23, r0, 32
+100002a0:	16f7b001 	cmp	r23, r23, r22
+100002a4:	bc77ffec 	blei	r23, -20	// 10000290 <skip_spaces>
+
+100002a8 <store_loop>:
+100002a8:	c2c05800 	lbu	r22, r0, r11
+100002ac:	216b0001 	addi	r11, r11, 1
+100002b0:	bc160018 	beqi	r22, 24	// 100002c8 <done>
+100002b4:	16f63001 	cmp	r23, r22, r6
+100002b8:	bc170010 	beqi	r23, 16	// 100002c8 <done>
+100002bc:	d2c0a800 	sb	r22, r0, r21
+100002c0:	b810ffe8 	brid	-24	// 100002a8 <store_loop>
+100002c4:	22b50001 	addi	r21, r21, 1
+
+100002c8 <done>:
+100002c8:	b60f0008 	rtsd	r15, 8
+100002cc:	80000000 	or	r0, r0, r0
+
+100002d0 <center_and_print>:
+100002d0:	03e07800 	add	r31, r0, r15
+100002d4:	02e0a000 	add	r23, r0, r20
+100002d8:	04b7a800 	rsub	r5, r23, r21
+100002dc:	24a50050 	rsubi	r5, r5, 80
+100002e0:	bc450024 	blti	r5, 36	// 10000304 <done_center>
+100002e4:	92e50041 	srl	r23, r5
+100002e8:	b9f4002c 	brlid	r15, 44	// 10000314 <write_stdout>
+100002ec:	20d30036 	addi	r6, r19, 54
+100002f0:	20e00001 	addi	r7, r0, 1	// 1 <STDOUT>
+100002f4:	b9f40048 	brlid	r15, 72	// 1000033c <num_to_ascii>
+100002f8:	00a0b800 	add	r5, r0, r23
+100002fc:	b9f40018 	brlid	r15, 24	// 10000314 <write_stdout>
+10000300:	20d30039 	addi	r6, r19, 57
+
+10000304 <done_center>:
+10000304:	b9f40010 	brlid	r15, 16	// 10000314 <write_stdout>
+10000308:	00c0a000 	add	r6, r0, r20
+1000030c:	20d3002e 	addi	r6, r19, 46
+10000310:	01e0f800 	add	r15, r0, r31
+
+10000314 <write_stdout>:
+10000314:	21800004 	addi	r12, r0, 4	// 4 <SYSCALL_WRITE>
+10000318:	20a00001 	addi	r5, r0, 1	// 1 <STDOUT>
+1000031c:	00e00000 	add	r7, r0, r0
+
+10000320 <str_loop1>:
+10000320:	c1263800 	lbu	r9, r6, r7
+10000324:	bc09000c 	beqi	r9, 12	// 10000330 <str_done>
+10000328:	b810fff8 	brid	-8	// 10000320 <str_loop1>
+1000032c:	20e70001 	addi	r7, r7, 1
+
+10000330 <str_done>:
+10000330:	b9cc0008 	brki	r14, 8
+10000334:	b60f0008 	rtsd	r15, 8
+10000338:	80000000 	or	r0, r0, r0
+
+1000033c <num_to_ascii>:
+1000033c:	b0001000 	imm	4096
+10000340:	20c05962 	addi	r6, r0, 22882
+
+10000344 <div_by_10>:
+10000344:	20c6ffff 	addi	r6, r6, -1
+10000348:	2160000a 	addi	r11, r0, 10	// a <COMPILED_OFFSET>
+1000034c:	4acb2800 	idiv	r22, r11, r5
+10000350:	6116000a 	muli	r8, r22, 10
+10000354:	05082800 	rsub	r8, r8, r5
+10000358:	21080030 	addi	r8, r8, 48
+1000035c:	d1003000 	sb	r8, r0, r6
+10000360:	00b60000 	add	r5, r22, r0
+10000364:	bc36ffe0 	bnei	r22, -32	// 10000344 <div_by_10>
+
+10000368 <write_out>:
+10000368:	bc27ffac 	bnei	r7, -84	// 10000314 <write_stdout>
+1000036c:	00a60000 	add	r5, r6, r0
+
+10000370 <strcat>:
+10000370:	c1602800 	lbu	r11, r0, r5
+10000374:	20a50001 	addi	r5, r5, 1
+10000378:	d160a800 	sb	r11, r0, r21
+1000037c:	be2bfff4 	bneid	r11, -12	// 10000370 <strcat>
+10000380:	22b50001 	addi	r21, r21, 1
+
+10000384 <done_strcat>:
+10000384:	b60f0008 	rtsd	r15, 8
+10000388:	22b5ffff 	addi	r21, r21, -1
+Disassembly of section .data:
+
+1000038c <data_begin>:
+1000038c:	20566572 	addi	r2, r22, 25970
+10000390:	73696f6e 		r27, r9, r13
+10000394:	20002c20 	addi	r0, r0, 11296
+
+10000396 <compiled_string>:
+10000396:	2c20436f 	rsubic	r1, r0, 17263
+1000039a:	6d70696c 	ncaget	r11, rfsl12
+1000039e:	65642000 	bsrli	r11, r4, 0
+
+100003a2 <ram_comma>:
+100003a2:	4d205241 	nagetd	r9, r10
+100003a6:	4d2c2000 	getd	r9, r4
+
+100003aa <bogo_total>:
+100003aa:	20426f67 	addi	r2, r2, 28519
+100003ae:	6f6d6970 	ncaget	r27, rfsl0
+100003b2:	7320546f 		r25, r0, r10
+100003b6:	74616c00 		r3, r1, r13
+
+100003ba <linefeed>:
+100003ba:	0a001b5b 		r16, r0, r3
+
+100003bc <default_colors>:
+100003bc:	1b5b306d 		r26, r27, r6
+100003c0:	0a001b5b 		r16, r0, r3
+
+100003c2 <escape>:
+100003c2:	1b5b0043 		r26, r27, r0
+
+100003c5 <c>:
+100003c5:	43002f70 		r24, r0, r5
+
+100003c7 <cpuinfo>:
+100003c7:	2f70726f 	rsubic	r27, r16, 29295
+100003cb:	632f6370 	muli	r25, r15, 25456
+100003cf:	75696e66 		r11, r9, r13
+100003d3:	6f004f6e 	neaget	r24, rfsl14
+
+100003d5 <one>:
+100003d5:	4f6e6520 	ecputd	r14, r12
+	...
+
+100003da <mhz>:
+100003da:	4d487a20 	negetd	r10, r15
+100003de:	4d696372 	necagetd	r11, r12
+100003e2:	6f626c61 	necaget	r27, rfsl1
+100003e6:	7a652000 		r19, r5, r4
+
+100003ea <processor>:
+100003ea:	2050726f 	addi	r2, r16, 29295
+100003ee:	63657373 	muli	r27, r5, 29555
+100003f2:	6f722c20 	ecaget	r27, rfsl0
+	...
+
+100003f7 <logo>:
+100003f7:	ff1b5b30 		r24, r27, r11
+100003fb:	3b313b33 	addikc	r25, r17, 15155
+100003ff:	379f3b34 	rsubik	r28, r31, 15156
+10000403:	376d23cc 	rsubik	r27, r13, 9164
+10000407:	f7c00733 	shi	r30, r0, 1843
+1000040b:	8d30c81b 		r9, r16, r25
+1000040f:	1b5bc407 		r26, r27, r24
+10000413:	cb1f1c0c 		r24, r31, r3
+10000417:	3b0f3430 	addikc	r24, r15, 13360
+1000041b:	6d0ac0f7 	nput	r10, rfsl7
+1000041f:	01601a38 		r11, r0, r3
+10000423:	2c9c1f1b 	rsubic	r4, r28, 7963
+10000427:	5b33316d 		r25, r19, r6
+1000042b:	cc0441ac 		r0, r4, r8
+1000042f:	0d24021c 		r9, r4, r0
+10000433:	104f0d20 		r2, r15, r1
+10000437:	10419398 		r2, r1, r18
+1000043b:	83341c34 		r25, r20, r3
+1000043f:	cc10100c 		r0, r16, r2
+10000443:	246f39ec 	rsubi	r3, r15, 14828
+10000447:	a71c0833 	andi	r24, r28, 2099
+1000044b:	16148955 		r16, r20, r17
+1000044f:	2c60002b 	rsubic	r3, r0, 43
+10000453:	61d671e2 	muli	r14, r22, 29154
+10000457:	c8cb08d4 		r6, r11, r1
+1000045b:	09d3102b 		r14, r19, r2
+1000045f:	59f5d100 	fmul	r15, r21, r26
+10000463:	8011d218 		r0, r17, r26
+10000467:	0d281c14 		r9, r8, r3
+1000046b:	0d2c1c1c 		r9, r12, r3
+1000046f:	f04a1a5b 	sbi	r2, r10, 6747
+10000473:	000d505f 		r0, r13, r10
+10000477:	6587652b 	bslli	r12, r7, 11
+1000047b:	55f5cdcd 		r15, r21, r25
+1000047f:	28cd1489 	addic	r6, r13, 5257
+10000483:	41001d87 		r8, r0, r3
+10000487:	424b7253 		r18, r11, r14
+1000048b:	1c780f62 		r3, r24, r1
+1000048f:	876d5558 		r27, r13, r10
+10000493:	f7c100e8 	shi	r30, r1, 232
+10000497:	2bf49749 	addic	r31, r20, -26807
+1000049b:	783db01b 		r1, r29, r22
+1000049f:	5f97b012 		r28, r23, r22
+100004a3:	2babca10 	addic	r29, r11, -13808
+100004a7:	df161af5 		r24, r22, r3
+100004ab:	5af5d93f 		r23, r21, r27
+100004af:	331b5692 	addik	r24, r27, 22162
+100004b3:	5bb00200 	fcmp.un	r29, r16, r0
+100004b7:	0c1dd3c8 		r0, r29, r26
+100004bb:	ac391766 	andni	r1, r25, 5990
+100004bf:	32f66e6d 	addik	r23, r22, 28269
+100004c3:	ec44605e 		r2, r4, r12
+100004c7:	08af0aa6 		r5, r15, r1
+100004cb:	69140130 		r8, r20, r0
+100004cf:	330bde1f 	addik	r24, r11, -8673
+100004d3:	310fd3bc 	addik	r8, r15, -11332
+100004d7:	00af4f19 		r5, r15, r9
+100004db:	56aa4552 		r21, r10, r8
+100004df:	db285246 		r25, r8, r10
+100004e3:	7f0853db 		r24, r8, r10
+100004e7:	2300a955 	addi	r24, r0, -22187
+100004eb:	aa351821 	xori	r17, r21, 6177
+100004ef:	1268912a 		r19, r8, r18
+100004f3:	c822b268 		r1, r2, r22
+100004f7:	702d00c6 		r1, r13, r0
+100004fb:	50b27991 		r5, r18, r15
+100004ff:	4a7031f8 		r19, r16, r6
+10000503:	51f328dd 		r15, r19, r5
+10000507:	17ff1708 		r31, r31, r2
+1000050b:	02360324 		r17, r22, r0
+1000050f:	Address 0x1000050f is out of bounds.
+
+Disassembly of section .bss:
+
+10000518 <bss_begin>:
+	...
+
+10004518 <text_buf>:
+	...
+
+10004958 <disk_buffer>:
+	...
+
+10005958 <ascii_buffer>:
+	...
+
+10005968 <sysinfo_buff>:
+	...
+
+100059a8 <uname_info>:
+	...

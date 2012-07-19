@@ -1,0 +1,445 @@
+
+./ll:     file format elf32-hppa-linux
+
+Disassembly of section .text:
+
+00010054 <_start>:
+   10054:	22 a8 00 00 	ldil L%10000,r21
+   10058:	36 b5 07 e8 	ldo 3f4(r21),r21
+   1005c:	22 c8 00 00 	ldil L%10000,r22
+   10060:	36 d6 0a f0 	ldo 578(r22),r22
+   10064:	34 08 07 80 	ldi 3c0,r8
+   10068:	b6 a9 00 d2 	addi 69,r21,r9
+   1006c:	b6 ac 03 08 	addi 184,r21,r12
+   10070:	b6 db 03 b0 	addi 1d8,r22,dp
+   10074:	22 08 30 00 	ldil L%11800,r16
+   10078:	36 10 07 20 	ldo 390(r16),r16
+   1007c:	08 10 02 51 	copy r16,r17
+   10080:	34 1c 01 fe 	ldi ff,ret0
+   10084:	34 1d 3f c0 	ldi 1fe0,ret1
+   10088:	08 1d 06 dd 	shladd ret1,3,r0,ret1
+
+0001008c <decompression_loop>:
+   1008c:	0d 20 10 0a 	ldb 0(r9),r10
+   10090:	b5 29 00 02 	addi 1,r9,r9
+   10094:	08 0a 02 4b 	copy r10,r11
+   10098:	0b ab 02 4b 	or r11,ret1,r11
+
+0001009c <test_flags>:
+   1009c:	81 2c 21 00 	cmpb,= r12,r9,10124 <done_logo>
+   100a0:	34 0d 00 02 	ldi 1,r13
+   100a4:	09 6d 02 0d 	and r13,r11,r13
+   100a8:	8d a0 20 c8 	cmpib,<> 0,r13,10114 <discrete_char>
+   100ac:	d1 60 0b cb 	shrpw r0,r11,1,r11
+
+000100b0 <offset_length>:
+   100b0:	0d 22 10 18 	ldb 1(r9),r24
+   100b4:	0d 20 10 0a 	ldb 0(r9),r10
+   100b8:	d5 58 0d 18 	depw r24,23,8,r10
+   100bc:	08 0a 02 58 	copy r10,r24
+   100c0:	b5 29 00 04 	addi 2,r9,r9
+   100c4:	d1 40 0a af 	shrpw r0,r10,10,r15
+   100c8:	b5 ef 00 06 	addi 3,r15,r15
+
+000100cc <output_loop>:
+   100cc:	d5 a6 19 18 	depwi,z 3,23,8,r13
+   100d0:	b5 ad 01 fe 	addi ff,r13,r13
+   100d4:	09 b8 02 18 	and r24,r13,r24
+   100d8:	0f 1b 00 0a 	ldb dp(r24),r10
+   100dc:	b7 18 00 02 	addi 1,r24,r24
+
+000100e0 <store_byte>:
+   100e0:	0e 2a 12 00 	stb r10,0(r17)
+   100e4:	b6 31 00 02 	addi 1,r17,r17
+   100e8:	09 1b 06 1a 	add dp,r8,r26
+   100ec:	0f 4a 12 00 	stb r10,0(r26)
+   100f0:	b5 08 00 02 	addi 1,r8,r8
+   100f4:	34 0d 07 fe 	ldi 3ff,r13
+   100f8:	b5 ef 07 ff 	addi -1,r15,r15
+   100fc:	8d e0 3f 95 	cmpib,<> 0,r15,100cc <output_loop>
+   10100:	09 0d 02 08 	and r13,r8,r8
+   10104:	0b ab 02 0d 	and r11,ret1,r13
+   10108:	8d a0 3f 1d 	cmpib,<> 0,r13,1009c <test_flags>
+   1010c:	08 00 02 40 	nop
+   10110:	e8 1f 1e ed 	b,l 1008c <decompression_loop>,r0
+
+00010114 <discrete_char>:
+   10114:	0d 20 10 0a 	ldb 0(r9),r10
+   10118:	b5 29 00 02 	addi 1,r9,r9
+   1011c:	e8 1f 1f 7d 	b,l 100e0 <store_byte>,r0
+   10120:	34 0f 00 02 	ldi 1,r15
+
+00010124 <done_logo>:
+   10124:	e8 40 03 e0 	b,l 1031c <write_stdout>,rp
+   10128:	08 10 02 59 	copy r16,r25
+   1012c:	b6 da 00 a0 	addi 50,r22,r26
+   10130:	08 1a 02 4f 	copy r26,r15
+   10134:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   10138:	34 14 00 76 	ldi 3b,r20
+   1013c:	08 10 02 51 	copy r16,r17
+   10140:	e8 40 02 e8 	b,l 102bc <strcat>,rp
+   10144:	b5 f9 00 00 	addi 0,r15,r25
+   10148:	e8 40 02 d8 	b,l 102bc <strcat>,rp
+   1014c:	b6 b9 00 00 	addi 0,r21,r25
+   10150:	e8 40 02 c8 	b,l 102bc <strcat>,rp
+   10154:	b5 f9 01 04 	addi 82,r15,r25
+   10158:	e8 40 02 b8 	b,l 102bc <strcat>,rp
+   1015c:	b6 b9 00 14 	addi a,r21,r25
+   10160:	e8 40 02 a8 	b,l 102bc <strcat>,rp
+   10164:	b5 f9 01 86 	addi c3,r15,r25
+   10168:	e8 40 02 d0 	b,l 102d8 <center_and_print>,rp
+   1016c:	08 00 02 40 	nop
+   10170:	08 10 02 51 	copy r16,r17
+   10174:	b6 ba 00 78 	addi 3c,r21,r26
+   10178:	34 19 00 00 	ldi 0,r25
+   1017c:	34 18 00 00 	ldi 0,r24
+   10180:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   10184:	34 14 00 0a 	ldi 5,r20
+   10188:	08 1c 02 4e 	copy ret0,r14
+   1018c:	08 0e 02 5a 	copy r14,r26
+   10190:	23 28 10 00 	ldil L%10800,r25
+   10194:	37 39 07 20 	ldo 390(r25),r25
+   10198:	34 18 20 00 	ldi 1000,r24
+   1019c:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   101a0:	34 14 00 06 	ldi 3,r20
+   101a4:	08 0e 02 5a 	copy r14,r26
+   101a8:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   101ac:	34 14 00 0c 	ldi 6,r20
+
+000101b0 <number_of_cpus>:
+   101b0:	e8 40 02 08 	b,l 102bc <strcat>,rp
+   101b4:	b6 b9 00 94 	addi 4a,r21,r25
+
+000101b8 <print_mhz>:
+   101b8:	23 4a d4 08 	ldil L%204d4800,r26
+   101bc:	37 5a 00 f4 	ldo 7a(r26),r26
+   101c0:	e8 40 01 18 	b,l 10254 <find_string>,rp
+   101c4:	34 18 00 5c 	ldi 2e,r24
+   101c8:	e8 40 01 d8 	b,l 102bc <strcat>,rp
+   101cc:	b6 b9 00 9e 	addi 4f,r21,r25
+
+000101d0 <chip_name>:
+   101d0:	23 43 2c 6e 	ldil L%63707000,r26
+   101d4:	37 5a 0a 12 	ldo 509(r26),r26
+   101d8:	e8 40 00 e8 	b,l 10254 <find_string>,rp
+   101dc:	34 18 00 40 	ldi 20,r24
+   101e0:	e8 40 01 a8 	b,l 102bc <strcat>,rp
+   101e4:	b6 b9 00 b8 	addi 5c,r21,r25
+   101e8:	b6 da 00 20 	addi 10,r22,r26
+   101ec:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   101f0:	34 14 00 e8 	ldi 74,r20
+   101f4:	4b 5a 00 20 	ldw 10(r26),r26
+   101f8:	d3 40 09 66 	shrpw r0,r26,20,r6
+   101fc:	e8 40 02 80 	b,l 10344 <num_to_ascii>,rp
+   10200:	34 09 00 02 	ldi 1,r9
+   10204:	e8 40 01 60 	b,l 102bc <strcat>,rp
+   10208:	b6 b9 00 2c 	addi 16,r21,r25
+   1020c:	23 4b ad ac 	ldil L%6d697000,r26
+   10210:	37 5a 00 e6 	ldo 73(r26),r26
+   10214:	e8 40 00 70 	b,l 10254 <find_string>,rp
+   10218:	34 18 00 14 	ldi a,r24
+   1021c:	e8 40 01 30 	b,l 102bc <strcat>,rp
+   10220:	b6 b9 00 3c 	addi 1e,r21,r25
+   10224:	e8 40 01 58 	b,l 102d8 <center_and_print>,rp
+   10228:	08 00 02 40 	nop
+   1022c:	08 11 02 50 	copy r17,r16
+   10230:	e8 40 01 08 	b,l 102bc <strcat>,rp
+   10234:	b5 f9 00 82 	addi 41,r15,r25
+   10238:	e8 40 01 30 	b,l 102d8 <center_and_print>,rp
+   1023c:	08 00 02 40 	nop
+   10240:	e8 40 01 a8 	b,l 1031c <write_stdout>,rp
+   10244:	b6 b9 00 60 	addi 30,r21,r25
+
+00010248 <exit>:
+   10248:	34 1a 00 00 	ldi 0,r26
+   1024c:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   10250:	34 14 00 02 	ldi 1,r20
+
+00010254 <find_string>:
+   10254:	21 48 10 00 	ldil L%10800,r10
+   10258:	35 4a 07 1e 	ldo 38f(r10),r10
+   1025c:	34 0c 00 74 	ldi 3a,r12
+   10260:	34 0b 00 00 	ldi 0,r11
+
+00010264 <find_loop>:
+   10264:	d5 6b 0d 08 	depw r11,23,24,r11
+   10268:	0d 42 10 09 	ldb 1(r10),r9
+   1026c:	d5 69 0c 18 	depw r9,31,8,r11
+   10270:	85 60 20 80 	cmpib,= 0,r11,102b8 <done>
+   10274:	b5 4a 00 02 	addi 1,r10,r10
+   10278:	89 7a 3f cd 	cmpb,<> r26,r11,10264 <find_loop>
+   1027c:	08 00 02 40 	nop
+
+00010280 <find_colon>:
+   10280:	0d 42 10 0b 	ldb 1(r10),r11
+   10284:	85 60 20 58 	cmpib,= 0,r11,102b8 <done>
+   10288:	b5 4a 00 02 	addi 1,r10,r10
+   1028c:	89 6c 3f dd 	cmpb,<> r12,r11,10280 <find_colon>
+   10290:	08 00 02 40 	nop
+   10294:	b5 4a 00 04 	addi 2,r10,r10
+
+00010298 <store_loop>:
+   10298:	0d 40 10 0b 	ldb 0(r10),r11
+   1029c:	85 60 20 28 	cmpib,= 0,r11,102b8 <done>
+   102a0:	b5 4a 00 02 	addi 1,r10,r10
+   102a4:	83 0b 20 18 	cmpb,= r11,r24,102b8 <done>
+   102a8:	08 00 02 40 	nop
+   102ac:	0e 2b 12 00 	stb r11,0(r17)
+   102b0:	e8 1f 1f c5 	b,l 10298 <store_loop>,r0
+   102b4:	b6 31 00 02 	addi 1,r17,r17
+
+000102b8 <done>:
+   102b8:	e8 40 c0 02 	bv,n r0(rp)
+
+000102bc <strcat>:
+   102bc:	0f 20 10 12 	ldb 0(r25),r18
+   102c0:	86 40 20 18 	cmpib,= 0,r18,102d4 <done_strcat>
+   102c4:	0e 32 12 00 	stb r18,0(r17)
+   102c8:	b7 39 00 02 	addi 1,r25,r25
+   102cc:	e8 1f 1f d5 	b,l 102bc <strcat>,r0
+   102d0:	b6 31 00 02 	addi 1,r17,r17
+
+000102d4 <done_strcat>:
+   102d4:	e8 40 c0 02 	bv,n r0(rp)
+
+000102d8 <center_and_print>:
+   102d8:	08 02 02 43 	copy rp,r3
+   102dc:	0a 11 04 04 	sub r17,r16,r4
+   102e0:	34 05 00 a0 	ldi 50,r5
+   102e4:	88 a4 60 40 	cmpb,> r4,r5,1030c <done_center>
+   102e8:	34 09 00 00 	ldi 0,r9
+   102ec:	08 85 04 04 	sub r5,r4,r4
+   102f0:	d0 80 0b c4 	shrpw r0,r4,1,r4
+   102f4:	e8 40 00 40 	b,l 1031c <write_stdout>,rp
+   102f8:	b6 b9 00 6e 	addi 37,r21,r25
+   102fc:	e8 40 00 80 	b,l 10344 <num_to_ascii>,rp
+   10300:	08 04 02 46 	copy r4,r6
+   10304:	e8 40 00 20 	b,l 1031c <write_stdout>,rp
+   10308:	b6 b9 00 74 	addi 3a,r21,r25
+
+0001030c <done_center>:
+   1030c:	e8 40 00 10 	b,l 1031c <write_stdout>,rp
+   10310:	08 10 02 59 	copy r16,r25
+   10314:	b6 b9 00 5c 	addi 2e,r21,r25
+   10318:	08 03 02 42 	copy r3,rp
+
+0001031c <write_stdout>:
+   1031c:	34 1a 00 02 	ldi 1,r26
+   10320:	34 18 00 00 	ldi 0,r24
+   10324:	08 19 02 52 	copy r25,r18
+
+00010328 <str_loop1>:
+   10328:	b6 52 00 02 	addi 1,r18,r18
+   1032c:	0e 40 10 13 	ldb 0(r18),r19
+   10330:	8e 60 3f e5 	cmpib,<> 0,r19,10328 <str_loop1>
+   10334:	b7 18 00 02 	addi 1,r24,r24
+   10338:	e4 00 82 00 	be,l 100(sr2,r0),sr0,r31
+   1033c:	34 14 00 08 	ldi 4,r20
+   10340:	e8 40 c0 02 	bv,n r0(rp)
+
+00010344 <num_to_ascii>:
+   10344:	b6 c5 00 14 	addi a,r22,r5
+   10348:	08 02 02 47 	copy rp,r7
+
+0001034c <div_by_10>:
+   1034c:	b4 a5 07 ff 	addi -1,r5,r5
+   10350:	08 06 02 5a 	copy r6,r26
+   10354:	e8 40 00 60 	b,l 1038c <div_uint>,rp
+   10358:	34 19 00 14 	ldi a,r25
+   1035c:	08 06 02 5a 	copy r6,r26
+   10360:	e8 40 00 a8 	b,l 103bc <mod_uint>,rp
+   10364:	34 19 00 14 	ldi a,r25
+   10368:	b7 bd 00 60 	addi 30,ret1,ret1
+   1036c:	08 1c 02 46 	copy ret0,r6
+   10370:	8f 80 3f ad 	cmpib,<> 0,ret0,1034c <div_by_10>
+   10374:	0c bd 12 00 	stb ret1,0(r5)
+
+00010378 <write_out>:
+   10378:	08 05 02 59 	copy r5,r25
+   1037c:	85 20 3f 35 	cmpib,= 0,r9,1031c <write_stdout>
+   10380:	08 07 02 42 	copy r7,rp
+   10384:	e8 1f 1e 65 	b,l 102bc <strcat>,r0
+   10388:	08 00 02 40 	nop
+
+0001038c <div_uint>:
+   1038c:	22 e0 08 00 	ldil L%40000000,r23
+   10390:	37 21 3f ff 	ldo -1(r25),r1
+   10394:	97 21 00 00 	subi 0,r25,r1
+   10398:	08 20 04 40 	ds r0,r1,r0
+   1039c:	0b 5a 06 1c 	add r26,r26,ret0
+   103a0:	0b 20 04 41 	ds r0,r25,r1
+
+000103a4 <div_uint_loop>:
+   103a4:	0b 9c 07 1c 	add,c ret0,ret0,ret0
+   103a8:	d2 e0 0b d7 	shrpw r0,r23,1,r23
+   103ac:	8e e0 3f e5 	cmpib,<> 0,r23,103a4 <div_uint_loop>
+   103b0:	0b 21 04 41 	ds r1,r25,r1
+   103b4:	e8 40 c0 00 	bv r0(rp)
+   103b8:	0b 9c 07 1c 	add,c ret0,ret0,ret0
+
+000103bc <mod_uint>:
+   103bc:	22 e0 08 00 	ldil L%40000000,r23
+   103c0:	37 21 3f ff 	ldo -1(r25),r1
+   103c4:	97 3d 00 00 	subi 0,r25,ret1
+   103c8:	0b a0 04 40 	ds r0,ret1,r0
+   103cc:	0b 5a 06 01 	add r26,r26,r1
+   103d0:	0b 20 04 5d 	ds r0,r25,ret1
+
+000103d4 <mod_uint_loop>:
+   103d4:	08 21 07 01 	add,c r1,r1,r1
+   103d8:	d2 e0 0b d7 	shrpw r0,r23,1,r23
+   103dc:	8e e0 3f e5 	cmpib,<> 0,r23,103d4 <mod_uint_loop>
+   103e0:	0b 3d 04 5d 	ds ret1,r25,ret1
+   103e4:	93 a0 60 00 	cmpiclr,<= 0,ret1,r0
+   103e8:	0b 3d 06 1d 	add ret1,r25,ret1
+   103ec:	e8 40 c0 00 	bv r0(rp)
+   103f0:	08 00 02 40 	nop
+Disassembly of section .data:
+
+000103f4 <ver_string>:
+   103f4:	20 56 65 72 	ldil L%2b96d000,rp
+   103f8:	73 69 6f 6e 	fstd,mb fr9,17b0(sr1,dp)
+   103fc:	20 00 2c 20 	ldil L%61001000,r0
+
+000103fe <compiled_string>:
+   103fe:	2c 20 43 6f 	cstd,5,m r15,r0(sr1,r1)
+   10402:	6d 70 69 6c 	stw,mb r16,14b6(sr1,r11)
+   10406:	65 64 20 00 	sth r4,1000(r11)
+
+0001040a <ram_comma>:
+   1040a:	4d 20 52 41 	ldw,ma -16e0(sr1,r9),r0
+   1040e:	4d 2c 20 00 	ldw,mb 1000(r9),r12
+
+00010412 <bogo_total>:
+   10412:	20 42 6f 67 	ldil L%-4cbb000,rp
+   10416:	6f 6d 69 70 	stw,mb r13,14b8(sr1,dp)
+   1041a:	73 20 54 6f 	fstd,mb fr0,-15d0(sr1,r25)
+   1041e:	74 61 6c 00 	#74616c00
+
+00010422 <linefeed>:
+   10422:	0a 00 1b 5b 	# a001b5b
+
+00010424 <default_colors>:
+   10424:	1b 5b 30 6d 	fmpyadd,sgl fr26,fr27,fr29,fr17,fr22
+   10428:	0a 0a 00 1b 	andcm r10,r16,dp
+
+0001042b <escape>:
+   1042b:	1b 5b 00 43 	fmpyadd,dbl fr26,fr27,fpe6,fpe2,fr0
+
+0001042e <c>:
+   1042e:	43 00 2f 70 	ldb 17b8(r24),r0
+
+00010430 <cpuinfo>:
+   10430:	2f 70 72 6f 	cstd,1,o r15,0(sr1,dp)
+   10434:	63 2f 63 70 	stb r15,11b8(sr1,r25)
+   10438:	75 69 6e 66 	#75696e66
+   1043c:	6f 00 4f 6e 	stw,ma r0,7b7(sr1,r24)
+
+0001043e <one>:
+   1043e:	4f 6e 65 20 	ldw,mb 1290(sr1,dp),r14
+	...
+
+00010443 <MHz>:
+   10443:	4d 48 7a 20 	ldw,mb 1d10(sr1,r10),r8
+   10447:	50 41 2d 52 	fldd 16a8(rp),fpe2
+   1044b:	49 53 43 20 	ldw 190(sr1,r10),r19
+	...
+
+00010450 <processor>:
+   10450:	20 50 72 6f 	ldil L%-6c89e800,rp
+   10454:	63 65 73 73 	stb r5,-647(sr1,dp)
+   10458:	6f 72 2c 20 	stw,mb r18,1610(dp)
+	...
+
+0001045d <logo>:
+   1045d:	ff 1b 5b 30 	#ff1b5b30
+   10461:	3b 31 3b 33 	#3b313b33
+   10465:	37 9f 3b 34 	ldo 1d9a(ret0),r31
+   10469:	37 6d 23 cc 	ldo 11e6(dp),r13
+   1046d:	f7 c0 07 33 	depdi 0,38,13,sp
+   10471:	8d 30 c8 1b 	cmpib,nsv,n 8,r9,e885 <_start-0x17cf>
+   10475:	1b 5b c4 07 	fmpyadd,dbl fr26,fr27,fr7,fr16,fr24
+   10479:	cb 1f 1c 0c 	movb r31,r24,12285 <out_buffer+0x6f5>
+   1047d:	3b 0f 34 30 	#3b0f3430
+   10481:	6d 0a c0 f7 	stw,ma r10,-1f85(sr3,r8)
+   10485:	01 60 1a 38 	# 1601a38
+   10489:	2c 9c 1f 1b 	cstd,4,o dp,0(r4)
+   1048d:	5b 33 31 6d 	fldw,mb -74c(r25),fr19
+   10491:	cc 04 41 ac 	movib,< 2,r0,1156d <disk_buffer+0x9dd>
+   10495:	0d 24 02 1c 	# d24021c
+   10499:	10 4f 0d 20 	spop2,4,3c20,n rp
+   1049d:	10 41 93 98 	spop1,6,832 r24
+   104a1:	83 34 1c 34 	cmpb r20,r25,122c1 <out_buffer+0x731>
+   104a5:	cc 10 10 0c 	movib 8,r0,11cb1 <out_buffer+0x121>
+   104a9:	24 6f 39 ec 	cldw,7,o,sl 0(r3),r12
+   104ad:	a7 1c 08 33 	addib,n e,r24,e8cd <_start-0x1787>
+   104b1:	16 14 89 55 	diag 2148955
+   104b5:	2c 60 00 2b 	fldd,m r0(r3),fr11
+   104b9:	61 d6 71 e2 	stb r22,18f1(sr1,r14)
+   104bd:	c8 cb 08 d4 	movb r11,r6,1192d <disk_buffer+0xd9d>
+   104c1:	09 d3 10 2b 	andcm,*tr r19,r14,r11
+   104c5:	59 f5 d1 00 	fldw,ma 880(sr3,r15),fr21
+   104c9:	80 11 d2 18 	cmpb,sv r17,r0,10ddd <disk_buffer+0x24d>
+   104cd:	0d 28 1c 14 	ldb 4(r9),r20
+   104d1:	0d 2c 1c 1c 	ldb 6(r9),ret0
+   104d5:	f0 4a 1a 5b 	depd,z r10,13,37,rp
+   104d9:	00 0d 50 5f 	#   d505f
+   104dd:	65 87 65 2b 	sth r7,-d6b(sr1,r12)
+   104e1:	55 f5 cd cd 	#55f5cdcd
+   104e5:	28 cd 14 89 	addil L%-5bbe5800,r6,r1
+   104e9:	41 00 1d 87 	ldb -113d(r8),r0
+   104ed:	42 4b 72 53 	ldb -6d7(sr1,r18),r11
+   104f1:	1c 78 0f 62 	#1c780f62
+   104f5:	87 6d 55 58 	cmpib,< -a,dp,10fa9 <disk_buffer+0x419>
+   104f9:	f7 c1 00 e8 	depdi,z -10,56,24,sp
+   104fd:	2b f4 97 49 	addil L%-45b57800,r31,r1
+   10501:	78 3d b0 1b 	fstw,ma  fr29R,-7f4(sr2,r1)
+   10505:	5f 97 b0 12 	fldw 1808(sr2,ret0),fr23R
+   10509:	2b ab ca 10 	addil L%508d6000,ret1,r1
+   1050d:	df 16 1a f5 	#df161af5
+   10511:	5a f5 d9 3f 	fldw,mb -1364(sr3,r23),fr21R
+   10515:	33 1b 56 92 	copr,2,31b572
+   10519:	5b b0 02 00 	fldw,ma 100(ret1),fr16
+   1051d:	0c 1d d3 c8 	# c1dd3c8
+   10521:	ac 39 17 66 	addib,tr,n -4,r1,120d9 <out_buffer+0x549>
+   10525:	32 f6 6e 6d 	copr,1,2f66ed,n
+   10529:	ec 44 60 5e 	cmpib,*<=,n 2,rp,1155d <disk_buffer+0x9cd>
+   1052d:	08 af 0a a6 	shladd,l r15,2,r5,r6
+   10531:	69 14 01 30 	stw r20,98(r8)
+   10535:	33 0b de 1f 	copr,0,30bdff
+   10539:	31 0f d3 bc 	copr,6,10fd3c,n
+   1053d:	00 af 4f 19 	#  af4f19
+   10541:	56 aa 45 52 	#56aa4552
+   10545:	db 28 52 46 	extrd,u,*< r25,18,58,r8
+   10549:	7f 08 53 db 	fstw fr8R,-1614(sr1,r24)
+   1054d:	23 00 a9 55 	ldil L%-3557f000,r24
+   10551:	aa 35 18 21 	addb,tr r21,r17,f169 <_start-0xeeb>
+   10555:	12 68 91 2a 	spop0,4,9a24a,n
+   10559:	c8 22 b2 68 	movb,<> rp,r1,10e95 <disk_buffer+0x305>
+   1055d:	70 2d 00 c6 	fstd fr13,60(r1)
+   10561:	50 b2 79 91 	ldd -338(sr1,r5),r18
+   10565:	4a 70 31 f8 	ldw 18fc(r19),r16
+   10569:	51 f3 28 dd 	ldd,mb -b98(r15),r19
+   1056d:	17 ff 17 08 	diag 3ff1708
+   10571:	02 36 03 24 	# 2360324
+   10575:	Address 0x00010575 is out of bounds.
+
+Disassembly of section .bss:
+
+00010578 <ascii_buff>:
+	...
+
+00010588 <sysinfo_buff>:
+	...
+
+000105c8 <uname_info>:
+	...
+
+00010750 <text_buf>:
+	...
+
+00010b90 <disk_buffer>:
+	...
+
+00011b90 <out_buffer>:
+	...

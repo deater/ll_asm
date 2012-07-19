@@ -1,0 +1,429 @@
+
+ll.s390:     file format elf32-s390
+
+
+Disassembly of section .text:
+
+00400054 <_start>:
+  400054:	0d 10             	basr	%r1,%r0
+
+00400056 <base>:
+  400056:	41 20 00 56       	la	%r2,86
+  40005a:	1b 12             	sr	%r1,%r2
+  40005c:	a7 a8 03 c0       	lhi	%r10,960
+  400060:	41 b0 16 00       	la	%r11,1536(%r1)
+  400064:	41 c0 13 08       	la	%r12,776(%r1)
+  400068:	41 d0 14 23       	la	%r13,1059(%r1)
+  40006c:	41 e0 1a 40       	la	%r14,2624(%r1)
+  400070:	a7 98 00 01       	lhi	%r9,1
+
+00400074 <decompression_loop>:
+  400074:	a7 88 00 08       	lhi	%r8,8
+  400078:	48 20 c0 00       	lh	%r2,0(%r12)
+  40007c:	1a c9             	ar	%r12,%r9
+
+0040007e <test_flags>:
+  40007e:	19 cd             	cr	%r12,%r13
+  400080:	a7 84 00 37       	je	4000ee <done_logo>
+  400084:	a7 21 00 01       	tml	%r2,1
+  400088:	88 20 00 01       	srl	%r2,1
+  40008c:	a7 74 00 2b       	jne	4000e2 <discrete_char>
+
+00400090 <offset_length>:
+  400090:	48 60 c0 00       	lh	%r6,0(%r12)
+  400094:	a7 38 00 ff       	lhi	%r3,255
+  400098:	14 63             	nr	%r6,%r3
+  40009a:	48 70 c0 01       	lh	%r7,1(%r12)
+  40009e:	a7 ca 00 02       	ahi	%r12,2
+  4000a2:	14 73             	nr	%r7,%r3
+  4000a4:	89 70 00 08       	sll	%r7,8
+  4000a8:	16 67             	or	%r6,%r7
+  4000aa:	18 56             	lr	%r5,%r6
+  4000ac:	88 50 00 0a       	srl	%r5,10
+  4000b0:	a7 5a 00 03       	ahi	%r5,3
+
+004000b4 <output_loop>:
+  4000b4:	a7 38 03 ff       	lhi	%r3,1023
+  4000b8:	14 63             	nr	%r6,%r3
+  4000ba:	48 46 b0 00       	lh	%r4,0(%r6,%r11)
+  4000be:	88 40 00 08       	srl	%r4,8
+  4000c2:	1a 69             	ar	%r6,%r9
+
+004000c4 <store_byte>:
+  4000c4:	42 40 e0 00       	stc	%r4,0(%r14)
+  4000c8:	1a e9             	ar	%r14,%r9
+  4000ca:	42 4a b0 00       	stc	%r4,0(%r10,%r11)
+  4000ce:	1a a9             	ar	%r10,%r9
+  4000d0:	a7 38 03 ff       	lhi	%r3,1023
+  4000d4:	14 a3             	nr	%r10,%r3
+  4000d6:	46 50 10 b4       	bct	%r5,180(%r1)
+  4000da:	46 80 10 7e       	bct	%r8,126(%r1)
+  4000de:	a7 f4 ff cb       	j	400074 <decompression_loop>
+
+004000e2 <discrete_char>:
+  4000e2:	48 40 c0 00       	lh	%r4,0(%r12)
+  4000e6:	1a c9             	ar	%r12,%r9
+  4000e8:	18 59             	lr	%r5,%r9
+  4000ea:	a7 f4 ff ed       	j	4000c4 <store_byte>
+
+004000ee <done_logo>:
+  4000ee:	41 30 1a 40       	la	%r3,2624(%r1)
+  4000f2:	18 83             	lr	%r8,%r3
+  4000f4:	a7 e5 00 ba       	bras	%r14,400268 <write_stdout>
+
+004000f8 <print_version>:
+  4000f8:	41 a0 11 da       	la	%r10,474(%r1)
+  4000fc:	18 d8             	lr	%r13,%r8
+  4000fe:	41 20 14 38       	la	%r2,1080(%r1)
+  400102:	18 c2             	lr	%r12,%r2
+  400104:	0a 7a             	svc	122
+  400106:	0d ea             	basr	%r14,%r10
+  400108:	41 c0 12 7e       	la	%r12,638(%r1)
+  40010c:	0d ea             	basr	%r14,%r10
+  40010e:	41 c0 14 ba       	la	%r12,1210(%r1)
+  400112:	0d ea             	basr	%r14,%r10
+  400114:	41 c0 12 88       	la	%r12,648(%r1)
+  400118:	0d ea             	basr	%r14,%r10
+  40011a:	41 c0 14 fb       	la	%r12,1275(%r1)
+  40011e:	0d ea             	basr	%r14,%r10
+  400120:	a7 48 0a 00       	lhi	%r4,2560
+  400124:	40 40 d0 00       	sth	%r4,0(%r13)
+  400128:	a7 e5 00 86       	bras	%r14,400234 <center_and_print>
+
+0040012c <middle_line>:
+  40012c:	41 20 12 c8       	la	%r2,712(%r1)
+  400130:	1b 33             	sr	%r3,%r3
+  400132:	0a 05             	svc	5
+  400134:	18 62             	lr	%r6,%r2
+  400136:	58 30 14 24       	l	%r3,1060(%r1)
+  40013a:	a7 48 10 00       	lhi	%r4,4096
+  40013e:	0a 03             	svc	3
+  400140:	18 26             	lr	%r2,%r6
+  400142:	0a 06             	svc	6
+
+00400144 <end_cpuinfo>:
+  400144:	41 d0 14 28       	la	%r13,1064(%r1)
+  400148:	41 40 12 e6       	la	%r4,742(%r1)
+  40014c:	a7 e5 00 5f       	bras	%r14,40020a <find_string>
+  400150:	a7 da ff ff       	ahi	%r13,-1
+  400154:	48 40 d0 00       	lh	%r4,0(%r13)
+  400158:	8a 40 00 08       	sra	%r4,8
+  40015c:	a7 38 00 0f       	lhi	%r3,15
+  400160:	14 43             	nr	%r4,%r3
+  400162:	18 24             	lr	%r2,%r4
+  400164:	a7 4a ff ff       	ahi	%r4,-1
+  400168:	8b 40 00 02       	sla	%r4,2
+  40016c:	41 50 12 d6       	la	%r5,726(%r1)
+  400170:	1a 54             	ar	%r5,%r4
+  400172:	18 d8             	lr	%r13,%r8
+  400174:	58 c0 50 00       	l	%r12,0(%r5)
+  400178:	0d ea             	basr	%r14,%r10
+  40017a:	41 40 12 ee       	la	%r4,750(%r1)
+  40017e:	a7 e5 00 46       	bras	%r14,40020a <find_string>
+  400182:	41 c0 12 94       	la	%r12,660(%r1)
+  400186:	0d ea             	basr	%r14,%r10
+  400188:	41 c0 12 9f       	la	%r12,671(%r1)
+  40018c:	46 20 11 92       	bct	%r2,402(%r1)
+  400190:	1a c9             	ar	%r12,%r9
+
+00400192 <no_s>:
+  400192:	0d ea             	basr	%r14,%r10
+  400194:	41 20 15 c0       	la	%r2,1472(%r1)
+  400198:	0a 74             	svc	116
+  40019a:	58 70 15 d0       	l	%r7,1488(%r1)
+  40019e:	8a 70 00 14       	sra	%r7,20
+  4001a2:	a7 e5 00 22       	bras	%r14,4001e6 <num_to_ascii>
+  4001a6:	18 c5             	lr	%r12,%r5
+  4001a8:	0d ea             	basr	%r14,%r10
+  4001aa:	41 c0 12 a3       	la	%r12,675(%r1)
+  4001ae:	0d ea             	basr	%r14,%r10
+  4001b0:	41 40 12 ea       	la	%r4,746(%r1)
+  4001b4:	a7 e5 00 2b       	bras	%r14,40020a <find_string>
+  4001b8:	41 c0 12 ab       	la	%r12,683(%r1)
+  4001bc:	0d ea             	basr	%r14,%r10
+  4001be:	a7 e5 00 3b       	bras	%r14,400234 <center_and_print>
+
+004001c2 <print_host_name>:
+  4001c2:	18 d8             	lr	%r13,%r8
+  4001c4:	41 c0 14 79       	la	%r12,1145(%r1)
+  4001c8:	0d ea             	basr	%r14,%r10
+  4001ca:	a7 e5 00 35       	bras	%r14,400234 <center_and_print>
+  4001ce:	41 30 12 bc       	la	%r3,700(%r1)
+  4001d2:	a7 e5 00 4b       	bras	%r14,400268 <write_stdout>
+  4001d6:	17 22             	xr	%r2,%r2
+  4001d8:	0a 01             	svc	1
+
+004001da <strcat>:
+  4001da:	1b 00             	sr	%r0,%r0
+
+004001dc <move_loop>:
+  4001dc:	b2 55 00 dc       	mvst	%r13,%r12
+  4001e0:	47 30 11 dc       	bnle	476(%r1)
+  4001e4:	0d 0e             	basr	%r0,%r14
+
+004001e6 <num_to_ascii>:
+  4001e6:	41 50 14 2f       	la	%r5,1071(%r1)
+  4001ea:	a7 48 00 0a       	lhi	%r4,10
+
+004001ee <div_by_10>:
+  4001ee:	17 66             	xr	%r6,%r6
+  4001f0:	1d 64             	dr	%r6,%r4
+  4001f2:	a7 6a 00 30       	ahi	%r6,48
+  4001f6:	42 60 50 00       	stc	%r6,0(%r5)
+  4001fa:	a7 5a ff ff       	ahi	%r5,-1
+  4001fe:	17 00             	xr	%r0,%r0
+  400200:	19 70             	cr	%r7,%r0
+  400202:	a7 74 ff f6       	jne	4001ee <div_by_10>
+  400206:	1a 59             	ar	%r5,%r9
+  400208:	0d 0e             	basr	%r0,%r14
+
+0040020a <find_string>:
+  40020a:	58 50 40 00       	l	%r5,0(%r4)
+  40020e:	58 60 14 24       	l	%r6,1060(%r1)
+
+00400212 <find_loop>:
+  400212:	58 70 60 00       	l	%r7,0(%r6)
+  400216:	1a 69             	ar	%r6,%r9
+  400218:	19 57             	cr	%r5,%r7
+  40021a:	a7 74 ff fc       	jne	400212 <find_loop>
+
+0040021e <find_colon>:
+  40021e:	a7 08 00 3a       	lhi	%r0,58
+  400222:	b2 5e 00 56       	srst	%r5,%r6
+  400226:	a7 5a 00 02       	ahi	%r5,2
+
+0040022a <store_loop>:
+  40022a:	a7 08 00 0a       	lhi	%r0,10
+  40022e:	b2 55 00 d5       	mvst	%r13,%r5
+
+00400232 <done>:
+  400232:	0d 0e             	basr	%r0,%r14
+
+00400234 <center_and_print>:
+  400234:	18 fe             	lr	%r15,%r14
+  400236:	41 30 12 c3       	la	%r3,707(%r1)
+  40023a:	a7 e5 00 17       	bras	%r14,400268 <write_stdout>
+  40023e:	18 38             	lr	%r3,%r8
+  400240:	1b d3             	sr	%r13,%r3
+  400242:	a7 78 00 50       	lhi	%r7,80
+  400246:	19 d7             	cr	%r13,%r7
+  400248:	47 20 12 66       	bh	614(%r1)
+  40024c:	1b 7d             	sr	%r7,%r13
+  40024e:	8a 70 00 01       	sra	%r7,1
+  400252:	a7 e5 ff ca       	bras	%r14,4001e6 <num_to_ascii>
+  400256:	18 35             	lr	%r3,%r5
+  400258:	a7 e5 00 08       	bras	%r14,400268 <write_stdout>
+  40025c:	41 30 12 c6       	la	%r3,710(%r1)
+  400260:	a7 e5 00 04       	bras	%r14,400268 <write_stdout>
+  400264:	18 38             	lr	%r3,%r8
+
+00400266 <done_center>:
+  400266:	18 ef             	lr	%r14,%r15
+
+00400268 <write_stdout>:
+  400268:	a7 28 00 01       	lhi	%r2,1
+
+0040026c <strlen>:
+  40026c:	1b 00             	sr	%r0,%r0
+  40026e:	18 53             	lr	%r5,%r3
+
+00400270 <strlen_loop>:
+  400270:	b2 5e 00 45       	srst	%r4,%r5
+  400274:	a7 34 ff fe       	jnle	400270 <strlen_loop>
+  400278:	1b 43             	sr	%r4,%r3
+  40027a:	0a 04             	svc	4
+  40027c:	0d 0e             	basr	%r0,%r14
+
+0040027e <ver_string>:
+  40027e:	20 56             	lpdr	%f5,%f6
+  400280:	65 72 73 69       	.long	0x65727369
+  400284:	6f 6e 20 00       	sw	%f6,0(%r14,%r2)
+
+00400288 <compiled_string>:
+  400288:	2c 20             	mdr	%f2,%f0
+  40028a:	43 6f 6d 70       	ic	%r6,3440(%r15,%r6)
+  40028e:	69 6c 65 64       	cd	%f6,1380(%r12,%r6)
+  400292:	20 00             	lpdr	%f0,%f0
+
+00400294 <processor>:
+  400294:	20 50             	lpdr	%f5,%f0
+  400296:	72 6f 63 65       	.long	0x726f6365
+  40029a:	73 73 6f 72       	.long	0x73736f72
+	...
+
+0040029f <s_comma>:
+  40029f:	73 2c 20 00       	.long	0x732c2000
+
+004002a3 <ram_comma>:
+  4002a3:	4d 20 52 41       	bas	%r2,577(%r5)
+  4002a7:	4d 2c 20 00       	bas	%r2,0(%r12,%r2)
+
+004002ab <bogo_total>:
+  4002ab:	20 42             	lpdr	%f4,%f2
+  4002ad:	6f 67 6f 6d       	sw	%f6,3949(%r7,%r6)
+  4002b1:	69 70 73 20       	cd	%f7,800(%r7)
+  4002b5:	54 6f 74 61       	n	%r6,1121(%r15,%r7)
+  4002b9:	6c 0a 00 1b       	md	%f0,27(%r10,%r0)
+
+004002bc <default_colors>:
+  4002bc:	1b 5b             	sr	%r5,%r11
+  4002be:	30 6d             	lper	%f6,%f13
+  4002c0:	0a 0a             	svc	10
+	...
+
+004002c3 <escape>:
+  4002c3:	1b 5b             	sr	%r5,%r11
+	...
+
+004002c6 <C>:
+  4002c6:	43 00 2f 70       	ic	%r0,3952(%r2)
+
+004002c8 <cpuinfo>:
+  4002c8:	2f 70             	swr	%f7,%f0
+  4002ca:	72 6f 63 2f       	.long	0x726f632f
+  4002ce:	63 70 75 69       	.long	0x63707569
+  4002d2:	6e 66 6f 00       	aw	%f6,3840(%r6,%r6)
+
+004002d6 <ordinal>:
+  4002d6:	00 40 02 f2       	.long	0x004002f2
+  4002da:	00 40 02 f7       	.long	0x004002f7
+  4002de:	00 40 02 fc       	.long	0x004002fc
+  4002e2:	00 40 03 03       	.long	0x00400303
+
+004002e6 <search_sors>:
+  4002e6:	73 6f 72 73       	.long	0x736f7273
+
+004002ea <search_bogo>:
+  4002ea:	62 6f 67 6f       	.long	0x626f676f
+
+004002ee <search_r_id>:
+  4002ee:	72 5f 69 64       	.long	0x725f6964
+
+004002f2 <one>:
+  4002f2:	4f 6e 65 20       	cvb	%r6,1312(%r14,%r6)
+	...
+
+004002f7 <two>:
+  4002f7:	54 77 6f 20       	n	%r7,3872(%r7,%r6)
+	...
+
+004002fc <three>:
+  4002fc:	54 68 72 65       	n	%r6,613(%r8,%r7)
+  400300:	65 20 00 46       	.long	0x65200046
+
+00400303 <four>:
+  400303:	46 6f 75 72       	bct	%r6,1394(%r15,%r7)
+  400307:	20 00             	lpdr	%f0,%f0
+
+00400309 <logo>:
+  400309:	ff 1b 5b 30       	.long	0xff1b5b30
+  40030d:	3b 31             	ser	%f3,%f1
+  40030f:	3b 33             	ser	%f3,%f3
+  400311:	37 9f             	sxr	%f9,%f15
+  400313:	3b 34             	ser	%f3,%f4
+  400315:	37 6d             	sxr	%f6,%f13
+  400317:	23 cc             	lcdr	%f12,%f12
+  400319:	f7 c0 07 33       	.long	0xf7c00733
+  40031d:	8d 30 c8 1b       	sldl	%r3,2075(%r12)
+  400321:	1b 5b             	sr	%r5,%r11
+  400323:	c4 07 cb 1f       	.long	0xc407cb1f
+  400327:	1c 0c             	mr	%r0,%r12
+  400329:	3b 0f             	ser	%f0,%f15
+  40032b:	34 30             	her	%f3,%f0
+  40032d:	6d 0a c0 f7       	dd	%f0,247(%r10,%r12)
+  400331:	01 60 1a 38       	.long	0x01601a38
+  400335:	2c 9c             	mdr	%f9,%f12
+  400337:	1f 1b             	slr	%r1,%r11
+  400339:	5b 33 31 6d       	s	%r3,365(%r3,%r3)
+  40033d:	cc 04 41 ac       	.long	0xcc0441ac
+  400341:	0d 24             	basr	%r2,%r4
+  400343:	02 1c 10 4f       	.long	0x021c104f
+  400347:	0d 20             	basr	%r2,%r0
+  400349:	10 41             	lpr	%r4,%r1
+  40034b:	93 98 83 34       	.long	0x93988334
+  40034f:	1c 34             	mr	%r3,%r4
+  400351:	cc 10 10 0c       	.long	0xcc10100c
+  400355:	24 6f             	hdr	%f6,%f15
+  400357:	39 ec             	cer	%f14,%f12
+  400359:	a7 1c 08 33       	mhi	%r1,2099
+  40035d:	16 14             	or	%r1,%r4
+  40035f:	89 55 2c 60       	.long	0x89552c60
+  400363:	00 2b 61 d6       	.long	0x002b61d6
+  400367:	71 e2 c8 cb       	ms	%r14,2251(%r2,%r12)
+  40036b:	08 d4 09 d3       	.long	0x08d409d3
+  40036f:	10 2b             	lpr	%r2,%r11
+  400371:	59 f5 d1 00       	c	%r15,256(%r5,%r13)
+  400375:	80 11 d2 18       	.long	0x8011d218
+  400379:	0d 28             	basr	%r2,%r8
+  40037b:	1c 14             	mr	%r1,%r4
+  40037d:	0d 2c             	basr	%r2,%r12
+  40037f:	1c 1c             	mr	%r1,%r12
+  400381:	f0 4a 1a 5b 00 0d 	srp	2651(5,%r1),13,10
+  400387:	50 5f 65 87       	st	%r5,1415(%r15,%r6)
+  40038b:	65 2b 55 f5       	.long	0x652b55f5
+  40038f:	cd cd 28 cd       	.long	0xcdcd28cd
+  400393:	14 89             	nr	%r8,%r9
+  400395:	41 00 1d 87       	la	%r0,3463(%r1)
+  400399:	42 4b 72 53       	stc	%r4,595(%r11,%r7)
+  40039d:	1c 78             	mr	%r7,%r8
+  40039f:	0f 62             	clcl	%r6,%r2
+  4003a1:	87 6d 55 58       	bxle	%r6,%r13,1368(%r5)
+  4003a5:	f7 c1 00 e8       	.long	0xf7c100e8
+  4003a9:	2b f4             	sdr	%f15,%f4
+  4003ab:	97 49 78 3d       	xi	2109(%r7),73
+  4003af:	b0 1b 5f 97       	.long	0xb01b5f97
+  4003b3:	b0 12 2b ab       	.long	0xb0122bab
+  4003b7:	ca 10 df 16       	.long	0xca10df16
+  4003bb:	1a f5             	ar	%r15,%r5
+  4003bd:	5a f5 d9 3f       	a	%r15,2367(%r5,%r13)
+  4003c1:	33 1b             	lcer	%f1,%f11
+  4003c3:	56 92 5b b0       	o	%r9,2992(%r2,%r5)
+  4003c7:	02 00 0c 1d       	.long	0x02000c1d
+  4003cb:	d3 c8 ac 39 17 66 	mvz	3129(201,%r10),1894(%r1)
+  4003d1:	32 f6             	lter	%f15,%f6
+  4003d3:	6e 6d ec 44       	aw	%f6,3140(%r13,%r14)
+  4003d7:	60 5e 08 af       	std	%f5,2223(%r14,%r0)
+  4003db:	0a a6             	svc	166
+  4003dd:	69 14 01 30       	cd	%f1,304(%r4,%r0)
+  4003e1:	33 0b             	lcer	%f0,%f11
+  4003e3:	de 1f 31 0f d3 bc 	ed	271(32,%r3),956(%r13)
+  4003e9:	00 af 4f 19       	.long	0x00af4f19
+  4003ed:	56 aa 45 52       	o	%r10,1362(%r10,%r4)
+  4003f1:	db 28 52 46 7f 08 	mvcs	582(%r2,%r5),3848(%r7),%r8
+  4003f7:	53 db 23 00       	.long	0x53db2300
+  4003fb:	a9 55 aa 35       	clcle	%r5,%r5,2613(%r10)
+  4003ff:	18 21             	lr	%r2,%r1
+  400401:	12 68             	ltr	%r6,%r8
+  400403:	91 2a c8 22       	tm	2082(%r12),42
+  400407:	b2 68 70 2d       	.long	0xb268702d
+  40040b:	00 c6 50 b2       	.long	0x00c650b2
+  40040f:	79 91 4a 70       	ce	%f9,2672(%r1,%r4)
+  400413:	31 f8             	lner	%f15,%f8
+  400415:	51 f3 28 dd       	lae	%r15,2269(%r3,%r2)
+  400419:	17 ff             	xr	%r15,%r15
+  40041b:	17 08             	xr	%r0,%r8
+  40041d:	02 36 03 24       	.long	0x02360324
+  400421:	e5 42 0a 00       	.long	0xe5420a00
+
+00400424 <disk_buffer_p>:
+  400424:	00 40 4a 40       	.long	0x00404a40
+
+Disassembly of section .bss:
+
+00400428 <temp_ascii>:
+	...
+
+00400438 <uname_info>:
+	...
+
+004005c0 <sysinfo_buff>:
+	...
+
+00400600 <text_buf>:
+	...
+
+00400a40 <out_buffer>:
+	...
+
+00404a40 <disk_buffer>:
+	...

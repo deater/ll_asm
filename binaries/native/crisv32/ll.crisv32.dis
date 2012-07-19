@@ -1,0 +1,465 @@
+
+./ll:     file format elf32-us-cris
+
+Disassembly of section .text:
+
+00000000 <__start>:
+   0:	5f1c 4f19           	movu.w 0x194f,r1
+   4:	5f2c c003           	movu.w 0x3c0,r2
+   8:	5f3c 1a02           	movu.w 0x21a,r3
+   c:	5f4c 3503           	movu.w 0x335,r4
+  10:	5fcc 0605           	movu.w 0x506,r12
+
+00000014 <decompression_loop>:
+  14:	438c                	movu.b [r3+],r8
+  16:	5f8f 00ff           	or.w 0xff00,r8
+
+0000001a <test_flags>:
+  1a:	e346                	cmp.d r3,r4
+  1c:	3a30                	beq 56 <done_logo>
+  1e:	8083                	btstq 0,r8
+  20:	3070                	bmi 50 <discrete_char>
+  22:	e183                	lsrq 1,r8
+
+00000024 <offset_length>:
+  24:	53ac                	movu.w [r3+],r10
+  26:	6ab6                	move.d r10,r11
+  28:	eaa3                	lsrq 10,r10
+  2a:	03a2                	addq 3,r10
+
+0000002c <output_loop>:
+  2c:	1fbf ff03           	and.w 0x3ff,r11
+  30:	4bc5                	addi r12.b,r11,acr
+  32:	4f98                	movu.b [acr],r9
+  34:	01b2                	addq 1,r11
+
+00000036 <store_byte>:
+  36:	c19f                	move.b r9,[r1+]
+  38:	42c5                	addi r12.b,r2,acr
+  3a:	cf9b                	move.b r9,[acr]
+  3c:	0122                	addq 1,r2
+  3e:	81a2                	subq 1,r10
+  40:	ed20                	bne 2c <output_loop>
+  42:	1f2f ff03           	and.w 0x3ff,r2
+  46:	8883                	btstq 8,r8
+  48:	d370                	bmi 1a <test_flags>
+  4a:	b005                	nop 
+  4c:	c9e0                	ba 14 <decompression_loop>
+  4e:	b005                	nop 
+
+00000050 <discrete_char>:
+  50:	439c                	movu.b [r3+],r9
+  52:	e5e0                	ba 36 <store_byte>
+  54:	41a2                	moveq 1,r10
+
+00000056 <done_logo>:
+  56:	5f8c 7401           	movu.w 0x174,r8
+  5a:	5fbc 4f19           	movu.w 0x194f,r11
+  5e:	b8b9                	jsr r8
+  60:	6b36                	move.d r11,r3
+  62:	5fdc b001           	movu.w 0x1b0,r13
+  66:	5f5c 4e01           	movu.w 0x14e,r5
+  6a:	5f2c 8801           	movu.w 0x188,r2
+  6e:	5f7c 1e01           	movu.w 0x11e,r7
+
+00000072 <first_line>:
+  72:	5fac 4003           	movu.w 0x340,r10
+  76:	6a46                	move.d r10,r4
+  78:	4f9c 7a00           	movu.b 0x7a,r9
+  7c:	3de9                	break 13
+  7e:	bdb9                	jsr r13
+  80:	5314                	movu.w r3,r1
+  82:	bdb9                	jsr r13
+  84:	5f4c ba01           	movu.w 0x1ba,r4
+  88:	bdb9                	jsr r13
+  8a:	5f4c c203           	movu.w 0x3c2,r4
+  8e:	bdb9                	jsr r13
+  90:	5f4c c401           	movu.w 0x1c4,r4
+  94:	bdb9                	jsr r13
+  96:	5f4c 0304           	movu.w 0x403,r4
+  9a:	bdb9                	jsr r13
+  9c:	5f4c fe01           	movu.w 0x1fe,r4
+  a0:	b5b9                	jsr r5
+  a2:	b005                	nop 
+
+000000a4 <middle_line>:
+  a4:	6316                	move.d r3,r1
+  a6:	5fac 0c02           	movu.w 0x20c,r10
+  aa:	7b86                	clear.d r11
+  ac:	4592                	moveq 5,r9
+  ae:	3de9                	break 13
+  b0:	6a66                	move.d r10,r6
+  b2:	5fbc 4f09           	movu.w 0x94f,r11
+  b6:	5fcc 0010           	movu.w 0x1000,r12
+  ba:	4392                	moveq 3,r9
+  bc:	3de9                	break 13
+  be:	66a6                	move.d r6,r10
+  c0:	4692                	moveq 6,r9
+  c2:	3de9                	break 13
+
+000000c4 <number_of_cpus>:
+  c4:	bdb9                	jsr r13
+  c6:	5f4c d001           	movu.w 0x1d0,r4
+
+000000ca <chip_name>:
+  ca:	b7b9                	jsr r7
+  cc:	6fae 6f64 656c      	move.d 6c65646f <_end+0x6c650b0f>,r10
+  d2:	bdb9                	jsr r13
+  d4:	5f4c da01           	movu.w 0x1da,r4
+
+000000d8 <ram>:
+  d8:	5fac c604           	movu.w 0x4c6,r10
+  dc:	4f9c 7400           	movu.b 0x74,r9
+  e0:	3de9                	break 13
+  e2:	5ffc d604           	movu.w 0x4d6,acr
+  e6:	6faa                	move.d [acr],r10
+  e8:	f4a3                	lsrq 20,r10
+  ea:	b2b9                	jsr r2
+  ec:	41c2                	moveq 1,r12
+  ee:	bdb9                	jsr r13
+  f0:	5f4c e701           	movu.w 0x1e7,r4
+
+000000f4 <bogomips>:
+  f4:	b7b9                	jsr r7
+  f6:	6fae 6d69 7073      	move.d 7370696d <_end+0x7370100d>,r10
+  fc:	bdb9                	jsr r13
+  fe:	5f4c ef01           	movu.w 0x1ef,r4
+ 102:	b5b9                	jsr r5
+ 104:	b005                	nop 
+
+00000106 <last_line>:
+ 106:	6316                	move.d r3,r1
+ 108:	bdb9                	jsr r13
+ 10a:	5f4c 8103           	movu.w 0x381,r4
+ 10e:	b5b9                	jsr r5
+ 110:	b005                	nop 
+ 112:	b8b9                	jsr r8
+ 114:	5fbc 0002           	movu.w 0x200,r11
+
+00000118 <exit>:
+ 118:	4192                	moveq 1,r9
+ 11a:	7a86                	clear.d r10
+ 11c:	3de9                	break 13
+
+0000011e <find_string>:
+ 11e:	5f6c 4f09           	movu.w 0x94f,r6
+
+00000122 <find_loop>:
+ 122:	660a                	move.d [r6],r0
+ 124:	2630                	beq 14a <done>
+ 126:	0162                	addq 1,r6
+ 128:	e0a6                	cmp.d r0,r10
+ 12a:	f920                	bne 122 <find_loop>
+ 12c:	b005                	nop 
+ 12e:	0362                	addq 3,r6
+
+00000130 <skip_tabs>:
+ 130:	460c                	movu.b [r6+],r0
+ 132:	cf0e 2100           	cmp.b 0x21,r0
+ 136:	fbb0                	blt 130 <skip_tabs>
+ 138:	b005                	nop 
+ 13a:	0162                	addq 1,r6
+
+0000013c <store_loop>:
+ 13c:	460c                	movu.b [r6+],r0
+ 13e:	ca02                	cmpq 10,r0
+ 140:	0830                	beq 148 <almost_done>
+ 142:	b005                	nop 
+ 144:	c10f                	move.b r0,[r1+]
+ 146:	f7e0                	ba 13c <store_loop>
+
+00000148 <almost_done>:
+ 148:	710a                	clear.b [r1]
+
+0000014a <done>:
+ 14a:	f0b9                	ret 
+ 14c:	b005                	nop 
+
+0000014e <center_and_print>:
+ 14e:	7fb6                	move srp,acr
+ 150:	b8b9                	jsr r8
+ 152:	5fbc 0702           	movu.w 0x207,r11
+ 156:	61a6                	move.d r1,r10
+ 158:	63b6                	move.d r3,r11
+ 15a:	a3a6                	sub.d r3,r10
+ 15c:	aaa5                	neg.d r10,r10
+ 15e:	2fac 5100           	adds.b 81,r10
+ 162:	1070                	bmi 172 <done_center>
+ 164:	e1a3                	lsrq 1,r10
+ 166:	b2b9                	jsr r2
+ 168:	7c86                	clear.d r12
+ 16a:	b8b9                	jsr r8
+ 16c:	5fbc 0a02           	movu.w 0x20a,r11
+ 170:	63b6                	move.d r3,r11
+
+00000172 <done_center>:
+ 172:	3fb6                	move acr,srp
+
+00000174 <write_stdout>:
+ 174:	6bc6                	move.d r11,r12
+
+00000176 <str_loop1>:
+ 176:	8c0f                	test.b [r12+]
+ 178:	ff20                	bne 176 <str_loop1>
+ 17a:	b005                	nop 
+ 17c:	abc6                	sub.d r11,r12
+ 17e:	81c2                	subq 1,r12
+
+00000180 <write_stdout_we_know_size>:
+ 180:	4492                	moveq 4,r9
+ 182:	41a2                	moveq 1,r10
+ 184:	3de9                	break 13
+ 186:	f0b9                	ret 
+
+00000188 <num_to_ascii>:
+ 188:	5fbc 4e09           	movu.w 0x94e,r11
+
+0000018c <div_by_10>:
+ 18c:	4a62                	moveq 10,r6
+ 18e:	d063                	lslq 16,r6
+ 190:	8162                	subq 1,r6
+ 192:	5002                	moveq 16,r0
+
+00000194 <div_loop>:
+ 194:	8102                	subq 1,r0
+ 196:	ff20                	bne 194 <div_loop>
+ 198:	f6a6                	dstep r6,r10
+ 19a:	6a06                	move.d r10,r0
+ 19c:	f003                	lsrq 16,r0
+ 19e:	3002                	addq 48,r0
+ 1a0:	81b2                	subq 1,r11
+ 1a2:	cb0b                	move.b r0,[r11]
+ 1a4:	5aa4                	movu.w r10,r10
+ 1a6:	e720                	bne 18c <div_by_10>
+
+000001a8 <write_out>:
+ 1a8:	c0c2                	cmpq 0,r12
+ 1aa:	0620                	bne 1b0 <strcat>
+ 1ac:	6b46                	move.d r11,r4
+
+000001ae <ascii_stdout>:
+ 1ae:	c7e0                	ba 174 <write_stdout>
+
+000001b0 <strcat>:
+ 1b0:	446c                	movu.b [r4+],r6
+ 1b2:	ff20                	bne 1b0 <strcat>
+ 1b4:	c16f                	move.b r6,[r1+]
+ 1b6:	f0b9                	ret 
+ 1b8:	8112                	subq 1,r1
+
+000001ba <ver_string>:
+ 1ba:	2056                	add.d r0,r5
+ 1bc:	6572                	moveq -27,r7
+ 1be:	7369                	lapcq 1c4 <compiled_string>,r6
+ 1c0:	6f6e 2000 2c20      	move.d 202c0020 <_end+0x202ba6c0>,r6
+
+000001c4 <compiled_string>:
+ 1c4:	2c20                	bne 1f0 <bogo_total+0x1>
+ 1c6:	436f                	or.b [r3+],r6
+ 1c8:	6d70                	bmi 134 <skip_tabs+0x4>
+ 1ca:	696c                	movs.b [r9+],r6
+ 1cc:	6564                	movs.b r5,r6
+ 1ce:	2000                	bcc 1ee <ram_comma+0x7>
+
+000001d0 <one>:
+ 1d0:	4f6e 6520           	move.b 0x2065,r6
+ 1d4:	4352                	moveq 3,r5
+ 1d6:	4953                	orq 9,r5
+ 1d8:	2000                	bcc 1f8 <bogo_total+0x9>
+
+000001da <processor>:
+ 1da:	2050                	bvs 1fa <bogo_total+0xb>
+ 1dc:	726f                	move s6,r2
+ 1de:	6365                	addi r6.d,r3,acr
+ 1e0:	7373                	orq -13,r7
+ 1e2:	6f72                	moveq -17,r7
+ 1e4:	2c20                	bne 210 <cpuinfo+0x4>
+ 1e6:	004d                	muls.b r0,r4
+
+000001e7 <ram_comma>:
+ 1e7:	4d20                	bne 133 <skip_tabs+0x3>
+ 1e9:	5241                	addoq 82,r4,acr
+ 1eb:	4d2c                	movu.b [r13+],r2
+ 1ed:	2000                	bcc 20d <cpuinfo+0x1>
+
+000001ef <bogo_total>:
+ 1ef:	2042                	addq 32,r4
+ 1f1:	6f67                	or.d acr,r6
+ 1f3:	6f6d 6970 7320      	addo.d 20737069 <_end+0x20731709>,r6,acr
+ 1f9:	546f                	or.w [r4+],r6
+ 1fb:	7461                	addoq 116,r6,acr
+ 1fd:	6c0a                	move.d [r12],r0
+
+000001fe <linefeed>:
+ 1fe:	0a00                	bcc 208 <escape+0x1>
+
+00000200 <default_colors>:
+ 200:	1b5b                	and.w [r11],r5
+ 202:	306d                	??0x6d30
+ 204:	0a0a                	add.b [r10],r0
+	...
+
+00000207 <escape>:
+ 207:	1b5b                	and.w [r11],r5
+	...
+
+0000020a <C>:
+ 20a:	4300                	bcc 14c <done+0x2>
+
+0000020c <cpuinfo>:
+ 20c:	2f70                	bmi 13a <skip_tabs+0xa>
+ 20e:	726f                	move s6,r2
+ 210:	632f                	or.d [r3+],r2
+ 212:	6370                	bmi 174 <write_stdout>
+ 214:	7569                	lapcq 21e <logo+0x4>,r6
+ 216:	6e66                	move.d sp,r6
+ 218:	6f00                	bcc 186 <write_stdout_we_know_size+0x6>
+
+0000021a <logo>:
+ 21a:	ff1b                	movem r1,[acr]
+ 21c:	5b30                	beq 176 <str_loop1>
+ 21e:	3b31                	addoq 59,r3,acr
+ 220:	3b33                	andq -5,r3
+ 222:	379f                	??0x9f37
+ 224:	3b34                	adds.w r11,r3
+ 226:	376d                	??0x6d37
+ 228:	23cc                	adds.b [r3+],r12
+ 22a:	f7c0                	bgt 220 <logo+0x6>
+ 22c:	0733                	andq 7,r3
+ 22e:	8d30                	beq 1ba <ver_string>
+ 230:	c81b                	move.b r1,[r8]
+ 232:	1b5b                	and.w [r11],r5
+ 234:	c407                	lsr.b r4,r0
+ 236:	cb1f                	move.b r1,[r11+]
+ 238:	1c0c                	addu.w [r12+],r0
+ 23a:	3b0f                	??0xf3b
+ 23c:	3430                	beq 270 <logo+0x56>
+ 23e:	6d0a                	move.d [r13],r0
+ 240:	c0f7                	lsr.b r0,acr
+ 242:	0160                	bpl 142 <store_loop+0x6>
+ 244:	1a38                	addu.w [r10],r3
+ 246:	2c9c                	adds.b [r12+],r9
+ 248:	1f1b                	and.w [acr],r1
+ 24a:	5b33                	orq 27,r3
+ 24c:	316d                	??0x6d31
+ 24e:	cc04                	lsl.b r12,r0
+ 250:	41ac                	movu.b [r1+],r10
+ 252:	0d24                	addu.b r13,r2
+ 254:	021c                	addu.b [r2+],r1
+ 256:	104f                	and.w [r0+],r4
+ 258:	0d20                	bne 164 <center_and_print+0x16>
+ 25a:	1041                	addoq 16,r4,acr
+ 25c:	9398                	subu.w [r3],r9
+ 25e:	8334                	subu.b r3,r3
+ 260:	1c34                	addu.w r12,r3
+ 262:	cc10                	bcs 32e <logo+0x114>
+ 264:	100c                	addu.w [r0+],r0
+ 266:	246f                	and.d [r4+],r6
+ 268:	39ec                	adds.w [r9+],sp
+ 26a:	a71c                	subs.b [r7+],r1
+ 26c:	0833                	andq 8,r3
+ 26e:	1614                	addu.w r6,r1
+ 270:	8955                	neg.b r9,r5
+ 272:	2c60                	bpl 29e <logo+0x84>
+ 274:	002b                	and.b [r0],r2
+ 276:	61d6                	move.d r1,r13
+ 278:	71e2                	moveq -15,sp
+ 27a:	c8cb                	move.b r12,[r8]
+ 27c:	08d4                	addu.b r8,r13
+ 27e:	09d3                	andq 9,r13
+ 280:	102b                	and.w [r0],r2
+ 282:	59f5                	addi acr.w,r9,acr
+ 284:	d100                	bcc 254 <logo+0x3a>
+ 286:	8011                	addoq -128,r1,acr
+ 288:	d218                	cmpu.w [r2],r1
+ 28a:	0d28                	addu.b [r13],r2
+ 28c:	1c14                	addu.w r12,r1
+ 28e:	0d2c                	addu.b [r13+],r2
+ 290:	1c1c                	addu.w [r12+],r1
+ 292:	f04a                	??0x4af0
+ 294:	1a5b                	and.w [r10],r5
+ 296:	000d                	muls.b r0,r0
+ 298:	505f                	or.w [r0+],r5
+ 29a:	6587                	or.d r5,r8
+ 29c:	652b                	or.d [r5],r2
+ 29e:	55f5                	addi acr.w,r5,acr
+ 2a0:	cdcd                	??0xcdcd
+ 2a2:	28cd                	muls.d r8,r12
+ 2a4:	1489                	mulu.w r4,r8
+ 2a6:	4100                	bcc 1e6 <processor+0xc>
+ 2a8:	1d87                	and.w r13,r8
+ 2aa:	424b                	or.b [r2],r4
+ 2ac:	7253                	orq -14,r5
+ 2ae:	1c78                	addu.w [r12],r7
+ 2b0:	0f62                	addq 15,r6
+ 2b2:	876d                	??0x6d87
+ 2b4:	5558                	movu.w [r5],r5
+ 2b6:	f7c1                	addoq -9,r12,acr
+ 2b8:	00e8                	addu.b [r0],sp
+ 2ba:	2bf4                	adds.b r11,acr
+ 2bc:	9749                	div.w r4,r7
+ 2be:	783d                	??0x3d78
+ 2c0:	b01b                	movem [r0],r1
+ 2c2:	5f97                	or.w acr,r9
+ 2c4:	b012                	subq 48,r1
+ 2c6:	2bab                	and.d [r11],r10
+ 2c8:	ca10                	bcs 392 <__bss_start+0x52>
+ 2ca:	df16                	cmp.w acr,r1
+ 2cc:	1af5                	addi acr.w,r10
+ 2ce:	5af5                	addi acr.w,r10,acr
+ 2d0:	d93f                	move.w r3,[r9+]
+ 2d2:	331b                	jasc r3,vr
+ 2d4:	5692                	moveq 22,r9
+ 2d6:	5bb0                	blt 230 <logo+0x16>
+ 2d8:	0200                	bcc 2da <logo+0xc0>
+ 2da:	0c1d                	muls.b r12,r1
+ 2dc:	d3c8                	cmpu.w [r3],r12
+ 2de:	ac39                	addc [r12],r3
+ 2e0:	1766                	add.w r7,r6
+ 2e2:	32f6                	move r2,spc
+ 2e4:	6e6d                	addo.d [sp+],r6,acr
+ 2e6:	ec44                	lsl.d r12,r4
+ 2e8:	605e                	move.d [r0+],r5
+ 2ea:	08af                	and.b [r8+],r10
+ 2ec:	0aa6                	add.b r10,r10
+ 2ee:	6914                	movs.b r9,r1
+ 2f0:	0130                	beq 1f0 <bogo_total+0x1>
+ 2f2:	330b                	jasc r3,bz
+ 2f4:	de1f                	move.w r1,[sp+]
+ 2f6:	310f                	??0xf31
+ 2f8:	d3bc                	cmpu.w [r3+],r11
+ 2fa:	00af                	and.b [r0+],r10
+ 2fc:	4f19                	addo.b [acr],r1,acr
+ 2fe:	56aa                	move.w [r6],r10
+ 300:	4552                	moveq 5,r5
+ 302:	db28                	cmpu.w [r11],r2
+ 304:	5246                	move.w r2,r4
+ 306:	7f08                	movs.w [acr],r0
+ 308:	53db                	or.w [r3],r13
+ 30a:	2300                	bcc 22c <logo+0x12>
+ 30c:	a955                	neg.d r9,r5
+ 30e:	aa35                	neg.d r10,r3
+ 310:	1821                	addoq 24,r2,acr
+ 312:	1268                	addu.w [r2],r6
+ 314:	912a                	sub.w [r1],r2
+ 316:	c822                	cmpq 8,r2
+ 318:	b268                	subs.w [r2],r6
+ 31a:	702d                	??0x2d70
+ 31c:	00c6                	add.b r0,r12
+ 31e:	50b2                	moveq 16,r11
+ 320:	7991                	addoq 121,r9,acr
+ 322:	4a70                	bmi 36c <__bss_start+0x2c>
+ 324:	31f8                	adds.w [r1],acr
+ 326:	51f3                	orq 17,acr
+ 328:	28dd                	muls.d r8,r13
+ 32a:	17ff                	and.w [r7+],acr
+ 32c:	1708                	addu.w [r7],r0
+ 32e:	0236                	add.b r2,r3
+ 330:	0324                	addu.b r3,r2
+ 332:	e542                	cmpq -27,r4
+ 334:	0a00                	bcc 33e <___fini__end+0x6>
+
+00000335 <logo_end>:
+ 335:	0000                	bcc .
+	...
+Disassembly of section .data:

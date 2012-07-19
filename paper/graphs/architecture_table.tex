@@ -1,0 +1,512 @@
+\begin{sidewaystable}[tbp]
+\caption{Summary of investigated architectures}
+\label{table:archtable}
+\begin{sf}
+\begin{footnotesize}
+\begin{center}
+\begin{tabular}{|c|c||c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\T \multirow{2}{*}{\bf Type} &
+\multirow{2}{*}{\bf arch} &
+\multirow{2}{*}{\bf endian$^{\star}$} & 
+\multirow{2}{*}{\bf bits} & 
+{\bf instr len} & 
+{\bf op} & 
+{\bf GP int} & 
+{\bf unaligned} & 
+{\bf auto-inc} & 
+{\bf hw}  &
+{\bf stat} &
+{\bf branch} & 
+{\bf predi-}\\
+
+        & % Type
+        & % arch
+        & % Endian
+        & % bits
+{\bf (bytes)} & % instr len
+{\bf args}    & % op
+{\bf regs}    & % GP int
+{\bf ld/st}   & % unaligned
+{\bf address} & % auto-inc
+{\bf div}     & % HW
+{\bf flags}   & % stat
+{\bf delay}   & % branch 
+{\bf cation}\\  % predi-
+
+\hline\hline
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% VLIW
+
+\multirow{1}{*}{\bf VLIW} &
+% IA64
+IA64             &  % ARCH  
+%VLIW             &  % TYPE
+%2001		    % year
+little           &  % endian 
+64               &  % bits
+16/3$^{\dagger}$ &  % instr length
+3                &  % arguments 
+127,zero         &  % GP int regs
+no               &  % unaligned accesses 
+yes              &  % auto-inc
+no               &  % hw-divide
+yes              &  % status flags  
+no               &  % branch delay slot
+yes                 % predication
+\\
+\hline
+\hline
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% RISC
+
+\multirow{8}{*}{\bf RISC} &
+% Alpha
+Alpha            & % ARCH
+%RISC            & % Type
+%1992		 & % Year
+little           & % endian
+64               & % bits 
+4                & % instr length
+3                & % arguments
+31, zero         & % GP int regs
+no               & % unaligned accesses
+no               & % auto-inc
+no               & % hw-divide 
+no               & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% ARM
+                 & % Type
+ARM              & % ARCH
+%RISC             & % Type
+%1986		 & % Year
+little           & % endian
+32               & % bits
+4                & % instr-length
+3                & % arguments
+15,PC            & % GP int regs
+no               & % unaligned accesses
+yes              & % auto-inc
+no               & % HW divide
+yes              & % status flags
+no               & % branch delay slot
+yes                % predication
+\\
+\cline{2-13}
+
+% m88k
+		 & % Type
+m88k             & % ARCH
+%RISC            & % Type
+%1988		 & % Year
+big              & % endian
+32               & % bits
+4                & % instr-length
+3                & % arguments
+31,zero          & % GP int regs
+no               & % unaligned accesses
+no               & % auto-inc
+Q only           & % HW divide
+no               & % status flags
+optional         & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% microblaze
+		 & % Type
+MicroBlaze       & % ARCH
+%RISC            & % Type
+%2001?		 & % Year
+big              & % endian
+32               & % bits
+4                & % instr-length
+3                & % arguments
+31,zero          & % GP int regs
+no               & % unaligned accesses
+no               & % auto-inc
+Q only$^{\star\star}$ & % hw-divide
+no               & % status flags
+optional         & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% MIPS
+		 & % Type
+MIPS             & % ARCH
+%RISC            & % Type
+%1985		 & % Year
+big              & % endian
+32/64            & % bits
+4                & % instr-length
+3                & % arguments
+31,hi/lo,zero    & % GP int regs
+yes$^{\star\star}$& % unaligned accesses
+no               & % auto-inc
+yes              & % hw-divide
+no               & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% PA-RISC
+                 & % Type
+PA-RISC          & % ARCH
+%RISC            & % Type
+%1989		 & % Year
+big              & % endian
+32/64            & % bits
+4                & % instr-length
+3                & % arguments
+31,zero          & % GP int regs
+no               & % unaligned accesses
+no               & % auto-inc
+part             & % hw-divide
+no               & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% PPC
+                 & % Type
+PPC              & % ARCH
+%RISC            & % Type
+%1991		 & % Year
+big              & % endian
+32/64            & % bits
+4                & % instr-length
+3                & % arguments
+32               & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+Q only           & % HW divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% RiSC
+                 & % Type
+RiSC             & % ARCH
+%RISC            & % type
+%1998		 & % Year
+big              & % endian
+16               & % bits
+2                & % instr-length
+3                & % arguments
+7,zero           & % GP int regs
+no               & % unaligned accesses
+no               & % auto-inc
+no               & % hw divide
+no               & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% SPARC
+                 & % Type
+SPARC            & % ARCH
+%RISC            & % Type
+%1985		 & % Year
+big              & % endian
+32/64            & % bits
+4                & % instr-length
+3                & % arguments
+63-527,zero$^{\ddagger}$ & % GP int regs
+no               & % unaligned accesses
+no               & % auto-inc
+Q only           & % hw-divide
+yes              & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+
+\hline\hline
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% CISC
+
+\multirow{5}{*}{\bf CISC} &
+% m68k
+m68k             & % ARCH
+%CISC            & % type
+%1979		 & % Year
+big              & % endian
+32               & % bits
+2-22             & % instr-length
+2                & % arguments
+16               & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+yes              & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% s390
+		 & % Type
+s390             & % ARCH
+%CISC            & % Type
+%1964		 & % Year
+big              & % endian
+32/64            & % bits
+2-6              & % instr-length
+2                & % arguments
+16               & % GP int regs
+yes              & % unaligned accesses
+no               & % auto-inc
+yes              & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% VAX
+                 & % Type
+VAX              & % ARCH
+%CISC            & % type
+%1977		 & % Year
+big              & % endian
+32               & % bits
+1-54             & % instr-length
+3                & % arguments
+16               & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+yes              & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% x86
+                 & % Type
+x86              & % ARCH
+%CISC            & % type
+%1978		 & % Year
+little           & % endian
+32               & % bits
+1-15             & % instr-length
+2                & % arguments
+8                & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+yes              & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% x86_64
+		 & % TYPE
+x86\_64          & % ARCH
+%CISC            & % Type
+%2000		 & % Year
+little           & % endian
+32/64            & % bits
+1-15             & % instr-length
+2                & % arguments
+16               & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+yes              & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+
+\hline\hline
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Embedded
+
+% avr32
+\multirow{4}{*}{\bf Embedded} &
+AVR32            & % ARCH
+%embed           & % type
+%2006		 & % Year
+big              & % endian
+32               & % bits
+2                & % instr-length
+2                & % arguments
+15,PC            & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+yes              & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% CRISv32
+                 & % Type
+CRISv32          & % ARCH
+%embed           & % type
+%2000		 & % Year
+little           & % endian
+32               & % bits
+2-6              & % instr-length
+2                & % arguments
+16,zero,special  & % GP int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+part             & % hw divide
+yes              & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% SH3
+                 & % Type
+SH3              & % ARCH
+%embed           & % type
+%1992		 & % Year
+little           & % endian
+32               & % bits
+2                & % instr-length
+2                & % arguments
+16,MAC           & % GP int regs
+no               & % unaligned accesses
+yes              & % auto-inc
+part             & % hw divide
+yes              & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% THUMB
+                 & % Thumb
+THUMB            & % ARCH
+%embed           & % type
+%1995		 & % Year
+little           & % endian
+32               & % bits
+2                & % instr-length
+2                & % arguments
+8/15,PC          & % GP int regs
+no               & % unaligned accesses
+yes              & % auto-inc
+no               & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+\hline
+\hline
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 8/16-bit
+
+% 6502
+\multirow{3}{*}{\bf 8/16-bit} &
+6502             & % ARCH
+%8-bit           & % Type
+%1975		 & % Year
+little           & % endian
+8                & % bits
+1-3              & % instr-length
+1                & % arguments
+3                & % GP int regs
+yes              & % unaligned accesses
+no               & % auto-inc
+no               & % hw-divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% 8086
+                 & % Type
+8086             & % ARCH
+%16-bit          & % type
+%1978		 & % Year
+little           & % endian
+16               & % bits
+1-15             & % instr-length
+2                & % arguments
+8                & % Gp int regs
+yes              & % unaligned accesses
+yes              & % auto-inc
+yes 		 & % hw-divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% pdp-11
+                 & % Type
+PDP-11           & % ARCH
+%16-bit          & % type
+%1970		 & % Year
+little           & % endian
+16               & % bits
+2-6              & % instr-length
+2                & % arguments
+6,sp,pc          & % Gp int regs
+no               & % unaligned accesses
+yes              & % auto-inc
+yes$^{\star\star}$& % hw-divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% z80
+                 & % Type
+z80              & % ARCH
+%8-bit           & % type
+%1976		 & % Year
+little           & % endian
+8                & % bits
+1-4              & % instr-length
+2                & % arguments
+18               & % Gp int regs
+no               & % unaligned accesses
+lim              & % auto-inc
+no 		 & % hw-divide
+yes              & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+\hline
+
+\end{tabular}
+
+$^{\star}$ on the machine we used \hspace{2em}$^{\dagger}$ 16-byte bundle has 3 instructions
+\hspace{3em}$^{\ddagger}$ register windows, only 32 visible
+\hspace{2em}$^{\star\star}$ many implementations
+\end{center}
+\end{footnotesize}
+\end{sf}
+\end{sidewaystable}
+% Longest intel instruction?  Some claim 17, longest I could find is 15
+%15 [16-bit]
+%66 67 F0 3E 81 04 4E 01234567 89ABCDEF
+%add [ds:esi+ecx*2+0x67452301], 0xEFCDAB89
+%13 [32-bit]
+%F0 3E 81 04 4E 01234567 89ABCDEF
+%lock add [ds:esi+ecx*2+0x67452301], 0xEFCDAB89
+% 15 [64-bit]
+%F0 65 67 4c 81 84 80 01234567 89abcdef
+% lock:add qw gs:Zpg[EAX+RD8*4+67452301h],-10325477h 
+% VAX POLYG can be 56 bytes.  Or is it 54?

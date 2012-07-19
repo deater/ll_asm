@@ -1,0 +1,508 @@
+
+./ll.8086.o:     file format elf32-i386
+
+
+Disassembly of section .text:
+
+00000000 <start-0x100>:
+	...
+
+00000100 <start>:
+ 100:	bd c0 03             	mov    $0x3c0,%bp
+ 103:	be f1 02             	mov    $0x2f1,%si
+ 106:	bf 4b 08             	mov    $0x84b,%di
+ 109:	57                   	push   %di
+
+0000010a <decompression_loop>:
+ 10a:	ac                   	lods   %ds:(%si),%al
+ 10b:	b6 ff                	mov    $0xff,%dh
+ 10d:	88 c2                	mov    %al,%dl
+
+0000010f <test_flags>:
+ 10f:	81 fe 0c 04          	cmp    $0x40c,%si
+ 113:	74 2f                	je     144 <done_logo>
+ 115:	d1 ea                	shr    %dx
+ 117:	72 25                	jb     13e <discrete_char>
+
+00000119 <offset_length>:
+ 119:	ad                   	lods   %ds:(%si),%ax
+ 11a:	89 c3                	mov    %ax,%bx
+ 11c:	b1 0a                	mov    $0xa,%cl
+ 11e:	d3 e8                	shr    %cl,%ax
+ 120:	04 03                	add    $0x3,%al
+ 122:	88 c1                	mov    %al,%cl
+
+00000124 <output_loop>:
+ 124:	80 e7 03             	and    $0x3,%bh
+ 127:	8a 87 0c 04          	mov    0x40c(%bx),%al
+ 12b:	43                   	inc    %bx
+
+0000012c <store_byte>:
+ 12c:	aa                   	stos   %al,%es:(%di)
+ 12d:	88 86 0c 04          	mov    %al,0x40c(%bp)
+ 131:	45                   	inc    %bp
+ 132:	81 e5 ff 03          	and    $0x3ff,%bp
+ 136:	e2 ec                	loop   124 <output_loop>
+ 138:	08 f6                	or     %dh,%dh
+ 13a:	75 d3                	jne    10f <test_flags>
+ 13c:	eb cc                	jmp    10a <decompression_loop>
+
+0000013e <discrete_char>:
+ 13e:	ac                   	lods   %ds:(%si),%al
+ 13f:	b9 01 00             	mov    $0x1,%cx
+ 142:	eb e8                	jmp    12c <store_byte>
+
+00000144 <done_logo>:
+ 144:	b0 24                	mov    $0x24,%al
+ 146:	aa                   	stos   %al,%es:(%di)
+ 147:	5d                   	pop    %bp
+ 148:	89 ea                	mov    %bp,%dx
+ 14a:	e8 04 01             	call   251 <write_stdout>
+
+0000014d <setup>:
+ 14d:	b9 13 02             	mov    $0x213,%cx
+ 150:	89 ef                	mov    %bp,%di
+ 152:	be 6e 02             	mov    $0x26e,%si
+ 155:	ff d1                	call   *%cx
+ 157:	51                   	push   %cx
+ 158:	b4 30                	mov    $0x30,%ah
+ 15a:	cd 21                	int    $0x21
+ 15c:	59                   	pop    %cx
+ 15d:	50                   	push   %ax
+ 15e:	30 e4                	xor    %ah,%ah
+ 160:	e8 f3 00             	call   256 <num_to_ascii>
+ 163:	b0 2e                	mov    $0x2e,%al
+ 165:	aa                   	stos   %al,%es:(%di)
+ 166:	58                   	pop    %ax
+ 167:	88 e0                	mov    %ah,%al
+ 169:	e8 ea 00             	call   256 <num_to_ascii>
+ 16c:	ff d1                	call   *%cx
+ 16e:	89 ea                	mov    %bp,%dx
+ 170:	e8 a8 00             	call   21b <center_and_print>
+
+00000173 <middle_line>:
+ 173:	89 ef                	mov    %bp,%di
+ 175:	51                   	push   %cx
+ 176:	b4 3d                	mov    $0x3d,%ah
+ 178:	30 c0                	xor    %al,%al
+ 17a:	ba e3 02             	mov    $0x2e3,%dx
+ 17d:	cd 21                	int    $0x21
+ 17f:	72 56                	jb     1d7 <exit>
+ 181:	50                   	push   %ax
+ 182:	89 c3                	mov    %ax,%bx
+ 184:	ba 4b 18             	mov    $0x184b,%dx
+ 187:	b9 00 10             	mov    $0x1000,%cx
+ 18a:	b4 3f                	mov    $0x3f,%ah
+ 18c:	cd 21                	int    $0x21
+ 18e:	5b                   	pop    %bx
+ 18f:	b4 3e                	mov    $0x3e,%ah
+ 191:	cd 21                	int    $0x21
+ 193:	59                   	pop    %cx
+
+00000194 <number_of_cpus>:
+ 194:	ff d1                	call   *%cx
+
+00000196 <print_mhz>:
+ 196:	bb 20 4d             	mov    $0x4d20,%bx
+ 199:	ba 48 7a             	mov    $0x7a48,%dx
+ 19c:	b4 0a                	mov    $0xa,%ah
+ 19e:	e8 3c 00             	call   1dd <find_string>
+ 1a1:	ff d1                	call   *%cx
+
+000001a3 <chip_name>:
+ 1a3:	bb 6e 61             	mov    $0x616e,%bx
+ 1a6:	ba 6d 65             	mov    $0x656d,%dx
+ 1a9:	b4 0a                	mov    $0xa,%ah
+ 1ab:	e8 2f 00             	call   1dd <find_string>
+ 1ae:	ff d1                	call   *%cx
+ 1b0:	51                   	push   %cx
+ 1b1:	cd 12                	int    $0x12
+ 1b3:	e8 a0 00             	call   256 <num_to_ascii>
+ 1b6:	59                   	pop    %cx
+ 1b7:	ff d1                	call   *%cx
+ 1b9:	bb 6d 69             	mov    $0x696d,%bx
+ 1bc:	ba 70 73             	mov    $0x7370,%dx
+ 1bf:	b4 0a                	mov    $0xa,%ah
+ 1c1:	e8 19 00             	call   1dd <find_string>
+ 1c4:	ff d1                	call   *%cx
+ 1c6:	89 ea                	mov    %bp,%dx
+ 1c8:	e8 50 00             	call   21b <center_and_print>
+ 1cb:	89 ef                	mov    %bp,%di
+ 1cd:	ff d1                	call   *%cx
+ 1cf:	e8 49 00             	call   21b <center_and_print>
+ 1d2:	89 f2                	mov    %si,%dx
+ 1d4:	e8 7a 00             	call   251 <write_stdout>
+
+000001d7 <exit>:
+ 1d7:	30 c0                	xor    %al,%al
+ 1d9:	b4 4c                	mov    $0x4c,%ah
+ 1db:	cd 21                	int    $0x21
+
+000001dd <find_string>:
+ 1dd:	56                   	push   %si
+ 1de:	be 4a 18             	mov    $0x184a,%si
+
+000001e1 <find_loop>:
+ 1e1:	46                   	inc    %si
+ 1e2:	80 3c 00             	cmpb   $0x0,(%si)
+ 1e5:	74 2a                	je     211 <done>
+ 1e7:	3b 1c                	cmp    (%si),%bx
+ 1e9:	75 f6                	jne    1e1 <find_loop>
+ 1eb:	3b 54 02             	cmp    0x2(%si),%dx
+ 1ee:	75 f1                	jne    1e1 <find_loop>
+
+000001f0 <find_colon>:
+ 1f0:	ac                   	lods   %ds:(%si),%al
+ 1f1:	3c 00                	cmp    $0x0,%al
+ 1f3:	74 1c                	je     211 <done>
+ 1f5:	3c 3a                	cmp    $0x3a,%al
+ 1f7:	75 f7                	jne    1f0 <find_colon>
+
+000001f9 <skip_spaces>:
+ 1f9:	ac                   	lods   %ds:(%si),%al
+ 1fa:	3c 20                	cmp    $0x20,%al
+ 1fc:	74 fb                	je     1f9 <skip_spaces>
+
+000001fe <store_loop>:
+ 1fe:	3c 00                	cmp    $0x0,%al
+ 200:	74 0f                	je     211 <done>
+ 202:	38 e0                	cmp    %ah,%al
+ 204:	74 08                	je     20e <almost_done>
+ 206:	3c 0a                	cmp    $0xa,%al
+ 208:	74 04                	je     20e <almost_done>
+ 20a:	aa                   	stos   %al,%es:(%di)
+ 20b:	ac                   	lods   %ds:(%si),%al
+ 20c:	eb f0                	jmp    1fe <store_loop>
+
+0000020e <almost_done>:
+ 20e:	c6 05 00             	movb   $0x0,(%di)
+
+00000211 <done>:
+ 211:	5e                   	pop    %si
+ 212:	c3                   	ret    
+
+00000213 <strcat>:
+ 213:	ac                   	lods   %ds:(%si),%al
+ 214:	aa                   	stos   %al,%es:(%di)
+ 215:	3c 00                	cmp    $0x0,%al
+ 217:	75 fa                	jne    213 <strcat>
+ 219:	4f                   	dec    %di
+ 21a:	c3                   	ret    
+
+0000021b <center_and_print>:
+ 21b:	52                   	push   %dx
+ 21c:	89 d3                	mov    %dx,%bx
+ 21e:	47                   	inc    %di
+ 21f:	57                   	push   %di
+ 220:	b8 1b 5b             	mov    $0x5b1b,%ax
+ 223:	ab                   	stos   %ax,%es:(%di)
+ 224:	66 99                	cltd   
+
+00000226 <str_loop2>:
+ 226:	42                   	inc    %dx
+ 227:	43                   	inc    %bx
+ 228:	80 3f 00             	cmpb   $0x0,(%bx)
+ 22b:	75 f9                	jne    226 <str_loop2>
+ 22d:	b8 50 00             	mov    $0x50,%ax
+ 230:	39 c2                	cmp    %ax,%dx
+ 232:	7c 03                	jl     237 <not_too_big>
+ 234:	ba 50 00             	mov    $0x50,%dx
+
+00000237 <not_too_big>:
+ 237:	29 d0                	sub    %dx,%ax
+ 239:	d1 e8                	shr    %ax
+ 23b:	e8 18 00             	call   256 <num_to_ascii>
+ 23e:	b8 43 24             	mov    $0x2443,%ax
+ 241:	ab                   	stos   %ax,%es:(%di)
+ 242:	5f                   	pop    %di
+ 243:	89 fa                	mov    %di,%dx
+ 245:	e8 09 00             	call   251 <write_stdout>
+ 248:	4f                   	dec    %di
+ 249:	b8 0d 0a             	mov    $0xa0d,%ax
+ 24c:	ab                   	stos   %ax,%es:(%di)
+ 24d:	b0 24                	mov    $0x24,%al
+ 24f:	aa                   	stos   %al,%es:(%di)
+
+00000250 <done_center>:
+ 250:	5a                   	pop    %dx
+
+00000251 <write_stdout>:
+ 251:	b4 09                	mov    $0x9,%ah
+ 253:	cd 21                	int    $0x21
+ 255:	c3                   	ret    
+
+00000256 <num_to_ascii>:
+ 256:	51                   	push   %cx
+ 257:	bb 0a 00             	mov    $0xa,%bx
+ 25a:	31 c9                	xor    %cx,%cx
+
+0000025c <div_by_10>:
+ 25c:	66 99                	cltd   
+ 25e:	f7 f3                	div    %bx
+ 260:	52                   	push   %dx
+ 261:	41                   	inc    %cx
+ 262:	09 c0                	or     %ax,%ax
+ 264:	75 f6                	jne    25c <div_by_10>
+
+00000266 <write_out>:
+ 266:	58                   	pop    %ax
+ 267:	04 30                	add    $0x30,%al
+ 269:	aa                   	stos   %al,%es:(%di)
+ 26a:	e2 fa                	loop   266 <write_out>
+ 26c:	59                   	pop    %cx
+ 26d:	c3                   	ret    
+
+0000026e <ver_string>:
+ 26e:	44                   	inc    %sp
+ 26f:	4f                   	dec    %di
+ 270:	53                   	push   %bx
+ 271:	20 56 65             	and    %dl,0x65(%bp)
+ 274:	72 73                	jb     2e9 <cpuinfo+0x6>
+ 276:	69 6f 6e 20 00       	imul   $0x20,0x6e(%bx),%bp
+
+0000027b <compiled_string>:
+ 27b:	2c 20                	sub    $0x20,%al
+ 27d:	43                   	inc    %bx
+ 27e:	6f                   	outsw  %ds:(%si),(%dx)
+ 27f:	6d                   	insw   (%dx),%es:(%di)
+ 280:	70 69                	jo     2eb <cpuinfo+0x8>
+ 282:	6c                   	insb   (%dx),%es:(%di)
+ 283:	65 64 20 23          	and    %ah,%fs:%gs:(%bp,%di)
+ 287:	31 20                	xor    %sp,(%bx,%si)
+ 289:	53                   	push   %bx
+ 28a:	75 6e                	jne    2fa <logo+0x9>
+ 28c:	20 4f 63             	and    %cl,0x63(%bx)
+ 28f:	74 20                	je     2b1 <processor+0x1>
+ 291:	31 37                	xor    %si,(%bx)
+ 293:	20 31                	and    %dh,(%bx,%di)
+ 295:	37                   	aaa    
+ 296:	3a 35                	cmp    (%di),%dh
+ 298:	36 3a 32             	cmp    %ss:(%bp,%si),%dh
+ 29b:	39 20                	cmp    %sp,(%bx,%si)
+ 29d:	45                   	inc    %bp
+ 29e:	44                   	inc    %sp
+ 29f:	54                   	push   %sp
+ 2a0:	20 31                	and    %dh,(%bx,%di)
+ 2a2:	39 38                	cmp    %di,(%bx,%si)
+ 2a4:	30 00                	xor    %al,(%bx,%si)
+
+000002a6 <one>:
+ 2a6:	4f                   	dec    %di
+ 2a7:	6e                   	outsb  %ds:(%si),(%dx)
+ 2a8:	65 20 00             	and    %al,%gs:(%bx,%si)
+
+000002ab <MHz>:
+ 2ab:	4d                   	dec    %bp
+ 2ac:	48                   	dec    %ax
+ 2ad:	7a 20                	jp     2cf <bogo_total+0xa>
+	...
+
+000002b0 <processor>:
+ 2b0:	20 50 72             	and    %dl,0x72(%bx,%si)
+ 2b3:	6f                   	outsw  %ds:(%si),(%dx)
+ 2b4:	63 65 73             	arpl   %sp,0x73(%di)
+ 2b7:	73 6f                	jae    328 <logo+0x37>
+ 2b9:	72 2c                	jb     2e7 <cpuinfo+0x4>
+ 2bb:	20 00                	and    %al,(%bx,%si)
+
+000002bd <ram_comma>:
+ 2bd:	4b                   	dec    %bx
+ 2be:	20 52 41             	and    %dl,0x41(%bp,%si)
+ 2c1:	4d                   	dec    %bp
+ 2c2:	2c 20                	sub    $0x20,%al
+	...
+
+000002c5 <bogo_total>:
+ 2c5:	20 42 6f             	and    %al,0x6f(%bp,%si)
+ 2c8:	67 6f                	addr32 outsw %ds:(%esi),(%dx)
+ 2ca:	6d                   	insw   (%dx),%es:(%di)
+ 2cb:	69 70 73 20 54       	imul   $0x5420,0x73(%bx,%si),%si
+ 2d0:	6f                   	outsw  %ds:(%si),(%dx)
+ 2d1:	74 61                	je     334 <logo+0x43>
+ 2d3:	6c                   	insb   (%dx),%es:(%di)
+	...
+
+000002d5 <node_name>:
+ 2d5:	44                   	inc    %sp
+ 2d6:	4f                   	dec    %di
+ 2d7:	53                   	push   %bx
+ 2d8:	42                   	inc    %dx
+ 2d9:	4f                   	dec    %di
+ 2da:	58                   	pop    %ax
+	...
+
+000002dc <default_colors>:
+ 2dc:	1b 5b 30             	sbb    0x30(%bp,%di),%bx
+ 2df:	6d                   	insw   (%dx),%es:(%di)
+ 2e0:	0d 0a 24             	or     $0x240a,%ax
+
+000002e3 <cpuinfo>:
+ 2e3:	70 72                	jo     357 <logo+0x66>
+ 2e5:	6f                   	outsw  %ds:(%si),(%dx)
+ 2e6:	63 5c 63             	arpl   %bx,0x63(%si)
+ 2e9:	70 75                	jo     360 <logo+0x6f>
+ 2eb:	38 2e 30 38          	cmp    %ch,0x3830
+ 2ef:	36                   	ss
+	...
+
+000002f1 <logo>:
+ 2f1:	ff 1b                	lcall  *(%bp,%di)
+ 2f3:	5b                   	pop    %bx
+ 2f4:	30 3b                	xor    %bh,(%bp,%di)
+ 2f6:	31 3b                	xor    %di,(%bp,%di)
+ 2f8:	33 37                	xor    (%bx),%si
+ 2fa:	9f                   	lahf   
+ 2fb:	3b 34                	cmp    (%si),%si
+ 2fd:	37                   	aaa    
+ 2fe:	6d                   	insw   (%dx),%es:(%di)
+ 2ff:	23 cc                	and    %sp,%cx
+ 301:	f7 c0 07 33          	test   $0x3307,%ax
+ 305:	8d 30                	lea    (%bx,%si),%si
+ 307:	c8 1b 1b 5b          	enter  $0x1b1b,$0x5b
+ 30b:	c4 07                	les    (%bx),%ax
+ 30d:	cb                   	lret   
+ 30e:	1f                   	pop    %ds
+ 30f:	1c 0c                	sbb    $0xc,%al
+ 311:	3b 0f                	cmp    (%bx),%cx
+ 313:	34 30                	xor    $0x30,%al
+ 315:	6d                   	insw   (%dx),%es:(%di)
+ 316:	0a c0                	or     %al,%al
+ 318:	f7 01 60 1a          	testw  $0x1a60,(%bx,%di)
+ 31c:	38 2c                	cmp    %ch,(%si)
+ 31e:	9c                   	pushf  
+ 31f:	1f                   	pop    %ds
+ 320:	1b 5b 33             	sbb    0x33(%bp,%di),%bx
+ 323:	31 6d cc             	xor    %bp,-0x34(%di)
+ 326:	04 41                	add    $0x41,%al
+ 328:	ac                   	lods   %ds:(%si),%al
+ 329:	0d 24 02             	or     $0x224,%ax
+ 32c:	1c 10                	sbb    $0x10,%al
+ 32e:	4f                   	dec    %di
+ 32f:	0d 20 10             	or     $0x1020,%ax
+ 332:	41                   	inc    %cx
+ 333:	93                   	xchg   %ax,%bx
+ 334:	98                   	cbtw   
+ 335:	83 34 1c             	xorw   $0x1c,(%si)
+ 338:	34 cc                	xor    $0xcc,%al
+ 33a:	10 10                	adc    %dl,(%bx,%si)
+ 33c:	0c 24                	or     $0x24,%al
+ 33e:	6f                   	outsw  %ds:(%si),(%dx)
+ 33f:	39 ec                	cmp    %bp,%sp
+ 341:	a7                   	cmpsw  %es:(%di),%ds:(%si)
+ 342:	1c 08                	sbb    $0x8,%al
+ 344:	33 16 14 89          	xor    -0x76ec,%dx
+ 348:	55                   	push   %bp
+ 349:	2c 60                	sub    $0x60,%al
+ 34b:	00 2b                	add    %ch,(%bp,%di)
+ 34d:	61                   	popa   
+ 34e:	d6                   	(bad)  
+ 34f:	71 e2                	jno    333 <logo+0x42>
+ 351:	c8 cb 08 d4          	enter  $0x8cb,$0xd4
+ 355:	09 d3                	or     %dx,%bx
+ 357:	10 2b                	adc    %ch,(%bp,%di)
+ 359:	59                   	pop    %cx
+ 35a:	f5                   	cmc    
+ 35b:	d1 00                	rolw   (%bx,%si)
+ 35d:	80 11 d2             	adcb   $0xd2,(%bx,%di)
+ 360:	18 0d                	sbb    %cl,(%di)
+ 362:	28 1c                	sub    %bl,(%si)
+ 364:	14 0d                	adc    $0xd,%al
+ 366:	2c 1c                	sub    $0x1c,%al
+ 368:	1c f0                	sbb    $0xf0,%al
+ 36a:	4a                   	dec    %dx
+ 36b:	1a 5b 00             	sbb    0x0(%bp,%di),%bl
+ 36e:	0d 50 5f             	or     $0x5f50,%ax
+ 371:	65 87 65 2b          	xchg   %sp,%gs:0x2b(%di)
+ 375:	55                   	push   %bp
+ 376:	f5                   	cmc    
+ 377:	cd cd                	int    $0xcd
+ 379:	28 cd                	sub    %cl,%ch
+ 37b:	14 89                	adc    $0x89,%al
+ 37d:	41                   	inc    %cx
+ 37e:	00 1d                	add    %bl,(%di)
+ 380:	87 42 4b             	xchg   %ax,0x4b(%bp,%si)
+ 383:	72 53                	jb     3d8 <logo+0xe7>
+ 385:	1c 78                	sbb    $0x78,%al
+ 387:	0f 62 87 6d 55       	punpckldq 0x556d(%bx),%mm0
+ 38c:	58                   	pop    %ax
+ 38d:	f7 c1 00 e8          	test   $0xe800,%cx
+ 391:	2b f4                	sub    %sp,%si
+ 393:	97                   	xchg   %ax,%di
+ 394:	49                   	dec    %cx
+ 395:	78 3d                	js     3d4 <logo+0xe3>
+ 397:	b0 1b                	mov    $0x1b,%al
+ 399:	5f                   	pop    %di
+ 39a:	97                   	xchg   %ax,%di
+ 39b:	b0 12                	mov    $0x12,%al
+ 39d:	2b ab ca 10          	sub    0x10ca(%bp,%di),%bp
+ 3a1:	df 16 1a f5          	fist   -0xae6
+ 3a5:	5a                   	pop    %dx
+ 3a6:	f5                   	cmc    
+ 3a7:	d9 3f                	fnstcw (%bx)
+ 3a9:	33 1b                	xor    (%bp,%di),%bx
+ 3ab:	56                   	push   %si
+ 3ac:	92                   	xchg   %ax,%dx
+ 3ad:	5b                   	pop    %bx
+ 3ae:	b0 02                	mov    $0x2,%al
+ 3b0:	00 0c                	add    %cl,(%si)
+ 3b2:	1d d3 c8             	sbb    $0xc8d3,%ax
+ 3b5:	ac                   	lods   %ds:(%si),%al
+ 3b6:	39 17                	cmp    %dx,(%bx)
+ 3b8:	66                   	data32
+ 3b9:	32 f6                	xor    %dh,%dh
+ 3bb:	6e                   	outsb  %ds:(%si),(%dx)
+ 3bc:	6d                   	insw   (%dx),%es:(%di)
+ 3bd:	ec                   	in     (%dx),%al
+ 3be:	44                   	inc    %sp
+ 3bf:	60                   	pusha  
+ 3c0:	5e                   	pop    %si
+ 3c1:	08 af 0a a6          	or     %ch,-0x59f6(%bx)
+ 3c5:	69 14 01 30          	imul   $0x3001,(%si),%dx
+ 3c9:	33 0b                	xor    (%bp,%di),%cx
+ 3cb:	de 1f                	ficomp (%bx)
+ 3cd:	31 0f                	xor    %cx,(%bx)
+ 3cf:	d3 bc 00 af          	sarw   %cl,-0x5100(%si)
+ 3d3:	4f                   	dec    %di
+ 3d4:	19 56 aa             	sbb    %dx,-0x56(%bp)
+ 3d7:	45                   	inc    %bp
+ 3d8:	52                   	push   %dx
+ 3d9:	db 28                	fldt   (%bx,%si)
+ 3db:	52                   	push   %dx
+ 3dc:	46                   	inc    %si
+ 3dd:	7f 08                	jg     3e7 <logo+0xf6>
+ 3df:	53                   	push   %bx
+ 3e0:	db 23                	(bad)  (%bp,%di)
+ 3e2:	00 a9 55 aa          	add    %ch,-0x55ab(%bx,%di)
+ 3e6:	35 18 21             	xor    $0x2118,%ax
+ 3e9:	12 68 91             	adc    -0x6f(%bx,%si),%ch
+ 3ec:	2a c8                	sub    %al,%cl
+ 3ee:	22 b2 68 70          	and    0x7068(%bp,%si),%dh
+ 3f2:	2d 00 c6             	sub    $0xc600,%ax
+ 3f5:	50                   	push   %ax
+ 3f6:	b2 79                	mov    $0x79,%dl
+ 3f8:	91                   	xchg   %ax,%cx
+ 3f9:	4a                   	dec    %dx
+ 3fa:	70 31                	jo     42d <fake_bss+0x21>
+ 3fc:	f8                   	clc    
+ 3fd:	51                   	push   %cx
+ 3fe:	f3 28 dd             	repz sub %bl,%ch
+ 401:	17                   	pop    %ss
+ 402:	ff 17                	call   *(%bx)
+ 404:	08 02                	or     %al,(%bp,%si)
+ 406:	36 03 24             	add    %ss:(%si),%sp
+ 409:	e5 42                	in     $0x42,%ax
+ 40b:	0a                   	.byte 0xa
+
+Disassembly of section .note:
+
+00000000 <.note>:
+   0:	06                   	push   %es
+   1:	00 00                	add    %al,(%bx,%si)
+   3:	00 00                	add    %al,(%bx,%si)
+   5:	00 00                	add    %al,(%bx,%si)
+   7:	00 02                	add    %al,(%bp,%si)
+   9:	00 00                	add    %al,(%bx,%si)
+   b:	00 69 38             	add    %ch,0x38(%bx,%di)
+   e:	30 38                	xor    %bh,(%bx,%si)
+  10:	36 00 00             	add    %al,%ss:(%bx,%si)
+	...

@@ -1,0 +1,611 @@
+
+./ll:     file format elf32-sh-linux
+
+Disassembly of section .text:
+
+00400054 <_start>:
+  400054:	3b d8       	mov.l	400144 <out_addr>,r8	! 0x400830 <out_buffer>
+  400056:	83 6a       	mov	r8,r10
+  400058:	3f d0       	mov.l	400158 <R>,r0	! 0x3c0
+  40005a:	3b d3       	mov.l	400148 <logo_addr>,r3	! 0x4002c7 <logo>
+  40005c:	3b d7       	mov.l	40014c <logo_end_addr>,r7	! 0x4003e2 <logo_end>
+  40005e:	3c d9       	mov.l	400150 <text_addr>,r9	! 0x4003f0 <text_buf>
+
+00400060 <decompression_loop>:
+  400060:	08 e5       	mov	#8,r5
+  400062:	34 61       	mov.b	@r3+,r1
+
+00400064 <test_flags>:
+  400064:	73 33       	cmp/ge	r7,r3
+  400066:	21 89       	bt	4000ac <done_logo>
+  400068:	01 41       	shlr	r1
+  40006a:	1c 89       	bt	4000a6 <discrete_char>
+
+0040006c <offset_length>:
+  40006c:	34 6c       	mov.b	@r3+,r12
+  40006e:	cc 6c       	extu.b	r12,r12
+  400070:	34 64       	mov.b	@r3+,r4
+  400072:	4c 64       	extu.b	r4,r4
+  400074:	18 44       	shll8	r4
+  400076:	4b 2c       	or	r4,r12
+  400078:	c3 66       	mov	r12,r6
+  40007a:	19 46       	shlr8	r6
+  40007c:	09 46       	shlr2	r6
+  40007e:	03 76       	add	#3,r6
+
+00400080 <output_loop>:
+  400080:	34 dd       	mov.l	400154 <pos_mask>,r13	! 0x3ff
+  400082:	d9 2c       	and	r13,r12
+  400084:	93 6d       	mov	r9,r13
+  400086:	cc 3d       	add	r12,r13
+  400088:	d0 64       	mov.b	@r13,r4
+  40008a:	01 7c       	add	#1,r12
+
+0040008c <store_byte>:
+  40008c:	40 2a       	mov.b	r4,@r10
+  40008e:	01 7a       	add	#1,r10
+  400090:	44 09       	mov.b	r4,@(r0,r9)
+  400092:	01 70       	add	#1,r0
+  400094:	62 92       	mov.w	40015c <n_val>,r2	! 0x400 <N>
+  400096:	ff 72       	add	#-1,r2
+  400098:	29 20       	and	r2,r0
+  40009a:	10 46       	dt	r6
+  40009c:	f0 8b       	bf	400080 <output_loop>
+  40009e:	10 45       	dt	r5
+  4000a0:	e0 8b       	bf	400064 <test_flags>
+  4000a2:	dd af       	bra	400060 <decompression_loop>
+  4000a4:	09 00       	nop	
+
+004000a6 <discrete_char>:
+  4000a6:	34 64       	mov.b	@r3+,r4
+  4000a8:	f0 af       	bra	40008c <store_byte>
+  4000aa:	01 e6       	mov	#1,r6
+
+004000ac <done_logo>:
+  4000ac:	93 b0       	bsr	4001d6 <write_stdout>
+  4000ae:	83 65       	mov	r8,r5
+
+004000b0 <first_line>:
+  4000b0:	83 6a       	mov	r8,r10
+  4000b2:	7a e3       	mov	#122,r3
+  4000b4:	63 d4       	mov.l	400244 <uname_addr>,r4	! 0x404830 <uname_info>
+  4000b6:	11 c3       	trapa	#17
+  4000b8:	75 b0       	bsr	4001a6 <strcat_r4>
+  4000ba:	43 6b       	mov	r4,r11
+  4000bc:	6c b0       	bsr	400198 <strcat_r9>
+  4000be:	60 d9       	mov.l	400240 <data_addr>,r9	! 0x400268 <__data_start>
+  4000c0:	41 7b       	add	#65,r11
+  4000c2:	b3 63       	mov	r11,r3
+  4000c4:	41 73       	add	#65,r3
+  4000c6:	6e b0       	bsr	4001a6 <strcat_r4>
+  4000c8:	33 64       	mov	r3,r4
+  4000ca:	65 b0       	bsr	400198 <strcat_r9>
+  4000cc:	09 00       	nop	
+  4000ce:	41 73       	add	#65,r3
+  4000d0:	69 b0       	bsr	4001a6 <strcat_r4>
+  4000d2:	33 64       	mov	r3,r4
+  4000d4:	60 b0       	bsr	400198 <strcat_r9>
+  4000d6:	09 00       	nop	
+  4000d8:	6c b0       	bsr	4001b4 <center_and_print>
+  4000da:	09 00       	nop	
+
+004000dc <middle_line>:
+  4000dc:	83 6a       	mov	r8,r10
+  4000de:	05 e3       	mov	#5,r3
+  4000e0:	56 d4       	mov.l	40023c <cpu_addr>,r4	! 0x4002b9 <cpuinfo>
+  4000e2:	00 e5       	mov	#0,r5
+  4000e4:	12 c3       	trapa	#18
+  4000e6:	03 61       	mov	r0,r1
+  4000e8:	03 e3       	mov	#3,r3
+  4000ea:	13 64       	mov	r1,r4
+  4000ec:	56 d5       	mov.l	400248 <disk_addr>,r5	! 0x404a10 <disk_buffer>
+  4000ee:	10 e6       	mov	#16,r6
+  4000f0:	18 46       	shll8	r6
+  4000f2:	13 c3       	trapa	#19
+  4000f4:	06 e3       	mov	#6,r3
+  4000f6:	13 64       	mov	r1,r4
+  4000f8:	11 c3       	trapa	#17
+
+004000fa <number_of_cpus>:
+  4000fa:	4d b0       	bsr	400198 <strcat_r9>
+  4000fc:	09 00       	nop	
+
+004000fe <print_mhz>:
+  4000fe:	2e b0       	bsr	40015e <find_string>
+  400100:	57 d4       	mov.l	400260 <mhz_search>,r4	! 0x7520636c
+  400102:	49 b0       	bsr	400198 <strcat_r9>
+  400104:	09 00       	nop	
+
+00400106 <chip_name>:
+  400106:	2a b0       	bsr	40015e <find_string>
+  400108:	54 d4       	mov.l	40025c <family_search>,r4	! 0x6d696c79
+  40010a:	45 b0       	bsr	400198 <strcat_r9>
+  40010c:	09 00       	nop	
+  40010e:	74 e3       	mov	#116,r3
+  400110:	4e d4       	mov.l	40024c <sys_addr>,r4	! 0x4049c0 <sysinfo_buff>
+  400112:	11 c3       	trapa	#17
+  400114:	44 54       	mov.l	@(16,r4),r4
+  400116:	29 44       	shlr16	r4
+  400118:	09 44       	shlr2	r4
+  40011a:	09 44       	shlr2	r4
+  40011c:	67 b0       	bsr	4001ee <num_to_ascii>
+  40011e:	01 e3       	mov	#1,r3
+  400120:	3a b0       	bsr	400198 <strcat_r9>
+  400122:	09 00       	nop	
+  400124:	1b b0       	bsr	40015e <find_string>
+  400126:	4f d4       	mov.l	400264 <bogo_search>,r4	! 0x6d697073
+  400128:	36 b0       	bsr	400198 <strcat_r9>
+  40012a:	09 00       	nop	
+  40012c:	42 b0       	bsr	4001b4 <center_and_print>
+  40012e:	09 00       	nop	
+
+00400130 <last_line>:
+  400130:	83 6a       	mov	r8,r10
+  400132:	38 b0       	bsr	4001a6 <strcat_r4>
+  400134:	b3 64       	mov	r11,r4
+  400136:	3d b0       	bsr	4001b4 <center_and_print>
+  400138:	09 00       	nop	
+  40013a:	4c b0       	bsr	4001d6 <write_stdout>
+  40013c:	93 65       	mov	r9,r5
+
+0040013e <exit>:
+  40013e:	01 e3       	mov	#1,r3
+  400140:	00 e4       	mov	#0,r4
+  400142:	11 c3       	trapa	#17
+
+00400144 <out_addr>:
+  400144:	30 08       	.word 0x0830
+  400146:	40 00       	.word 0x0040
+
+00400148 <logo_addr>:
+  400148:	c7 02       	mul.l	r12,r2
+  40014a:	40 00       	.word 0x0040
+
+0040014c <logo_end_addr>:
+  40014c:	e2 03       	stc	r6_bank,r3
+  40014e:	40 00       	.word 0x0040
+
+00400150 <text_addr>:
+  400150:	f0 03       	.word 0x03f0
+  400152:	40 00       	.word 0x0040
+
+00400154 <pos_mask>:
+  400154:	ff 03       	mac.l	@r15+,@r3+
+	...
+
+00400158 <R>:
+  400158:	c0 03       	.word 0x03c0
+	...
+
+0040015c <n_val>:
+  40015c:	00 04       	.word 0x0400
+
+0040015e <find_string>:
+  40015e:	3a d5       	mov.l	400248 <disk_addr>,r5	! 0x404a10 <disk_buffer>
+
+00400160 <find_loop>:
+  400160:	1a 21       	xor	r1,r1
+  400162:	00 e0       	mov	#0,r0
+
+00400164 <looper>:
+  400164:	5c 0e       	mov.b	@(r0,r5),r14
+  400166:	18 41       	shll8	r1
+  400168:	eb 21       	or	r14,r1
+  40016a:	01 70       	add	#1,r0
+  40016c:	04 88       	cmp/eq	#4,r0
+  40016e:	f9 8b       	bf	400164 <looper>
+  400170:	0a 20       	xor	r0,r0
+  400172:	10 30       	cmp/eq	r1,r0
+  400174:	0e 89       	bt	400194 <done>
+  400176:	40 31       	cmp/eq	r4,r1
+  400178:	f2 8f       	bf.s	400160 <find_loop>
+  40017a:	01 75       	add	#1,r5
+
+0040017c <find_colon>:
+  40017c:	54 60       	mov.b	@r5+,r0
+  40017e:	3a 88       	cmp/eq	#58,r0
+  400180:	fc 8f       	bf.s	40017c <find_colon>
+  400182:	09 00       	nop	
+  400184:	01 75       	add	#1,r5
+
+00400186 <store_loop>:
+  400186:	54 60       	mov.b	@r5+,r0
+  400188:	00 2a       	mov.b	r0,@r10
+  40018a:	01 7a       	add	#1,r10
+  40018c:	0a 88       	cmp/eq	#10,r0
+  40018e:	fa 8f       	bf.s	400186 <store_loop>
+  400190:	09 00       	nop	
+  400192:	0a 20       	xor	r0,r0
+
+00400194 <done>:
+  400194:	0b 00       	rts	
+  400196:	04 2a       	mov.b	r0,@-r10
+
+00400198 <strcat_r9>:
+  400198:	94 60       	mov.b	@r9+,r0
+  40019a:	00 2a       	mov.b	r0,@r10
+  40019c:	01 7a       	add	#1,r10
+  40019e:	00 88       	cmp/eq	#0,r0
+  4001a0:	fa 8b       	bf	400198 <strcat_r9>
+  4001a2:	0b 00       	rts	
+  4001a4:	ff 7a       	add	#-1,r10
+
+004001a6 <strcat_r4>:
+  4001a6:	44 60       	mov.b	@r4+,r0
+  4001a8:	00 2a       	mov.b	r0,@r10
+  4001aa:	01 7a       	add	#1,r10
+  4001ac:	00 88       	cmp/eq	#0,r0
+  4001ae:	fa 8b       	bf	4001a6 <strcat_r4>
+  4001b0:	0b 00       	rts	
+  4001b2:	ff 7a       	add	#-1,r10
+
+004001b4 <center_and_print>:
+  4001b4:	22 4f       	sts.l	pr,@-r15
+  4001b6:	0e b0       	bsr	4001d6 <write_stdout>
+  4001b8:	25 d5       	mov.l	400250 <escape_addr>,r5	! 0x4002b4 <escape>
+
+004001ba <str_loop2>:
+  4001ba:	a3 60       	mov	r10,r0
+  4001bc:	88 30       	sub	r8,r0
+  4001be:	51 e4       	mov	#81,r4
+  4001c0:	0b 34       	subv	r0,r4
+  4001c2:	06 89       	bt	4001d2 <done_center>
+  4001c4:	01 44       	shlr	r4
+  4001c6:	0a 20       	xor	r0,r0
+  4001c8:	0e 34       	addc	r0,r4
+  4001ca:	10 b0       	bsr	4001ee <num_to_ascii>
+  4001cc:	00 e3       	mov	#0,r3
+  4001ce:	02 b0       	bsr	4001d6 <write_stdout>
+  4001d0:	21 d5       	mov.l	400258 <c_addr>,r5	! 0x4002b7 <C>
+
+004001d2 <done_center>:
+  4001d2:	26 4f       	lds.l	@r15+,pr
+  4001d4:	83 65       	mov	r8,r5
+
+004001d6 <write_stdout>:
+  4001d6:	ff e0       	mov	#-1,r0
+  4001d8:	00 e2       	mov	#0,r2
+
+004001da <strlen>:
+  4001da:	01 70       	add	#1,r0
+  4001dc:	5c 01       	mov.b	@(r0,r5),r1
+  4001de:	20 31       	cmp/eq	r2,r1
+  4001e0:	fb 8f       	bf.s	4001da <strlen>
+  4001e2:	03 66       	mov	r0,r6
+  4001e4:	04 e3       	mov	#4,r3
+  4001e6:	01 e4       	mov	#1,r4
+  4001e8:	13 c3       	trapa	#19
+  4001ea:	0b 00       	rts	
+  4001ec:	09 00       	nop	
+
+004001ee <num_to_ascii>:
+  4001ee:	19 d5       	mov.l	400254 <ascii_addr>,r5	! 0x404a0a
+
+004001f0 <div_by_10>:
+  4001f0:	0a e6       	mov	#10,r6
+  4001f2:	28 46       	shll16	r6
+  4001f4:	19 00       	div0u	
+  4001f6:	43 62       	mov	r4,r2
+
+004001f8 <divloop>:
+  4001f8:	64 32       	div1	r6,r2
+  4001fa:	64 32       	div1	r6,r2
+  4001fc:	64 32       	div1	r6,r2
+  4001fe:	64 32       	div1	r6,r2
+  400200:	64 32       	div1	r6,r2
+  400202:	64 32       	div1	r6,r2
+  400204:	64 32       	div1	r6,r2
+  400206:	64 32       	div1	r6,r2
+  400208:	64 32       	div1	r6,r2
+  40020a:	64 32       	div1	r6,r2
+  40020c:	64 32       	div1	r6,r2
+  40020e:	64 32       	div1	r6,r2
+  400210:	64 32       	div1	r6,r2
+  400212:	64 32       	div1	r6,r2
+  400214:	64 32       	div1	r6,r2
+  400216:	64 32       	div1	r6,r2
+  400218:	24 42       	rotcl	r2
+  40021a:	2d 62       	extu.w	r2,r2
+  40021c:	0a e6       	mov	#10,r6
+  40021e:	67 02       	mul.l	r6,r2
+  400220:	1a 00       	sts	macl,r0
+  400222:	43 66       	mov	r4,r6
+  400224:	08 36       	sub	r0,r6
+  400226:	30 76       	add	#48,r6
+  400228:	64 25       	mov.b	r6,@-r5
+  40022a:	23 64       	mov	r2,r4
+  40022c:	0a 20       	xor	r0,r0
+  40022e:	00 34       	cmp/eq	r0,r4
+  400230:	de 8b       	bf	4001f0 <div_by_10>
+
+00400232 <write_out>:
+  400232:	30 30       	cmp/eq	r3,r0
+  400234:	cf 89       	bt	4001d6 <write_stdout>
+  400236:	b6 af       	bra	4001a6 <strcat_r4>
+  400238:	53 64       	mov	r5,r4
+  40023a:	09 00       	nop	
+
+0040023c <cpu_addr>:
+  40023c:	b9 02       	.word 0x02b9
+  40023e:	40 00       	.word 0x0040
+
+00400240 <data_addr>:
+  400240:	68 02       	.word 0x0268
+  400242:	40 00       	.word 0x0040
+
+00400244 <uname_addr>:
+  400244:	30 48       	.word 0x4830
+  400246:	40 00       	.word 0x0040
+
+00400248 <disk_addr>:
+  400248:	10 4a       	dt	r10
+  40024a:	40 00       	.word 0x0040
+
+0040024c <sys_addr>:
+  40024c:	c0 49       	.word 0x49c0
+  40024e:	40 00       	.word 0x0040
+
+00400250 <escape_addr>:
+  400250:	b4 02       	mov.b	r11,@(r0,r2)
+  400252:	40 00       	.word 0x0040
+
+00400254 <ascii_addr>:
+  400254:	0a 4a       	lds	r10,mach
+  400256:	40 00       	.word 0x0040
+
+00400258 <c_addr>:
+  400258:	b7 02       	mul.l	r11,r2
+  40025a:	40 00       	.word 0x0040
+
+0040025c <family_search>:
+  40025c:	79 6c       	swap.w	r7,r12
+  40025e:	69 6d       	swap.w	r6,r13
+
+00400260 <mhz_search>:
+  400260:	6c 63       	extu.b	r6,r3
+  400262:	20 75       	add	#32,r5
+
+00400264 <bogo_search>:
+  400264:	73 70       	add	#115,r0
+  400266:	69 6d       	swap.w	r6,r13
+Disassembly of section .data:
+
+00400268 <__data_start>:
+  400268:	20 56       	mov.l	@(0,r2),r6
+  40026a:	65 72       	add	#101,r2
+  40026c:	73 69       	mov	r7,r9
+  40026e:	6f 6e       	exts.w	r6,r14
+  400270:	20 00       	.word 0x0020
+
+00400272 <compiled_string>:
+  400272:	2c 20       	cmp/str	r2,r0
+  400274:	43 6f       	mov	r4,r15
+  400276:	6d 70       	add	#109,r0
+  400278:	69 6c       	swap.w	r6,r12
+  40027a:	65 64       	mov.w	@r6+,r4
+  40027c:	20 00       	.word 0x0020
+
+0040027e <linefeed>:
+  40027e:	0a 00       	sts	mach,r0
+
+00400280 <one>:
+  400280:	4f 6e       	exts.w	r4,r14
+  400282:	65 20       	mov.w	r6,@-r0
+	...
+
+00400285 <mhz>:
+  400285:	20 00       	.word 0x0020
+
+00400287 <processor>:
+  400287:	20 50       	mov.l	@(0,r2),r0
+  400289:	72 6f       	mov.l	@r7,r15
+  40028b:	63 65       	mov	r6,r5
+  40028d:	73 73       	add	#115,r3
+  40028f:	6f 72       	add	#111,r2
+  400291:	2c 20       	cmp/str	r2,r0
+	...
+
+00400294 <ram_comma>:
+  400294:	4d 20       	xtrct	r4,r0
+  400296:	52 41       	.word 0x4152
+  400298:	4d 2c       	xtrct	r4,r12
+  40029a:	20 00       	.word 0x0020
+
+0040029c <bogo_total>:
+  40029c:	20 42       	shal	r2
+  40029e:	6f 67       	exts.w	r6,r7
+  4002a0:	6f 6d       	exts.w	r6,r13
+  4002a2:	69 70       	add	#105,r0
+  4002a4:	73 20       	.word 0x2073
+  4002a6:	54 6f       	mov.b	@r5+,r15
+  4002a8:	74 61       	mov.b	@r7+,r1
+  4002aa:	6c 0a       	mov.b	@(r0,r6),r10
+	...
+
+004002ad <default_colors>:
+  4002ad:	1b 5b       	mov.l	@(44,r1),r11
+  4002af:	30 6d       	mov.b	@r3,r13
+  4002b1:	0a 0a       	sts	mach,r10
+	...
+
+004002b4 <escape>:
+  4002b4:	1b 5b       	mov.l	@(44,r1),r11
+	...
+
+004002b7 <C>:
+  4002b7:	43 00       	.word 0x0043
+
+004002b9 <cpuinfo>:
+  4002b9:	2f 70       	add	#47,r0
+  4002bb:	72 6f       	mov.l	@r7,r15
+  4002bd:	63 2f       	.word 0x2f63
+  4002bf:	63 70       	add	#99,r0
+  4002c1:	75 69       	mov.w	@r7+,r9
+  4002c3:	6e 66       	exts.b	r6,r6
+  4002c5:	6f 00       	mac.l	@r6+,@r0+
+
+004002c7 <logo>:
+  4002c7:	ff 1b       	mov.l	r15,@(60,r11)
+  4002c9:	5b 30       	subv	r5,r0
+  4002cb:	3b 31       	subv	r3,r1
+  4002cd:	3b 33       	subv	r3,r3
+  4002cf:	37 9f       	mov.w	400340 <logo+0x79>,r15	! 0x1a4a
+  4002d1:	3b 34       	subv	r3,r4
+  4002d3:	37 6d       	not	r3,r13
+  4002d5:	23 cc       	tst.b	#35,@(r0,gbr)
+  4002d7:	f7 c0       	mov.b	r0,@(247,gbr)
+  4002d9:	07 33       	cmp/gt	r0,r3
+  4002db:	8d 30       	dmuls.l	r8,r0
+  4002dd:	c8 1b       	mov.l	r12,@(32,r11)
+  4002df:	1b 5b       	mov.l	@(44,r1),r11
+  4002e1:	c4 07       	mov.b	r12,@(r0,r7)
+  4002e3:	cb 1f       	mov.l	r12,@(44,r15)
+  4002e5:	1c 0c       	mov.b	@(r0,r1),r12
+  4002e7:	3b 0f       	.word 0x0f3b
+  4002e9:	34 30       	div1	r3,r0
+  4002eb:	6d 0a       	mov.w	@(r0,r6),r10
+  4002ed:	c0 f7       	.word 0xf7c0
+  4002ef:	01 60       	mov.w	@r0,r0
+  4002f1:	1a 38       	subc	r1,r8
+  4002f3:	2c 9c       	mov.w	40034e <logo+0x87>,r12	! 0x28cd
+  4002f5:	1f 1b       	mov.l	r1,@(60,r11)
+  4002f7:	5b 33       	subv	r5,r3
+  4002f9:	31 6d       	mov.w	@r3,r13
+  4002fb:	cc 04       	mov.b	@(r0,r12),r4
+  4002fd:	41 ac       	bra	3ffb83 <N+0x3ff783>
+  4002ff:	0d 24       	xtrct	r0,r4
+  400301:	02 1c       	mov.l	r0,@(8,r12)
+  400303:	10 4f       	dt	r15
+  400305:	0d 20       	xtrct	r0,r0
+  400307:	10 41       	dt	r1
+  400309:	93 98       	mov.w	400432 <text_buf+0x42>,r8
+  40030b:	83 34       	cmp/ge	r8,r4
+  40030d:	1c 34       	add	r1,r4
+  40030f:	cc 10       	mov.l	r12,@(48,r0)
+  400311:	10 0c       	.word 0x0c10
+  400313:	24 6f       	mov.b	@r2+,r15
+  400315:	39 ec       	mov	#57,r12
+  400317:	a7 1c       	mov.l	r10,@(28,r12)
+  400319:	08 33       	sub	r0,r3
+  40031b:	16 14       	mov.l	r1,@(24,r4)
+  40031d:	89 55       	mov.l	@(36,r8),r5
+  40031f:	2c 60       	extu.b	r2,r0
+  400321:	00 2b       	mov.b	r0,@r11
+  400323:	61 d6       	mov.l	4004a8 <text_buf+0xb8>,r6
+  400325:	71 e2       	mov	#113,r2
+  400327:	c8 cb       	or	#-56,r0
+  400329:	08 d4       	mov.l	40034c <logo+0x85>,r4	! 0x28cdcdf5
+  40032b:	09 d3       	mov.l	400350 <logo+0x89>,r3	! 0x418914cd
+  40032d:	10 2b       	mov.b	r1,@r11
+  40032f:	59 f5       	.word 0xf559
+  400331:	d1 00       	.word 0x00d1
+  400333:	80 11       	mov.l	r8,@(0,r1)
+  400335:	d2 18       	mov.l	r13,@(8,r8)
+  400337:	0d 28       	xtrct	r0,r8
+  400339:	1c 14       	mov.l	r1,@(48,r4)
+  40033b:	0d 2c       	xtrct	r0,r12
+  40033d:	1c 1c       	mov.l	r1,@(48,r12)
+  40033f:	f0 4a       	.word 0x4af0
+  400341:	1a 5b       	mov.l	@(40,r1),r11
+  400343:	00 0d       	.word 0x0d00
+  400345:	50 5f       	mov.l	@(0,r5),r15
+  400347:	65 87       	.word 0x8765
+  400349:	65 2b       	mov.w	r6,@-r11
+  40034b:	55 f5       	.word 0xf555
+  40034d:	cd cd       	and.b	#-51,@(r0,gbr)
+  40034f:	28 cd       	and.b	#40,@(r0,gbr)
+  400351:	14 89       	bt	40037d <logo+0xb6>
+  400353:	41 00       	.word 0x0041
+  400355:	1d 87       	.word 0x871d
+  400357:	42 4b       	.word 0x4b42
+  400359:	72 53       	mov.l	@(8,r7),r3
+  40035b:	1c 78       	add	#28,r8
+  40035d:	0f 62       	exts.w	r0,r2
+  40035f:	87 6d       	not	r8,r13
+  400361:	55 58       	mov.l	@(20,r5),r8
+  400363:	f7 c1       	mov.w	r0,@(494,gbr)
+  400365:	00 e8       	mov	#0,r8
+  400367:	2b f4       	.word 0xf42b
+  400369:	97 49       	ldc.l	@r9+,r1_bank
+  40036b:	78 3d       	sub	r7,r13
+  40036d:	b0 1b       	mov.l	r11,@(0,r11)
+  40036f:	5f 97       	mov.w	400430 <text_buf+0x40>,r7
+  400371:	b0 12       	mov.l	r11,@(0,r2)
+  400373:	2b ab       	bra	3ff9cd <N+0x3ff5cd>
+  400375:	ca 10       	mov.l	r12,@(40,r0)
+  400377:	df 16       	mov.l	r13,@(60,r6)
+  400379:	1a f5       	.word 0xf51a
+  40037b:	5a f5       	.word 0xf55a
+  40037d:	d9 3f       	.word 0x3fd9
+  40037f:	33 1b       	mov.l	r3,@(12,r11)
+  400381:	56 92       	mov.w	400430 <text_buf+0x40>,r2
+  400383:	5b b0       	bsr	40043d <text_buf+0x4d>
+  400385:	02 00       	stc	sr,r0
+  400387:	0c 1d       	mov.l	r0,@(48,r13)
+  400389:	d3 c8       	tst	#-45,r0
+  40038b:	ac 39       	add	r10,r9
+  40038d:	17 66       	not	r1,r6
+  40038f:	32 f6       	.word 0xf632
+  400391:	6e 6d       	exts.b	r6,r13
+  400393:	ec 44       	shad	r14,r4
+  400395:	60 5e       	mov.l	@(0,r6),r14
+  400397:	08 af       	bra	4001ab <strcat_r4+0x5>
+  400399:	0a a6       	bra	400fb1 <out_buffer+0x781>
+  40039b:	69 14       	mov.l	r6,@(36,r4)
+  40039d:	01 30       	.word 0x3001
+  40039f:	33 0b       	.word 0x0b33
+  4003a1:	de 1f       	mov.l	r13,@(56,r15)
+  4003a3:	31 0f       	.word 0x0f31
+  4003a5:	d3 bc       	bsr	3ffd4f <N+0x3ff94f>
+  4003a7:	00 af       	bra	4001ab <strcat_r4+0x5>
+  4003a9:	4f 19       	mov.l	r4,@(60,r9)
+  4003ab:	56 aa       	bra	3ff85b <N+0x3ff45b>
+  4003ad:	45 52       	mov.l	@(20,r4),r2
+  4003af:	db 28       	or	r13,r8
+  4003b1:	52 46       	.word 0x4652
+  4003b3:	7f 08       	mac.l	@r7+,@r8+
+  4003b5:	53 db       	mov.l	400504 <text_buf+0x114>,r11
+  4003b7:	23 00       	braf	r0
+  4003b9:	a9 55       	mov.l	@(36,r10),r5
+  4003bb:	aa 35       	subc	r10,r5
+  4003bd:	18 21       	tst	r1,r1
+  4003bf:	12 68       	mov.l	@r1,r8
+  4003c1:	91 2a       	mov.w	r9,@r10
+  4003c3:	c8 22       	tst	r12,r2
+  4003c5:	b2 68       	mov.l	@r11,r8
+  4003c7:	70 2d       	mov.b	r7,@r13
+  4003c9:	00 c6       	mov.l	@(0,gbr),r0
+  4003cb:	50 b2       	bsr	40086f <out_buffer+0x3f>
+  4003cd:	79 91       	mov.w	4004c2 <text_buf+0xd2>,r1
+  4003cf:	4a 70       	add	#74,r0
+  4003d1:	31 f8       	.word 0xf831
+  4003d3:	51 f3       	.word 0xf351
+  4003d5:	28 dd       	mov.l	400478 <text_buf+0x88>,r13
+  4003d7:	17 ff       	.word 0xff17
+  4003d9:	17 08       	mul.l	r1,r8
+  4003db:	02 36       	cmp/hs	r0,r6
+  4003dd:	03 24       	.word 0x2403
+  4003df:	e5 42       	.word 0x42e5
+  4003e1:	0a 00       	sts	mach,r0
+
+004003e2 <logo_end>:
+	...
+Disassembly of section .bss:
+
+004003f0 <text_buf>:
+	...
+
+00400830 <out_buffer>:
+	...
+
+00404830 <uname_info>:
+	...
+
+004049c0 <sysinfo_buff>:
+	...
+
+00404a00 <ascii_buffer>:
+	...
+
+00404a10 <disk_buffer>:
+	...

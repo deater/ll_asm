@@ -1,0 +1,36 @@
+\begin{table}[tbp]
+\caption{Correlations of architectural features to binary size}
+\label{table:correlations}
+\begin{sf} 
+\begin{center}
+\begin{tabular}{|r@{.\hspace{0.025em}}l|l|}
+\hline
+\multicolumn{2}{|c|}{\bf Correlation} & \multirow{2}{*}{\bf Architectural Parameter}\\
+\multicolumn{2}{|c|}{\bf Coefficient} & \\
+\hline
+\hline
+ 0 & 9381 	& Minimum possible instruction length \\
+ 0 & 9116	& Number of integer registers \\
+ 0 & 7823       & Virtual address of first instruction \\ 
+ 0 & 6607	& Architecture has a zero register \\
+ 0 & 6159	& Bit-width \\
+ 0 & 4982	& Number of operands in each instruction \\
+ 0 & 3129	& Year the architecture was introduced \\
+ \hline
+-0 & 0021	& Branch delay slot \\
+-0 & 0809	& Machine is big-endian \\
+-0 & 2121	& Auto-incrementing addressing scheme \\
+-0 & 2521	& Hardware status flags (zero/overflow/etc.) \\
+-0 & 3653	& Unaligned load/store available \\
+-0 & 3854	& Hardware divide in ALU \\
+\hline
+\end{tabular}
+\end{center}
+\end{sf}
+% 0.6160	& Predicated instructions \\
+% 0.0126	& Maximum possible instruction size  \\
+%
+% Explain
+%   Positive correlation means high val of feature increases code size 
+%   Negative correlation means high val of feature decreased code size
+\end{table}

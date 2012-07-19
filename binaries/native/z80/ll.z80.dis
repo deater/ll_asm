@@ -1,0 +1,746 @@
+
+./ll.debug:     file format coff-z80
+
+
+Disassembly of section .text:
+
+00000000 <_start>:
+   0:	21 e5 29    	ld hl,0x29e5
+   3:	f9          	ld sp,hl
+
+00000004 <setup>:
+   4:	fd 21 c1 07 	ld iy,0x07c1
+   8:	fd e5       	push iy
+   a:	d9          	exx
+   b:	11 c0 03    	ld de,0x03c0
+   e:	d9          	exx
+   f:	21 60 02    	ld hl,0x0260
+
+00000012 <decompression_loop>:
+  12:	4e          	ld c,(hl)
+  13:	23          	inc hl
+  14:	06 08       	ld b,0x08
+
+00000016 <test_flags>:
+  16:	c5          	push bc
+  17:	01 7b 03    	ld bc,0x037b
+  1a:	ed 42       	sbc hl,bc
+  1c:	28 54       	jr z,0x0072
+  1e:	09          	add hl,bc
+  1f:	c1          	pop bc
+  20:	cb 39       	srl c
+  22:	38 48       	jr c,0x006c
+
+00000024 <offset_length>:
+  24:	c5          	push bc
+  25:	4e          	ld c,(hl)
+  26:	23          	inc hl
+  27:	46          	ld b,(hl)
+  28:	23          	inc hl
+  29:	78          	ld a,b
+  2a:	cb 3f       	srl a
+  2c:	cb 3f       	srl a
+  2e:	c6 03       	add a,0x03
+  30:	57          	ld d,a
+  31:	78          	ld a,b
+  32:	e6 03       	and 0x03
+  34:	47          	ld b,a
+  35:	c5          	push bc
+  36:	dd e1       	pop ix
+  38:	c1          	pop bc
+
+00000039 <output_loop>:
+  39:	d9          	exx
+  3a:	dd e5       	push ix
+  3c:	c1          	pop bc
+  3d:	78          	ld a,b
+  3e:	e6 03       	and 0x03
+  40:	47          	ld b,a
+  41:	21 82 03    	ld hl,0x0382
+  44:	09          	add hl,bc
+  45:	7e          	ld a,(hl)
+  46:	dd 23       	inc ix
+  48:	d9          	exx
+
+00000049 <store_byte>:
+  49:	fe 0a       	cp 0x0a
+  4b:	20 07       	jr nz,0x0054
+  4d:	1e 0d       	ld e,0x0d
+  4f:	fd 73 00    	ld (iy+0),e
+  52:	fd 23       	inc iy
+
+00000054 <not_linefeed>:
+  54:	fd 77 00    	ld (iy+0),a
+  57:	fd 23       	inc iy
+  59:	d9          	exx
+  5a:	21 82 03    	ld hl,0x0382
+  5d:	19          	add hl,de
+  5e:	77          	ld (hl),a
+  5f:	13          	inc de
+  60:	7a          	ld a,d
+  61:	e6 03       	and 0x03
+  63:	57          	ld d,a
+  64:	d9          	exx
+  65:	15          	dec d
+  66:	20 d1       	jr nz,0x0039
+  68:	10 ac       	djnz 0x0016
+  6a:	18 a6       	jr 0x0012
+
+0000006c <discrete_char>:
+  6c:	7e          	ld a,(hl)
+  6d:	23          	inc hl
+  6e:	16 01       	ld d,0x01
+  70:	18 d7       	jr 0x0049
+
+00000072 <done_logo>:
+  72:	c1          	pop bc
+  73:	fd 36 00 24 	ld (iy+0),0x24
+  77:	d1          	pop de
+  78:	d5          	push de
+  79:	cd 57 01    	call 0x0157
+
+0000007c <first_line>:
+  7c:	d1          	pop de
+  7d:	d5          	push de
+  7e:	0e 0c       	ld c,0x0c
+  80:	cd 05 00    	call 0x0005
+
+00000083 <print_os_version>:
+  83:	7c          	ld a,h
+  84:	3d          	dec a
+  85:	e6 f6       	and 0xf6
+  87:	c6 4d       	add a,0x4d
+  89:	12          	ld (de),a
+  8a:	13          	inc de
+
+0000008b <print_pm_string>:
+  8b:	e5          	push hl
+  8c:	21 da 01    	ld hl,0x01da
+  8f:	cd d2 01    	call 0x01d2
+  92:	e1          	pop hl
+
+00000093 <print_version_number>:
+  93:	7d          	ld a,l
+  94:	1f          	rra
+  95:	1f          	rra
+  96:	1f          	rra
+  97:	1f          	rra
+  98:	e6 0f       	and 0x0f
+  9a:	c6 30       	add a,0x30
+  9c:	12          	ld (de),a
+  9d:	13          	inc de
+  9e:	3e 2e       	ld a,0x2e
+  a0:	12          	ld (de),a
+  a1:	13          	inc de
+  a2:	7d          	ld a,l
+  a3:	e6 0f       	and 0x0f
+  a5:	c6 30       	add a,0x30
+  a7:	12          	ld (de),a
+  a8:	13          	inc de
+  a9:	21 e7 01    	ld hl,0x01e7
+  ac:	cd d2 01    	call 0x01d2
+  af:	e5          	push hl
+  b0:	cd 2a 01    	call 0x012a
+
+000000b3 <middle_line>:
+  b3:	11 c1 27    	ld de,0x27c1
+  b6:	d5          	push de
+  b7:	06 24       	ld b,0x24
+  b9:	af          	xor a
+
+000000ba <clear_fcb>:
+  ba:	12          	ld (de),a
+  bb:	13          	inc de
+  bc:	10 fc       	djnz 0x00ba
+  be:	01 0b 00    	ld bc,0x000b
+  c1:	d1          	pop de
+  c2:	d5          	push de
+  c3:	13          	inc de
+  c4:	21 55 02    	ld hl,0x0255
+  c7:	ed b0       	ldir
+  c9:	d1          	pop de
+  ca:	d5          	push de
+  cb:	0e 0f       	ld c,0x0f
+  cd:	cd 05 00    	call 0x0005
+  d0:	d1          	pop de
+  d1:	d5          	push de
+  d2:	0e 14       	ld c,0x14
+  d4:	cd 05 00    	call 0x0005
+  d7:	d1          	pop de
+  d8:	0e 10       	ld c,0x10
+  da:	cd 05 00    	call 0x0005
+  dd:	e1          	pop hl
+  de:	d1          	pop de
+  df:	d5          	push de
+
+000000e0 <number_of_cpus>:
+  e0:	cd d2 01    	call 0x01d2
+
+000000e3 <print_mhz>:
+  e3:	e5          	push hl
+  e4:	21 49 02    	ld hl,0x0249
+  e7:	cd ac 01    	call 0x01ac
+  ea:	3e 20       	ld a,0x20
+  ec:	12          	ld (de),a
+  ed:	13          	inc de
+
+000000ee <chip_name>:
+  ee:	21 51 02    	ld hl,0x0251
+  f1:	cd ac 01    	call 0x01ac
+  f4:	e1          	pop hl
+  f5:	cd d2 01    	call 0x01d2
+
+000000f8 <print_ram>:
+  f8:	e5          	push hl
+  f9:	2a 06 00    	ld hl,(0x0006)
+  fc:	7c          	ld a,h
+  fd:	1f          	rra
+  fe:	1f          	rra
+  ff:	ed 62       	sbc hl,hl
+ 101:	6f          	ld l,a
+ 102:	b7          	or a
+ 103:	cd 5c 01    	call 0x015c
+ 106:	e1          	pop hl
+ 107:	cd d2 01    	call 0x01d2
+ 10a:	e5          	push hl
+
+0000010b <print_bogomips>:
+ 10b:	21 4d 02    	ld hl,0x024d
+ 10e:	cd ac 01    	call 0x01ac
+ 111:	e1          	pop hl
+ 112:	cd d2 01    	call 0x01d2
+ 115:	cd 2a 01    	call 0x012a
+
+00000118 <last_line>:
+ 118:	d1          	pop de
+ 119:	21 39 02    	ld hl,0x0239
+ 11c:	cd d2 01    	call 0x01d2
+ 11f:	e5          	push hl
+ 120:	cd 2a 01    	call 0x012a
+ 123:	d1          	pop de
+ 124:	cd 57 01    	call 0x0157
+
+00000127 <exit>:
+ 127:	c3 00 00    	jp 0x0000
+
+0000012a <center_and_print>:
+ 12a:	d5          	push de
+ 12b:	11 44 02    	ld de,0x0244
+ 12e:	cd 57 01    	call 0x0157
+
+00000131 <str_loop2>:
+ 131:	e1          	pop hl
+ 132:	e5          	push hl
+ 133:	11 c1 07    	ld de,0x07c1
+ 136:	ed 52       	sbc hl,de
+ 138:	7d          	ld a,l
+ 139:	ed 44       	neg
+ 13b:	c6 50       	add a,0x50
+ 13d:	fa 4d 01    	jp m,0x014d
+ 140:	cb 2f       	sra a
+ 142:	6f          	ld l,a
+ 143:	37          	scf
+ 144:	cd 5c 01    	call 0x015c
+ 147:	11 47 02    	ld de,0x0247
+ 14a:	cd 57 01    	call 0x0157
+
+0000014d <done_center>:
+ 14d:	d1          	pop de
+ 14e:	21 41 02    	ld hl,0x0241
+ 151:	cd d2 01    	call 0x01d2
+ 154:	11 c1 07    	ld de,0x07c1
+
+00000157 <write_stdout>:
+ 157:	0e 09       	ld c,0x09
+ 159:	c3 05 00    	jp 0x0005
+
+0000015c <num_to_ascii>:
+ 15c:	dd 21 7b 03 	ld ix,0x037b
+ 160:	dd e5       	push ix
+ 162:	f5          	push af
+ 163:	af          	xor a
+ 164:	08          	ex af,af'
+ 165:	01 f0 d8    	ld bc,0xd8f0
+ 168:	cd 7e 01    	call 0x017e
+ 16b:	01 18 fc    	ld bc,0xfc18
+ 16e:	cd 7e 01    	call 0x017e
+ 171:	01 9c ff    	ld bc,0xff9c
+ 174:	cd 7e 01    	call 0x017e
+ 177:	0e f6       	ld c,0xf6
+ 179:	cd 7e 01    	call 0x017e
+ 17c:	0e ff       	ld c,0xff
+
+0000017e <handle_digit>:
+ 17e:	3e 2f       	ld a,0x2f
+
+00000180 <digit_loop>:
+ 180:	3c          	inc a
+ 181:	09          	add hl,bc
+ 182:	38 fc       	jr c,0x0180
+ 184:	ed 42       	sbc hl,bc
+ 186:	dd 77 00    	ld (ix+0),a
+ 189:	e6 0f       	and 0x0f
+ 18b:	20 06       	jr nz,0x0193
+ 18d:	af          	xor a
+ 18e:	08          	ex af,af'
+ 18f:	b1          	or c
+ 190:	e6 01       	and 0x01
+ 192:	c8          	ret z
+
+00000193 <write_digit>:
+ 193:	dd 23       	inc ix
+ 195:	3e 01       	ld a,0x01
+ 197:	08          	ex af,af'
+ 198:	cb 41       	bit 0,c
+ 19a:	c8          	ret z
+
+0000019b <done_converting>:
+ 19b:	f1          	pop af
+ 19c:	30 07       	jr nc,0x01a5
+
+0000019e <num_to_stdout>:
+ 19e:	d1          	pop de
+ 19f:	dd 36 00 24 	ld (ix+0),0x24
+ 1a3:	18 b2       	jr 0x0157
+
+000001a5 <num_to_strcat>:
+ 1a5:	e1          	pop hl
+ 1a6:	dd 36 00 00 	ld (ix+0),0x00
+ 1aa:	18 26       	jr 0x01d2
+
+000001ac <find_string>:
+ 1ac:	d5          	push de
+ 1ad:	11 7f 00    	ld de,0x007f
+ 1b0:	d5          	push de
+ 1b1:	e5          	push hl
+
+000001b2 <no_match>:
+ 1b2:	e1          	pop hl
+ 1b3:	d1          	pop de
+ 1b4:	1c          	inc e
+ 1b5:	28 0e       	jr z,0x01c5
+ 1b7:	d5          	push de
+ 1b8:	e5          	push hl
+ 1b9:	06 04       	ld b,0x04
+
+000001bb <find_loop>:
+ 1bb:	1a          	ld a,(de)
+ 1bc:	be          	cp (hl)
+ 1bd:	13          	inc de
+ 1be:	23          	inc hl
+ 1bf:	20 f1       	jr nz,0x01b2
+ 1c1:	10 f8       	djnz 0x01bb
+ 1c3:	e1          	pop hl
+ 1c4:	e1          	pop hl
+
+000001c5 <error>:
+ 1c5:	d1          	pop de
+
+000001c6 <find_colon>:
+ 1c6:	3e 3a       	ld a,0x3a
+ 1c8:	01 80 00    	ld bc,0x0080
+ 1cb:	ed b1       	cpir
+ 1cd:	c0          	ret nz
+ 1ce:	23          	inc hl
+ 1cf:	3e 0d       	ld a,0x0d
+ 1d1:	06 af       	ld b,0xaf
+
+000001d2 <strcat>:
+ 1d2:	af          	xor a
+
+000001d3 <rep>:
+ 1d3:	be          	cp (hl)
+ 1d4:	ed a0       	ldi
+ 1d6:	20 fb       	jr nz,0x01d3
+ 1d8:	1b          	dec de
+ 1d9:	c9          	ret
+
+000001da <ver_string>:
+ 1da:	50          	ld d,b
+ 1db:	2f          	cpl
+ 1dc:	4d          	ld c,l
+ 1dd:	20 56       	jr nz,0x0235
+ 1df:	65          	ld h,l
+ 1e0:	72          	ld (hl),d
+ 1e1:	73          	ld (hl),e
+ 1e2:	69          	ld l,c
+ 1e3:	6f          	ld l,a
+ 1e4:	6e          	ld l,(hl)
+ 1e5:	20 00       	jr nz,0x01e7
+
+000001e7 <compiled_string>:
+ 1e7:	2c          	inc l
+ 1e8:	20 43       	jr nz,0x022d
+ 1ea:	6f          	ld l,a
+ 1eb:	6d          	ld l,l
+ 1ec:	70          	ld (hl),b
+ 1ed:	69          	ld l,c
+ 1ee:	6c          	ld l,h
+ 1ef:	65          	ld h,l
+ 1f0:	64          	ld h,h
+ 1f1:	20 46       	jr nz,0x0239
+
+000001f2 <compiled_date>:
+ 1f2:	46          	ld b,(hl)
+ 1f3:	72          	ld (hl),d
+ 1f4:	69          	ld l,c
+ 1f5:	20 4f       	jr nz,0x0246
+ 1f7:	63          	ld h,e
+ 1f8:	74          	ld (hl),h
+ 1f9:	20 31       	jr nz,0x022c
+ 1fb:	37          	scf
+ 1fc:	20 31       	jr nz,0x022f
+ 1fe:	30 3a       	jr nc,0x023a
+ 200:	30 30       	jr nc,0x0232
+ 202:	3a 30 30    	ld a,(0x3030)
+ 205:	20 45       	jr nz,0x024c
+ 207:	44          	ld b,h
+ 208:	54          	ld d,h
+ 209:	20 31       	jr nz,0x023c
+ 20b:	39          	add hl,sp
+ 20c:	38 30       	jr c,0x023e
+	...
+
+0000020f <one>:
+ 20f:	4f          	ld c,a
+ 210:	6e          	ld l,(hl)
+ 211:	65          	ld h,l
+ 212:	20 00       	jr nz,0x0214
+
+00000214 <processor>:
+ 214:	20 50       	jr nz,0x0266
+ 216:	72          	ld (hl),d
+ 217:	6f          	ld l,a
+ 218:	63          	ld h,e
+ 219:	65          	ld h,l
+ 21a:	73          	ld (hl),e
+ 21b:	73          	ld (hl),e
+ 21c:	6f          	ld l,a
+ 21d:	72          	ld (hl),d
+ 21e:	2c          	inc l
+ 21f:	20 00       	jr nz,0x0221
+
+00000221 <ram_comma>:
+ 221:	4b          	ld c,e
+ 222:	20 52       	jr nz,0x0276
+ 224:	41          	ld b,c
+ 225:	4d          	ld c,l
+ 226:	2c          	inc l
+ 227:	20 00       	jr nz,0x0229
+
+00000229 <bogo_total>:
+ 229:	20 42       	jr nz,0x026d
+ 22b:	6f          	ld l,a
+ 22c:	67          	ld h,a
+ 22d:	6f          	ld l,a
+ 22e:	6d          	ld l,l
+ 22f:	69          	ld l,c
+ 230:	70          	ld (hl),b
+ 231:	73          	ld (hl),e
+ 232:	20 54       	jr nz,0x0288
+ 234:	6f          	ld l,a
+ 235:	74          	ld (hl),h
+ 236:	61          	ld h,c
+ 237:	6c          	ld l,h
+	...
+
+00000239 <host_string>:
+ 239:	6b          	ld l,e
+ 23a:	72          	ld (hl),d
+ 23b:	67          	ld h,a
+	...
+
+0000023d <default_colors>:
+ 23d:	1b          	dec de
+ 23e:	5b          	ld e,e
+ 23f:	30 6d       	jr nc,0x02ae
+
+00000241 <linefeed>:
+ 241:	0d          	dec c
+ 242:	0a          	ld a,(bc)
+ 243:	24          	inc h
+
+00000244 <escape>:
+ 244:	1b          	dec de
+ 245:	5b          	ld e,e
+ 246:	24          	inc h
+
+00000247 <Cstring>:
+ 247:	43          	ld b,e
+ 248:	24          	inc h
+
+00000249 <mhz_search>:
+ 249:	20 4d       	jr nz,0x0298
+ 24b:	48          	ld c,b
+ 24c:	7a          	ld a,d
+
+0000024d <mips_search>:
+ 24d:	4d          	ld c,l
+ 24e:	49          	ld c,c
+ 24f:	50          	ld d,b
+ 250:	53          	ld d,e
+
+00000251 <type_search>:
+ 251:	74          	ld (hl),h
+ 252:	79          	ld a,c
+ 253:	70          	ld (hl),b
+ 254:	65          	ld h,l
+
+00000255 <cpuinfo>:
+ 255:	43          	ld b,e
+ 256:	50          	ld d,b
+ 257:	55          	ld d,l
+ 258:	49          	ld c,c
+ 259:	4e          	ld c,(hl)
+ 25a:	46          	ld b,(hl)
+ 25b:	4f          	ld c,a
+ 25c:	20 5a       	jr nz,0x02b8
+ 25e:	38 30       	jr c,0x0290
+
+00000260 <logo>:
+ 260:	ff          	rst 0x38
+ 261:	1b          	dec de
+ 262:	5b          	ld e,e
+ 263:	30 3b       	jr nc,0x02a0
+ 265:	31 3b 33    	ld sp,0x333b
+ 268:	37          	scf
+ 269:	9f          	sbc a,a
+ 26a:	3b          	dec sp
+ 26b:	34          	inc (hl)
+ 26c:	37          	scf
+ 26d:	6d          	ld l,l
+ 26e:	23          	inc hl
+ 26f:	cc f7 c0    	call z,0xc0f7
+ 272:	07          	rlca
+ 273:	33          	inc sp
+ 274:	8d          	adc a,l
+ 275:	30 c8       	jr nc,0x023f
+ 277:	1b          	dec de
+ 278:	1b          	dec de
+ 279:	5b          	ld e,e
+ 27a:	c4 07 cb    	call nz,0xcb07
+ 27d:	1f          	rra
+ 27e:	1c          	inc e
+ 27f:	0c          	inc c
+ 280:	3b          	dec sp
+ 281:	0f          	rrca
+ 282:	34          	inc (hl)
+ 283:	30 6d       	jr nc,0x02f2
+ 285:	0a          	ld a,(bc)
+ 286:	c0          	ret nz
+ 287:	f7          	rst 0x30
+ 288:	01 60 1a    	ld bc,0x1a60
+ 28b:	38 2c       	jr c,0x02b9
+ 28d:	9c          	sbc a,h
+ 28e:	1f          	rra
+ 28f:	1b          	dec de
+ 290:	5b          	ld e,e
+ 291:	33          	inc sp
+ 292:	31 6d cc    	ld sp,0xcc6d
+ 295:	04          	inc b
+ 296:	41          	ld b,c
+ 297:	ac          	xor h
+ 298:	0d          	dec c
+ 299:	24          	inc h
+ 29a:	02          	ld (bc),a
+ 29b:	1c          	inc e
+ 29c:	10 4f       	djnz 0x02ed
+ 29e:	0d          	dec c
+ 29f:	20 10       	jr nz,0x02b1
+ 2a1:	41          	ld b,c
+ 2a2:	93          	sub e
+ 2a3:	98          	sbc a,b
+ 2a4:	83          	add a,e
+ 2a5:	34          	inc (hl)
+ 2a6:	1c          	inc e
+ 2a7:	34          	inc (hl)
+ 2a8:	cc 10 10    	call z,0x1010
+ 2ab:	0c          	inc c
+ 2ac:	24          	inc h
+ 2ad:	6f          	ld l,a
+ 2ae:	39          	add hl,sp
+ 2af:	ec a7 1c    	call pe,0x1ca7
+ 2b2:	08          	ex af,af'
+ 2b3:	33          	inc sp
+ 2b4:	16 14       	ld d,0x14
+ 2b6:	89          	adc a,c
+ 2b7:	55          	ld d,l
+ 2b8:	2c          	inc l
+ 2b9:	60          	ld h,b
+ 2ba:	00          	nop
+ 2bb:	2b          	dec hl
+ 2bc:	61          	ld h,c
+ 2bd:	d6 71       	sub 0x71
+ 2bf:	e2 c8 cb    	jp po,0xcbc8
+ 2c2:	08          	ex af,af'
+ 2c3:	d4 09 d3    	call nc,0xd309
+ 2c6:	10 2b       	djnz 0x02f3
+ 2c8:	59          	ld e,c
+ 2c9:	f5          	push af
+ 2ca:	d1          	pop de
+ 2cb:	00          	nop
+ 2cc:	80          	add a,b
+ 2cd:	11 d2 18    	ld de,0x18d2
+ 2d0:	0d          	dec c
+ 2d1:	28 1c       	jr z,0x02ef
+ 2d3:	14          	inc d
+ 2d4:	0d          	dec c
+ 2d5:	2c          	inc l
+ 2d6:	1c          	inc e
+ 2d7:	1c          	inc e
+ 2d8:	f0          	ret p
+ 2d9:	4a          	ld c,d
+ 2da:	1a          	ld a,(de)
+ 2db:	5b          	ld e,e
+ 2dc:	00          	nop
+ 2dd:	0d          	dec c
+ 2de:	50          	ld d,b
+ 2df:	5f          	ld e,a
+ 2e0:	65          	ld h,l
+ 2e1:	87          	add a,a
+ 2e2:	65          	ld h,l
+ 2e3:	2b          	dec hl
+ 2e4:	55          	ld d,l
+ 2e5:	f5          	push af
+ 2e6:	cd cd 28    	call 0x28cd
+ 2e9:	cd 14 89    	call 0x8914
+ 2ec:	41          	ld b,c
+ 2ed:	00          	nop
+ 2ee:	1d          	dec e
+ 2ef:	87          	add a,a
+ 2f0:	42          	ld b,d
+ 2f1:	4b          	ld c,e
+ 2f2:	72          	ld (hl),d
+ 2f3:	53          	ld d,e
+ 2f4:	1c          	inc e
+ 2f5:	78          	ld a,b
+ 2f6:	0f          	rrca
+ 2f7:	62          	ld h,d
+ 2f8:	87          	add a,a
+ 2f9:	6d          	ld l,l
+ 2fa:	55          	ld d,l
+ 2fb:	58          	ld e,b
+ 2fc:	f7          	rst 0x30
+ 2fd:	c1          	pop bc
+ 2fe:	00          	nop
+ 2ff:	e8          	ret pe
+ 300:	2b          	dec hl
+ 301:	f4 97 49    	call p,0x4997
+ 304:	78          	ld a,b
+ 305:	3d          	dec a
+ 306:	b0          	or b
+ 307:	1b          	dec de
+ 308:	5f          	ld e,a
+ 309:	97          	sub a
+ 30a:	b0          	or b
+ 30b:	12          	ld (de),a
+ 30c:	2b          	dec hl
+ 30d:	ab          	xor e
+ 30e:	ca 10 df    	jp z,0xdf10
+ 311:	16 1a       	ld d,0x1a
+ 313:	f5          	push af
+ 314:	5a          	ld e,d
+ 315:	f5          	push af
+ 316:	d9          	exx
+ 317:	3f          	ccf
+ 318:	33          	inc sp
+ 319:	1b          	dec de
+ 31a:	56          	ld d,(hl)
+ 31b:	92          	sub d
+ 31c:	5b          	ld e,e
+ 31d:	b0          	or b
+ 31e:	02          	ld (bc),a
+ 31f:	00          	nop
+ 320:	0c          	inc c
+ 321:	1d          	dec e
+ 322:	d3 c8       	out (0xc8),a
+ 324:	ac          	xor h
+ 325:	39          	add hl,sp
+ 326:	17          	rla
+ 327:	66          	ld h,(hl)
+ 328:	32 f6 6e    	ld (0x6ef6),a
+ 32b:	6d          	ld l,l
+ 32c:	ec 44 60    	call pe,0x6044
+ 32f:	5e          	ld e,(hl)
+ 330:	08          	ex af,af'
+ 331:	af          	xor a
+ 332:	0a          	ld a,(bc)
+ 333:	a6          	and (hl)
+ 334:	69          	ld l,c
+ 335:	14          	inc d
+ 336:	01 30 33    	ld bc,0x3330
+ 339:	0b          	dec bc
+ 33a:	de 1f       	sbc a,0x1f
+ 33c:	31 0f d3    	ld sp,0xd30f
+ 33f:	bc          	cp h
+ 340:	00          	nop
+ 341:	af          	xor a
+ 342:	4f          	ld c,a
+ 343:	19          	add hl,de
+ 344:	56          	ld d,(hl)
+ 345:	aa          	xor d
+ 346:	45          	ld b,l
+ 347:	52          	ld d,d
+ 348:	db 28       	in a,(0x28)
+ 34a:	52          	ld d,d
+ 34b:	46          	ld b,(hl)
+ 34c:	7f          	ld a,a
+ 34d:	08          	ex af,af'
+ 34e:	53          	ld d,e
+ 34f:	db 23       	in a,(0x23)
+ 351:	00          	nop
+ 352:	a9          	xor c
+ 353:	55          	ld d,l
+ 354:	aa          	xor d
+ 355:	35          	dec (hl)
+ 356:	18 21       	jr 0x0379
+ 358:	12          	ld (de),a
+ 359:	68          	ld l,b
+ 35a:	91          	sub c
+ 35b:	2a c8 22    	ld hl,(0x22c8)
+ 35e:	b2          	or d
+ 35f:	68          	ld l,b
+ 360:	70          	ld (hl),b
+ 361:	2d          	dec l
+ 362:	00          	nop
+ 363:	c6 50       	add a,0x50
+ 365:	b2          	or d
+ 366:	79          	ld a,c
+ 367:	91          	sub c
+ 368:	4a          	ld c,d
+ 369:	70          	ld (hl),b
+ 36a:	31 f8 51    	ld sp,0x51f8
+ 36d:	f3          	di
+ 36e:	28 dd       	jr z,0x034d
+ 370:	17          	rla
+ 371:	ff          	rst 0x38
+ 372:	17          	rla
+ 373:	08          	ex af,af'
+ 374:	02          	ld (bc),a
+ 375:	36 03       	ld (hl),0x03
+ 377:	24          	inc h
+ 378:	e5          	push hl
+ 379:	42          	ld b,d
+ 37a:	0a          	ld a,(bc)
+
+Disassembly of section .bss:
+
+0000037b <__Lbss>:
+     37b:	00          	nop
+     37c:	00          	nop
+     37d:	00          	nop
+     37e:	00          	nop
+     37f:	00          	nop
+	...
+
+00000382 <text_buf>:
+	...
+
+000007c1 <out_buffer>:
+	...
+
+000027c1 <cpuinfo_fcb>:
+	...
+
+000027e5 <stack>:
+	...

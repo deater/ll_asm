@@ -1,0 +1,1424 @@
+ca65 V2.12.0 - (C) Copyright 1998-2005 Ullrich von Bassewitz
+Main file   : ll_6502.s
+Current file: ll_6502.s
+
+000000r 1               ;
+000000r 1               ;  ll_6502.s  -- Linux Logo in 6502 Assembly for the Apple II v0.40
+000000r 1               ;
+000000r 1               ;		by Vince Weaver  <vince _at_ deater.net>
+000000r 1               ;
+000000r 1               ;     decompresses the same lzss data as the Linux versions
+000000r 1               ;     but displays it to the high-res Apple II screen
+000000r 1               ;
+000000r 1               ;     Also prints some rough system info for Apple II class
+000000r 1               ;     computers, though not for the IIgs
+000000r 1               ;
+000000r 1               ;     File I/O routines based on sample code in
+000000r 1               ;       "Beneath Apple DOS" by Don Worth and Pieter Lechner
+000000r 1               
+000000r 1               
+000000r 1               .define EQU =
+000000r 1               
+000000r 1               ;; Standard zero page allocations that we use
+000000r 1               
+000000r 1               CH      EQU $24
+000000r 1               CV      EQU $25
+000000r 1               BASL    EQU $28
+000000r 1               BASH    EQU $29
+000000r 1               
+000000r 1               
+000000r 1               ;; Our Zero Page Allocations
+000000r 1               
+000000r 1               ;; for the LZSS part of the code
+000000r 1               
+000000r 1               LOGOH     EQU $FF
+000000r 1               LOGOL     EQU $FE
+000000r 1               OUTPUTH   EQU $FD
+000000r 1               OUTPUTL   EQU $FC
+000000r 1               STORERH   EQU $FB
+000000r 1               STORERL   EQU $FA
+000000r 1               LOADRH    EQU $F9
+000000r 1               LOADRL    EQU $F8
+000000r 1               EFFECTRH  EQU $F7
+000000r 1               EFFECTRL  EQU $F6
+000000r 1               MSELECT   EQU $F5
+000000r 1               COUNT     EQU $F4
+000000r 1               
+000000r 1               ;; for the graphics code
+000000r 1               
+000000r 1               QUOTIENT  EQU $FF
+000000r 1               REMAINDER EQU $FE
+000000r 1               ;; FD is OUTPUTH
+000000r 1               ;; FC is OUTPUTL
+000000r 1               DIVISORH  EQU $FB
+000000r 1               DIVISORL  EQU $FA
+000000r 1               DIVIDENDH EQU $F9
+000000r 1               DIVIDENDL EQU $F8
+000000r 1               YADDRH    EQU $F7
+000000r 1               YADDRL    EQU $F6
+000000r 1               APPLEY    EQU $F5
+000000r 1               ;; F4 is COUNT
+000000r 1               COLOR     EQU $F3
+000000r 1               APPLEXH   EQU $F2
+000000r 1               APPLEXL   EQU $F1
+000000r 1               MASK      EQU $F0
+000000r 1               BLOCK     EQU $EF
+000000r 1               OUTH      EQU $EE
+000000r 1               OUTL      EQU $ED
+000000r 1               HGRPNTH   EQU $EC
+000000r 1               HGRPNTL   EQU $EB
+000000r 1               
+000000r 1               ;; for the sysinfo code
+000000r 1               RAMSIZE   EQU $F7
+000000r 1               NUM2      EQU $F3
+000000r 1               NUM1      EQU $F2
+000000r 1               NUM0      EQU $F1
+000000r 1               CHAR1	  EQU $F0
+000000r 1               CHAR2	  EQU $EF
+000000r 1               ENDCHAR	  EQU $EE
+000000r 1               FINDH	  EQU $ED
+000000r 1               FINDL	  EQU $EC
+000000r 1               STRCATH   EQU $EB
+000000r 1               STRCATL   EQU $EA
+000000r 1               
+000000r 1               ;; For the disk-read code
+000000r 1               RWTSH	  EQU $F1
+000000r 1               RWTSL	  EQU $F0
+000000r 1               DOSBUFH	  EQU $EF
+000000r 1               DOSBUFL   EQU $EE
+000000r 1               FILEMH    EQU $ED
+000000r 1               FILEML	  EQU $EC
+000000r 1               
+000000r 1               ;; DOS Constants
+000000r 1               OPEN     EQU $01
+000000r 1               CLOSE    EQU $02
+000000r 1               READ     EQU $03
+000000r 1               WRITE    EQU $04
+000000r 1               DELETE   EQU $05
+000000r 1               CATALOG  EQU $06
+000000r 1               LOCK     EQU $07
+000000r 1               UNLOCK   EQU $08
+000000r 1               RENAME   EQU $09
+000000r 1               POSITION EQU $0A
+000000r 1               INIT     EQU $0B
+000000r 1               VERIFY   EQU $0C
+000000r 1               
+000000r 1               ;;
+000000r 1               OUTPUT	  EQU $4000	     	       ;; hgr page2, should be unused
+000000r 1               
+000000r 1               ;; VECTORS
+000000r 1               BASIC 	 EQU $3D0		       ;; VECTOR for return to Applesoft
+000000r 1               KEYPRESS EQU $C000
+000000r 1               KEYRESET EQU $C010
+000000r 1               
+000000r 1               LOCATE_FILEM_PARAM EQU $3DC
+000000r 1               LOCATE_RWTS_PARAM  EQU $3E3
+000000r 1               FILEMANAGER        EQU $3D6
+000000r 1               
+000000r 1               ;; SOFT SWITCHES
+000000r 1               GR      EQU $C050
+000000r 1               TEXT    EQU $C051
+000000r 1               FULLGR  EQU $C052
+000000r 1               TEXTGR  EQU $C053
+000000r 1               PAGE0   EQU $C054
+000000r 1               PAGE1   EQU $C055
+000000r 1               LORES   EQU $C056
+000000r 1               HIRES   EQU $C057
+000000r 1               
+000000r 1               ;; MONITOR ROUTINES
+000000r 1               PRBL2	EQU $F94A		       ;; Print Blanks monitor routine
+000000r 1               BASCALC	EQU $FBC1
+000000r 1               HOME    EQU $FC58		       ;; Clear the text screen
+000000r 1               SETNORM EQU $FE84		       ;; NORMAL
+000000r 1               COUT	EQU $FDED
+000000r 1               COUT1   EQU $FDF0		       ;; output A to screen
+000000r 1               CROUT   EQU $FD8E		       ;; char out monitor routine
+000000r 1               
+000000r 1               ;; LZSS Parameters
+000000r 1               
+000000r 1               N  	      EQU 1024
+000000r 1               F     	      EQU 64
+000000r 1               THRESHOLD     EQU 2
+000000r 1               P_BITS	      EQU 10
+000000r 1               POSITION_MASK EQU 3
+000000r 1               
+000000r 1               
+000000r 1               ;; OPTIMIZATION
+000000r 1               ;; 1651 - original
+000000r 1               ;; 1649 - change jmps branches (-1 byte each)
+000000r 1               ;; 1647 - remove unneeded branch
+000000r 1               ;; 1640 - share some code
+000000r 1               ;; 1639 - another branch adjust
+000000r 1               ;; 1611 - remove extraneous address loads
+000000r 1               ;; 1600 - rearrange find string
+000000r 1               ;; 1595 - inline strlen
+000000r 1               ;; 1575 - hack up RAM detection
+000000r 1               ;; 1573 - more JMP elimination
+000000r 1               
+000000r 1               ;==========================================================
+000000r 1               ; MAIN()
+000000r 1               ;==========================================================
+000000r 1               
+000000r 1                       ; save zero page
+000000r 1               	; otherwise we can't return to BASIC
+000000r 1               
+000000r 1  A2 E8        	ldx	#$e8   	     	       	 ; we save $E8-$FF
+000002r 1  A0 00        	ldy	#0
+000004r 1  A9 rr        	lda	#>zp_save
+000006r 1  85 FD        	sta	OUTPUTH
+000008r 1  A9 rr        	lda	#<zp_save
+00000Ar 1  85 FC        	sta	OUTPUTL
+00000Cr 1               save_zp_loop:
+00000Cr 1  B5 00        	lda	0,X
+00000Er 1  91 FC        	sta	(OUTPUTL),Y
+000010r 1  E8           	inx
+000011r 1  C8           	iny
+000012r 1  C0 17        	cpy	#$17			; save 16 bytes
+000014r 1  D0 F6        	bne	save_zp_loop
+000016r 1               
+000016r 1                 ;==========================
+000016r 1                 ; set graphics mode, page 0
+000016r 1                 ;==========================
+000016r 1  D8           	cld				; make sure doing binary adds
+000017r 1               					; not decimal
+000017r 1  20 58 FC     	jsr     HOME
+00001Ar 1  8D 50 C0     	sta	GR
+00001Dr 1  8D 57 C0     	sta	HIRES			; hires mode
+000020r 1  8D 53 C0     	sta	TEXTGR			; mixed text/graphics
+000023r 1  8D 54 C0     	sta	PAGE0			; first graphics page
+000026r 1               
+000026r 1  20 rr rr     	jsr	clear_screen		; clear the screen
+000029r 1               
+000029r 1  A9 rr        	lda	#>LOGO			; load logo pointer
+00002Br 1  85 FF        	sta	LOGOH
+00002Dr 1  A9 rr        	lda     #<LOGO
+00002Fr 1  85 FE        	sta	LOGOL
+000031r 1               
+000031r 1  20 rr rr     	jsr	reset_output		; load output pointer
+000034r 1               
+000034r 1  A9 03        	lda	#>(N-F)			; load R value
+000036r 1  85 FB        	sta	STORERH
+000038r 1  A9 C0        	lda	#<(N-F)
+00003Ar 1  85 FA        	sta	STORERL
+00003Cr 1               
+00003Cr 1  A0 00        	ldy	#0			; setup Y for indirect zero page
+00003Er 1               					; addressing, we always want +0
+00003Er 1               
+00003Er 1               decompression_loop:
+00003Er 1               
+00003Er 1  A9 08           	lda	#8                  	; set mask counter
+000040r 1  85 F4        	sta	COUNT
+000042r 1               
+000042r 1  B1 FE        	lda	(LOGOL),Y		; load byte
+000044r 1               
+000044r 1  85 F5        	sta	MSELECT			; store it
+000046r 1               
+000046r 1  A2 FE        	ldx	#LOGOL
+000048r 1  20 rr rr     	jsr	inc16 			; increment pointer
+00004Br 1               
+00004Br 1               test_flags:
+00004Br 1               
+00004Br 1  A5 FF        	lda	LOGOH			; compare to see if we've reached end
+00004Dr 1  C9 rr        	cmp	#>LOGO_END
+00004Fr 1  90 06        	bcc	not_match
+000051r 1               
+000051r 1  A5 FE        	lda	LOGOL
+000053r 1  C9 rr        	cmp	#<LOGO_END
+000055r 1               
+000055r 1  B0 65        	bcs	done_logo 		; if so, we are done
+000057r 1               					; bcs one byte less than jmp
+000057r 1               
+000057r 1               not_match:
+000057r 1  46 F5                lsr	MSELECT		   	; shift byte mask into carry flag
+000059r 1               
+000059r 1  B1 FE        	lda	(LOGOL),Y               ; load byte
+00005Br 1               
+00005Br 1  A2 FE                ldx	#LOGOL                  ; 16-bit increrment
+00005Dr 1  20 rr rr     	jsr	inc16
+000060r 1               
+000060r 1  B0 56                bcs	discrete_char		; if set we have discrete char
+000062r 1               
+000062r 1               offset_length:
+000062r 1               
+000062r 1  85 F8        	sta	LOADRL			; bottom of R offset
+000064r 1               
+000064r 1  B1 FE        	lda	(LOGOL),Y               ; load another byte
+000066r 1               
+000066r 1  A2 FE        	ldx	#LOGOL                  ;
+000068r 1  20 rr rr     	jsr	inc16			; 16 bit increment
+00006Br 1               
+00006Br 1  85 F9        	sta	LOADRH			; top of R offset
+00006Dr 1               
+00006Dr 1  4A           	lsr	A
+00006Er 1  4A           	lsr	A			; shift right by 10 (top byte by 2)
+00006Fr 1               
+00006Fr 1  18              	clc
+000070r 1  69 03        	adc	#3			; add threshold+1 (3)
+000072r 1               
+000072r 1  AA           	tax				; store out count in X
+000073r 1               
+000073r 1               output_loop:
+000073r 1               
+000073r 1  18           	clc 				; calculate R+LOADR
+000074r 1  A5 F8        	lda	LOADRL
+000076r 1  69 rr        	adc	#<R
+000078r 1  85 F6        	sta	EFFECTRL
+00007Ar 1               
+00007Ar 1  A5 F9        	lda	LOADRH
+00007Cr 1  29 03        	and	#((N-1)>>8)		; Mask so mod N
+00007Er 1  85 F9                sta	LOADRH
+000080r 1               
+000080r 1  69 rr        	adc	#>R
+000082r 1  85 F7        	sta	EFFECTRH
+000084r 1               
+000084r 1  B1 F6                lda	(EFFECTRL),Y		; Load byte R[LOADR]
+000086r 1               
+000086r 1  E6 F8          	inc     LOADRL			; increment address
+000088r 1  D0 02                bne	load_carry1
+00008Ar 1  E6 F9                inc	LOADRH	 		; handle overflow
+00008Cr 1               load_carry1:
+00008Cr 1               
+00008Cr 1               store_byte:
+00008Cr 1               
+00008Cr 1  91 FC        	sta     (OUTPUTL),Y		 ; store byte to output
+00008Er 1               
+00008Er 1  E6 FC        	inc     OUTPUTL			 ; increment address
+000090r 1  D0 02                bne	sb_carry
+000092r 1  E6 FD                inc	OUTPUTH	 		 ; handle overflow
+000094r 1               sb_carry:
+000094r 1  48           	pha	     			 ; calculate R+STORER
+000095r 1  18           	clc
+000096r 1  A5 FA                lda	STORERL
+000098r 1  69 rr        	adc	#<R
+00009Ar 1  85 F6        	sta	EFFECTRL
+00009Cr 1               
+00009Cr 1  A5 FB        	lda	STORERH
+00009Er 1  29 03        	and	#((N-1)>>8)		 ; mask so mod N
+0000A0r 1               
+0000A0r 1  85 FB        	sta	STORERH
+0000A2r 1  69 rr        	adc	#>R
+0000A4r 1  85 F7        	sta	EFFECTRH
+0000A6r 1               
+0000A6r 1  68           	pla				 ; restore from stack
+0000A7r 1               
+0000A7r 1  91 F6        	sta	(EFFECTRL),Y		 ; store A there too
+0000A9r 1               
+0000A9r 1  E6 FA        	inc     STORERL			 ; increment address
+0000ABr 1  D0 02                bne	store_carry2
+0000ADr 1  E6 FB                inc	STORERH	 		 ; handle overflow
+0000AFr 1               store_carry2:
+0000AFr 1               
+0000AFr 1  CA           	dex  			         ; count down the out counter
+0000B0r 1  D0 C1        	bne	output_loop		 ; loop to output_loop if not 0
+0000B2r 1               
+0000B2r 1  C6 F4        	dec	COUNT			 ; count down the mask counter
+0000B4r 1  D0 95        	bne	test_flags		 ; loop to test_flags if not zero
+0000B6r 1               
+0000B6r 1  F0 86        	beq	decompression_loop	 ; restart whole process
+0000B8r 1               
+0000B8r 1               discrete_char:
+0000B8r 1  A2 01        	ldx	#1   			 ; want to write a single byte
+0000BAr 1               
+0000BAr 1  D0 D0                bne	store_byte		 ; go and store it (1 byte less than jmp)
+0000BCr 1               
+0000BCr 1               done_logo:
+0000BCr 1               
+0000BCr 1               	;==========================
+0000BCr 1               	; print ANSI to HGR display
+0000BCr 1               	;==========================
+0000BCr 1               
+0000BCr 1  98           	tya			       	 ; get zero from Y
+0000BDr 1  91 FC        	sta	(OUTPUTL),Y	         ; make sure we are null terminated
+0000BFr 1               
+0000BFr 1  20 rr rr     	jsr	reset_output		 ; restore OUTPUT pointer
+0000C2r 1               					 ; now as input
+0000C2r 1               
+0000C2r 1  84 F4        	sty	COUNT  		    	 ; set count to zero
+0000C4r 1  84 F3        	sty	COLOR			 ; set color to zero
+0000C6r 1               
+0000C6r 1  A9 40        	lda	#64			 ; start Y at 64 (partway down screen)
+0000C8r 1  85 F5        	sta	APPLEY
+0000CAr 1               
+0000CAr 1  84 F2        	sty	APPLEXH			 ; set X to 20 (centered)
+0000CCr 1  A9 14        	lda	#20			 ; X can be up to 280, so 16-bit val
+0000CEr 1  85 F1                sta	APPLEXL
+0000D0r 1               
+0000D0r 1  20 rr rr             jsr	y_to_addr		 ; convert Y value to an address
+0000D3r 1               
+0000D3r 1               rle_loop:
+0000D3r 1  B1 FC        	lda	(OUTPUTL),Y		 ; load a byte
+0000D5r 1  F0 60              	beq	rle_done		 ; if zero, we are done
+0000D7r 1               
+0000D7r 1  C9 1B        	cmp	#27			 ; are we escape?
+0000D9r 1  D0 33        	bne	not_escape
+0000DBr 1               
+0000DBr 1               escape:
+0000DBr 1  A6 F4        	ldx	COUNT			 ; don't display if COUNT==0
+0000DDr 1  F0 03        	beq	dont_output
+0000DFr 1               
+0000DFr 1  20 rr rr     	jsr	flush_line 		 ; we finished a color, display it
+0000E2r 1               					 ; flush_line should set COUNT to 0
+0000E2r 1               dont_output:
+0000E2r 1  20 rr rr     	jsr     inc_pointer		 ; point after escape
+0000E5r 1               
+0000E5r 1  B1 FC                lda	(OUTPUTL),Y		 ; load next byte (should be [ )
+0000E7r 1               
+0000E7r 1               find_m:
+0000E7r 1  C9 6D        	cmp	#$6D			 ; looking for 'm'
+0000E9r 1  F0 1D              	beq	found_m
+0000EBr 1               
+0000EBr 1  C9 33                cmp	#$33   			 ; now looking for '3'
+0000EDr 1  D0 11        	bne	not_three
+0000EFr 1               
+0000EFr 1  20 rr rr     	jsr	inc_pointer
+0000F2r 1               
+0000F2r 1               	; if we have 3, the next number after is our color
+0000F2r 1               	; (these are ANSI escape codes)
+0000F2r 1               	; convert to apple HGR colors
+0000F2r 1               
+0000F2r 1  B1 FC        	lda	(OUTPUTL),Y		 ; load ascii number
+0000F4r 1  29 07        	and	#7                	 ; mask
+0000F6r 1  0A                   asl	A
+0000F7r 1  C9 08        	cmp	#8
+0000F9r 1  30 01        	bmi	ok			 ; make sure red, yellow map to orange
+0000FBr 1  4A              	lsr	A
+0000FCr 1               ok:		 			 ; I'm out of meaningful label names!
+0000FCr 1  29 03                and	#3
+0000FEr 1  85 F3                sta	COLOR			 ; save our computed color
+000100r 1               
+000100r 1               not_three:
+000100r 1  20 rr rr     	jsr  	inc_pointer
+000103r 1  B1 FC              	lda	(OUTPUTL),Y
+000105r 1  4C rr rr             jmp	find_m	   		 ; loop until we find a 'm'
+000108r 1               
+000108r 1               found_m:
+000108r 1  20 rr rr     	jsr	inc_pointer		 ; done with escape
+00010Br 1  4C rr rr     	jmp	rle_loop		 ; rejoin main loop
+00010Er 1               
+00010Er 1               not_escape:
+00010Er 1  C9 0A        	cmp   	#10			 ; check for linefeed
+000110r 1  D0 19                bne	not_linefeed
+000112r 1               
+000112r 1               linefeed:
+000112r 1  20 rr rr     	jsr 	flush_line		 ; if linefeed, flush line
+000115r 1               					 ; flush_line should set count to 0
+000115r 1               
+000115r 1  20 rr rr             jsr	inc_pointer
+000118r 1               
+000118r 1  84 F2        	sty	APPLEXH	   		 ; reset APPLEX to 20
+00011Ar 1  A9 14        	lda	#20
+00011Cr 1  85 F1        	sta	APPLEXL
+00011Er 1               
+00011Er 1  18           	clc	       			 ; increment Y by 8 (we are doing
+00011Fr 1  A5 F5        	lda	APPLEY			 ;  8-pixel high blocks)
+000121r 1  69 08        	adc	#8
+000123r 1  85 F5        	sta	APPLEY
+000125r 1  20 rr rr     	jsr	y_to_addr
+000128r 1               
+000128r 1  4C rr rr     	jmp rle_loop	 		 ; loop
+00012Br 1               
+00012Br 1               not_linefeed:
+00012Br 1  E6 F4        	inc	COUNT			 ; normal case.  we increment run by 3
+00012Dr 1  E6 F4        	inc	COUNT			 ; because 80*3 fits on 280 wide screen
+00012Fr 1  E6 F4        	inc	COUNT
+000131r 1               
+000131r 1  20 rr rr     	jsr	inc_pointer
+000134r 1               
+000134r 1  4C rr rr     	jmp	rle_loop   		 ; loop
+000137r 1               
+000137r 1               rle_done:
+000137r 1               
+000137r 1               	;================================
+000137r 1               	; read from disk
+000137r 1               	;================================
+000137r 1               
+000137r 1  20 DC 03     	jsr     LOCATE_FILEM_PARAM  	; load file manager param list
+00013Ar 1               					; Y=low A=high
+00013Ar 1               
+00013Ar 1  85 ED        	sta	FILEMH
+00013Cr 1  84 EC        	sty	FILEML
+00013Er 1               
+00013Er 1  A0 07        	ldy    #7	 		; file type offset = 7
+000140r 1  A9 00        	lda    #0			; 0 = text
+000142r 1  91 EC        	sta    (FILEML),y
+000144r 1               
+000144r 1  C8           	iny    				; filename ptr offset = 8
+000145r 1  A9 rr        	lda    #<filename
+000147r 1  91 EC        	sta    (FILEML),y
+000149r 1  C8           	iny
+00014Ar 1  A9 rr        	lda    #>filename
+00014Cr 1  91 EC        	sta    (FILEML),y
+00014Er 1               
+00014Er 1  A2 01        	ldx    #1	 		; open existing file
+000150r 1               
+000150r 1  20 rr rr     	jsr    open			; open file
+000153r 1               
+000153r 1  20 rr rr     	jsr    read			; read buffer
+000156r 1               
+000156r 1  20 rr rr     	jsr    close			; close file
+000159r 1               
+000159r 1               	;=================================
+000159r 1               	; print the system info
+000159r 1               	;=================================
+000159r 1               
+000159r 1  A0 00        	ldy 	#0			; be sure Y is zero
+00015Br 1               
+00015Br 1  84 24        	sty	CH			; set HTAB to 0
+00015Dr 1  A9 14        	lda	#20			; set VTAB to 20 (visible under
+00015Fr 1  85 25        	sta	CV			;                 the graphics)
+000161r 1  20 C1 FB     	jsr	BASCALC			; update output pointers
+000164r 1               
+000164r 1  20 rr rr     	jsr 	detect_ram		; get some system info
+000167r 1               
+000167r 1               	;=========================
+000167r 1                       ; print version info
+000167r 1                       ;=========================
+000167r 1               
+000167r 1  20 rr rr     	jsr 	reset_output
+00016Ar 1               
+00016Ar 1  A9 rr        	lda	#>VERSION
+00016Cr 1  85 EB        	sta	STRCATH
+00016Er 1  A9 rr        	lda	#<VERSION
+000170r 1  85 EA        	sta	STRCATL
+000172r 1  20 rr rr     	jsr	strcat 			; concatenate version info
+000175r 1               
+000175r 1  20 rr rr     	jsr	center_and_print	; print it to screen
+000178r 1               
+000178r 1               	;==========================
+000178r 1               	; print middle line
+000178r 1               	;==========================
+000178r 1               
+000178r 1  20 rr rr     	jsr	reset_output		; reset output pointer
+00017Br 1               
+00017Br 1               		       			; STCATL/H should auto point to "One "
+00017Br 1  20 rr rr     	jsr	strcat 			; concatenate it
+00017Er 1               
+00017Er 1  A9 C8        	lda	#('H'+$80)
+000180r 1  85 F0        	sta	CHAR1
+000182r 1  A9 DA        	lda	#('Z'+$80)		; search for HZ
+000184r 1  85 EF        	sta	CHAR2
+000186r 1  A9 CD        	lda	#('M'+$80)
+000188r 1  85 EE        	sta	ENDCHAR			; and get to \M
+00018Ar 1  20 rr rr     	jsr	find_string
+00018Dr 1               
+00018Dr 1               			   		; STRCATL/H already points to "MHz"
+00018Dr 1  20 rr rr     	jsr	strcat 			; concatenate it
+000190r 1               
+000190r 1  A9 D0        	lda	#('P'+$80)
+000192r 1  85 F0        	sta	CHAR1
+000194r 1  A9 D5        	lda	#('U'+$80)		; search for CPU
+000196r 1  85 EF        	sta	CHAR2
+000198r 1  A9 8D        	lda	#$8d
+00019Ar 1  85 EE        	sta	ENDCHAR			; and get to \r
+00019Cr 1  20 rr rr     	jsr	find_string
+00019Fr 1               
+00019Fr 1               				        ; STRCATL/H already points to "Processor"
+00019Fr 1  20 rr rr     	jsr	strcat
+0001A2r 1               
+0001A2r 1  20 rr rr     	jsr	num_to_ascii		; add the amount of RAM
+0001A5r 1               
+0001A5r 1  20 rr rr     	jsr	strcat 			; STRCATL/H points to "kB RAM"
+0001A8r 1               
+0001A8r 1  20 rr rr     	jsr	center_and_print	; center and print
+0001ABr 1               
+0001ABr 1               	;====================
+0001ABr 1                       ; print last line
+0001ABr 1               	;====================
+0001ABr 1               
+0001ABr 1  20 rr rr     	jsr    	reset_output		; reset output pointer
+0001AEr 1               
+0001AEr 1  A9 C5        	lda	#('E'+$80)
+0001B0r 1  85 F0        	sta	CHAR1
+0001B2r 1  A9 CC        	lda	#('L'+$80)		; search for CPU
+0001B4r 1  85 EF        	sta	CHAR2
+0001B6r 1               		     			; ENDCHAR already is $8D
+0001B6r 1               
+0001B6r 1  20 rr rr     	jsr	find_string
+0001B9r 1               
+0001B9r 1  20 rr rr     	jsr	center_and_print	; center and print
+0001BCr 1               
+0001BCr 1  20 rr rr     	jsr	wait_until_keypressed	; wait until a key is pressed
+0001BFr 1               
+0001BFr 1               
+0001BFr 1               ;==========================================================
+0001BFr 1               ; EXIT back to BASIC
+0001BFr 1               ;==========================================================
+0001BFr 1               
+0001BFr 1               exit:
+0001BFr 1                       ; restore zero page
+0001BFr 1               
+0001BFr 1  A2 E8        	ldx	#$e8   	   		; restore $e8-$ff
+0001C1r 1  A0 00        	ldy	#$0
+0001C3r 1  A9 rr        	lda	#>zp_save
+0001C5r 1  85 FD        	sta	OUTPUTH
+0001C7r 1  A9 rr        	lda	#<zp_save
+0001C9r 1  85 FC        	sta	OUTPUTL
+0001CBr 1               restore_zp_loop:
+0001CBr 1  B1 FC        	lda	(OUTPUTL),Y
+0001CDr 1  95 00        	sta	0,X
+0001CFr 1  E8           	inx
+0001D0r 1  C8           	iny
+0001D1r 1  C0 17        	cpy	#$17
+0001D3r 1  D0 F6        	bne	restore_zp_loop
+0001D5r 1               
+0001D5r 1  4C D0 03          	jmp 	BASIC		       ; return to BASIC
+0001D8r 1               
+0001D8r 1               
+0001D8r 1               ;==========================================================
+0001D8r 1               ; Wait until keypressed
+0001D8r 1               ;==========================================================
+0001D8r 1               ;
+0001D8r 1               
+0001D8r 1               wait_until_keypressed:
+0001D8r 1  AD 00 C0             lda     KEYPRESS                 ; check if keypressed
+0001DBr 1  10 FB        	bpl     wait_until_keypressed    ; if not, loop
+0001DDr 1  60           	rts
+0001DEr 1               
+0001DEr 1               
+0001DEr 1               
+0001DEr 1               
+0001DEr 1               ;==================================================
+0001DEr 1               ; y_to_addr - convert y value to address in mem
+0001DEr 1               ;==================================================
+0001DEr 1               ; this is needlessly complicated.  Blame Steve Wozniak
+0001DEr 1               ; apparently it was a clever hack to avoid the need
+0001DEr 1               ; for dedicated memory refresh circuitry
+0001DEr 1               
+0001DEr 1               y_to_addr:
+0001DEr 1  A5 F5        	lda	APPLEY
+0001E0r 1  29 07        	and	#$7  			 ; y%8
+0001E2r 1  0A                   asl	A			 ; *1024 (by saving to high bit free
+0001E3r 1  0A           	asl	A			 ;        multiply by 256)
+0001E4r 1               
+0001E4r 1  18           	clc
+0001E5r 1  69 20        	adc	#$20			 ; add 0x2000 which is where HGR starts
+0001E7r 1  85 F7        	sta	YADDRH
+0001E9r 1  84 F6        	sty	YADDRL
+0001EBr 1               
+0001EBr 1               less_than_64:
+0001EBr 1  A5 F5        	lda  	APPLEY
+0001EDr 1  C9 40        	cmp	#64
+0001EFr 1  B0 04        	bcs	less_than_128
+0001F1r 1  A2 00                ldx	#0
+0001F3r 1  F0 11        	beq	ready_to_add
+0001F5r 1               
+0001F5r 1               less_than_128:
+0001F5r 1  C9 80        	cmp     #128
+0001F7r 1  B0 08        	bcs	more_than_128
+0001F9r 1  A2 28        	ldx	#$28
+0001FBr 1  38           	sec	     			 ; on 6502 carry must be 1 to subtract
+0001FCr 1  E9 40        	sbc     #64			 ; subtract down
+0001FEr 1  4C rr rr     	jmp	ready_to_add
+000201r 1               
+000201r 1               more_than_128:
+000201r 1  A2 50        	ldx     #$50
+000203r 1  38           	sec
+000204r 1  E9 80                sbc	#128
+000206r 1               
+000206r 1               ready_to_add:
+000206r 1  4A           	lsr	A			 ; divide by 8
+000207r 1  4A           	lsr	A			 ; this also maskes off low bits
+000208r 1  4A           	lsr	A			 ; so we can't combine with below
+000209r 1               
+000209r 1  4A           	lsr	A			 ; this shift puts us to lower half
+00020Ar 1               					 ; of 16-bit value, so have to check
+00020Ar 1               					 ; and handle the underflow
+00020Ar 1               					 ; low bit is put into the C bit
+00020Ar 1  90 09        	bcc	no_bottom_add
+00020Cr 1               
+00020Cr 1  48           	pha		     		 ; save accumulator
+00020Dr 1  18           	clc				 ; shifted out C to bottom byte
+00020Er 1  A5 F6                lda     YADDRL
+000210r 1  69 80        	adc	#$80
+000212r 1  85 F6        	sta	YADDRL
+000214r 1  68                  	pla	      			 ; restore A from stack
+000215r 1               
+000215r 1               no_bottom_add:
+000215r 1  65 F7        	adc     YADDRH			 ; update top half of address
+000217r 1  85 F7        	sta	YADDRH
+000219r 1               
+000219r 1  18           	clc
+00021Ar 1  8A           	txa				 ; add in X which we picked earlier
+00021Br 1  65 F6        	adc	YADDRL			 ; we shifted by 0x80,
+00021Dr 1               					 ; and max X can be is 0x50
+00021Dr 1               					 ; so shouldn't ever carry
+00021Dr 1  85 F6        	sta	YADDRL
+00021Fr 1               
+00021Fr 1  60           	rts
+000220r 1               
+000220r 1               ;============================================
+000220r 1               ; inc_pointer - increments the output pointer
+000220r 1               ;============================================
+000220r 1               
+000220r 1               inc_pointer:
+000220r 1  A2 FC        	ldx	#OUTPUTL
+000222r 1               
+000222r 1               ;==================================================
+000222r 1               ; inc16 - increments a 16-bit pointer in zero page
+000222r 1               ;==================================================
+000222r 1               
+000222r 1               inc16:
+000222r 1  F6 00                inc     0,X                	 ; increment address
+000224r 1  D0 03        	bne     no_carry
+000226r 1  E8           	inx
+000227r 1  F6 00        	inc     0,X			 ; handle overflow
+000229r 1               no_carry:
+000229r 1  60           	rts
+00022Ar 1               
+00022Ar 1               
+00022Ar 1               
+00022Ar 1               ;===================================================
+00022Ar 1               ; flush_line - flush out an RLE pair to graphics mem
+00022Ar 1               ;===================================================
+00022Ar 1               
+00022Ar 1               flush_line:
+00022Ar 1  A5 F4                lda	COUNT			 ; repeat until COUNT=0
+00022Cr 1  F0 0D              	beq	end_flush
+00022Er 1               
+00022Er 1  20 rr rr     	jsr	hplot	 		 ; plot a point
+000231r 1               
+000231r 1  A2 F1        	ldx	#APPLEXL
+000233r 1  20 rr rr     	jsr	inc16			 ; increment 16-bit count
+000236r 1               
+000236r 1  C6 F4        	dec	COUNT
+000238r 1  4C rr rr     	jmp	flush_line
+00023Br 1               
+00023Br 1               end_flush:
+00023Br 1  60           	rts
+00023Cr 1               
+00023Cr 1               ;===========================================
+00023Cr 1               ; hplot - plot a pixel to the screen
+00023Cr 1               ;===========================================
+00023Cr 1               
+00023Cr 1               hplot:
+00023Cr 1  A5 F2                lda	APPLEXH			 ; prepare to divide by 7
+00023Er 1  85 F9              	sta	DIVIDENDH		 ; again, thanks Woz
+000240r 1  A5 F1                lda	APPLEXL
+000242r 1  85 F8        	sta	DIVIDENDL
+000244r 1               
+000244r 1  20 rr rr     	jsr	div7
+000247r 1               
+000247r 1  A9 01        	lda	#1  			 ; load a 1
+000249r 1  A6 FE                ldx	REMAINDER		 ; and shift it by X%7
+00024Br 1               
+00024Br 1               make_mask:
+00024Br 1  F0 04        	beq	done_mask
+00024Dr 1  0A           	asl	A
+00024Er 1  CA           	dex
+00024Fr 1  D0 FA        	bne 	make_mask
+000251r 1               
+000251r 1               done_mask:
+000251r 1  85 F0        	sta	MASK			; mask saved
+000253r 1               
+000253r 1  A5 F7        	lda	YADDRH			; copy yaddr into our hgr pointer
+000255r 1  85 EC        	sta	HGRPNTH
+000257r 1  A5 F6        	lda	YADDRL
+000259r 1  85 EB        	sta	HGRPNTL
+00025Br 1               
+00025Br 1  18           	clc
+00025Cr 1  65 FF                adc	QUOTIENT		; add x/7 to out mem pointer
+00025Er 1  85 EB        	sta	HGRPNTL
+000260r 1  A5 EC        	lda	HGRPNTH
+000262r 1  69 00                adc	#0
+000264r 1  85 EC        	sta	HGRPNTH
+000266r 1               
+000266r 1  B1 EB        	lda	(HGRPNTL),Y		; get our 7 bits of interest
+000268r 1  85 EF        	sta	BLOCK			; store for later
+00026Ar 1               
+00026Ar 1  A9 01        	lda	#1			; see if out X value is even or odd
+00026Cr 1  24 F1        	bit	APPLEXL
+00026Er 1  F0 08        	beq	even
+000270r 1               
+000270r 1               odd:
+000270r 1  A9 02            	lda	#2			; load odd mask
+000272r 1  24 F3        	bit	COLOR			; see if our color has this bit set
+000274r 1  D0 08                bne	set_bit			; if so, set it
+000276r 1  F0 0D        	beq	clear_bit		; otherwise, clear it
+000278r 1               
+000278r 1               even:
+000278r 1  A9 01        	lda	#1			; load even mask
+00027Ar 1  24 F3        	bit	COLOR			; see if our color has this bit set
+00027Cr 1  F0 07                beq	clear_bit		; if not, clear it
+00027Er 1               					; if so, fall through
+00027Er 1               set_bit:
+00027Er 1  A5 F0        	lda	MASK			; set the bit
+000280r 1  05 EF        	ora	BLOCK
+000282r 1  4C rr rr     	jmp	done_pset
+000285r 1               
+000285r 1               clear_bit:
+000285r 1  A5 F0        	lda	MASK			; clear the bit
+000287r 1  49 FF        	eor	#$FF			; invert the bits
+000289r 1  25 EF        	and	BLOCK			; and with inverse to clear
+00028Br 1               
+00028Br 1               done_pset:
+00028Br 1  09 80        	ora	#$80			; force blue/orange palette
+00028Dr 1  85 EF              	sta	BLOCK			; write out block
+00028Fr 1               
+00028Fr 1  A2 08                ldx	#8   			; we want to make it 8 pixels high
+000291r 1               make_blocky:
+000291r 1  91 EB        	sta 	(HGRPNTL),Y		; store to video mem
+000293r 1               
+000293r 1  48           	pha				; save on stack
+000294r 1  18           	clc
+000295r 1  A5 EC        	lda	HGRPNTH			; add 4 to high byte, equiv to
+000297r 1  69 04        	adc	#$04			; adding 1k to address.
+000299r 1  85 EC        	sta	HGRPNTH			; the lines are 1k apart in mem
+00029Br 1  68                 	pla				; restore block
+00029Cr 1               
+00029Cr 1  CA           	dex				; decrement counter
+00029Dr 1  D0 F2        	bne make_blocky			; repeat until done
+00029Fr 1  60           	rts
+0002A0r 1               
+0002A0r 1               ;=========================================
+0002A0r 1               ; div7 - divide by 7
+0002A0r 1               ;=========================================
+0002A0r 1               ; this is all the fault of 7400 series logic
+0002A0r 1               ; and the NTSC standard
+0002A0r 1               
+0002A0r 1               div7:
+0002A0r 1  84 FF                sty	QUOTIENT		 ; clear quotient
+0002A2r 1               
+0002A2r 1  A9 01                lda	#1
+0002A4r 1  85 FB        	sta	DIVISORH
+0002A6r 1  A9 C0        	lda	#$C0
+0002A8r 1  85 FA        	sta	DIVISORL		 ; set DIVISOR to 7<<6
+0002AAr 1               
+0002AAr 1               div7_loop:
+0002AAr 1  06 FF        	asl	QUOTIENT
+0002ACr 1               
+0002ACr 1  A5 F9        	lda	DIVIDENDH
+0002AEr 1  C5 FB        	cmp	DIVISORH
+0002B0r 1  90 1B                bcc	less_than
+0002B2r 1  D0 06                bne	subtract
+0002B4r 1               
+0002B4r 1  A5 F8        	lda	DIVIDENDL
+0002B6r 1  C5 FA        	cmp	DIVISORL
+0002B8r 1  90 13        	bcc	less_than
+0002BAr 1               
+0002BAr 1               subtract:
+0002BAr 1  38                   sec
+0002BBr 1  A5 F8                lda	DIVIDENDL
+0002BDr 1  E5 FA        	sbc	DIVISORL
+0002BFr 1  85 F8        	sta	DIVIDENDL
+0002C1r 1               
+0002C1r 1  A5 F9        	lda	DIVIDENDH
+0002C3r 1  E5 FB        	sbc	DIVISORH
+0002C5r 1  85 F9        	sta	DIVIDENDH
+0002C7r 1               
+0002C7r 1  A5 FF        	lda	QUOTIENT
+0002C9r 1  09 01                ora	#1
+0002CBr 1  85 FF        	sta	QUOTIENT
+0002CDr 1               
+0002CDr 1               less_than:
+0002CDr 1  18           	clc
+0002CEr 1  66 FB        	ror	DIVISORH
+0002D0r 1  66 FA        	ror	DIVISORL		 ; carry should make this 16 bit
+0002D2r 1  A5 FA        	lda	DIVISORL
+0002D4r 1  C9 03                cmp	#3
+0002D6r 1  D0 D2        	bne	div7_loop
+0002D8r 1               
+0002D8r 1  A5 F8        	lda	DIVIDENDL		 ; set remainder
+0002DAr 1  85 FE        	sta	REMAINDER
+0002DCr 1               
+0002DCr 1  60           	rts
+0002DDr 1               
+0002DDr 1               ;=======================================
+0002DDr 1               ; clear_screen - clear the hi-res screen
+0002DDr 1               ;=======================================
+0002DDr 1               clear_screen:
+0002DDr 1  A9 20        	lda     #$20
+0002DFr 1  85 FD        	sta	OUTPUTH
+0002E1r 1  A9 00        	lda	#$0
+0002E3r 1  85 FC        	sta	OUTPUTL
+0002E5r 1  A0 00        	ldy	#0
+0002E7r 1               clear_screen_loop:
+0002E7r 1  A9 00        	lda	#$00
+0002E9r 1  91 FC        	sta	(OUTPUTL),Y
+0002EBr 1  18           	clc
+0002ECr 1               
+0002ECr 1  20 rr rr     	jsr	inc_pointer
+0002EFr 1               
+0002EFr 1  A5 FD        	lda	OUTPUTH
+0002F1r 1  C9 40        	cmp	#$40
+0002F3r 1  D0 F2        	bne	clear_screen_loop
+0002F5r 1               
+0002F5r 1  60           	rts
+0002F6r 1               
+0002F6r 1               ;==============================================
+0002F6r 1               ; num_to_ascii - convert byte to 3 ascii bytes
+0002F6r 1               ;==============================================
+0002F6r 1               
+0002F6r 1               num_to_ascii:
+0002F6r 1  A2 F3                ldx  	#NUM2			; output to 3 bytes in zero page
+0002F8r 1  A5 F7        	lda	RAMSIZE			; hardcoded to only print ramsize
+0002FAr 1  85 F8                sta	DIVIDENDL
+0002FCr 1               
+0002FCr 1               div_loop:
+0002FCr 1  20 rr rr     	jsr	div10			; divide/mod by 10
+0002FFr 1               
+0002FFr 1  18           	clc
+000300r 1  A9 B0        	lda	#$B0
+000302r 1  65 FE        	adc	REMAINDER		; convert remainder to ASCII
+000304r 1  95 00               	sta	0,X			; store to zero page
+000306r 1  CA           	dex
+000307r 1  A5 FF        	lda	QUOTIENT		; move quotient to be next dividend
+000309r 1  85 F8        	sta	DIVIDENDL
+00030Br 1  D0 EF        	bne	div_loop
+00030Dr 1               
+00030Dr 1               store_loop:				; now copy from zero page to output
+00030Dr 1  E8           	inx				; because generated in reverse
+00030Er 1  B5 00        	lda	0,X
+000310r 1  91 FC                sta	(OUTPUTL),Y
+000312r 1  E0 F4        	cpx	#(NUM2+1)
+000314r 1  F0 08        	beq	done_ntoa
+000316r 1               
+000316r 1  E6 FC        	inc     OUTPUTL			 ; increment address
+000318r 1  D0 02                bne	ntoa_carry
+00031Ar 1  E6 FD                inc	OUTPUTH	 		 ; handle overflow
+00031Cr 1               ntoa_carry:
+00031Cr 1               
+00031Cr 1  D0 EF        	bne	store_loop		 ; save a byte.  OutputH never in zero page
+00031Er 1               done_ntoa:
+00031Er 1  60           	rts
+00031Fr 1               
+00031Fr 1               ;==================================
+00031Fr 1               ; div10 - divide a byte by 10
+00031Fr 1               ;==================================
+00031Fr 1               
+00031Fr 1               div10:
+00031Fr 1  84 FF                sty	QUOTIENT
+000321r 1  A9 A0                lda	#$a0
+000323r 1  85 FA                sta	DIVISORL		 ; set DIVISOR to 10<<4
+000325r 1               div10_loop:
+000325r 1               
+000325r 1  06 FF               	asl	QUOTIENT
+000327r 1               
+000327r 1  A5 F8        	lda	DIVIDENDL
+000329r 1  C5 FA        	cmp	DIVISORL
+00032Br 1  90 0D                bcc	less_than_10
+00032Dr 1               subtract_10:
+00032Dr 1  38           	sec
+00032Er 1  A5 F8                lda	DIVIDENDL
+000330r 1  E5 FA        	sbc	DIVISORL
+000332r 1  85 F8        	sta	DIVIDENDL
+000334r 1               
+000334r 1  A5 FF        	lda	QUOTIENT
+000336r 1  09 01        	ora	#1
+000338r 1  85 FF        	sta	QUOTIENT
+00033Ar 1               less_than_10:
+00033Ar 1               
+00033Ar 1  18           	clc
+00033Br 1               
+00033Br 1  66 FA        	ror	DIVISORL
+00033Dr 1  A5 FA        	lda	DIVISORL
+00033Fr 1  C9 05        	cmp	#$5
+000341r 1  D0 E2        	bne	div10_loop
+000343r 1               
+000343r 1  A5 F8        	lda	DIVIDENDL
+000345r 1  85 FE        	sta    	REMAINDER
+000347r 1               
+000347r 1  60           	rts
+000348r 1               
+000348r 1               ;====================================
+000348r 1               ; strcat - concatenate string
+000348r 1               ;====================================
+000348r 1               
+000348r 1               strcat:
+000348r 1  B1 EA                lda	(STRCATL),Y		; load byte into A
+00034Ar 1  91 FC        	sta	(OUTPUTL),Y		; store A out
+00034Cr 1  48           	pha
+00034Dr 1  A2 EA        	ldx	#STRCATL		; increment STRCAT pointer
+00034Fr 1  20 rr rr     	jsr	inc16			;  we do this first, so that we point
+000352r 1               					;  past null which lets us avoid
+000352r 1               					;  reloading in consecutive strcat's
+000352r 1  68            	pla
+000353r 1  F0 05                beq	strcat_done		; if zero, then done
+000355r 1               
+000355r 1  20 rr rr     	jsr	inc_pointer		; increment output pointer
+000358r 1  D0 EE        	bne	strcat	   		; we know OUTPUTH is never in zeor page
+00035Ar 1               					; so same as jmp
+00035Ar 1               strcat_done:
+00035Ar 1  60           	rts
+00035Br 1               
+00035Br 1               ;====================================
+00035Br 1               ; find_string -
+00035Br 1               ;====================================
+00035Br 1               ; CHAR1,2 = chars to find
+00035Br 1               ; ENDCHAR = end char
+00035Br 1               
+00035Br 1               find_string:
+00035Br 1  A9 rr        	lda 	#<disk_buff
+00035Dr 1  85 EC        	sta	FINDL
+00035Fr 1  A9 rr        	lda	#>disk_buff
+000361r 1  85 ED        	sta	FINDH
+000363r 1               
+000363r 1  18           	clc	     			; set return value
+000364r 1               
+000364r 1               find_loop1:
+000364r 1  20 rr rr     	jsr	find_loop		; find first 2 chars
+000367r 1  90 21        	bcc	find_string_done	; exit if error
+000369r 1               
+000369r 1               find_colon:
+000369r 1  A9 BA        	lda	#(':'+$80)		; find a colon
+00036Br 1  85 F0        	sta	CHAR1
+00036Dr 1  A9 A0        	lda	#(' '+$80)		; followed by a space
+00036Fr 1  85 EF        	sta	CHAR2
+000371r 1  20 rr rr     	jsr find_loop
+000374r 1  90 14        	bcc find_string_done
+000376r 1               
+000376r 1               out_loop:
+000376r 1  B1 EC                lda	(FINDL),Y			; load byte
+000378r 1  F0 10        	beq	find_string_done		; quit if zero
+00037Ar 1               
+00037Ar 1  C5 EE        	cmp	ENDCHAR				; quit if endhcar matched
+00037Cr 1  F0 0C        	beq	find_string_done
+00037Er 1               
+00037Er 1  91 FC        	sta	(OUTPUTL),Y			; store to output
+000380r 1  A2 EC        	ldx	#FINDL
+000382r 1  20 rr rr     	jsr	inc16				; increment FIND pointer
+000385r 1  20 rr rr     	jsr	inc_pointer			; increment OUT pointer
+000388r 1  D0 EC        	bne	out_loop			; loop (OUT is never in page 0)
+00038Ar 1               
+00038Ar 1               find_string_done:
+00038Ar 1  98           	tya					; null terminate (y is 0)
+00038Br 1  91 FC        	sta	(OUTPUTL),Y
+00038Dr 1  60           	rts
+00038Er 1               
+00038Er 1               find_loop:
+00038Er 1  B1 EC                lda	(FINDL),Y			; load byte
+000390r 1  F0 15        	beq	find_loop_done			; if zero, we're done
+000392r 1               
+000392r 1  A2 EC        	ldx	#FINDL				;
+000394r 1  20 rr rr     	jsr	inc16				; increment pointer
+000397r 1               
+000397r 1  C5 F0        	cmp	CHAR1
+000399r 1  D0 F3        	bne	find_loop			; jmp. disk buffer never in 0 page
+00039Br 1               
+00039Br 1  B1 EC        	lda	(FINDL),Y			; load byte
+00039Dr 1  C5 EF        	cmp	CHAR2				; compare 2nd char
+00039Fr 1  D0 ED        	bne	find_loop
+0003A1r 1               
+0003A1r 1               found_it:
+0003A1r 1  A2 EC        	ldx	#FINDL
+0003A3r 1  20 rr rr     	jsr	inc16				; increment pointer
+0003A6r 1  38           	sec					; set that we were correct
+0003A7r 1               find_loop_done:
+0003A7r 1  60           	rts
+0003A8r 1               
+0003A8r 1               
+0003A8r 1               ;=============================================
+0003A8r 1               ; center_and_print - centers and prints string
+0003A8r 1               ;=============================================
+0003A8r 1               
+0003A8r 1               center_and_print:
+0003A8r 1               
+0003A8r 1                       ;================================
+0003A8r 1               	; inlined strlen - count length of string
+0003A8r 1               	;================================
+0003A8r 1               
+0003A8r 1               strlen:
+0003A8r 1  20 rr rr             jsr	reset_output		; reset the output pointer
+0003ABr 1               
+0003ABr 1  84 F4        	sty	COUNT			; set count to zero
+0003ADr 1               strlen_loop:
+0003ADr 1  B1 FC                lda 	(OUTPUTL),Y
+0003AFr 1  F0 07               	beq	strlen_done
+0003B1r 1  E6 F4        	inc	COUNT	   		; if not zero, increment count
+0003B3r 1  20 rr rr     	jsr	inc_pointer
+0003B6r 1  D0 F5                bne	strlen_loop		; same as jmp, pointer never in 0 page
+0003B8r 1               
+0003B8r 1               strlen_done:
+0003B8r 1               
+0003B8r 1  38           	sec
+0003B9r 1  A9 28                lda	#40			; width of screen
+0003BBr 1  E5 F4        	sbc	COUNT
+0003BDr 1               
+0003BDr 1  30 0A        	bmi	no_center
+0003BFr 1  4A           	lsr	A	 		; divide by 2
+0003C0r 1  69 00        	adc	#0			; round up if carry
+0003C2r 1               
+0003C2r 1  AA           	tax
+0003C3r 1               
+0003C3r 1  20 4A F9     	jsr	PRBL2			; print X blanks
+0003C6r 1               
+0003C6r 1  20 rr rr     	jsr	reset_output		; reset output pointer
+0003C9r 1               
+0003C9r 1               no_center:
+0003C9r 1  A6 F4        	ldx	COUNT
+0003CBr 1               print_loop:
+0003CBr 1  B1 FC              	lda	(OUTPUTL),Y
+0003CDr 1  20 ED FD             jsr	COUT	   		 ; output a char
+0003D0r 1               
+0003D0r 1  E6 FC        	inc     OUTPUTL			 ; increment address
+0003D2r 1  D0 02                bne	cap_carry
+0003D4r 1  E6 FD                inc	OUTPUTH	 		 ; handle overflow
+0003D6r 1               cap_carry:
+0003D6r 1               
+0003D6r 1  CA           	dex
+0003D7r 1  D0 F2        	bne	print_loop
+0003D9r 1               
+0003D9r 1  20 8E FD     	jsr	CROUT	  		; output to screen
+0003DCr 1               
+0003DCr 1  60           	rts
+0003DDr 1               
+0003DDr 1               ;=========================================
+0003DDr 1               ; reset_output - reset OUTPUT H&L pointers
+0003DDr 1               ;=========================================
+0003DDr 1               
+0003DDr 1               reset_output:
+0003DDr 1  A9 00        	lda  	#<OUTPUT
+0003DFr 1  85 FC              	sta	OUTPUTL
+0003E1r 1  A9 40                lda	#>OUTPUT
+0003E3r 1  85 FD        	sta	OUTPUTH
+0003E5r 1  60           	rts
+0003E6r 1               
+0003E6r 1               ;=================================
+0003E6r 1               ; detect_ram
+0003E6r 1               ;=================================
+0003E6r 1               ;
+0003E6r 1               ; uses lookup table from
+0003E6r 1               ;    http://web.pdx.edu/~heiss/technotes/misc/tn.misc.07.html
+0003E6r 1               ; to get model type.
+0003E6r 1               ; Then make some intelligent guesses about RAM size
+0003E6r 1               
+0003E6r 1               detect_ram:
+0003E6r 1  A2 40        	ldx 	#64			; set default ram to 64 bytes
+0003E8r 1               
+0003E8r 1  AD B3 FB     	lda	$FBB3			; this address
+0003EBr 1  C9 38        	cmp	#$38			; is $38 on an original apple ii
+0003EDr 1  D0 02        	bne	apple_iiplus
+0003EFr 1               apple_ii:
+0003EFr 1  F0 13        	beq	done_detecting		; we were apple II, done
+0003F1r 1               
+0003F1r 1               apple_iiplus:
+0003F1r 1  C9 EA        	cmp  	#$EA			; are we an apple iie
+0003F3r 1  D0 04              	bne	apple_iie		; if so keep going
+0003F5r 1               
+0003F5r 1               	; if we get here we're a ii+ or iii in emulation mode
+0003F5r 1               
+0003F5r 1  A2 30        	ldx	#48	 		; we're an Apple II+
+0003F7r 1               					; we assume 48k even though it can be
+0003F7r 1               		     			; 64k if language card
+0003F7r 1               					; too lazy to detect that
+0003F7r 1               
+0003F7r 1  F0 0B        	beq	done_detecting
+0003F9r 1               
+0003F9r 1               apple_iie:
+0003F9r 1  AD C0 FB     	lda	$FBC0
+0003FCr 1  F0 04        	beq	apple_iic		; check for apple iic
+0003FEr 1               
+0003FEr 1  C9 E0                cmp	#$E0	    		; if we're an Apple IIe (original)
+000400r 1  D0 02        	bne	done_detecting		; then use 64K and finish
+000402r 1               
+000402r 1               apple_iie_enhanced:
+000402r 1               apple_iic:
+000402r 1  A2 80        	ldx	#128
+000404r 1               
+000404r 1               done_detecting:
+000404r 1  86 F7        	stx     RAMSIZE
+000406r 1  60           	rts
+000407r 1               
+000407r 1               
+000407r 1               error:
+000407r 1  4C rr rr           	jmp	exit
+00040Ar 1               
+00040Ar 1               ;=================================
+00040Ar 1               ; get_dos_buffer
+00040Ar 1               ;=================================
+00040Ar 1               ;
+00040Ar 1               ; Dos buffer format
+00040Ar 1               ; 0x000-0x0ff = data buffer
+00040Ar 1               ; 0x100-0x1ff = t/s list buffer
+00040Ar 1               ; 0x200-0x22c = file manager workarea (45 bytes)
+00040Ar 1               ; 0x22d-0x24a = file name buffer
+00040Ar 1               
+00040Ar 1               ; 0x24b-0x24c = address of file manager workarea
+00040Ar 1               ; 0x24d-0x24e = address of t/s list buffer
+00040Ar 1               ; 0x24f-0x250 = adress of data sector buffer
+00040Ar 1               ; 0x251-0x252 = address of file name field for the next buffer
+00040Ar 1               
+00040Ar 1               ; In DOS, $3D2 points to 0x22d of first buffer
+00040Ar 1               ;    add 0x24 to get chain pointer
+00040Ar 1               
+00040Ar 1               
+00040Ar 1               open:
+00040Ar 1               	; allocate one of the DOS buffers so we don't have to set them up
+00040Ar 1               
+00040Ar 1               allocate_dos_buffer:
+00040Ar 1  AD D2 03     	lda     $3D2			; DOS load point
+00040Dr 1  85 EF        	sta	DOSBUFH
+00040Fr 1  A0 00        	ldy	#0
+000411r 1  84 EE        	sty	DOSBUFL
+000413r 1               
+000413r 1               buf_loop:
+000413r 1  B1 EE        	lda	(DOSBUFL),Y		; locate next buffer
+000415r 1  48           	pha				; push on stack
+000416r 1               					; we need this later
+000416r 1               					; to test validity
+000416r 1               
+000416r 1  C8           	iny				; increment y
+000417r 1  B1 EE        	lda	(DOSBUFL),Y		; load next byte
+000419r 1  85 EF        	sta	DOSBUFH			; store to buffer pointerl
+00041Br 1               
+00041Br 1  68           	pla				; restore value from stack
+00041Cr 1               
+00041Cr 1  85 EE        	sta	DOSBUFL			; store to buffer pointerh
+00041Er 1               
+00041Er 1  D0 04        	bne	found_buffer		; if not zero, found a buffer
+000420r 1               
+000420r 1  A5 EF        	lda	DOSBUFH			; also if not zero, found a buffer
+000422r 1  F0 E3        	beq     error			; no buffer found, exit
+000424r 1               
+000424r 1               found_buffer:
+000424r 1  A0 00        	ldy  	#0			; get filename
+000426r 1  B1 EE        	lda	(DOSBUFL),Y		; get first byte
+000428r 1  F0 04        	beq	good_buffer		; if zero, good buffer
+00042Ar 1               
+00042Ar 1               					; in use
+00042Ar 1  A0 24        	ldy	#$24	   		; point to next
+00042Cr 1  D0 E5        	bne	buf_loop		; and loop
+00042Er 1               
+00042Er 1               good_buffer:
+00042Er 1  A9 78        	lda 	#$78
+000430r 1  91 EE        	sta	(DOSBUFL),Y		; mark as in use (can be any !0)
+000432r 1               
+000432r 1               keep_opening:
+000432r 1  A0 00        	ldy	#0
+000434r 1  A9 01        	lda	#OPEN			; set operation code to OPEN
+000436r 1  91 EC        	sta	(FILEML),y
+000438r 1               
+000438r 1  A0 02        	ldy	#2	  		; point to record length
+00043Ar 1  A9 00        	lda	#0			; set it to zero (16-bits)
+00043Cr 1  91 EC        	sta	(FILEML),y
+00043Er 1  C8           	iny
+00043Fr 1  91 EC        	sta	(FILEML),y
+000441r 1               
+000441r 1  C8           	iny		  		; point to volume num (0=any)
+000442r 1  91 EC        	sta	(FILEML),y
+000444r 1               
+000444r 1  20 E3 03     	jsr	LOCATE_RWTS_PARAM	; get current RWTS parameters
+000447r 1               					; so we can get disk/slot info
+000447r 1               
+000447r 1  84 F0        	sty	RWTSL
+000449r 1  85 F1        	sta	RWTSH
+00044Br 1               
+00044Br 1  A0 01        	ldy	#1
+00044Dr 1  B1 F0        	lda	(RWTSL),y		; get slot*16
+00044Fr 1  4A           	lsr	a
+000450r 1  4A           	lsr	a
+000451r 1  4A           	lsr	a
+000452r 1  4A           	lsr	a			; divide by 16
+000453r 1               
+000453r 1  A0 06        	ldy	#6			; address of slot
+000455r 1  91 EC        	sta	(FILEML),y		; store it
+000457r 1               
+000457r 1  A0 02        	ldy	#2
+000459r 1  B1 F0        	lda	(RWTSL),y		; get drive
+00045Br 1  A0 05        	ldy	#5			; address of drive
+00045Dr 1  91 EC        	sta	(FILEML),y
+00045Fr 1               
+00045Fr 1               filemanager_interface:
+00045Fr 1               
+00045Fr 1  A0 1E        	ldy 	#$1E
+000461r 1               dbuf_loop:
+000461r 1  B1 EE        	lda	(DOSBUFL),y		; get three buffer pointers
+000463r 1  48           	pha				; push onto stack
+000464r 1  C8           	iny				; increment pointer
+000465r 1  C0 24        	cpy	#$24			; have we incremented 6 times?
+000467r 1  90 F8        	bcc	dbuf_loop		; if not, loop
+000469r 1               
+000469r 1  A0 11        	ldy	#$11			; point to the end of the same struct
+00046Br 1               					; in file manager
+00046Br 1               fmgr_loop:
+00046Br 1  68           	pla				; pop value
+00046Cr 1  91 EC        	sta	(FILEML),Y		; store it
+00046Er 1  88           	dey				; work backwards
+00046Fr 1  C0 0C        	cpy	#$c			; see if we are done
+000471r 1  B0 F8        	bcs	fmgr_loop		; loop
+000473r 1               
+000473r 1  4C D6 03     	jmp	FILEMANAGER		; run filemanager
+000476r 1               
+000476r 1               
+000476r 1               ;====================
+000476r 1               ; close DOS file
+000476r 1               ;====================
+000476r 1               
+000476r 1               close:
+000476r 1  A0 00                ldy    #0    			; command offset
+000478r 1  A9 02        	lda    #CLOSE			; load close
+00047Ar 1  91 EC        	sta    (FILEML),y
+00047Cr 1               
+00047Cr 1  20 rr rr     	jsr    filemanager_interface
+00047Fr 1               
+00047Fr 1  A0 00        	ldy    #0		    	; mark dos buffer as free again
+000481r 1  98           	tya
+000482r 1  91 EE        	sta    (DOSBUFL),y
+000484r 1               
+000484r 1  60           	rts
+000485r 1               
+000485r 1               ;=========================
+000485r 1               ; read from dos file
+000485r 1               ;=========================
+000485r 1               
+000485r 1               read:
+000485r 1  A0 00                ldy   #0			; command offset
+000487r 1  A9 03        	lda   #READ
+000489r 1  91 EC        	sta   (FILEML),y
+00048Br 1               
+00048Br 1  C8           	iny   				; point to sub-opcode
+00048Cr 1  A9 02        	lda   #2			; "range of bytes"
+00048Er 1  91 EC        	sta   (FILEML),y
+000490r 1               
+000490r 1  A0 06        	ldy   #6			; point to number of bytes to read
+000492r 1  A9 FF        	lda   #$ff
+000494r 1  91 EC        	sta   (FILEML),y		; we want to read 255 bytes
+000496r 1  C8           	iny
+000497r 1  A9 00        	lda   #$00
+000499r 1  91 EC        	sta   (FILEML),y
+00049Br 1               
+00049Br 1  A0 08        	ldy   #8			; buffer address
+00049Dr 1  A9 rr        	lda   #<disk_buff
+00049Fr 1  91 EC        	sta   (FILEML),y
+0004A1r 1  C8           	iny
+0004A2r 1  A9 rr        	lda   #>disk_buff
+0004A4r 1  91 EC        	sta   (FILEML),y
+0004A6r 1               
+0004A6r 1  D0 B7        	bne   filemanager_interface     ; same as JMP
+0004A8r 1               
+0004A8r 1               
+0004A8r 1               
+0004A8r 1               ;; *********************
+0004A8r 1               ;; BSS
+0004A8r 1               ;; *********************
+0004A8r 1               .bss
+000000r 1               
+000000r 1  xx xx xx xx  R:  		  .res (N-F)
+000004r 1  xx xx xx xx  
+000008r 1  xx xx xx xx  
+0003C0r 1  xx xx xx xx  zp_save:	  .res 32
+0003C4r 1  xx xx xx xx  
+0003C8r 1  xx xx xx xx  
+0003E0r 1  xx xx xx xx  disk_buff:	  .res 256
+0003E4r 1  xx xx xx xx  
+0003E8r 1  xx xx xx xx  
+0004E0r 1               
+0004E0r 1               
+0004E0r 1               ;; *********************
+0004E0r 1               ;; DATA
+0004E0r 1               ;; *********************
+0004E0r 1               .data
+000000r 1               
+000000r 1               filename:
+000000r 1               ; CPUINFO__6502 (padded to be 30 chars long)
+000000r 1  C3 D0 D5 C9  .byte $C3,$D0,$D5,$C9,$CE,$C6,$CF,$DF
+000004r 1  CE C6 CF DF  
+000008r 1  DF B6 B5 B0  .byte $DF,$B6,$B5,$B0,$B2,$A0,$A0,$A0
+00000Cr 1  B2 A0 A0 A0  
+000010r 1  A0 A0 A0 A0  .byte $A0,$A0,$A0,$A0,$A0,$A0,$A0,$A0
+000014r 1  A0 A0 A0 A0  
+000018r 1  A0 A0 A0 A0  .byte $A0,$A0,$A0,$A0,$A0,$A0
+00001Cr 1  A0 A0        
+00001Er 1               
+00001Er 1               VERSION:
+00001Er 1               ; "Linux Version 2.6.22.6, Compiled 2007"
+00001Er 1  CC E9 EE F5  .byte	$CC,$E9,$EE,$F5,$F8,$A0,$D6,$E5,$F2,$F3,$E9,$EF,$EE,$A0,$B2,$AE
+000022r 1  F8 A0 D6 E5  
+000026r 1  F2 F3 E9 EF  
+00002Er 1  B6 AE B2 B2  .byte	$B6,$AE,$B2,$B2,$AE,$B6,$AC,$A0,$C3,$EF,$ED,$F0,$E9,$EC,$E5,$E4
+000032r 1  AE B6 AC A0  
+000036r 1  C3 EF ED F0  
+00003Er 1  A0 B2 B0 B0  .byte	$A0,$B2,$B0,$B0,$B7,$00
+000042r 1  B7 00        
+000044r 1               
+000044r 1               ONE:
+000044r 1               ; "One "
+000044r 1  CF EE E5 A0  .byte	$CF,$EE,$E5,$A0,$00
+000048r 1  00           
+000049r 1               
+000049r 1               MHZ:
+000049r 1               ; "MHz "
+000049r 1  CD C8 FA A0  .byte $CD,$C8,$FA,$A0,$00
+00004Dr 1  00           
+00004Er 1               
+00004Er 1               PROCESSOR:
+00004Er 1               ; " Processor, "
+00004Er 1  A0 D0 F2 EF  .byte	$A0,$D0,$F2,$EF,$E3,$E5,$F3,$F3,$EF,$F2,$AC,$A0,$00
+000052r 1  E3 E5 F3 F3  
+000056r 1  EF F2 AC A0  
+00005Br 1               
+00005Br 1               RAM:
+00005Br 1               ; "kB RAM"
+00005Br 1  EB C2 A0 D2  .byte	$EB,$C2,$A0,$D2,$C1,$CD,$00
+00005Fr 1  C1 CD 00     
+000062r 1               
+000062r 1               
+000062r 1               LOGO:
+000062r 1  FF 1B 5B 30  .byte	255,27,91,48,59,49,59,51,55
+000066r 1  3B 31 3B 33  
+00006Ar 1  37           
+00006Br 1  9F 3B 34 37  .byte	159,59,52,55,109,35,204,247,192,7,51
+00006Fr 1  6D 23 CC F7  
+000073r 1  C0 07 33     
+000076r 1  8D 30 C8 1B  .byte	141,48,200,27,27,91,196,7,203,31,28,12,59
+00007Ar 1  1B 5B C4 07  
+00007Er 1  CB 1F 1C 0C  
+000083r 1  0F 34 30 6D  .byte	15,52,48,109,10,192,247,1,96,26,56,44,156
+000087r 1  0A C0 F7 01  
+00008Br 1  60 1A 38 2C  
+000090r 1  1F 1B 5B 33  .byte	31,27,91,51,49,109,204,4,65,172,13,36
+000094r 1  31 6D CC 04  
+000098r 1  41 AC 0D 24  
+00009Cr 1  02 1C 10 4F  .byte	2,28,16,79,13,32,16,65,147,152,131,52,28,52,204,16
+0000A0r 1  0D 20 10 41  
+0000A4r 1  93 98 83 34  
+0000ACr 1  10 0C 24 6F  .byte	16,12,36,111,57,236,167,28,8,51,22,20,137,85,44,96
+0000B0r 1  39 EC A7 1C  
+0000B4r 1  08 33 16 14  
+0000BCr 1  00 2B 61 D6  .byte	0,43,97,214,113,226,200,203,8,212,9,211,16,43,89,245,209
+0000C0r 1  71 E2 C8 CB  
+0000C4r 1  08 D4 09 D3  
+0000CDr 1  00 80 11 D2  .byte	0,128,17,210,24,13,40,28,20,13,44,28,28,240,74,26,91
+0000D1r 1  18 0D 28 1C  
+0000D5r 1  14 0D 2C 1C  
+0000DEr 1  00 0D 50 5F  .byte	0,13,80,95,101,135,101,43,85,245,205,205,40,205,20,137,65
+0000E2r 1  65 87 65 2B  
+0000E6r 1  55 F5 CD CD  
+0000EFr 1  00 1D 87 42  .byte	0,29,135,66,75,114,83,28,120,15,98,135,109,85,88,247,193
+0000F3r 1  4B 72 53 1C  
+0000F7r 1  78 0F 62 87  
+000100r 1  00 E8 2B F4  .byte	0,232,43,244,151,73,120,61,176,27,95,151,176,18,43,171,202
+000104r 1  97 49 78 3D  
+000108r 1  B0 1B 5F 97  
+000111r 1  10 DF 16 1A  .byte	16,223,22,26,245,90,245,217,63,51,27,86,146,91,176,2
+000115r 1  F5 5A F5 D9  
+000119r 1  3F 33 1B 56  
+000121r 1  00 0C 1D D3  .byte	0,12,29,211,200,172,57,23,102,50,246,110,109,236,68,96,94
+000125r 1  C8 AC 39 17  
+000129r 1  66 32 F6 6E  
+000132r 1  08 AF 0A A6  .byte	8,175,10,166,105,20,1,48,51,11,222,31,49,15,211,188
+000136r 1  69 14 01 30  
+00013Ar 1  33 0B DE 1F  
+000142r 1  00 AF 4F 19  .byte	0,175,79,25,86,170,69,82,219,40,82,70,127,8,83,219,35
+000146r 1  56 AA 45 52  
+00014Ar 1  DB 28 52 46  
+000153r 1  00 A9 55 AA  .byte	0,169,85,170,53,24,33,18,104,145,42,200,34,178,104,112,45
+000157r 1  35 18 21 12  
+00015Br 1  68 91 2A C8  
+000164r 1  00 C6 50 B2  .byte	0,198,80,178,121,145,74,112,49,248,81,243,40,221,23,255,23
+000168r 1  79 91 4A 70  
+00016Cr 1  31 F8 51 F3  
+000175r 1  08 02 36 03  .byte	8,2,54,3,36,229,66,10
+000179r 1  24 E5 42 0A  
+00017Dr 1               LOGO_END:
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               
+00017Dr 1               

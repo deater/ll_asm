@@ -1,0 +1,422 @@
+
+./ll:     file format elf32-vax
+
+Disassembly of section .text:
+
+00010074 <_start>:
+   10074:	00          	halt
+   10075:	00          	halt
+   10076:	de ef f8 01 	moval 10274 <data_begin>,r9
+   1007a:	00 00 59 
+   1007d:	3c 8f c0 03 	movzwl $0x03c0,r4
+   10081:	54 
+   10082:	de a9 63 51 	moval 0x63(r9),r1
+   10086:	de ef 84 19 	moval 11a10 <out_buffer>,r3
+   1008a:	00 00 53 
+   1008d:	d0 53 56    	movl r3,r6
+
+00010090 <decompression_loop>:
+   10090:	d4 55       	clrf r5
+   10092:	90 81 57    	movb (r1)+,r7
+
+00010095 <test_flags>:
+   10095:	d1 8f f2 03 	cmpl $0x000103f2,r1
+   10099:	01 00 51 
+   1009c:	13 52       	beql 100f0 <done_logo>
+   1009e:	e0 55 57 46 	bbs r5,r7,100e8 <discrete_char>
+
+000100a2 <offset_length>:
+   100a2:	9a 81 52    	movzbl (r1)+,r2
+   100a5:	9a 81 5b    	movzbl (r1)+,r11
+   100a8:	78 08 5b 5b 	ashl $0x8,r11,r11
+   100ac:	88 52 5b    	bisb2 r2,r11
+   100af:	3c 5b 52    	movzwl r11,r2
+   100b2:	78 8f f6 52 	ashl $0xf6,r2,r2
+   100b6:	52 
+   100b7:	c0 03 52    	addl2 $0x3,r2
+
+000100ba <output_loop>:
+   100ba:	aa 8f 00 fc 	bicw2 $0xfc00,r11
+   100be:	5b 
+   100bf:	90 eb f8 03 	movb 0x103f8(r11),r10
+   100c3:	01 00 5a 
+   100c6:	d6 5b       	incl r11
+
+000100c8 <store_byte>:
+   100c8:	90 5a 83    	movb r10,(r3)+
+   100cb:	90 5a e4 f8 	movb r10,0x103f8(r4)
+   100cf:	03 01 00 
+   100d2:	d6 54       	incl r4
+   100d4:	aa 8f 00 fc 	bicw2 $0xfc00,r4
+   100d8:	54 
+   100d9:	9d 01 8f ff 	acbb $0x1,$0xff,r2,100ba <output_loop>
+   100dd:	52 da ff 
+   100e0:	9d 07 01 55 	acbb $0x7,$0x1,r5,10095 <test_flags>
+   100e4:	af ff 
+   100e6:	11 a8       	brb 10090 <decompression_loop>
+
+000100e8 <discrete_char>:
+   100e8:	90 81 5a    	movb (r1)+,r10
+   100eb:	9a 01 52    	movzbl $0x1,r2
+   100ee:	11 d8       	brb 100c8 <store_byte>
+
+000100f0 <done_logo>:
+   100f0:	d0 56 53    	movl r6,r3
+   100f3:	30 46 01    	bsbw 1023c <write_stdout>
+
+000100f6 <first_line>:
+   100f6:	d0 56 5b    	movl r6,r11
+   100f9:	de ef 89 07 	moval 10888 <uname_info>,r7
+   100fd:	00 00 57 
+   10100:	dd 57       	pushl r7
+   10102:	9a 8f 7a 50 	movzbl $0x7a,r0
+   10106:	fb 01 cf 61 	calls $0x1,1026c <syscall>
+   1010a:	01 
+   1010b:	d0 57 55    	movl r7,r5
+   1010e:	10 58       	bsbb 10168 <strcat>
+   10110:	d0 59 55    	movl r9,r5
+   10113:	10 53       	bsbb 10168 <strcat>
+   10115:	de c7 82 00 	moval 0x82(r7),r5
+   10119:	55 
+   1011a:	10 4c       	bsbb 10168 <strcat>
+   1011c:	de a9 0a 55 	moval 0xa(r9),r5
+   10120:	10 46       	bsbb 10168 <strcat>
+   10122:	de c7 c3 00 	moval 0xc3(r7),r5
+   10126:	55 
+   10127:	10 3f       	bsbb 10168 <strcat>
+   10129:	b0 0a 6b    	movw $0xa,(r11)
+   1012c:	30 d6 00    	bsbw 10205 <center_and_print>
+
+0001012f <middle_line>:
+   1012f:	d0 56 5b    	movl r6,r11
+   10132:	7d 00 7e    	movq $0x0,-(sp)
+   10135:	dd 8f c9 02 	pushl $0x000102c9
+   10139:	01 00 
+   1013b:	9a 05 50    	movzbl $0x5,r0
+   1013e:	fb 03 cf 29 	calls $0x3,1026c <syscall>
+   10142:	01 
+   10143:	d0 50 55    	movl r0,r5
+   10146:	dd 8f 00 10 	pushl $0x00001000
+   1014a:	00 00 
+   1014c:	dd 8f 10 0a 	pushl $0x00010a10
+   10150:	01 00 
+   10152:	dd 55       	pushl r5
+   10154:	9a 03 50    	movzbl $0x3,r0
+   10157:	fb 03 cf 10 	calls $0x3,1026c <syscall>
+   1015b:	01 
+   1015c:	dd 55       	pushl r5
+   1015e:	9a 06 50    	movzbl $0x6,r0
+   10161:	fb 01 cf 06 	calls $0x1,1026c <syscall>
+   10165:	01 
+   10166:	11 15       	brb 1017d <number_of_cpus>
+
+00010168 <strcat>:
+   10168:	3a 00 8f ff 	locc $0x0,$0xffff,(r5)
+   1016c:	ff 65 
+
+0001016e <strcat_know_size>:
+   1016e:	c3 55 51 50 	subl3 r5,r1,r0
+   10172:	28 50 65 6b 	movc3 r0,(r5),(r11)
+   10176:	d0 53 5b    	movl r3,r11
+   10179:	90 00 6b    	movb $0x0,(r11)
+   1017c:	05          	rsb
+
+0001017d <number_of_cpus>:
+   1017d:	de a9 16 55 	moval 0x16(r9),r5
+   10181:	10 e5       	bsbb 10168 <strcat>
+
+00010183 <chip_name>:
+   10183:	de a9 4d 55 	moval 0x4d(r9),r5
+   10187:	10 58       	bsbb 101e1 <find_string>
+   10189:	de a9 1b 55 	moval 0x1b(r9),r5
+   1018d:	10 d9       	bsbb 10168 <strcat>
+   1018f:	de ef b3 06 	moval 10848 <sysinfo_buff>,r10
+   10193:	00 00 5a 
+   10196:	dd 5a       	pushl r10
+   10198:	9a 8f 74 50 	movzbl $0x74,r0
+   1019c:	fb 01 cf cb 	calls $0x1,1026c <syscall>
+   101a0:	00 
+   101a1:	d0 aa 10 53 	movl 0x10(r10),r3
+   101a5:	78 8f ec 53 	ashl $0xec,r3,r2
+   101a9:	52 
+   101aa:	30 a5 00    	bsbw 10252 <num_to_ascii>
+   101ad:	d0 51 55    	movl r1,r5
+   101b0:	10 b6       	bsbb 10168 <strcat>
+   101b2:	de a9 28 55 	moval 0x28(r9),r5
+   101b6:	10 b0       	bsbb 10168 <strcat>
+   101b8:	de a9 51 55 	moval 0x51(r9),r5
+   101bc:	10 23       	bsbb 101e1 <find_string>
+   101be:	de a9 30 55 	moval 0x30(r9),r5
+   101c2:	10 a4       	bsbb 10168 <strcat>
+   101c4:	10 3f       	bsbb 10205 <center_and_print>
+
+000101c6 <third_line>:
+   101c6:	d0 56 5b    	movl r6,r11
+   101c9:	de a7 41 55 	moval 0x41(r7),r5
+   101cd:	10 99       	bsbb 10168 <strcat>
+   101cf:	10 34       	bsbb 10205 <center_and_print>
+   101d1:	de a9 41 53 	moval 0x41(r9),r3
+   101d5:	10 65       	bsbb 1023c <write_stdout>
+
+000101d7 <exit>:
+   101d7:	dd 00       	pushl $0x0
+   101d9:	9a 01 50    	movzbl $0x1,r0
+   101dc:	fb 01 cf 8b 	calls $0x1,1026c <syscall>
+   101e0:	00 
+
+000101e1 <find_string>:
+   101e1:	de ef 29 08 	moval 10a10 <disk_buffer>,r0
+   101e5:	00 00 50 
+   101e8:	39 04 65 8f 	matchc $0x4,(r5),$0x1000,(r0)
+   101ec:	00 10 60 
+   101ef:	d0 53 55    	movl r3,r5
+
+000101f2 <find_colon>:
+   101f2:	3a 3a 8f ff 	locc $0x3a,$0xffff,(r5)
+   101f6:	ff 65 
+   101f8:	c1 51 02 55 	addl3 r1,$0x2,r5
+
+000101fc <store_loop>:
+   101fc:	3a 0a 8f ff 	locc $0xa,$0xffff,(r5)
+   10200:	ff 65 
+   10202:	31 69 ff    	brw 1016e <strcat_know_size>
+
+00010205 <center_and_print>:
+   10205:	de e9 48 00 	moval 0x48(r9),r3
+   10209:	00 00 53 
+   1020c:	10 2e       	bsbb 1023c <write_stdout>
+   1020e:	ce 56 53    	mnegl r6,r3
+   10211:	c0 5b 53    	addl2 r11,r3
+   10214:	d0 8f 50 00 	movl $0x00000050,r1
+   10218:	00 00 51 
+   1021b:	91 53 51    	cmpb r3,r1
+   1021e:	18 19       	bgeq 10239 <done_center>
+   10220:	c3 53 51 53 	subl3 r3,r1,r3
+   10224:	78 8f ff 53 	ashl $0xff,r3,r2
+   10228:	52 
+   10229:	10 27       	bsbb 10252 <num_to_ascii>
+   1022b:	d0 51 53    	movl r1,r3
+   1022e:	10 0c       	bsbb 1023c <write_stdout>
+   10230:	de e9 4b 00 	moval 0x4b(r9),r3
+   10234:	00 00 53 
+   10237:	10 03       	bsbb 1023c <write_stdout>
+
+00010239 <done_center>:
+   10239:	d0 56 53    	movl r6,r3
+
+0001023c <write_stdout>:
+   1023c:	3a 00 8f ff 	locc $0x0,$0xffff,(r3)
+   10240:	ff 63 
+   10242:	c3 53 51 7e 	subl3 r3,r1,-(sp)
+   10246:	dd 53       	pushl r3
+   10248:	dd 01       	pushl $0x1
+   1024a:	9a 04 50    	movzbl $0x4,r0
+   1024d:	fb 03 af 1b 	calls $0x3,1026c <syscall>
+   10251:	05          	rsb
+
+00010252 <num_to_ascii>:
+   10252:	de ef e8 05 	moval 10840 <ascii_buffer+0x8>,r1
+   10256:	00 00 51 
+   10259:	d4 53       	clrf r3
+
+0001025b <div_by_10>:
+   1025b:	7b 0a 52 54 	ediv $0xa,r2,r4,r5
+   1025f:	55 
+
+00010260 <write_out>:
+   10260:	c0 30 55    	addl2 $0x30,r5
+   10263:	90 55 71    	movb r5,-(r1)
+   10266:	d0 54 52    	movl r4,r2
+   10269:	12 f0       	bneq 1025b <div_by_10>
+   1026b:	05          	rsb
+
+0001026c <syscall>:
+   1026c:	00          	halt
+   1026d:	00          	halt
+   1026e:	bc 50       	chmk r0
+   10270:	04          	ret
+Disassembly of section .data:
+
+00010274 <data_begin>:
+   10274:	20 56 65 72 	addp4 r6,(r5),-(r2),-(r3)
+   10278:	73 
+   10279:	69 6f 6e    	cvtdw (pc),(sp)
+   1027c:	20 00 2c 20 	addp4 $0x0,$0x2c,$0x20,(pc)[r3]
+   10280:	43 6f 
+
+0001027e <compiled_string>:
+   1027e:	2c 20 43 6f 	movc5 $0x20,(pc)[r3],(fp),-(r0),(r9)
+   10282:	6d 70 69 
+   10285:	6c 65 64    	cvtbd (r5),(r4)
+   10288:	20 00 4f 6e 	addp4 $0x0,(sp)[pc],(r5),$0x20
+   1028c:	65 20 
+
+0001028a <one>:
+   1028a:	4f 6e 65 20 	acbf (sp),(r5),$0x20 [f-float],12290 <out_buffer+0x880>
+   1028e:	00 20 
+
+0001028f <processor_string>:
+   1028f:	20 50 72 6f 	addp4 r0,-(r2),(pc),(r3)
+   10293:	63 
+   10294:	65 73 73 6f 	muld3 -(r3),-(r3),(pc)
+   10298:	72 2c 20    	mnegd $0x2c [d-float],$0x20 [d-float]
+	...
+
+0001029c <ram_comma>:
+   1029c:	4d 20 52    	cvtwf $0x20,r2
+   1029f:	41 4d 2c 20 	addf3 $0x2c [f-float][fp],$0x20 [f-float],$0x0 [f-float]
+   102a3:	00 
+
+000102a4 <bogo_total>:
+   102a4:	20 42 6f 67 	addp4 (pc)[r2],(r7),(pc),(fp)
+   102a8:	6f 6d 
+   102aa:	69 70 73    	cvtdw -(r0),-(r3)
+   102ad:	20 54 6f 74 	addp4 r4,(pc),-(r4),(r1)
+   102b1:	61 
+   102b2:	6c 0a 00    	cvtbd $0xa,$0x0 [d-float]
+
+000102b5 <default_colors>:
+   102b5:	1b 5b       	blequ 10312 <logo+0x3b>
+   102b7:	30 6d 0a    	bsbw 10d27 <disk_buffer+0x317>
+   102ba:	0a 00 1b 5b 	index $0x0,$0x1b,r11,$0x0,$0x0[r3],-(r4)
+   102be:	00 43 00 74 
+
+000102bc <escape>:
+   102bc:	1b 5b       	blequ 10319 <logo+0x42>
+	...
+
+000102bf <C>:
+   102bf:	43 00 74 79 	subf3 $0x0 [f-float],-(r4),-(r9)
+
+000102c1 <type_string>:
+   102c1:	74 79 70 65 	emodd -(r9),-(r0),(r5),(pc)[r2],(r7)
+   102c5:	42 6f 67 
+
+000102c5 <bogo_string>:
+   102c5:	42 6f 67    	subf2 (pc),(r7)
+   102c8:	6f 2f 70 72 	acbd $0x2f [d-float],-(r0),-(r2),1663d <_end+0xc2d>
+   102cc:	6f 63 
+
+000102c9 <cpuinfo>:
+   102c9:	2f 70 72 6f 	movtuc -(r0),-(r2),(pc),(r3),$0x2f,(r3)
+   102cd:	63 2f 63 
+   102d0:	70 75 69    	movd -(r5),(r9)
+   102d3:	6e 66 6f    	cvtld (r6),(pc)
+	...
+
+000102d7 <logo>:
+   102d7:	ff 1b       	.word 0xff1b
+   102d9:	5b 30       	.word 0x5b30
+   102db:	3b 31 3b 33 	skpc $0x31,$0x3b,$0x33
+   102df:	37 9f 3b 34 	cmpp4 *0x6d37343b,$0x23,0xffffc0f7(ap),$0x7
+   102e3:	37 6d 23 cc 
+   102e7:	f7 c0 07 
+   102ea:	33 8d 30    	cvtwb (fp)+,$0x30
+   102ed:	c8 1b 1b    	bisl2 $0x1b,$0x1b
+   102f0:	5b c4       	.word 0x5bc4
+   102f2:	07          	svpctx
+   102f3:	cb 1f 1c 0c 	bicl3 $0x1f,$0x1c,$0xc
+   102f7:	3b 0f 34 30 	skpc $0xf,$0x34,$0x30
+   102fb:	6d 0a c0 f7 	cvtwd $0xa,0x1f7(r0)
+   102ff:	01 
+   10300:	60 1a 38    	addd2 $0x1a [d-float],$0x38 [d-float]
+   10303:	2c 9c 1f 1b 	movc5 @(ap)+,$0x1f,$0x1b,r11,$0x33
+   10307:	5b 33 
+   10309:	31 6d cc    	brw cf79 <N+0xcb79>
+   1030c:	04          	ret
+   1030d:	41 ac 0d 24 	addf3 0xd(ap),$0x24 [f-float],$0x2 [f-float]
+   10311:	02 
+   10312:	1c 10       	bvc 10324 <logo+0x4d>
+   10314:	4f 0d 20 10 	acbf $0xd [f-float],$0x20 [f-float],$0x10 [f-float],965b <N+0x925b>
+   10318:	41 93 
+   1031a:	98 83 34    	cvtbl (r3)+,$0x34
+   1031d:	1c 34       	bvc 10353 <logo+0x7c>
+   1031f:	cc 10 10    	xorl2 $0x10,$0x10
+   10322:	0c 24 6f 39 	prober $0x24,(pc),$0x39
+   10326:	ec a7 1c 08 	cmpv 0x1c(r7),$0x8,$0x33,$0x16
+   1032a:	33 16 
+   1032c:	14 89       	bgtr 102b7 <default_colors+0x2>
+   1032e:	55 2c 60 00 	polyf $0x2c [f-float],(r0),$0x0
+   10332:	2b 61 d6 71 	spanc (r1),*0xffffe271(r6),0x8cb(r8),*0xffffd309(r4)
+   10336:	e2 c8 cb 08 
+   1033a:	d4 09 d3 
+   1033d:	10 2b       	bsbb 1036a <logo+0x93>
+   1033f:	59 f5       	.word 0x59f5
+   10341:	d1 00 80    	cmpl $0x0,(r0)+
+   10344:	11 d2       	brb 10318 <logo+0x41>
+   10346:	18 0d       	bgeq 10355 <logo+0x7e>
+   10348:	28 1c 14 0d 	movc3 $0x1c,$0x14,$0xd
+   1034c:	2c 1c 1c f0 	movc5 $0x1c,$0x1c,*0x5b1a4a(r0),$0xd,r0
+   10350:	4a 1a 5b 00 
+   10354:	0d 50 
+   10356:	5f 65 87    	remqti (r5),(r7)+
+   10359:	65 2b 55 f5 	muld3 $0x2b [d-float],r5,*0xcd28cdcd(r5)
+   1035d:	cd cd 28 cd 
+   10361:	14 89       	bgtr 102ec <logo+0x15>
+   10363:	41 00 1d 87 	addf3 $0x0 [f-float],$0x1d [f-float],(r7)+
+   10367:	42 4b 72 53 	subf2 -(r2)[r11],r3
+   1036b:	1c 78       	bvc 103e5 <logo+0x10e>
+   1036d:	0f 62 87    	remque (r2),(r7)+
+   10370:	6d 55 58    	cvtwd r5,r8
+   10373:	f7 c1 00 e8 	cvtlw 0xffffe800(r1),$0x2b
+   10377:	2b 
+   10378:	f4 97 49    	sobgeq @(r7)+,103c4 <logo+0xed>
+   1037b:	78 3d b0 1b 	ashl $0x3d,*0x1b(r0),pc
+   1037f:	5f 
+   10380:	97 b0 12    	decb *0x12(r0)
+   10383:	2b ab ca 10 	spanc 0xffffffca(r11),$0x10,*11da0 <out_buffer+0x390>,*0x3fd9f55a(r5)
+   10387:	df 16 1a f5 
+   1038b:	5a f5 d9 3f 
+   1038f:	33 1b 56    	cvtwb $0x1b,r6
+   10392:	92 5b b0 02 	mcomb r11,*0x2(r0)
+   10396:	00          	halt
+   10397:	0c 1d d3 c8 	prober $0x1d,*0xffffacc8(r3),$0x39
+   1039b:	ac 39 
+   1039d:	17 66       	jmp (r6)
+   1039f:	32 f6 6e 6d 	cvtwl *0x44ec6d6e(r6),(r0)
+   103a3:	ec 44 60 
+   103a6:	5e 08 af 0a 	remqhi $0x8,103b4 <logo+0xdd>
+   103aa:	a6 69 14    	divw2 (r9),$0x14
+   103ad:	01          	nop
+   103ae:	30 33 0b    	bsbw 10ee4 <disk_buffer+0x4d4>
+   103b1:	de 1f 31    	moval $0x1f,$0x31
+   103b4:	0f d3 bc 00 	remque *0xbc(r3),10409 <text_buf+0x11>
+   103b8:	af 4f 
+   103ba:	19 56       	blss 10412 <text_buf+0x1a>
+   103bc:	aa 45 52 db 	bicw2 r2[r5],*0x5228(r11)
+   103c0:	28 52 
+   103c2:	46 7f 08    	divf2 -(pc),$0x8 [f-float]
+   103c5:	53 db 23 00 	tstf *0x23(r11)
+   103c9:	a9 55 aa 35 	bisw3 r5,0x35(r10),$0x18
+   103cd:	18 
+   103ce:	21 12 68 91 	addp6 $0x12,(r8),@(r1)+,$0x2a,0xffffb222(r8),(r8)
+   103d2:	2a c8 22 b2 
+   103d6:	68 
+   103d7:	70 2d 00    	movd $0x2d [d-float],$0x0 [d-float]
+   103da:	c6 50 b2 79 	divl2 r0,*0x79(r2)
+   103de:	91 4a 70 31 	cmpb -(r0)[r10],$0x31
+   103e2:	f8 51 f3 28 	ashp r1,*0xff17dd28(r3),$0x17,$0x8,$0x2,$0x36
+   103e6:	dd 17 ff 17 
+   103ea:	08 02 36 
+   103ed:	03          	bpt
+   103ee:	cvtpt Address 0x000103f0 is out of bounds.
+
+Disassembly of section .bss:
+
+000103f8 <text_buf>:
+	...
+
+00010838 <ascii_buffer>:
+	...
+
+00010848 <sysinfo_buff>:
+	...
+
+00010888 <uname_info>:
+	...
+
+00010a10 <disk_buffer>:
+	...
+
+00011a10 <out_buffer>:
+	...

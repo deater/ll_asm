@@ -1,0 +1,2 @@
+#!/bin/sh
+/fusion/research1/fusion/tools/unixstat/bin/colex 2 23 < big_grid | /fusion/research1/fusion/tools/unixstat/bin/pair
