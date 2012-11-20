@@ -1,10 +1,10 @@
 #
-#  linux_logo in ix86 assembler 0.30
+#  linux_logo in ix86 assembler 0.46
 #
-#  Originally by 
+#  Originally by:
 #       Vince Weaver <vince _at_ deater.net>
 #
-#  Crazy size-optimization hacks by
+#  Crazy size-optimization hacks by:
 #       Stephan Walter <stephan.walter _at_ gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.i386.s"
@@ -24,7 +24,158 @@
 # + "xor %ebx,%ebx" is smaller than "mov $0,%ebx"
 # + "or ah,ah" is NOT smaller than "cmp $0,ah"
 
-	
+# Registers
+# + 32-bit eax, ebx, ecx, edx, esi, edi, ebp, esp
+#   esp is the stack pointer, ebp often is frame pointer
+    Can access lower 16-bits ax,bx,cd,dx,si,di,bp,sp
+    Can access high/low 8-bits of some ah/al bh/bl ch/cl dh/dl
+# + 16-bit segments cs,ds,es,fs,gs usually ignored
+# + 8 x87 floating point regs (stack) ST(0) - ST(7)
+# Where supported
+# + 8 64-bit MMX registers overlap stack MM0 - MM7
+# + 8 128-bit SSE registers XMM0-XMM7
+# + 8 128-bit AVS registers YMM0-YMM7
+
+# 32-bit syscall interface
+#   Syscall is int $0x80
+#    syscall number goes in %eax
+#    system call numbers found in /usr/include/asm/unistd\_32.h
+#    arguments go in %ebx, %ecx, %edx, %esi, %edi, %ebp
+#    any extra arguments are passed on the stack
+#    Return value and errno is in %eax.
+
+# Addressing modes
+#   register :  mov %eax, %ebx   (note, source/destination AT&T, not Intel)
+#  immediate :  mov $5, %eax
+#     direct :  mov 0xdeadbeef,%eax
+#  register indirect:
+#               mov (%ebx),%eax
+# base scaled index w displacement:
+#               mov 0xdeadbeef(%eax,%ebx,4),%ecx
+#               gets value 0xdeadbeef+(%eax+(%ebx*4))
+#
+#
+# Flags register: set on most instructions
+#   Important flags: C = carry, Z = zero, S = Sign O = Overflow P = Parity
+#                    D = direction
+#
+# Instruction Summary
+# * String Instructions
+#   have b/w/l/q postfix (specify size) [note intel Manual uses b/w/d/q]
+#   auto increment (decrement if D (direction) flag set)
+#   + cmps - compare (%edi) with (%esi), increment
+#   + lods - load value from (%esi) into %eax, increment
+#   + ins/outs - input byte from i/o into %eax, increment
+#   + movs - move (%edi) to (%esi), incrememnt
+#   + scas - scan (%edi) for %eax, increment
+#   + stos - store %eax to (%edi), increment
+#   rep/repe/repz/repne/repnz prefixes:  repeat instruction ECX times
+#
+# * lea - load effective address
+#         Computes the address calculation and stores calculated
+#         quick way to multiply -> "lea (%ebx,%ebx,4),%ebx" 
+#         multiplies %ebx by 5 (much faster than using mul
+#         or discrete shift and add instructions)
+#
+# * BCD Instructions
+#   + aaa, aad, aam, aas, daa, das
+#     adjust BCD results when doing Binary-Coded-Decimal arithmatic
+#
+# * MOV instructions
+#   + mov - move a value to or from a register
+#   + movzx - move with zero extend
+#   + xchg - exchange two registers
+#
+# * Stack Instructions
+#   + pop, push - push or pop a register, constant, or
+#     memory location onto the stack, then decrement the stack by
+#     the appropriate amount
+#   + pusha,popa - push/pop all registers
+#   + pushf,popf - push/pop flags
+#
+# * ALU Instructions
+#   + add, adc - add, add with carry
+#   + sub, sbb - subtract, subtract with borrow
+#   + dec, inc - decrement/increment
+#   + div, idiv - divide AX or DX:AX with resulting
+#     Quotient in AL and Remainder in AH (or Quotient in AX
+#     and Remainder in DX)
+#     idiv is signed divide, div unsigned
+#   + mul - unsigned multiply
+#     multiply by AX or DX:AX and put result in DX:AX
+#   + imul - signed multiply.  Can be like mul, or can
+#     also multiply two arbitrary registers, or even a register by
+#     a constant and store in a third.
+#   + cmp - compare (subtract, but sets flags only, no result stored)
+#   + neg - negate (2s complement)
+#   + nop - same as xchg %eax, %eax
+#   + cbw/cwde/cdwq - sign extend %eax
+#   + cwd/cdq/cqo - sign extend %eax into %edx
+#     also a quick way to clear %edx
+#
+# * Bit Instructions
+#   + and - bitwise and
+#   + bsf, bsr - bit scan forward or  reverse
+#   + test - bit test ( bitwise and, set flags, don't save result)
+#   + bt/btc/btr/bts - bit test with complement/reset/set bit
+#   + not - bitwise not
+#   + or - bitwise or
+#   + xor - bitwise xor.  Fast way to clear a register is to xor with self
+#   + rcl/rcr/rol/ror - rotate left/right, through carry
+#   + sal/sar/shl/shr - shift left/right arithmatic/logical
+#   + shld, shrd -- doubler precision shift
+
+# * Control Flow
+#   + call/ret - call by pushing next address on stack, jumping, return
+#   + call *%ebx - call to address in register
+#   + enter / leave - create stack frame
+#   + Jcc -- conditional jump based on flags
+#     - ja, jna (above / not above)
+#     - jae, jnae (above equal)
+#     - jb, jnb (below)
+#     - jbe, jnbe (below equal)
+#     - jc, jnc (carry)
+#     - jcxz (cx == 0)
+#     - je, jne (equal)
+#     - jg, jng (greater)
+#     - jge, jnge (greater equal)
+#     - jl, jnl (less)
+#     - jle, jnle (less or equal)
+#     - jo, jno (overflow)
+#     - js, jns (sign)
+#     - jpe, jpo (parity)
+#     - jz, jnz (zero)
+#   + jmp - unconditional jump
+#   + loop/loope/loopne - decrement CX, loop if not 0
+#     (with loope/loopne also check zero flag)
+#
+# * Conditional Moves/Sets
+#   + CMOVcc (all of the postfixes of jmps)
+#     conditional move lets you do an "if (CONDITION) x=y;"
+#     construct without needing any jump instructions, which hurt
+#     performance
+#     i.e. cmovc = move if carry set
+#   + SETcc - set byte on condition code
+#
+# * Flag manipulation
+#   + lahf / sahf - load flags into or out of %ah
+#   + clc, cld, cmc, stc, std - clear, complement or set the various flags
+#
+# * Other Misc
+#   + bound - check arrary bounds
+#   + bswap - byte swap (switch endian)
+#   + int - software interrupt.  Also single-step for debug
+#   + cmpxchg - compare and exchange, useful for locks
+#   + cpuid - get CPU info
+#   + rdmsr/rdtsc/rdpmc -
+#     read model specific reg, timestamp, perf counter
+#   + xadd - exchange and add, useful for locks.  Can use LOCK prefix
+#   + xlate - do a table lookup
+#
+# There are numerous x86 floating point, SSE, MMX, 3Dnow! and AVX
+# vector instructions, and others such as specific crypto instructions.
+
+
 .include "logo.include"
 
 # offsets into the results returned by the uname syscall

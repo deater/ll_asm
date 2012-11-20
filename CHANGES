@@ -390,3 +390,6 @@ RELEASE 0.44
 + z80 down to 891 bytes!
 
 RELEASE 0.45
+
+20 November 2012
++ Add lots of documentation to i386 code
