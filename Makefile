@@ -202,7 +202,8 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
 
 clean:
-	rm -f ll ll_c ll.$(ARCH) *.fakeproc *.stripped *.o *~ ll.s ll.thumb \
+	rm -f ll ll_c ll.$(ARCH) ll.$(SOURCE_ARCH) *.fakeproc *.stripped \
+	*.o *~ ll.s ll.thumb \
 	ll.mips16 ansi_compress logo.inc logo.lzss logo.lzss_new \
 	core logo.include logo_optimize logo.include.parisc \
 	logo.lzss_new.parisc a.out *.dis *.output *.com
