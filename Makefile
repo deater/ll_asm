@@ -23,10 +23,9 @@ endif
 # Handle various ARM variants
 #
 ifneq (,$(findstring arm,$(ARCH)))
-   SOURCE_ARCH := arm
+   SOURCE_ARCH := arm.eabi
    ARCH := arm
-   THUMB := ll.thumb ll.thumb.stripped ll.thumb.fakeproc ll.thumb.fakeproc.stripped \
-            ll.arm.eabi ll.arm.eabi.stripped ll.arm.eabi.fakeproc ll.arm.eabi.fakeproc.stripped
+   THUMB := ll.thumb ll.thumb.stripped ll.thumb.fakeproc ll.thumb.fakeproc.stripped
 endif
 
 #
@@ -176,26 +175,6 @@ ll.thumb.fakeproc:	ll.thumb.fakeproc.o
 
 ll.thumb.fakeproc.o:	ll.thumb.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mthumb-interwork -o ll.thumb.fakeproc.o ll.thumb.s
-
-ll.arm.eabi.stripped:  ll.arm.eabi sstrip/sstrip
-	cp ll.arm.eabi ll.arm.eabi.stripped
-	sstrip/sstrip ll.arm.eabi.stripped
-
-ll.arm.eabi:	ll.arm.eabi.o
-	$(CROSS)$(LD) -N -o ll.arm.eabi ll.arm.eabi.o
-
-ll.arm.eabi.o:	ll.arm.eabi.s
-	$(CROSS)$(AS) -o ll.arm.eabi.o ll.arm.eabi.s	
-
-ll.arm.eabi.fakeproc.stripped:  ll.arm.eabi.fakeproc sstrip/sstrip
-	cp ll.arm.eabi.fakeproc ll.arm.eabi.fakeproc.stripped
-	sstrip/sstrip ll.arm.eabi.fakeproc.stripped
-
-ll.arm.eabi.fakeproc:	ll.arm.eabi.fakeproc.o
-	$(CROSS)$(LD) -N -o ll.arm.eabi.fakeproc ll.arm.eabi.fakeproc.o
-
-ll.arm.eabi.fakeproc.o:	ll.arm.eabi.s
-	$(CROSS)$(AS) -defsym FAKE_PROC=1 -o ll.arm.eabi.fakeproc.o ll.arm.eabi.s
 
 ll.mips16.o:	ll.mips16.s
 	$(CROSS)$(AS) -mips32r2 -o ll.mips16.o ll.mips16.s
