@@ -25,7 +25,8 @@ endif
 ifneq (,$(findstring arm,$(ARCH)))
    SOURCE_ARCH := arm.eabi
    ARCH := arm
-   THUMB := ll.thumb ll.thumb.stripped ll.thumb.fakeproc ll.thumb.fakeproc.stripped
+   THUMB := ll.thumb ll.thumb.stripped ll.thumb.fakeproc ll.thumb.fakeproc.stripped \
+            ll.thumb2 ll.thumb2.stripped ll.thumb2.fakeproc ll.thumb2.fakeproc.stripped
 endif
 
 #
@@ -156,6 +157,10 @@ ll.o:	ll.$(SOURCE_ARCH).s logo.lzss
 ll.fakeproc.o:	ll.s logo.lzss
 	$(CROSS)$(AS) $(C_EXTRA) $(LITTLE_ENDIAN) -defsym FAKE_PROC=1 -o ll.fakeproc.o ll.s
 
+#
+# Thumb
+#
+
 ll.thumb.stripped:  ll.thumb sstrip/sstrip
 	cp ll.thumb ll.thumb.stripped
 	sstrip/sstrip ll.thumb.stripped
@@ -175,6 +180,34 @@ ll.thumb.fakeproc:	ll.thumb.fakeproc.o
 
 ll.thumb.fakeproc.o:	ll.thumb.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mthumb-interwork -o ll.thumb.fakeproc.o ll.thumb.s
+
+#
+# Thumb2
+#
+
+ll.thumb2.stripped:  ll.thumb2 sstrip/sstrip
+	cp ll.thumb2 ll.thumb2.stripped
+	sstrip/sstrip ll.thumb2.stripped
+
+ll.thumb2:	ll.thumb2.o
+	$(CROSS)$(LD) -N --thumb-entry=_start -o ll.thumb2 ll.thumb2.o
+
+ll.thumb2.o:	ll.thumb2.s
+	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb2.o ll.thumb2.s	
+
+ll.thumb2.fakeproc.stripped:  ll.thumb2.fakeproc sstrip/sstrip
+	cp ll.thumb2.fakeproc ll.thumb2.fakeproc.stripped
+	sstrip/sstrip ll.thumb2.fakeproc.stripped
+
+ll.thumb2.fakeproc:	ll.thumb2.fakeproc.o
+	$(CROSS)$(LD) -N --thumb-entry=_start -o ll.thumb2.fakeproc ll.thumb2.fakeproc.o
+
+ll.thumb2.fakeproc.o:	ll.thumb2.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mthumb-interwork -o ll.thumb2.fakeproc.o ll.thumb2.s
+
+#
+# Mips16
+#
 
 ll.mips16.o:	ll.mips16.s
 	$(CROSS)$(AS) -mips32r2 -o ll.mips16.o ll.mips16.s
@@ -203,7 +236,7 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 
 clean:
 	rm -f ll ll_c ll.$(ARCH) ll.$(SOURCE_ARCH) *.fakeproc *.stripped \
-	*.o *~ ll.s ll.thumb \
+	*.o *~ ll.s ll.thumb ll.thumb2 \
 	ll.mips16 ansi_compress logo.inc logo.lzss logo.lzss_new \
 	core logo.include logo_optimize logo.include.parisc \
 	logo.lzss_new.parisc a.out *.dis *.output *.com
