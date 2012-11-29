@@ -30,7 +30,8 @@ Some Statistics
      microblaze		1298 bytes   (as 2.16)
      mips               1276 bytes   (as 2.19.51.20090714)
      m88k		1240 bytes   (as 1.92.3)
-     arm		1186 bytes   (as 2.18.0.20080103)
+     arm.eabi		1198 bytes   (as 2.22)
+     arm.oabi		1186 bytes   (as 2.18.0.20080103)
      PPC		1165 bytes   (as 2.19.51.20090805)
      6502		1130*bytes   (ca64 2.12.0)
      s390	        1064 bytes   (as 2.19.51.20090805)
@@ -239,6 +240,9 @@ arm:	no integer division routine
 	  else 8-bit values shifted by power of two.
 	If we had integer divide, saner constant support, and  unaligned loads 
 	  we could probably beat x86 even with 32 bit instructions.
+	  
+	OABI smaller than EABI because don't need to load r7 with
+	syscall number.
 
 ppc:	The PowerPC has very CISC-like opcodes as well.
         Despite being load-store with 3 operand instructions, you almost

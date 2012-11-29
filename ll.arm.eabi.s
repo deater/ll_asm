@@ -28,8 +28,8 @@
 # HI, LS (unsigned higer/lowersame) 
 # GE, LT (greaterequal,less than)
 # GT, LE (greater than, lessthanequal)
-# AL (always)		
-	
+# AL (always)
+
 # comment character is a @
 # gas supports "nop"=mov r0,r0
 #   ldr = load register
@@ -58,24 +58,23 @@
 #   [ r ] , +/- reg, shift #shift amt  = post-index / load, then if CC write back base+off
 
 # for halfword, signed bytes you only get an 8bit offset and some other caveats
-	
-	
+
 # Constants are 8 bits, optionally shifted left by an even amount
-	
+
 # The PC is a gp register and can be written too by any ALU op
 
 # multiply with accumulate option, mul two numbers together, add in third, store to 4th
-	
-# no support for unaligned memory access	
-		
+
+# no support for unaligned memory access
+
 # Addressing modes include pre/post incrememnt that can
 #  save back the updated address to a register
 # Also, multiple registers worth of data can be read/stored at once
-		
+
 # TODO - see if we can optimize with condition codes!
 #      - look into LDM to load multiple pointers into consecutive mem?
 #      - look at using POP with PC to return
-	
+
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -101,7 +100,7 @@
 .equ STDOUT,1
 .equ STDERR,2
 
-	.globl _start	
+	.globl _start
 _start:
 	ldr	r11,data_addr
 	ldr	r12,bss_addr
@@ -125,7 +124,7 @@ _start:
 	ldr	r9,text_addr		@ r9 points to text buf
 
 decompression_loop:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer 	
+	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
 
 	mov	r5,#0xff		@ load top as a hackish 8-bit counter
 	orr 	r5,r4,r5,LSL #8		@ shift 0xff left by 8 and or in the byte we loaded
@@ -139,7 +138,7 @@ test_flags:
 
 offset_length:
 	ldrb	r0,[r3],#+1	@ load a byte, increment pointer
-	ldrb	r4,[r3],#+1	@ load a byte, increment pointer	
+	ldrb	r4,[r3],#+1	@ load a byte, increment pointer
 				@ we can't load halfword as no unaligned loads on arm
 
 	orr	r4,r0,r4,LSL #8	@ merge back into 16 bits
@@ -177,7 +176,7 @@ store_byte:
 	b	decompression_loop
 
 discrete_char:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer 		
+	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
 	mov	r6,#1			@ we set r6 to one so byte
 					@ will be output once
 
@@ -190,7 +189,7 @@ done_logo:
 	ldr	r1,out_addr		@ buffer we are printing to
 
 	bl	write_stdout		@ print the logo
-		
+
 	#==========================
 	# PRINT VERSION
 	#==========================
@@ -207,14 +206,14 @@ first_line:
 
 	bl	strcat				@ call strcat
 
-	
+
 	add	r1,r11,#(ver_string-data_begin) @ source is " Version "
 	bl 	strcat			        @ call strcat
 
 	add	r1,r12,#((uname_info-bss_begin)+U_RELEASE)
 						@ version from uname, ie "2.6.20"
 	bl	strcat				@ call strcat
-	
+
 	add	r1,r11,#(compiled_string-data_begin)
 						@ source is ", Compiled "
 	bl	strcat				@  call strcat
@@ -223,28 +222,28 @@ first_line:
 						@ compiled date
 	bl	strcat				@ call strcat
 
-	mov	r3,#0xa	
+	mov	r3,#0xa
 	strb	r3,[r10],#+1		@ store a linefeed, increment pointer
 	strb	r0,[r10],#+1		@ NUL terminate, increment pointer
-	
+
 	bl	center_and_print	@ center and print
 
 	@===============================
 	@ Middle-Line
 	@===============================
-middle_line:		
+middle_line:
 	@=========
 	@ Load /proc/cpuinfo into buffer
 	@=========
 
 	ldr	r10,out_addr		@ point r10 to out_buffer
-	
+
 	add	r0,r11,#(cpuinfo-data_begin)
 					@ '/proc/cpuinfo'
 	mov	r1,#0			@ 0 = O_RDONLY <bits/fcntl.h>
 	mov	r7,#SYSCALL_OPEN
-	swi	0x0			
-					@ syscall.  return in r0?  
+	swi	0x0
+					@ syscall.  return in r0?
 	mov	r5,r0			@ save our fd
 	ldr	r1,disk_addr
 	mov	r2,#4096
@@ -271,13 +270,13 @@ number_of_cpus:
 	@ MHz
 	@=========
 print_mhz:
-	
+
 	@ the arm system I have does not report MHz
 
 	@=========
 	@ Chip Name
 	@=========
-chip_name:	
+chip_name:
 	mov	r0,#'s'
 	mov	r1,#'o'
 	mov	r2,#'r'
@@ -287,17 +286,17 @@ chip_name:
 
 	add	r1,r11,#(processor-data_begin)
 					@ print " Processor, "
-	bl	strcat	
-	
+	bl	strcat
+
 	@========
 	@ RAM
 	@========
-	
+
 	add	r0,r12,#(sysinfo_buff-bss_begin)
 	mov	r7,#SYSCALL_SYSINFO
 	swi	0x0
 					@ sysinfo() syscall
-	
+
 	ldr	r3,[r12,#((sysinfo_buff-bss_begin)+S_TOTALRAM)]
 					@ size in bytes of RAM
 	movs	r3,r3,lsr #20		@ divide by 1024*1024 to get M
@@ -305,11 +304,11 @@ chip_name:
 
 	mov	r0,#1
 	bl num_to_ascii
-	
+
 	add	r1,r11,#(ram_comma-data_begin)
 					@ print 'M RAM, '
 	bl	strcat			@ call strcat
-	
+
 
 	@========
 	@ Bogomips
@@ -323,25 +322,25 @@ chip_name:
 
 	add	r1,r11,#(bogo_total-data_begin)
 	bl	strcat			@ print bogomips total
-	
+
 	bl	center_and_print	@ center and print
 
 	#=================================
 	# Print Host Name
 	#=================================
 last_line:
-	ldr	r10,out_addr		@ point r10 to out_buffer	
-	
+	ldr	r10,out_addr		@ point r10 to out_buffer
+
 	add	r1,r12,#((uname_info-bss_begin)+U_NODENAME)
 					@ host name from uname()
 	bl	strcat			@ call strcat
-	
+
 	bl	center_and_print	@ center and print
 
 	add	r1,r11,#(default_colors-data_begin)
 					@ restore colors, print a few linefeeds
 	bl	write_stdout
-	
+
 
 	@================================
 	@ Exit
@@ -353,7 +352,7 @@ exit:
 
 
 	@=================================
-	@ FIND_STRING 
+	@ FIND_STRING
 	@=================================
 	@ r0,r1,r2 = string to find
 	@ r3 = char to end at
@@ -361,32 +360,32 @@ exit:
 find_string:
 	ldr	r7,disk_addr		@ look in cpuinfo buffer
 find_loop:
-	ldrb	r5,[r7],#+1		@ load a byte, increment pointer	
+	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
 	cmp	r5,r0			@ compare against first byte
 	ldrb	r5,[r7]			@ load next byte
 	cmpeq	r5,r1			@ if first byte matched, comp this one
-	ldrb	r5,[r7,#+1]		@ load next byte 
+	ldrb	r5,[r7,#+1]		@ load next byte
 	cmpeq	r5,r2			@ if first two matched, comp this one
 	beq	find_colon		@ if all 3 matched, we are found
-	
+
 	cmp	r5,#0			@ are we at EOF?
 	beq	done			@ if so, done
 
 	b	find_loop
-	
+
 find_colon:
 	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
 	cmp	r5,#':'
 	bne	find_colon		@ repeat till we find colon
 
 	add	r7,r7,#1		@ skip the space
-		
+
 store_loop:
 	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
-	strb	r5,[r10],#+1		@ store a byte, increment pointer	
+	strb	r5,[r10],#+1		@ store a byte, increment pointer
 	cmp	r5,r3
 	bne	store_loop
-	
+
 almost_done:
 	mov	r0,#0
 	strb	r0,[r10],#-1		@ replace last value with NUL
@@ -401,13 +400,13 @@ done:
 	# output buffer in r10
 	# r3 trashed
 strcat:
-	ldrb	r3,[r1],#+1		@ load a byte, increment pointer 
+	ldrb	r3,[r1],#+1		@ load a byte, increment pointer
 	strb	r3,[r10],#+1		@ store a byte, increment pointer
 	cmp	r3,#0			@ is it zero?
 	bne	strcat			@ if not loop
 	sub	r10,r10,#1		@ point to one less than null
 	mov	pc,lr			@ return
-	
+
 
 	#==============================
 	# center_and_print
@@ -421,8 +420,8 @@ center_and_print:
 	add	r1,r11,#(escape-data_begin)
 					@ we want to output ^[[
 	bl	write_stdout
-		
-str_loop2:				
+
+str_loop2:
 	ldr	r2,out_addr		@ point r2 to out_buffer
 	sub	r2,r10,r2		@ get length by subtracting
 
@@ -430,7 +429,7 @@ str_loop2:
 					@ we use 81 to not count ending \n
 
 	bne	done_center		@ if result negative, don't center
-	
+
 	lsrs	r3,r2,#1		@ divide by 2
 	adc	r3,r3,#0		@ round?
 
@@ -459,67 +458,62 @@ str_loop1:
 	cmp	r3,#0
 	bne	str_loop1			@ repeat till zero
 
-write_stdout_we_know_size:	
+write_stdout_we_know_size:
 	mov	r0,#STDOUT			@ print to stdout
 	mov	r7,#SYSCALL_WRITE
 	swi	0x0		 		@ run the syscall
 	mov	pc,lr				@ return
 
-	
+
 	@#############################
 	@ num_to_ascii
 	@#############################
 	@ r3 = value to print
 	@ r0 = 0=stdout, 1=strcat
-	
+
 num_to_ascii:
 	stmfd	SP!,{r10,LR}		@ store return address on stack
 	add	r10,r12,#((ascii_buffer-bss_begin))
 	add	r10,r10,#10
 					@ point to end of our buffer
 
-	mov	r4,#10		@ we'll be dividing by 10
 div_by_10:
-	bl	divide		@ Q=r7,$0, R=r8,$1
+	@================================================================
+	@ Divide by 10 - because ARM has no hardware divide instruction
+	@    the algorithm multiplies by 1/10 * 2^32
+	@    then divides by 2^32 (by ignoring the low 32-bits of result)
+	@================================================================
+	@ r3=numerator
+	@ r7=quotient    r8=remainder
+	@ r5=trashed
+divide_by_10:
+	ldr	r4,=429496730			@ 1/10 * 2^32
+	sub	r5,r3,r3,lsr #30
+	umull	r8,r7,r4,r5			@ {r8,r7}=r4*r5
+
+	mov	r4,#10				@ calculate remainder
+	mul	r8,r7,r4
+	sub	r8,r3,r8
+
+@	mov	pc,lr
+
+@	bl	divide_by_10	@ Q=r7,$0, R=r8,$1
 	add	r8,r8,#0x30	@ convert to ascii
-	strb	r8,[r10],#-1	@ store a byte, decrement pointer	
+	strb	r8,[r10],#-1	@ store a byte, decrement pointer
 	adds	r3,r7,#0	@ move Q in for next divide, update flags
 	bne	div_by_10	@ if Q not zero, loop
-	
+
 write_out:
 	add	r1,r10,#1	@ adjust pointer
 	ldmfd	SP!,{r10,LR}	@ restore return address from stack
-	
+
 	cmp	r0,#0
 	bne	strcat		@ if 1, strcat
-	
+
 	b write_stdout		@ else, fallthrough to stdout
 
-	
-	@===================================================
-	@ Divide - because ARM has no hardware int divide
-	@ yes this is an awful algorithm, but simple
-	@  and uses few registers
-	@==================================================
-	@ r3=numerator   r4=denominator
-	@ r7=quotient    r8=remainder
-	@ r5=trashed
-divide:
 
-	mov	r7,#0		@ zero out quotient
-divide_loop:
-	mul	r5,r7,r4	@ multiply Q by denominator
-	add	r7,r7,#1	@ increment quotient
-	cmp	r5,r3		@ is it greater than numerator?
-	ble	divide_loop	@ if not, loop
-	sub	r7,r7,#2	@ otherwise went too far, decrement
-				@ and done
-	
-	mul	r5,r7,r4	@ calculate remainder
-	sub	r8,r3,r5	@ R=N-(Q*D)
-	mov	pc,r14		@ return
 
-	
 bss_addr:	.word bss_begin
 data_addr:	.word data_begin
 out_addr:	.word out_buffer
@@ -527,7 +521,7 @@ disk_addr:	.word disk_buffer
 logo_end_addr:	.word logo_end
 pos_mask:	.word ((POSITION_MASK<<8)+0xff)
 text_addr:	.word text_buf
-							
+
 #===========================================================================
 #	section .data
 #===========================================================================
