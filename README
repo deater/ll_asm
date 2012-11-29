@@ -30,7 +30,7 @@ Some Statistics
      microblaze		1298 bytes   (as 2.16)
      mips               1276 bytes   (as 2.19.51.20090714)
      m88k		1240 bytes   (as 1.92.3)
-     arm.eabi		1198 bytes   (as 2.22)
+     arm.eabi		1194 bytes   (as 2.22)
      arm.oabi		1186 bytes   (as 2.18.0.20080103)
      PPC		1165 bytes   (as 2.19.51.20090805)
      6502		1130*bytes   (ca64 2.12.0)
