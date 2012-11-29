@@ -1,5 +1,5 @@
 #
-#  linux_logo in ARM assembler 0.46
+#  linux_logo in ARM 32-bit EABI assembler 0.46
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -9,12 +9,13 @@
 
 .include "logo.include"
 
-# Syscalls.. old way is swi SYSBASE+SYSCALLNUM with args in r0-r6
-#            New EABI way, syscall num is in r7, do a "swi 0"
+# Syscalls:    New EABI way, syscall num is in r7, do a "swi 0"
 #              for EABI you need kernel support and gcc > 4.0.0?
 
-# ARM has 31 registers, (only lower 16 visible to userspace)
-#  r0-r7 are unbanked, always the same.  r8-r14 change depending on mode
+# ARM has 16 registers
+#  (more visible in system mode: r0-r7 are unbanked, always the same.
+#   r8-r14 change depending on system status)
+# When writing user programs	
 # + r0-r12 are general purpose
 # + r13 = stack pointer
 # + r14 = link register
@@ -29,15 +30,16 @@
 # GE, LT (greaterequal,less than)
 # GT, LE (greater than, lessthanequal)
 # AL (always)
-
+#
 # comment character is a @
 # gas supports "nop"=mov r0,r0
 #   ldr = load register
 #   adr reg,label = load label into addr (via pc-relative add or sub)
 #   adrl = like above, but always an 8-byte instr
 # every instruction has a condition code
-# THUMB instructions... will do both.
-
+#
+# THUMB instructions: see the separate ll.thumb.s
+#
 # ALU ops can also do a shift (no dedicated shift instr)
 #   Shift goes last.  LSL, LSR (logical shift left/right)
 #                     ASR (arithmatic shift right)
@@ -96,11 +98,11 @@
 .equ SYSCALL_UNAME,	122
 
 #
-.equ STDIN,0
-.equ STDOUT,1
-.equ STDERR,2
+.equ STDIN,	0
+.equ STDOUT,	1
+.equ STDERR,	2
 
-	.globl _start
+	.globl	_start
 _start:
 	ldr	r11,data_addr
 	ldr	r12,bss_addr
