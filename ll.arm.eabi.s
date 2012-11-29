@@ -173,7 +173,7 @@ store_byte:
 	strb	r4,[r1],#+1		@ store a byte, increment pointer
 	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
 	add 	r2,r2,#1		@ r++
-	mov	r0,#(N)
+	mov	r0,#(N)			@ grr, N-1 won't fit in 12-bits
 	sub	r0,r0,#1		@ grrr no way to get this easier
 	and 	r2,r2,r0		@ mask r
 
@@ -268,6 +268,7 @@ number_of_cpus:
 
 	add	r1,r11,#(one-data_begin)
 					# cheat.  Who has an SMP arm?
+					# 2012 calling, my pandaboard is...
 	bl	strcat
 
 	@=========
