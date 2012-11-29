@@ -1,5 +1,5 @@
 #
-#  linux_logo in ARM assembler 0.42
+#  linux_logo in ARM assembler 0.46
 #
 #  Originally by 
 #       Vince Weaver <vince _at_ deater.net>
@@ -392,7 +392,7 @@ almost_done:
 	strb	r0,[r10],#-1		@ replace last value with NUL
 
 done:
-	bx	r14			@ return
+	mov	pc,lr			@ return
 
 	#================================
 	# strcat
@@ -406,7 +406,7 @@ strcat:
 	cmp	r3,#0			@ is it zero?
 	bne	strcat			@ if not loop
 	sub	r10,r10,#1		@ point to one less than null
-	bx	r14			@ return
+	mov	pc,lr			@ return
 	
 
 	#==============================
@@ -463,7 +463,7 @@ write_stdout_we_know_size:
 	mov	r0,#STDOUT			@ print to stdout
 	mov	r7,#SYSCALL_WRITE
 	swi	0x0		 		@ run the syscall
-	bx	r14				@ return
+	mov	pc,lr				@ return
 
 	
 	@#############################
@@ -517,7 +517,7 @@ divide_loop:
 	
 	mul	r5,r7,r4	@ calculate remainder
 	sub	r8,r3,r5	@ R=N-(Q*D)
-	bx	r14		@ return
+	mov	pc,r14		@ return
 
 	
 bss_addr:	.word bss_begin
