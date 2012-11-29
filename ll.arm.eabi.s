@@ -136,14 +136,14 @@ test_flags:
 	bge	done_logo  	@ if so, exit
 
 	lsrs 	r5,#1		@ shift bottom bit into carry flag
-	bcc	offset_length	@ if not set, we jump to offset_length
-
+@	bcc	offset_length	@ if not set, we jump to offset_length
+				@ USE CONDITIONAL EXECUTION INSTEAD OF BRANCH
 discrete_char:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
-	mov	r6,#1			@ we set r6 to one so byte
+	ldrcsb	r4,[r3],#+1		@ load a byte, increment pointer
+	movcs	r6,#1			@ we set r6 to one so byte
 					@ will be output once
 
-	b	store_byte		@ and store it
+	bcs	store_byte		@ and store it
 
 	
 offset_length:
