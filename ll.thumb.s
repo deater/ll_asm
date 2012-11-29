@@ -46,15 +46,11 @@
 @ reading r15 in general gives you current PC+4
 @ 6 Status registers (only one visible in userspace)
 @ - NZCVQ (Negative, Zero, Carry, oVerflow, saturate)
-@ prefix most instructions to handle the condition codes:
-@ EQ, NE (equal/not equal)  CS, CC (carry set/clear)
-@ MI, PL (minus/plus)       VS, VC (overflow set/clear)
-@ HI, LS (unsigned higer/lowersame) 
-@ GE, LT (greaterequal,less than)
-@ GT, LE (greater than, lessthanequal)
-@ AL (always)		
+
 @ comment character is a @
 
+@ IT (if/then) instruction
+	
 	
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
