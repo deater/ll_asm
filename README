@@ -41,6 +41,7 @@ Some Statistics
      m68k		 982 bytes   (as 2.18.0.20080103)
      x86                 969 bytes   (as 2.19.51.20090723)
      arm_thumb		 957 bytes   (as 2.18.0.20080103)
+     arm_thumb2		 953 bytes   (as 2.22)
      avr32		 914 bytes   (as 2.16.1)
      crisv32		 905 bytes   (as 2.12.1)
      z80		 891 bytes   (as 2.20.1.20100303)
@@ -345,6 +346,17 @@ arm_thumb:
 	 is great.  I cheated a bit by using the Arm5 instruction subset.
 	 The code wouldn't be anywhere near as small if I had to use
 	 generic arm4 thumb.
+
+arm_thumb2:
+
+	Is same size as thumb if you make sure to use the narrow
+        forms of all the opcodes.
+
+	The "cbz" instruction saves space, but oddly only works
+        for forward branches.
+
+	The "itt" conditional instruction does help, as does
+	"movw" and "movt" to load 32-bit constants.
 
 
 z80:
