@@ -1,5 +1,5 @@
 @
-@  linux_logo in ARM THUMB assembler 0.23
+@  linux_logo in ARM THUMB assembler 0.46
 @
 @  Originally by 
 @       Vince Weaver <vince _at_ deater.net>
@@ -29,13 +29,28 @@
 @
 @ Architectural info
 @
-@ ARM has 31 registers (only 16 visible at a time)
-@ In thumb, obly r0-r7 are accessible normally
-@ The BX instruction is used to change into thumb.  Bottom bit
-@   of the target address is the important one.
-@ + r13 = stack pointer
-@ + r14 = link register
-@ + r15 = program counter
+
+@ THUMB differences from ARM
+@
+@ In thumb, only r0-r7 are accessible normally
+@ Some instructions (add,mov) can access the remaining high registers
+@ Only two arguments to opcode
+@ No fancy addressing modes
+@ No predication / conditional execution
+@ 8-bit rather than 12-bit constants
+@ Some instructions have implicit destinations (sp, pc, etc.)
+@ The BX instruction (and later blx) is used to change into thumb.
+@   If branching to a label, the switch happens always if it is BX
+@   (you can't specify the bottom bit)
+@   If branching to a register value, set the bottom bit to 1
+@   to indicate thumb mode.
+@ 	
+	
+@ General ARM info
+@ ARM has 16 GP registers r0-r15 (some banked in system/interrupt handlers)
+@ + r13 sp = stack pointer
+@ + r14 lr = link register
+@ + r15 pc = program counter
 @ powerful push/pop that can push/pop any combination of r0-r7 in one insn.
 @    also can push LR and pop that to PC
 @ Instructions that can use the high registers:	
@@ -44,12 +59,19 @@
 @		
 @ syscalls are like EABI syscalls, syscall num is in r7, args in r0-r?
 @ reading r15 in general gives you current PC+4
-@ 6 Status registers (only one visible in userspace)
+@ 1 status register (more visible in system/interrupt handlers)
 @ - NZCVQ (Negative, Zero, Carry, oVerflow, saturate)
 
 @ comment character is a @
 
+@ There's a thumb-2 mode that extends thumb to provide 32-bit encodings
+@   of some instructions unavailable in THUMB (but not the same encoding
+@   as full 32-bit ARM).
+@ In addition it adds support for cbz, cbnz (compare and branch)
+@   but only works for forward branch?
 @ IT (if/then) instruction
+@   allows setting blocks of conditional instructions
+@   IT directive ignored in 32-bit mode but used in THUMB-2	
 	
 	
 # offsets into the results returned by the uname syscall
