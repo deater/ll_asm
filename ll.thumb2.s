@@ -67,7 +67,8 @@
 @  -- 1145 bytes, direct port of THUMB code
 @  --  957 bytes, make sure we use 16-bit encoding whenever possible
 @                 (this mostly meant adding .n or s to the opcodes)
-
+@  --  953 bytes, use cbz (compare and branch zero) THUMB2 instruction
+	
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -392,8 +393,9 @@ find_string:
 	ldr	r7,disk_addr		@ look in cpuinfo buffer
 find_loop:
 	ldrb	r5,[r7]			@ load a byte
-	cmp	r5,#0			@ off the end?
-	beq.n	done			@ then finished
+	cbz	r5,done
+	@cmp	r5,#0			@ off the end?
+	@beq.n	done			@ then finished
 
 	adds	r7,#1			@ increment pointer
 	cmp	r5,r0			@ compare against first byte
@@ -522,8 +524,8 @@ divide_loop:
 write_out:
 	adds	r1,r2,#1	@ adjust pointer
 
-	cmp	r0,#0
-	beq.n	num_stdout
+	cbz	r0,num_stdout
+#	beq.n	num_stdout
 
 	mov	r5,r1
 	blx	r10			@ if 1, strcat_r5
@@ -555,6 +557,7 @@ strcat_loop:
 	adds	r6,#1			@ increment pointer
 	cmp	r3,#0			@ is it zero?
 	bne.n	strcat_loop		@ if not loop
+	                                @ cbz insn only goes forward
 	subs	r6,r6,#1		@ point to one less than null
 	pop	{r3,pc}			@ return
 
@@ -571,7 +574,7 @@ str_loop1:
 	ldrb	r3,[r1,r2]
 	cmp	r3,#0
 	bne.n	str_loop1			@ repeat till zero
-
+	
 write_stdout_we_know_size:
 	movs	r0,#STDOUT			@ print to stdout
 	movs	r7,#SYSCALL_WRITE
