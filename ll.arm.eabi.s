@@ -76,7 +76,7 @@
 # TODO - see if we can optimize with condition codes!
 #      - look into LDM to load multiple pointers into consecutive mem?
 #      - look at using POP with PC to return
-
+	
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -104,8 +104,8 @@
 
 	.globl	_start
 _start:
-	ldr	r11,data_addr
-	ldr	r12,bss_addr
+	ldr	r11,=data_begin
+	ldr	r12,=bss_begin
 
 	#=========================
 	# PRINT LOGO
@@ -115,15 +115,15 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	ldr	r1,out_addr		@ buffer we are printing to
+	ldr	r1,=out_buffer		@ buffer we are printing to
 
 	mov     r2,#(N-F)		@ R
 
 	add	r3,r11,#(logo-data_begin)
 					@ r3 points to logo data
-	ldr	r8,logo_end_addr
+	ldr	r8,=logo_end
 					@ r8 points to logo end
-	ldr	r9,text_addr		@ r9 points to text buf
+	ldr	r9,=text_buf		@ r9 points to text buf
 
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
@@ -164,7 +164,8 @@ offset_length:
 				@                       (=match_length)
 
 output_loop:
-	ldr	r0,pos_mask		@ urgh, can't handle simple constants
+	ldr	r0,=((POSITION_MASK<<8)+0xff)
+	                                @ urgh, can't handle simple constants
 	and	r7,r7,r0		@ mask it
 	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
 	add	r7,r7,#1		@ advance pointer in text_buf
@@ -190,7 +191,7 @@ store_byte:
 # end of LZSS code
 
 done_logo:
-	ldr	r1,out_addr		@ buffer we are printing to
+	ldr	r1,=out_buffer		@ buffer we are printing to
 
 	bl	write_stdout		@ print the logo
 
@@ -206,7 +207,7 @@ first_line:
 	add	r1,r12,#(uname_info-bss_begin)
 						@ os-name from uname "Linux"
 
-	ldr	r10,out_addr			@ point r10 to out_buffer
+	ldr	r10,=out_buffer			@ point r10 to out_buffer
 
 	bl	strcat				@ call strcat
 
@@ -240,7 +241,7 @@ middle_line:
 	@ Load /proc/cpuinfo into buffer
 	@=========
 
-	ldr	r10,out_addr		@ point r10 to out_buffer
+	ldr	r10,=out_buffer		@ point r10 to out_buffer
 
 	add	r0,r11,#(cpuinfo-data_begin)
 					@ '/proc/cpuinfo'
@@ -249,7 +250,7 @@ middle_line:
 	swi	0x0
 					@ syscall.  return in r0?
 	mov	r5,r0			@ save our fd
-	ldr	r1,disk_addr
+	ldr	r1,=disk_buffer	
 	mov	r2,#4096
 				 	@ 4096 is maximum size of proc file ;)
 	mov	r7,#SYSCALL_READ
@@ -334,7 +335,7 @@ chip_name:
 	# Print Host Name
 	#=================================
 last_line:
-	ldr	r10,out_addr		@ point r10 to out_buffer
+	ldr	r10,=out_buffer		@ point r10 to out_buffer
 
 	add	r1,r12,#((uname_info-bss_begin)+U_NODENAME)
 					@ host name from uname()
@@ -363,7 +364,7 @@ exit:
 	@ r3 = char to end at
 	@ r5 trashed
 find_string:
-	ldr	r7,disk_addr		@ look in cpuinfo buffer
+	ldr	r7,=disk_buffer		@ look in cpuinfo buffer
 find_loop:
 	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
 	cmp	r5,r0			@ compare against first byte
@@ -427,7 +428,7 @@ center_and_print:
 	bl	write_stdout
 
 str_loop2:
-	ldr	r2,out_addr		@ point r2 to out_buffer
+	ldr	r2,=out_buffer		@ point r2 to out_buffer
 	sub	r2,r10,r2		@ get length by subtracting
 
 	rsb	r2,r2,#81		@ reverse subtract!  r2=81-r2
@@ -446,7 +447,7 @@ str_loop2:
 	bl	write_stdout
 
 done_center:
-	ldr	r1,out_addr		@ point r1 to out_buffer
+	ldr	r1,=out_buffer		@ point r1 to out_buffer
 	ldmfd	SP!,{LR}		@ restore return address from stack
 
 	#================================
@@ -517,15 +518,10 @@ write_out:
 
 	b write_stdout		@ else, fallthrough to stdout
 
+literals:
+# Put literal values here
+.ltorg	
 
-
-bss_addr:	.word bss_begin
-data_addr:	.word data_begin
-out_addr:	.word out_buffer
-disk_addr:	.word disk_buffer
-logo_end_addr:	.word logo_end
-pos_mask:	.word ((POSITION_MASK<<8)+0xff)
-text_addr:	.word text_buf
 
 #===========================================================================
 #	section .data
