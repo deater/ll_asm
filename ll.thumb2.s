@@ -68,7 +68,8 @@
 @  --  957 bytes, make sure we use 16-bit encoding whenever possible
 @                 (this mostly meant adding .n or s to the opcodes)
 @  --  953 bytes, use cbz (compare and branch zero) THUMB2 instruction
-	
+@  --  949 bytes, use ldmia to load initial constants
+
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -119,17 +120,19 @@ _start:
 	@ r8 = logo end
 	@ r9 = text_addr
 
+	ldr	r0,=addresses_begin
+	ldm	r0,{r1,r2,r3,r8,r9}
 
-	ldr	r1,=out_buffer		@ buffer we are printing to
-	ldr	r2,R			@ R
+@	ldr	r1,out_addr		@ buffer we are printing to
+@	ldr	r2,R			@ R
 
-	ldr	r3,logo_addr		@ r3 points to logo data
+@	ldr	r3,logo_addr		@ r3 points to logo data
 
-	ldr	r0,logo_end_addr
-	mov	r8,r0			@ r8 points to logo end
+@	ldr	r0,logo_end_addr
+@	mov	r8,r4			@ r8 points to logo end
 
-	ldr	r0,text_addr		@ r9 points to text buf
-	mov	r9,r0
+@	ldr	r0,text_addr		@ r9 points to text buf
+@	mov	r9,r5
 
 decompression_loop:
 	ldrb	r4,[r3]			@ load a byte
@@ -206,7 +209,7 @@ discrete_char:
 # end of LZSS code
 
 done_logo:
-	ldr	r1,=out_buffer		@ buffer we are printing to
+	ldr	r1,out_addr		@ buffer we are printing to
 
 
 	ldr	r0,strcat_addr
@@ -235,7 +238,7 @@ first_line:
 
 					@ os-name from uname "Linux"
 
-	ldr	r6,=out_buffer		@ point r6 to out_buffer
+	ldr	r6,out_addr		@ point r6 to out_buffer
 
 	blx	r10			@ call strcat_r5
 
@@ -267,7 +270,7 @@ middle_line:
 	@ Load /proc/cpuinfo into buffer
 	@=========
 
-	ldr	r6,=out_buffer		@ point r6 to out_buffer
+	ldr	r6,out_addr		@ point r6 to out_buffer
 
 	mov	r0,r4
 					@ '/proc/cpuinfo'
@@ -358,7 +361,7 @@ bogomips:
 	# Print Host Name
 	#=================================
 last_line:
-	ldr	r6,=out_buffer		@ point r6 to out_buffer
+	ldr	r6,out_addr		@ point r6 to out_buffer
 
 	subs	r5,#(U_VERSION-U_NODENAME)
 					@ host name from uname()
@@ -452,7 +455,7 @@ center_and_print:
 	bl	write_stdout_we_know_size
 
 str_loop2:
-	ldr	r2,=out_buffer		@ point r2 to out_buffer
+	ldr	r2,out_addr		@ point r2 to out_buffer
 	subs	r2,r2,r6		@ get length by subtracting
 					@ actually, negative value here
 					@ an optimization...
@@ -471,7 +474,7 @@ str_loop2:
 	blx	r9			@ write_stdout
 
 done_center:
-	ldr	r1,=out_buffer		@ point r1 to out_buffer
+	ldr	r1,out_addr		@ point r1 to out_buffer
 	blx	r9			@ write_stdout
 	pop	{r3,r4,PC}		@ restore return address from stack
 
@@ -574,7 +577,7 @@ str_loop1:
 	ldrb	r3,[r1,r2]
 	cmp	r3,#0
 	bne.n	str_loop1			@ repeat till zero
-	
+
 write_stdout_we_know_size:
 	movs	r0,#STDOUT			@ print to stdout
 	movs	r7,#SYSCALL_WRITE
@@ -583,22 +586,24 @@ write_stdout_we_know_size:
 
 
 .align 2
-@ data address
-ver_addr:	.word ver_string
-colors_addr:	.word default_colors
+addresses_begin:
+@ These need to be consecutive; loaded by ldmia
+out_addr:	.word out_buffer
+R:		.word (N-F)
 logo_addr:	.word logo
 logo_end_addr:	.word logo_end
+text_addr:	.word text_buf
 
-@bss addresses
+ver_addr:	.word ver_string
+colors_addr:	.word default_colors
+
 uname_addr:	.word uname_info
 sysinfo_addr:	.word sysinfo_buff
 ascii_addr:	.word ascii_buffer
-text_addr:	.word text_buf
 disk_addr:	.word disk_buffer
 
 @ constant values
 pos_mask:	.word ((POSITION_MASK<<8)+0xff)
-R:		.word (N-F)
 NMINUS1:	.word (N-1)
 
 @ function pointers

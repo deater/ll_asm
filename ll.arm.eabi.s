@@ -104,8 +104,6 @@
 
 	.globl	_start
 _start:
-	ldr	r11,=data_begin
-	ldr	r12,=bss_begin
 
 	#=========================
 	# PRINT LOGO
@@ -115,16 +113,17 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	ldr	r1,=out_buffer		@ buffer we are printing to
+	ldr	r0,=addresses
+	ldmia	r0,{r1,r2,r3,r8,r9,r11,r12}
 
-	mov     r2,#(N-F)		@ R
-
-	add	r3,r11,#(logo-data_begin)
-					@ r3 points to logo data
-	ldr	r8,=logo_end
-					@ r8 points to logo end
-	ldr	r9,=text_buf		@ r9 points to text buf
-
+@	ldr	r1,out_addr		@ buffer we are printing to
+@	mov     r2,#(N-F)		@ R
+@	ldr	r3,logo_addr		@ r3 points to logo data	
+@	ldr	r8,logo_end_addr	@ r8 points to logo end
+@	ldr	r9,text_buf_addr	@ r9 points to text buf
+@	ldr	r11,data_begin	
+@	ldr	r12,bss_begin
+	
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
 
@@ -191,7 +190,7 @@ store_byte:
 # end of LZSS code
 
 done_logo:
-	ldr	r1,=out_buffer		@ buffer we are printing to
+	ldr	r1,out_addr		@ buffer we are printing to
 
 	bl	write_stdout		@ print the logo
 
@@ -207,7 +206,7 @@ first_line:
 	add	r1,r12,#(uname_info-bss_begin)
 						@ os-name from uname "Linux"
 
-	ldr	r10,=out_buffer			@ point r10 to out_buffer
+	ldr	r10,out_addr			@ point r10 to out_buffer
 
 	bl	strcat				@ call strcat
 
@@ -241,7 +240,7 @@ middle_line:
 	@ Load /proc/cpuinfo into buffer
 	@=========
 
-	ldr	r10,=out_buffer		@ point r10 to out_buffer
+	ldr	r10,out_addr		@ point r10 to out_buffer
 
 	add	r0,r11,#(cpuinfo-data_begin)
 					@ '/proc/cpuinfo'
@@ -335,7 +334,7 @@ chip_name:
 	# Print Host Name
 	#=================================
 last_line:
-	ldr	r10,=out_buffer		@ point r10 to out_buffer
+	ldr	r10,out_addr		@ point r10 to out_buffer
 
 	add	r1,r12,#((uname_info-bss_begin)+U_NODENAME)
 					@ host name from uname()
@@ -428,7 +427,7 @@ center_and_print:
 	bl	write_stdout
 
 str_loop2:
-	ldr	r2,=out_buffer		@ point r2 to out_buffer
+	ldr	r2,out_addr		@ point r2 to out_buffer
 	sub	r2,r10,r2		@ get length by subtracting
 
 	rsb	r2,r2,#81		@ reverse subtract!  r2=81-r2
@@ -447,7 +446,7 @@ str_loop2:
 	bl	write_stdout
 
 done_center:
-	ldr	r1,=out_buffer		@ point r1 to out_buffer
+	ldr	r1,out_addr		@ point r1 to out_buffer
 	ldmfd	SP!,{LR}		@ restore return address from stack
 
 	#================================
@@ -518,6 +517,15 @@ write_out:
 
 	b write_stdout		@ else, fallthrough to stdout
 
+addresses:
+out_addr:	.word out_buffer
+R_val:		.word (N-F)
+logo_addr:	.word logo
+logo_end_addr:	.word logo_end
+text_addr:	.word text_buf
+data_begin_addr:.word data_begin
+bss_begin_addr:	.word bss_begin
+		
 literals:
 # Put literal values here
 .ltorg	
