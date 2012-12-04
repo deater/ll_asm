@@ -69,7 +69,8 @@
 @                 (this mostly meant adding .n or s to the opcodes)
 @  --  953 bytes, use cbz (compare and branch zero) THUMB2 instruction
 @  --  949 bytes, use ldmia to load initial constants
-
+@  --  941 bytes, use mul instead of subtract for div_by_10
+	
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -492,39 +493,23 @@ num_to_ascii:
 	ldr	r2,ascii_addr
 	adds	r2,#9			@ point to end of our buffer
 
-	movs	r7,#10		@ we'll be dividing by 10
+        @===================================================
+        @ div_by_10: because ARM has no divide instruction
+        @==================================================
+        @ r3=numerator
+        @ r7=quotient    r1=remainder
 div_by_10:
+        ldr     r4,=429496730	@ 1/10 * 2^32
+        umull   r4,r7,r4,r3	@ {r4,r7}=r4*r3
 
+        movs	r4,#10		@ calculate remainder
+	mls	r1,r4,r7,r3	@ r1 = r3 - (r4*r7)
+        adds	r1,r1,#0x30	@ convert to ascii
+        strb	r1,[r2]		@ store a byte, decrement pointer
+        subs	r2,#1
+        adds	r3,r7,#0	@ move Q in for next divide, update flags
+        bne.n	div_by_10	@ if Q not zero, loop
 
-	@===================================================
-	@ Divide - because ARM has no hardware int divide
-	@ yes this is an awful algorithm, but simple
-	@  and uses few registers
-	@==================================================
-	@ r3=numerator   r7=denominator
-	@ r5=quotient    r4=remainder
-
-divide:
-	movs	r5,#0		@ zero out quotient
-divide_loop:
-	mov	r1,r5		@ move Q temporarily to r2
-	muls	r1,r7		@ multiply Q by denominator
-	adds	r5,#1		@ increment quotient
-	cmp	r1,r3		@ is it greater than numerator?
-	ble.n	divide_loop	@ if not, loop
-	subs	r5,#2		@ otherwise went too far, decrement
-				@ and done
-
-	mov	r1,r5		@ move Q temporarily to r2
-	muls	r1,r7		@ calculate remainder
-	subs	r4,r3,r1	@ R=N-(Q*D)
-
-@	bl	divide		@ Q=r5, R=r4
-	adds	r4,#0x30	@ convert to ascii
-	strb	r4,[r2]		@ store a byte
-	subs	r2,#1		@ decrement pointer
-	movs	r3,r5		@ move Q in for next divide, update flags
-	bne.n	div_by_10	@ if Q not zero, loop
 
 write_out:
 	adds	r1,r2,#1	@ adjust pointer
