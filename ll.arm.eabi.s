@@ -497,12 +497,12 @@ divide_by_10:
 	umull	r8,r7,r4,r5			@ {r8,r7}=r4*r5
 
 	mov	r4,#10				@ calculate remainder
+
+						@ could use "mls" on
+						@ armv6/armv7
 	mul	r8,r7,r4
 	sub	r8,r3,r8
 
-@	mov	pc,lr
-
-@	bl	divide_by_10	@ Q=r7,$0, R=r8,$1
 	add	r8,r8,#0x30	@ convert to ascii
 	strb	r8,[r10],#-1	@ store a byte, decrement pointer
 	adds	r3,r7,#0	@ move Q in for next divide, update flags
