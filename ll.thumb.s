@@ -10,6 +10,9 @@
 @  assemble with     "as -o ll.thumb.o ll.thumb.s"
 @  link with         "ld -o ll_thumb ll.thumb.o"
 
+@ We want only armv4t instructions
+.arch armv5t
+	
 .include "logo.include"
 
 @ Optimization progress:
