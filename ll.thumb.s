@@ -1,18 +1,15 @@
 @
 @  linux_logo in ARM THUMB assembler 0.46
 @
-@  Originally by 
+@  By:
 @       Vince Weaver <vince _at_ deater.net>
-@
-@  Crazy size-optimization hacks by
-@       Stephan Walter <stephan.walter _at_ gmx.ch>
 @
 @  assemble with     "as -o ll.thumb.o ll.thumb.s"
 @  link with         "ld -o ll_thumb ll.thumb.o"
 
 @ We want only armv4t instructions
 .arch armv5t
-	
+
 .include "logo.include"
 
 @ Optimization progress:
@@ -31,7 +28,9 @@
 @       957  - not sure, version 0.46 is this size
 @	953  - use ldm to load initial values
 @	949  - use multiply instead of iterative subtraction for div_by_10
-	
+@	953  - back to using subtract, as umull isn't valid THUMB-16
+@	       considered mul by 8/10 algorithm but it is much longer
+
 @
 @ Architectural info
 @
@@ -504,19 +503,29 @@ num_to_ascii:
 	@ div_by_10: because ARM has no divide instruction
 	@==================================================
 	@ r3=numerator
-	@ r7=quotient    r1=remainder
-div_by_10:
-	ldr	r4,=429496730                   @ 1/10 * 2^32
-	umull	r4,r7,r4,r3                     @ {r4,r7}=r4*r3
+	@ r5=quotient    r4=remainder
 
-	mov	r4,#10                          @ calculate remainder
-	mul	r4,r4,r7
-	sub	r1,r3,r4
-step:
-	add	r1,r1,#0x30	@ convert to ascii
-	strb	r1,[r2]		@ store a byte, decrement pointer
-	add	r2,#-1
-	add	r3,r7,#0	@ move Q in for next divide, update flags
+	mov	r7,#10		@ Divide by 10
+div_by_10:
+	mov     r5,#0           @ zero out quotient
+divide_loop:
+	mov     r1,r5           @ move Q temporarily to r1
+	mul     r1,r7           @ multiply Q by denominator
+	add     r5,#1           @ increment quotient
+	cmp     r1,r3           @ is it greater than numerator?
+	ble     divide_loop     @ if not, loop
+	sub     r5,#2           @ otherwise went too far, decrement
+				@ and done
+	mov     r1,r5           @ move Q temporarily to r2
+	mul     r1,r7           @ calculate remainder
+	sub     r4,r3,r1        @ R=N-(Q*D)
+
+	@ Done Divide, Q=r5 R=r4
+
+	add     r4,#0x30        @ convert to ascii
+	strb    r4,[r2]         @ store a byte
+	sub     r2,#1           @ decrement pointer
+	mov     r3,r5           @ move Q in for next divide, update flags
 	bne	div_by_10	@ if Q not zero, loop
 
 write_out:
