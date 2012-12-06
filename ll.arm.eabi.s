@@ -503,11 +503,14 @@ divide_by_10:
 	mul	r8,r7,r4
 	sub	r8,r3,r8
 
+	@ r7=Q, R8=R
+	
 	add	r8,r8,#0x30	@ convert to ascii
 	strb	r8,[r10],#-1	@ store a byte, decrement pointer
 	adds	r3,r7,#0	@ move Q in for next divide, update flags
 	bne	div_by_10	@ if Q not zero, loop
 
+	
 write_out:
 	add	r1,r10,#1	@ adjust pointer
 	ldmfd	SP!,{r10,LR}	@ restore return address from stack
