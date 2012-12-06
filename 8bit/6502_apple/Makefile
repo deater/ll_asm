@@ -5,20 +5,20 @@ LL_6502:	ll_6502
 		make_b ./ll_6502 ./LL_6502 0xC00
 
 ll_6502:	ll_6502.o
-	ld65 -C ./apple2_c00.inc -o ll_6502 ll_6502.o
+	ld65 -o ll_6502 ll_6502.o -C ./apple2_c00.inc 
 
 ll_6502.o:	ll_6502.s
-		ca65 -o ll_6502.o -l ll_6502.s
+		ca65 -o ll_6502.o ll_6502.s -l ll_6502.lst
 
 
 PROC_DETECT:	proc_detect 
 		make_b ./proc_detect ./PROC_DETECT 0xC00
 
 proc_detect:	proc_detect.o
-	ld65 -C ./apple2_c00.inc -o proc_detect proc_detect.o
+	ld65 -o proc_detect proc_detect.o -C ./apple2_c00.inc 
 
 proc_detect.o:	proc_detect.s
-		ca65 -o proc_detect.o -l proc_detect.s
+		ca65 -o proc_detect.o proc_detect.s -l proc_detec.lst
 
 
 disk:		
