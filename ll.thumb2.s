@@ -70,7 +70,8 @@
 @  --  953 bytes, use cbz (compare and branch zero) THUMB2 instruction
 @  --  949 bytes, use ldmia to load initial constants
 @  --  941 bytes, use mul instead of subtract for div_by_10
-	
+@  --  937 bytes, use movw to load 16-bit constants
+
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -124,31 +125,18 @@ _start:
 	ldr	r0,=addresses_begin
 	ldm	r0,{r1,r2,r3,r8,r9}
 
-@	ldr	r1,out_addr		@ buffer we are printing to
-@	ldr	r2,R			@ R
-
-@	ldr	r3,logo_addr		@ r3 points to logo data
-
-@	ldr	r0,logo_end_addr
-@	mov	r8,r4			@ r8 points to logo end
-
-@	ldr	r0,text_addr		@ r9 points to text buf
-@	mov	r9,r5
-
 decompression_loop:
-	ldrb	r4,[r3]			@ load a byte
-	adds	r3,#1			@ increment pointer
+	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
 
 	movs	r5,#0xff		@ load top as a hackish 8-bit counter
-	lsls	r5,#8			@ shift 0xff left by 8
-	orrs 	r5,r4			@ or in the byte we loaded
+					@ shift 0xff left by 8
+	orr 	r5,r4,r5,LSL #8		@ or in the byte we loaded
 
 test_flags:
 	cmp	r3,r8		@ have we reached the end?
 	bge.n	done_logo  	@ if so, exit
 
 	lsrs 	r5,#1		@ shift bottom bit into carry flag
-@	bcc.n	offset_length	@ if clear, we skip to discrete char
 
 	ittt cs				@ If CS Then Next instruction
 					@       plus CS for next 3
@@ -161,50 +149,42 @@ discrete_char:
 	bcs.n	store_byte		@ and store it
 
 offset_length:
-	ldrb	r0,[r3]		@ load a byte
-	adds	r3,#1		@ increment pointer
-	ldrb	r4,[r3]		@ load a byte
-	adds	r3,#1		@ increment pointer
+	ldrb	r0,[r3],#1		@ load a byte, increment pointer
+	ldrb	r6,[r3],#1		@ load a byte, increment pointer
 				@ we can't load halfword
 				@ as no unaligned loads on arm
 
-	lsls	r4,#8
-	orrs	r4,r0,r4	@ merge back into 16 bits
+	orrs	r6,r0,r6, LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
 
-	mov	r7,r4		@ copy r4 to r7
+	mov	r7,r6		@ copy r4 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
 	movs	r0,#(THRESHOLD+1)
-	lsrs	r4,#(P_BITS)
-	adds	r6,r4,r0
+	add	r6,r0,r6,LSR #(P_BITS)
 				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
-	ldr	r0,pos_mask		@ urgh, can't handle simple constants
+	movw	r0,((POSITION_MASK<<8)+0xff)
+
 	ands	r7,r0			@ mask it
-	mov	r0,r9
-	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
+	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
 	adds	r7,#1			@ advance pointer in text_buf
 
 store_byte:
-	strb	r4,[r1]			@ store a byte
-	adds	r1,#1			@ increment pointer
-	mov	r0,r9
-	strb	r4,[r0,r2]		@ store a byte to text_buf[r]
+	strb	r4,[r1],#+1		@ store a byte, increment pointer
+	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
 	adds	r2,#1			@ r++
 
-	ldr	r0,NMINUS1		@ grrr no way to get this easier
+	movw	r0,#(N-1)		@ grrr no way to get this easier
 	ands 	r2,r0			@ mask r
 
 	subs	r6,#1			@ decement count
 	bne.n 	output_loop		@ repeat until k>j
 
-	movs	r0,#0xff
-	lsls	r0,#8
-	tst	r5,r0			@ are the top bits 0?
+	tst	r5,#0xff00		@ are the top bits 0?
 	bne.n	test_flags		@ if not, re-load flags
 
 	b.n	decompression_loop
@@ -588,10 +568,6 @@ uname_addr:	.word uname_info
 sysinfo_addr:	.word sysinfo_buff
 ascii_addr:	.word ascii_buffer
 disk_addr:	.word disk_buffer
-
-@ constant values
-pos_mask:	.word ((POSITION_MASK<<8)+0xff)
-NMINUS1:	.word (N-1)
 
 @ function pointers
 strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
