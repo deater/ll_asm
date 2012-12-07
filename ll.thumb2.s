@@ -80,7 +80,8 @@
 @  --  949 bytes, use ldmia to load initial constants
 @  --  941 bytes, use mul instead of subtract for div_by_10
 @  --  937 bytes, use movw to load 16-bit constants
-@  --  933 bytes, eliminate use of r0 as temp, moving one var down to low
+@  --  935 bytes, eliminate use of r0 as temp, moving one var down to low
+@  --  933 bytes, change 16-bit compare to 8-bit compare
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -205,8 +206,12 @@ store_byte:
 	subs	r6,#1			@ decement count
 	bne.n 	output_loop		@ repeat until k>j
 
-	tst	r5,#0xff00		@ are the top bits 0?
-	bne.n	test_flags		@ if not, re-load flags
+	cmp	r5,#0xff		@ are the top bits 0?
+	bgt.n	test_flags		@ if not, re-load flags
+
+
+@	tst	r5,#0xff00		@ are the top bits 0?
+@	bne.n	test_flags		@ if not, re-load flags
 
 	b.n	decompression_loop
 

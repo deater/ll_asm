@@ -30,7 +30,8 @@
 @	949  - use multiply instead of iterative subtraction for div_by_10
 @	953  - back to using subtract, as umull isn't valid THUMB-16
 @	       considered mul by 8/10 algorithm but it is much longer
-
+@       949  - change 16-bit compare to an 8-bit one
+	
 @
 @ Architectural info
 @
@@ -203,10 +204,8 @@ store_byte:
 	sub	r6,#1			@ decement count
 	bne 	output_loop		@ repeat until k>j
 
-	mov	r0,#0xff
-	lsl	r0,#8
-	tst	r5,r0			@ are the top bits 0?
-	bne	test_flags		@ if not, re-load flags
+	cmp	r5,#0xff		@ are the top bits 0?
+	bgt	test_flags		@ if not, re-load flags
 
 	b	decompression_loop
 
