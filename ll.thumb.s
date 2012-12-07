@@ -32,6 +32,7 @@
 @	       considered mul by 8/10 algorithm but it is much longer
 @       949  - change 16-bit compare to an 8-bit one
 @	945  - much simpler masking code
+@	941  - eliminate use of r0 as temp, allowig moving of pointer low
 
 @
 @ Architectural info
@@ -133,9 +134,8 @@ _start:
 	@ r9 = text_addr
 
 	ldr	r0,=addresses
-	ldm	r0!,{r1,r2,r3,r4,r5}
+	ldm	r0,{r0,r1,r2,r3,r4}
 	mov	r8,r4
-	mov	r9,r5
 
 decompression_loop:
 	ldrb	r4,[r3]			@ load a byte
@@ -177,14 +177,12 @@ offset_length:
 output_loop:
 	ldr	r4,pos_mask		@ urgh, can't handle simple constants
 	and	r7,r4			@ mask it
-	mov	r4,r9
-	ldrb 	r4,[r4,r7]		@ load byte from text_buf[]
+	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
 	add	r7,#1			@ advance pointer in text_buf
 
 store_byte:
 	strb	r4,[r1]			@ store a byte
 	add	r1,#1			@ increment pointer
-	mov	r0,r9
 	strb	r4,[r0,r2]		@ store a byte to text_buf[r]
 	add 	r2,#1			@ r++
 
@@ -581,11 +579,11 @@ write_stdout_we_know_size:
 
 addresses:
 @ These are loaded by LDM at init
+text_addr:	.word text_buf
 out_addr:	.word out_buffer
 R:		.word (N-F)
 logo_addr:	.word logo
 logo_end_addr:	.word logo_end
-text_addr:	.word text_buf
 
 
 @ data address
