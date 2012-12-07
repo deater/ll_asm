@@ -80,6 +80,7 @@
 @  --  949 bytes, use ldmia to load initial constants
 @  --  941 bytes, use mul instead of subtract for div_by_10
 @  --  937 bytes, use movw to load 16-bit constants
+@  --  933 bytes, eliminate use of r0 as temp, moving one var down to low
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -120,7 +121,7 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	@ r0 = temp
+	@ r0 = text_addr
 	@ r1 = output_buffer
 	@ r2 = R
 	@ r3 = logo data inputting from
@@ -129,10 +130,9 @@ _start:
 	@ r6 = position
 	@ r7 = match length
 	@ r8 = logo end
-	@ r9 = text_addr
 
 	ldr	r0,=addresses_begin
-	ldm	r0,{r1,r2,r3,r8,r9}
+	ldm	r0,{r0,r1,r2,r3,r8}
 
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
@@ -179,17 +179,20 @@ output_loop:
 	movw	r4,((POSITION_MASK<<8)+0xff)
 
 	ands	r7,r4			@ mask it
-	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
+	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
 	adds	r7,#1			@ advance pointer in text_buf
 
 store_byte:
 	strb	r4,[r1],#+1		@ store a byte, increment pointer
-	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
+	strb	r4,[r0,r2]		@ store a byte to text_buf[r]
 	adds	r2,#1			@ r++
 
 					@ can't mask with 0x3ff due
 					@ to thumb2's crazy immediate
 					@ values
+
+					@ was wasting a reg as a temp
+					@ value
 
 					@ So mask another way
 					@ 22 = 32-log2(N)
@@ -573,11 +576,11 @@ write_stdout_we_know_size:
 .align 2
 addresses_begin:
 @ These need to be consecutive; loaded by ldmia
+text_addr:	.word text_buf
 out_addr:	.word out_buffer
 R:		.word (N-F)
 logo_addr:	.word logo
 logo_end_addr:	.word logo_end
-text_addr:	.word text_buf
 
 ver_addr:	.word ver_string
 colors_addr:	.word default_colors
