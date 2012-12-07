@@ -82,6 +82,7 @@
 @  --  937 bytes, use movw to load 16-bit constants
 @  --  935 bytes, eliminate use of r0 as temp, moving one var down to low
 @  --  933 bytes, change 16-bit compare to 8-bit compare
+@  --  929 bytes, can mask simply with lsl/lsr
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -167,13 +168,13 @@ offset_length:
 	orrs	r6,r4,r6, LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
 
-	mov	r7,r6		@ copy r4 to r7
+	mov	r7,r6		@ copy r6 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
 	movs	r4,#(THRESHOLD+1)
 	add	r6,r4,r6,LSR #(P_BITS)
-				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
+				@ r6 = (r6 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
@@ -199,9 +200,7 @@ store_byte:
 					@ 22 = 32-log2(N)
 
 	lsls	r2,#22			@ shift up to see if bit 10 set
-	ite	CS
-	movcs	r2,#0			@ if yes, wrap to 0
-	lsrcc	r2,#22			@ otherwise restore value
+	lsrs	r2,#22			@ otherwise restore value
 
 	subs	r6,#1			@ decement count
 	bne.n 	output_loop		@ repeat until k>j

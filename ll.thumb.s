@@ -31,7 +31,8 @@
 @	953  - back to using subtract, as umull isn't valid THUMB-16
 @	       considered mul by 8/10 algorithm but it is much longer
 @       949  - change 16-bit compare to an 8-bit one
-	
+@	945  - much simpler masking code
+
 @
 @ Architectural info
 @
@@ -136,17 +137,6 @@ _start:
 	mov	r8,r4
 	mov	r9,r5
 
-@	ldr	r1,out_addr		@ buffer we are printing to
-@	ldr	r2,R			@ R
-
-@	ldr	r3,logo_addr		@ r3 points to logo data
-
-@	ldr	r0,logo_end_addr
-@	mov	r8,r0			@ r8 points to logo end
-
-@	ldr	r0,text_addr		@ r9 points to text buf
-@	mov	r9,r0
-
 decompression_loop:
 	ldrb	r4,[r3]			@ load a byte
 	add	r3,#1			@ increment pointer
@@ -163,32 +153,32 @@ test_flags:
 	bcs	discrete_char	@ if set, we jump to discrete char
 
 offset_length:
-	ldrb	r0,[r3]		@ load a byte
-	add	r3,#1		@ increment pointer
 	ldrb	r4,[r3]		@ load a byte
+	add	r3,#1		@ increment pointer
+	ldrb	r6,[r3]		@ load a byte
 	add	r3,#1		@ increment pointer
 				@ we can't load halfword
 				@ as no unaligned loads on arm
 
-	lsl	r4,#8
-	orr	r4,r0,r4	@ merge back into 16 bits
+	lsl	r6,#8
+	orr	r6,r6,r4	@ merge back into 16 bits
 				@ this has match_length and match_position
 
-	mov	r7,r4		@ copy r4 to r7
+	mov	r7,r6		@ copy r6 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
-	mov	r0,#(THRESHOLD+1)
-	lsr	r4,#(P_BITS)
-	add	r6,r4,r0
-				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
+	mov	r4,#(THRESHOLD+1)
+	lsr	r6,#(P_BITS)
+	add	r6,r4,r6
+				@ r6 = (r6 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
-	ldr	r0,pos_mask		@ urgh, can't handle simple constants
-	and	r7,r0			@ mask it
-	mov	r0,r9
-	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
+	ldr	r4,pos_mask		@ urgh, can't handle simple constants
+	and	r7,r4			@ mask it
+	mov	r4,r9
+	ldrb 	r4,[r4,r7]		@ load byte from text_buf[]
 	add	r7,#1			@ advance pointer in text_buf
 
 store_byte:
@@ -198,8 +188,8 @@ store_byte:
 	strb	r4,[r0,r2]		@ store a byte to text_buf[r]
 	add 	r2,#1			@ r++
 
-	ldr	r0,NMINUS1		@ grrr no way to get this easier
-	and 	r2,r0			@ mask r
+	lsl	r2,#22			@ mask off high 22 bits
+	lsr	r2,#22			@ (wrap to N-1 bits)
 
 	sub	r6,#1			@ decement count
 	bne 	output_loop		@ repeat until k>j
@@ -610,7 +600,6 @@ disk_addr:	.word disk_buffer
 
 @ constant values
 pos_mask:	.word ((POSITION_MASK<<8)+0xff)
-NMINUS1:	.word (N-1)
 
 @ function pointers
 strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr

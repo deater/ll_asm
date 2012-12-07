@@ -73,10 +73,6 @@
 #  save back the updated address to a register
 # Also, multiple registers worth of data can be read/stored at once
 
-# TODO - see if we can optimize with condition codes!
-#      - look into LDM to load multiple pointers into consecutive mem?
-#      - look at using POP with PC to return
-	
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65

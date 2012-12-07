@@ -1,0 +1,5 @@
++ For more fair comparisons, have the CPU prettyprinting be
+  standardized
+
++ Look into the lsl / lsr masking in store_byte on other arches
+
