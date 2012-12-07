@@ -105,7 +105,7 @@ finished:
 
 int rle_two(FILE *ansi,FILE *output) {
 
-    int ch,oldchar,byte_count=0,run,digit,i,j,match,miss;
+    int ch,oldchar,byte_count=0,run,digit,i,j,miss;
     int bufsize=4096;
     int buffer_pointer=0;
     unsigned char *buffer;
@@ -154,7 +154,6 @@ loop_no_read:
 //       printf("\n");
        
        i=0;
-       match=0;
        miss=0;
        for(i=0;i<ansi_table_entries;i++) {
 	  miss=0;

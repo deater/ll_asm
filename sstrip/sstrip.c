@@ -204,7 +204,7 @@ static int getmemorysize(Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 			 unsigned long *newsize)
 {
     Elf_Phdr    *phdr;
-    unsigned long	size, n ,end=0;
+    unsigned long	size, n;
     int			i;
 
     unsigned long e_phoff;
@@ -257,7 +257,7 @@ static int getmemorysize(Elf_Ehdr const *ehdr, Elf_Phdr *phdrs,
 	    n = p_offset + p_filesz;
 	    if (n > size)
 		size = n;
-            end=size;
+            //end=size;
 	}
     }
 
