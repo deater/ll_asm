@@ -63,6 +63,15 @@
 @     in 16-bit thumb the "s" is assumed in many instructions and gas
 @     won't let you set it explicitly
 
+@  -- crazy immediate encoding.  Does have 12 bits, but allocated as such
+@     top 4 bits 0000 -- 00000000 00000000 00000000 abcdefgh
+@                0001 -- 00000000 abcdefgh 00000000 abcdefgh
+@                0010 -- abcdefgh 00000000 abcdefgh 00000000
+@                0011 -- abcdefgh abcdefgh abcdefgh abcdefgh
+@                0100 -- 1bcdedfh 00000000 00000000 00000000
+@                 ...
+@                1111 -- 00000000 00000000 00000001 bcdefgh0
+
 @ Optimizing:
 @  -- 1145 bytes, direct port of THUMB code
 @  --  957 bytes, make sure we use 16-bit encoding whenever possible
@@ -149,27 +158,27 @@ discrete_char:
 	bcs.n	store_byte		@ and store it
 
 offset_length:
-	ldrb	r0,[r3],#1		@ load a byte, increment pointer
+	ldrb	r4,[r3],#1		@ load a byte, increment pointer
 	ldrb	r6,[r3],#1		@ load a byte, increment pointer
 				@ we can't load halfword
 				@ as no unaligned loads on arm
 
-	orrs	r6,r0,r6, LSL #8	@ merge back into 16 bits
+	orrs	r6,r4,r6, LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
 
 	mov	r7,r6		@ copy r4 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
-	movs	r0,#(THRESHOLD+1)
-	add	r6,r0,r6,LSR #(P_BITS)
+	movs	r4,#(THRESHOLD+1)
+	add	r6,r4,r6,LSR #(P_BITS)
 				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
-	movw	r0,((POSITION_MASK<<8)+0xff)
+	movw	r4,((POSITION_MASK<<8)+0xff)
 
-	ands	r7,r0			@ mask it
+	ands	r7,r4			@ mask it
 	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
 	adds	r7,#1			@ advance pointer in text_buf
 
@@ -178,8 +187,17 @@ store_byte:
 	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
 	adds	r2,#1			@ r++
 
-	movw	r0,#(N-1)		@ grrr no way to get this easier
-	ands 	r2,r0			@ mask r
+					@ can't mask with 0x3ff due
+					@ to thumb2's crazy immediate
+					@ values
+
+					@ So mask another way
+					@ 22 = 32-log2(N)
+
+	lsls	r2,#22			@ shift up to see if bit 10 set
+	ite	CS
+	movcs	r2,#0			@ if yes, wrap to 0
+	lsrcc	r2,#22			@ otherwise restore value
 
 	subs	r6,#1			@ decement count
 	bne.n 	output_loop		@ repeat until k>j
