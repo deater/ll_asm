@@ -33,6 +33,7 @@
 @       949  - change 16-bit compare to an 8-bit one
 @	945  - much simpler masking code
 @	941  - eliminate use of r0 as temp, allowig moving of pointer low
+@	937  - change another mask to lsl/lsr
 
 @
 @ Architectural info
@@ -175,8 +176,14 @@ offset_length:
 				@                       (=match_length)
 
 output_loop:
-	ldr	r4,pos_mask		@ urgh, can't handle simple constants
-	and	r7,r4			@ mask it
+@	ldr	r4,pos_mask		@ urgh, can't handle simple constants
+@	and	r7,r4			@ mask it
+
+	@ Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
+	lsl	r7,#22			@ mask off high 22 bits
+	lsr	r7,#22			@ (wrap to N-1 bits)
+
+
 	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
 	add	r7,#1			@ advance pointer in text_buf
 
@@ -597,7 +604,7 @@ ascii_addr:	.word ascii_buffer
 disk_addr:	.word disk_buffer
 
 @ constant values
-pos_mask:	.word ((POSITION_MASK<<8)+0xff)
+@pos_mask:	.word ((POSITION_MASK<<8)+0xff)
 
 @ function pointers
 strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr

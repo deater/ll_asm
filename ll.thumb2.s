@@ -83,6 +83,7 @@
 @  --  935 bytes, eliminate use of r0 as temp, moving one var down to low
 @  --  933 bytes, change 16-bit compare to 8-bit compare
 @  --  929 bytes, can mask simply with lsl/lsr
+@  --  925 bytes, change another mask to lsl/lsr
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -178,9 +179,14 @@ offset_length:
 				@                       (=match_length)
 
 output_loop:
-	movw	r4,((POSITION_MASK<<8)+0xff)
+@	movw	r4,((POSITION_MASK<<8)+0xff)
+@	ands	r7,r4			@ mask it
 
-	ands	r7,r4			@ mask it
+					@ Assume
+					@ ((POSITION_MASK<<8)+0xff) = 0x3ff
+	lsls	r7,#22			@ shift up to see if bit 10 set
+	lsrs	r7,#22			@ otherwise restore value
+
 	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
 	adds	r7,#1			@ advance pointer in text_buf
 
