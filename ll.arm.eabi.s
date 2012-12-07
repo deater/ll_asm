@@ -113,16 +113,16 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
+	@ r1 = out_addr (buffer we are printing to)
+	@ r2 = N-F (R)
+	@ r3 = logo data	
+	@ r8 = logo end
+	@ r9 = text_buf_addr
+	@ r11 = data_begin	
+	@ r12 = bss_begin
+	
 	ldr	r0,=addresses
 	ldmia	r0,{r1,r2,r3,r8,r9,r11,r12}
-
-@	ldr	r1,out_addr		@ buffer we are printing to
-@	mov     r2,#(N-F)		@ R
-@	ldr	r3,logo_addr		@ r3 points to logo data	
-@	ldr	r8,logo_end_addr	@ r8 points to logo end
-@	ldr	r9,text_buf_addr	@ r9 points to text buf
-@	ldr	r11,data_begin	
-@	ldr	r12,bss_begin
 	
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
@@ -180,8 +180,8 @@ store_byte:
 	subs	r6,r6,#1		@ decement count
 	bne 	output_loop		@ repeat until k>j
 
-	tst	r5,#0xff00		@ are the top bits 0?
-	bne	test_flags		@ if not, re-load flags
+	cmp	r5,#0xff		@ are the top bits 0?
+	bgt	test_flags		@ if not, re-load flags
 
 	b	decompression_loop
 
