@@ -83,7 +83,8 @@
 @  --  935 bytes, eliminate use of r0 as temp, moving one var down to low
 @  --  933 bytes, change 16-bit compare to 8-bit compare
 @  --  929 bytes, can mask simply with lsl/lsr
-@  --  925 bytes, change another mask to lsl/lsr
+@  --  927 bytes, change another mask to lsl/lsr
+@  --  925 bytes, load one more reg via ldm
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -135,7 +136,7 @@ _start:
 	@ r8 = logo end
 
 	ldr	r0,=addresses_begin
-	ldm	r0,{r0,r1,r2,r3,r8}
+	ldm	r0,{r0,r1,r2,r3,r8,r11}
 
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
@@ -225,11 +226,9 @@ store_byte:
 done_logo:
 	ldr	r1,out_addr		@ buffer we are printing to
 
-
-	ldr	r0,strcat_addr
-	mov	r11,r0			@ point r11 to "strcat_r4"
+	mov	r0,r11			@ point r11 to "strcat_r4"
 	subs	r0,#8
-	mov	r10,r0			@ point r10 to "strcat_r3"
+	mov	r10,r0			@ point r10 to "strcat_r5"
 	subs.n	r0,#(strcat_r5-write_stdout)
 	mov	r9,r0			@ point r9 to "write_stdout"
 
@@ -246,7 +245,7 @@ done_logo:
 
 first_line:
 	ldr	r0,uname_addr
-	mov	r5,r0
+	mov	r5,r0			@ point r5 at uname buffer
 	movs	r7,#SYSCALL_UNAME
 	swi	#0			@ do uname syscall
 
@@ -286,20 +285,20 @@ middle_line:
 
 	ldr	r6,out_addr		@ point r6 to out_buffer
 
-	mov	r0,r4
-					@ '/proc/cpuinfo'
+	mov	r0,r4			@ point r0 to '/proc/cpuinfo'
+
 	movs	r1,#0			@ 0 = O_RDONLY <bits/fcntl.h>
 	movs	r7,#SYSCALL_OPEN
 	swi	#0			@ syscall.  return in r0?
 
 	mov	r3,r0			@ save our fd
+
 	ldr	r1,disk_addr
-	movs	r2,#128
-	lsls	r2,#5		 	@ 4096 is maximum size of proc file ;)
+	mov	r2,#4096		@ 4096 is maximum size of proc file ;)
 	movs	r7,#SYSCALL_READ
 	swi	#0
 
-	mov	r0,r3
+	mov	r0,r3			@ restore fd
 	movs	r7,#SYSCALL_CLOSE
 	swi	#0			@ close (to be correct)
 
@@ -591,6 +590,7 @@ out_addr:	.word out_buffer
 R:		.word (N-F)
 logo_addr:	.word logo
 logo_end_addr:	.word logo_end
+strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
 
 ver_addr:	.word ver_string
 colors_addr:	.word default_colors
@@ -601,7 +601,6 @@ ascii_addr:	.word ascii_buffer
 disk_addr:	.word disk_buffer
 
 @ function pointers
-strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
 .align 1
 #===========================================================================
 #	section .data
@@ -622,8 +621,6 @@ bogo_total:	.asciz	" Bogomips Total\n"
 
 default_colors:	.asciz "\033[0m\n\n"
 C:		.asciz "C"
-
-
 
 .include	"logo.lzss_new"
 
