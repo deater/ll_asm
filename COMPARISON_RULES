@@ -36,54 +36,55 @@ LINE 2: Must be Centered and Printed
 
 LINE 3: Must be centered and printed
 20.  Print hostname from UNAME
+21.  Restore to original colors
 
 exit()
-21.  Must exit 0
+22.  Must exit 0
 
 find_string()
-22. can use minimum of 3 bytes in string search
+23. can use minimum of 3 bytes in string search
 
 strcat()
-23. must have strcat
+24. must have strcat
 
 center_and_print() 
-24. center for 80 column display
-25. use ansi escape code to center if possible
-26. must check if > 80 and not center in that case
-27. should round with adc if possible after divide
+25. center for 80 column display
+26. use ansi escape code to center if possible
+27. must check if > 80 and not center in that case
+28. should round with adc if possible after divide
 
 num_to_ascii()
-28. should work for arbitrary 32-bit int
-29. can use any method of /10 that works
+29. should work for arbitrary 32-bit int
+30. can use any method of /10 that works
 
 
 
-                                1111111111|2|2|2|2|2222|22
-Compliance:        |0|123456|7890123456789|0|1|2|3|4567|89
-===================|=|======|=============|=|=|===|====|==
-1.  ll.8051.s      | |      |             | | |   |    |
-2.  ll.8086.s      |X|      |             | | |   |    |
-3.  ll.alpha.s     |X|      |             | | |   |    |
-4.  ll.arm.eabi.s  |X|      |             | | |   |    |
-5.  ll.arm.oabi.s  |X|      |             | | |   |    |
-6.  ll.avr32.s     |X|      |             | | |   |    |
-7.  ll.crisv32.s   |X|      |             | | |   |    |
-8.  ll.i386.s      |X|XXXXXX|XXXXXXXXXXXXX|X|X|XXX|XXXX|XX
-9.  ll.ia64.s      |X|      |             | | |   |    |
-10. ll.m68k.s      |X|      |             | | |   |    |
-11. ll.m88k.s      |X|      |             | | |   |    |
-12. ll.microblaze.s|X|      |             | | |   |    |
-13. ll.mips16.s    |X|      |             | | |   |    |
-14. ll.mips.s      |X|      |             | | |   |    |
-15. ll.parisc.s    |X|      |             | | |   |    |
-16. ll.pdp11.s     |X|      |             | | |   |    |
-17. ll.ppc.s       |X|      |             | | |   |    |
-18. ll.RiSC.s      |X|      |             | | |   |    |
-19. ll.s390.s      |X|      |             | | |   |    |
-20. ll.sh3.s       |X|      |             | | |   |    |
-21. ll.sparc.s     |X|      |             | | |   |    |
-22. ll.thumb2.s    |X|      |             | | |   |    |
-23. ll.thumb.s     |X|      |             | | |   |    |
-24. ll.vax.s       |X|      |             | | |   |    |
-25. ll.x86_64.s    |X|      |             | | |   |    |
-26. ll.z80.s       |X|      |             | | |   |    |
+                                1111111111|22|2|2|2|2222|23
+Compliance:        |0|123456|7890123456789|01|2|3|4|5678|90
+===================|=|======|=============|==|=|===|====|==
+1.  ll.8051.s      | |      |             |  | |   |    |
+2.  ll.8086.s      |X|      |             |  | |   |    |
+3.  ll.alpha.s     |X|      |             |  | |   |    |
+4.  ll.arm.eabi.s  |X|      |             |  | |   |    |
+5.  ll.arm.oabi.s  |X|      |             |  | |   |    |
+6.  ll.avr32.s     |X|      |             |  | |   |    |
+7.  ll.crisv32.s   |X|      |             |  | |   |    |
+8.  ll.i386.s      |X|XXXXXX|XXXXXXXXXXXXX|XX|X|XXX|XXXX|XX
+9.  ll.ia64.s      |X|      |             |  | |   |    |
+10. ll.m68k.s      |X|      |             |  | |   |    |
+11. ll.m88k.s      |X|      |             |  | |   |    |
+12. ll.microblaze.s|X|      |             |  | |   |    |
+13. ll.mips16.s    |X|      |             |  | |   |    |
+14. ll.mips.s      |X|      |             |  | |   |    |
+15. ll.parisc.s    |X|      |             |  | |   |    |
+16. ll.pdp11.s     |X|      |             |  | |   |    |
+17. ll.ppc.s       |X|      |             |  | |   |    |
+18. ll.RiSC.s      |X|      |             |  | |   |    |
+19. ll.s390.s      |X|      |             |  | |   |    |
+20. ll.sh3.s       |X|      |             |  | |   |    |
+21. ll.sparc.s     |X|      |             |  | |   |    |
+22. ll.thumb2.s    |X|      |             |  | |   |    |
+23. ll.thumb.s     |X|      |             |  | |   |    |
+24. ll.vax.s       |X|      |             |  | |   |    |
+25. ll.x86_64.s    |X|      |             |  | |   |    |
+26. ll.z80.s       |X|      |             |  | |   |    |

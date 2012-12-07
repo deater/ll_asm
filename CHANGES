@@ -393,3 +393,7 @@ RELEASE 0.45
 
 20 November 2012
 + Add lots of documentation to i386 code
+
+7 December 2012
++ Overhaul ARM, add THUMB-2
++ Add more documetation
