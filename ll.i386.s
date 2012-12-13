@@ -27,8 +27,8 @@
 # Registers
 # + 32-bit eax, ebx, ecx, edx, esi, edi, ebp, esp
 #   esp is the stack pointer, ebp often is frame pointer
-    Can access lower 16-bits ax,bx,cd,dx,si,di,bp,sp
-    Can access high/low 8-bits of some ah/al bh/bl ch/cl dh/dl
+#   Can access lower 16-bits ax,bx,cd,dx,si,di,bp,sp
+#   Can access high/low 8-bits of some ah/al bh/bl ch/cl dh/dl
 # + 16-bit segments cs,ds,es,fs,gs usually ignored
 # + 8 x87 floating point regs (stack) ST(0) - ST(7)
 # Where supported
