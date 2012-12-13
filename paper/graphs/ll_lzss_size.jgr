@@ -12,7 +12,7 @@ yaxis size 1.25 min 0 max 300 hash 64 grid_lines grid_gray 0.8
 label font Helvetica fontsize 12 : bytes
 hash_labels font Helvetica fontsize 12
 
-xaxis size 9 min -1 max 23
+xaxis size 9 min -1 max 24
 no_draw_hash_marks no_auto_hash_labels
 hash_labels hjr vjc rotate 45 font Helvetica fontsize 12
 hash_label at 0 : RiSC
@@ -24,20 +24,21 @@ hash_label at 5 : sparc
 hash_label at 6 : mblaze
 hash_label at 7 : 6502
 hash_label at 8 : m88k
-hash_label at 9 : arm
-hash_label at 10 : s390
+hash_label at 9 : s390
+hash_label at 10 : arm
 hash_label at 11 : ppc
 hash_label at 12 : pdp-11
 hash_label at 13 : vax
 hash_label at 14 : z80
 hash_label at 15 : m68k
-hash_label at 16 : thumb
-hash_label at 17 : avr32
-hash_label at 18 : sh3
-hash_label at 19 : x86_64
-hash_label at 20 : crisv32
-hash_label at 21 : i386
-hash_label at 22 : 8086
+hash_label at 16 : avr32
+hash_label at 17 : thumb
+hash_label at 18 : thumb-2
+hash_label at 19 : sh3
+hash_label at 20 : x86_64
+hash_label at 21 : crisv32
+hash_label at 22 : i386
+hash_label at 23 : 8086
 
 newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1 
 label vjc hjl font Helvetica fontsize 12 label x 20 y 272 : VLIW
@@ -95,13 +96,13 @@ newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
 pts
 8 128  (* m88k *)
 
-newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
-pts
-9 124 (* arm *)
-
 newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9 
 pts
-10 122  (* s390 *)
+9 122  (* s390 *)
+
+newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
+pts
+10 116 (* arm *)
 
 newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3
 pts
@@ -123,31 +124,35 @@ newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
 pts
 15 88  (* m68k *)
 
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
+pts
+16 80 (* avr32 *)
+
 newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8 
 pts
-16  84  (* thumb *)
+17  76  (* thumb *)
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8 
+pts
+18  76  (* thumb-2 *)
 
 newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
 pts
-17 80 (* avr32 *)
-
-newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
-pts
-18 76 (* sh3 *)
+19 76 (* sh3 *)
 
 newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
 pts
-19  66 (* x86_64 *)
+20  66 (* x86_64 *)
 
 newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
 pts
-20 66  (* crisv32 *)
+21 66  (* crisv32 *)
 
 newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9
 pts
-21 63  (* i386 *)
+22 63  (* i386 *)
 
 newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
 pts
-22 58  (* 8086 *)
+23 58  (* 8086 *)
 

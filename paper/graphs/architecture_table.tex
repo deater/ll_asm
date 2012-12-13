@@ -400,13 +400,33 @@ little           & % endian
 2                & % arguments
 8/15,PC          & % GP int regs
 no               & % unaligned accesses
-yes              & % auto-inc
+no               & % auto-inc
 no               & % hw divide
 yes              & % status flags
 no               & % branch delay slot
 no                 % predication
 \\
 \cline{2-13}
+
+% THUMB-2
+                 & % Thumb
+THUMB-2          & % ARCH
+%embed           & % type
+%1995		 & % Year
+little           & % endian
+32               & % bits
+2-4              & % instr-length
+2-3              & % arguments
+8/15,PC          & % GP int regs
+no               & % unaligned accesses
+yes              & % auto-inc
+no               & % hw divide
+yes              & % status flags
+no               & % branch delay slot
+yes                % predication
+\\
+\cline{2-13}
+
 
 \hline
 \hline

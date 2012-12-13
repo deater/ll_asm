@@ -13,7 +13,7 @@ yaxis size 1.25 min 0 max 3000 hash 512 grid_lines grid_gray 0.8
 label font Helvetica fontsize 12 : bytes
 hash_labels font Helvetica fontsize 12
 
-xaxis size 9 min -1 max 23
+xaxis size 9 min -1 max 24
 no_draw_hash_marks no_auto_hash_labels
 hash_labels hjr vjc rotate 45 font Helvetica fontsize 12
 hash_label at 0 : ia64
@@ -34,11 +34,12 @@ hash_label at 14 : sh3
 hash_label at 15 : m68k
 hash_label at 16 : i386
 hash_label at 17 : thumb
-hash_label at 18 : avr32
-hash_label at 19 : crisv32
-hash_label at 20 : z80
-hash_label at 21 : pdp-11
-hash_label at 22 : 8086
+hash_label at 18 : thumb-2
+hash_label at 19 : avr32
+hash_label at 20 : crisv32
+hash_label at 21 : z80
+hash_label at 22 : pdp-11
+hash_label at 23 : 8086
 
 newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1 
 label vjc hjl font Helvetica fontsize 12 label x 20 y 2688 : VLIW
@@ -64,7 +65,7 @@ pts
 
 newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1 
 pts
-0 2874 (* ia64 *)
+0 2826 (* ia64 *)
 
 newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3 
 pts
@@ -134,23 +135,27 @@ newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
 pts
 17  957  (* thumb *)
 
-newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8 
 pts
-18 914  (* avr32 *)
+18  925  (* thumb-2 *)
 
 newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
 pts
-19 905 (* crisv32 *)
+19 914  (* avr32 *)
+
+newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8
+pts
+20 905 (* crisv32 *)
 
 newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
 pts
-20 891  (* z80 *)
+21 891  (* z80 *)
 
 newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
 pts
-21 890  (* pdp-11 *)
+22 890  (* pdp-11 *)
 
 newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8
 pts
-22 780  (* 8086 *)
+23 780  (* 8086 *)
 
