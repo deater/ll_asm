@@ -6,7 +6,7 @@
 #define CISC  3
 #define EMBED 4
 
-#define POINTS 23
+#define POINTS 24
 #define COLORS 3
 #define TYPES  5
 
@@ -19,15 +19,15 @@ struct point_type {
 };
 
 struct point_type points[POINTS]={
-     {  "ia64",VLIW,2874},
+     {  "ia64",VLIW,2826},
      {  "alpha",RISC,1821},
      {  "RiSC",RISC,1418},
      {  "pa-risc",RISC,1400},
      {  "sparc",RISC,1397},   
      {  "microblaze",RISC,1298},      
      {  "mips",RISC,1276},
-     {  "m88k",RISC,1230},   
-     {  "arm",RISC,1186},      
+     {  "m88k",RISC,1240},   
+     {  "arm.eabi",RISC,1186},      
      {  "PowerPC",RISC,1165},         
      {  "6502",EBIT,1130},
      {  "s390",CISC,1064},   
@@ -35,8 +35,9 @@ struct point_type points[POINTS]={
      {  "vax",CISC,1010},         
      {  "sh3",EMBED,994},         
      {  "m68k",CISC,982},            
-     {  "i386",CISC,969},               
-     {  "Thumb",EMBED,957},                  
+     {  "i386",CISC,969},
+     {  "THUMB",EMBED,937},                  
+     {  "Thumb-2",EMBED,925},                     
      {  "avr32",EMBED,914},   
      {  "crisv32",EMBED,905},
      {  "z80",EBIT,891},
@@ -70,7 +71,7 @@ int main(int argc, char **argv) {
 
    fprintf(stdout,"Y 7\n\n");
    
-   fprintf(stdout,"yaxis size 6 min -1 max 23 color 1 1 1\n");
+   fprintf(stdout,"yaxis size 6 min -1 max %d color 1 1 1\n",POINTS);
    fprintf(stdout,"no_draw_hash_marks no_auto_hash_labels\n");
 
    fprintf(stdout,"legend custom\n\n");
