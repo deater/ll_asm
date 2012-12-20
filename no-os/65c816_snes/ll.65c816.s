@@ -165,7 +165,9 @@ start_program:
 .a8
 .i16
         stz     $2121           ; CGRAM color-generator read/write address
-        ldy     #$0200          ; counter, 512 bytes
+
+        ldy     #$000c          ; we only have 6 colors / 12 bytes
+
         ldx     #$0000          ; pointer
 copypal:
         lda     tile_palette, x	; load byte of palette
@@ -179,6 +181,9 @@ copypal:
 	; Load Tile Data
 	;=====================
 
+	; replace with DMA!
+
+
 	rep     #$20            ; set accumulator/mem to 16bit
 .a16
 .i16
@@ -186,14 +191,14 @@ copypal:
         sta     $2116           ; set adddress for VRAM read/write
 				; multiply by 2, so 0x8000
 
-        ldy     #$2000          ; Copy 512 tiles, which are 32bytes each
+        ldy     #$1690          ; Copy 361 tiles, which are 32 bytes each
                                 ;  8x8 tile with 4bpp (four bits per pixel)
 				; in 2-byte chunks, so
-				; (512*32)/2 = 8192 = 0x2000
+				; (361*32)/2 = 5776 = 0x1690
 
         ldx     #$0000
 copy_tile_data:
-        lda     tile_data, x
+        lda     tile_data2, x
         sta     $2118           ; write the data
         inx                     ; increment by 2 (16-bits)
         inx
@@ -213,7 +218,7 @@ clear_linear_tilemap:
 	sta	$2116
 
         ldy     #$0000          ; clear counters
-	ldx	#$0000
+	ldx	#$ffff
 
 				; store to VRAM
                                 ; the bottom 8 bits is the tile to use
@@ -228,6 +233,7 @@ clear_linear_tilemap:
 
 .a16
 .i16
+
 fill_screen_loop:
 
 	tya
@@ -239,13 +245,16 @@ fill_screen_loop:
 
 	cpx	#30
 	bne	no_skip
+
+	lda	#$0
 	sta	$2118
 	sta	$2118
+
 	ldx	#0
 
 no_skip:
 
-	cpy	#$0400			; 32x32 = 1024
+	cpy	#$0169			; 30x12 = 360 = 0x168
 
 	bne     fill_screen_loop
 
@@ -357,115 +366,16 @@ main_loop:
 
 	; all work done in interrupt handler
 
+	; stp?
+
 	bra	main_loop
 
 
 ;=============================
 ; VBLank Routine
-;  All the action happens here
 ;=============================
 
 VBlank:
-	rti
-
-	php		; save status register
-	rep	#$30	; Set A/mem=16 bits, X/Y=16 bits (to push all 16 bits)
-.a16			; tell assembler the A is 16-bits
-	phb		; save b
-	pha		; save A
-	phx		; save X
-	phy		; save Y
-	phd		; save zero page
-
-	sep #$20        ; A/mem=8 bit
-.a8
-
-joypad_read:
-	lda	$4212		; get joypad status
-	and #%00000001		; if joy is not ready
-	bne joypad_read		; wait
-
-	lda	$4219		; read joypad (BYSTudlr)
-
-	and	#%11110000  	; see if a button pressed
-
-	bne	done_vblank	; if so, skip and don't move ball
-
-done_joypad:
-
-	lda	#^x_direction	; get bank for x_direction var (probably $7E)
-	pha			;
-	plb			; set the data bank to the one containing x_direction
-
-	lda	ball_x		; get current ball X value
-				; in the zero page, which is mirrored on SNES
-
-	ldx	x_direction	; get x_direction  0=right, 1=left
-	bne	ball_left	; if 1 skip ahead to handle going left
-
-	ina			; ball_x += 2
-	ina
-
-	cmp	#248		; have we reached right side?
-
-	bne	done_moving	; if not, keep moving right
-
-	ldx	#1		; if so, switch to moving left
-	bra	done_moving
-
-ball_left:
-	dea			; ball_x -= 2
-	dea
-	bne	done_moving	; if not at zero, keep moving left
-
-	ldx	#0		; hit wall, switchto moving right
-
-done_moving:
-	sta	ball_x		; save ball_x co-ord
-	stx	x_direction	; save x_direction
-
-
-	;=======================================
-	; Update the sprite info structure (OAM)
-	;=======================================
-.a8
-
-	lda	#$0		; set data bank back to 0
-	pha
-	plb
-
-	; Setup DMA transfer to copy our OAM structure in the zero page
-	; into the actual OAM
-
-	stz	$2102		; set OAM address to 0
-	stz	$2103
-
-	ldy	#$0400
-	sty	$4300		; CPU -> PPU, auto increment, write 1 reg, $2104 (OAM Write)
-	stz	$4302
-	stz	$4303		; source offset
-	ldy	#$0220
-	sty	$4305		; number of bytes to transfer
-	lda	#$7E
-	sta	$4304		; bank address = $7E  (work RAM)
-	lda	#$01
-	sta	$420B		;start DMA transfer
-
-
-done_vblank:
-
-	lda	$4210	; Clear NMI flag
-
-	rep	#$30	; A/Mem=16 bits, X/Y=16 bits
-.a16
-	pld		; restore saved vaules from stack
-	ply
-	plx
-	pla
-	plb
-
-	sep #$20
-	plp
 	rti		; return from interrupt
 
 
@@ -481,6 +391,27 @@ wram_fill_byte:
 
 
 ; tile data
+
+tile_data2:
+        ; Planes 1 and 0
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        ; Planes 3 and 2
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+        .word $0000
+
 .include "ll.tiles"
 
 hello_string:
