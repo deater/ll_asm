@@ -3,3 +3,32 @@
 
 + Look into the lsl / lsr masking in store_byte on other arches
 
+
+Chips TODO:
++ 6800?
++ amd29k, att92k (crisp/hobbit), 1802, Renasas RX,
++ 65c816, TI-990, CDC6600, 8051
++ micromips?
++ Z8000
++ Intel 432
+
+Linux:   
++ arm64
++ blackfin
++ c6x
++ frv
++ h8300
++ hexagon
++ i960 
++ m32r
++ mn10300
++ openrisc
++ ppc book VLE
++ sh4
++ s+core
++ tile
++ trimedia
++ unicore32
++ v850
++ xtensa
++ x86 x32
