@@ -161,6 +161,15 @@ sparc:
 	SPARC is unfair a bit, because my test machine is a 24-proc
         niagara, so it has extra code to handle that many chips properly.
 
+65c816:
+        Another non-Linux addition.
+	
+	The method of switching the A and X, Y registers into and out
+	of 16 bit mode is a PAIN.  A non-intuitive opcode, and if you
+	aren't careful your routines break if you're in an unexpected mode.
+	Would have been much better if somehow there were separate opcodes
+	for 8 vs 16-bit instructions.
+
 6502:
         So obviously this isn't running on Linux.  I was curious
 	how an 8-bit processor would compare.

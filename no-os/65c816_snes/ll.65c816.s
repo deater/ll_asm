@@ -1,9 +1,105 @@
-; Hello World for SNES
+;
+;  ll.65c816.s  -- Linux Logo in 65c816 Assembly for the SNES v0.47
+;
+;               by Vince Weaver  <vince _at_ deater.net>
+;
+;     decompresses the same lzss data as the Linux versions
+;     but displays it to the Mode 1 SNES Screen
 
-; use the cc65 assembler
-;   cl65 -t none -o hello_world.o -l hello_world.lst -c hello_world.s
-;   ld65 -o hello_world.sfc --config hello_world.cfg --obj hello_world.o
+; 65c816 -- 16 bit extension to the 6502
+;  Comes up in 6502 compatibility mode
+;  3 registers, A, X, Y
+;    8 or 16-bits.  Top half of A is called B, C is combo of B|A
+;  Stack pointer S (can be anywhere bank 0)
+;  Status register P  -- NVMXDIZC
+;    Negative, oVerflow, M (Accum 8/16), X (X,y 8/16), Decimal,
+;    IRQ Disable, Zero, Carry 
+;  Direct (Zero) page register D (can be anywhere bank 0)
+;     not being at multiple of 256 adds extra clock cycle
+;  B -- data bank register (top 8 bits of 24-bit address)
+;  K -- program bank register (top 8-bits of 24-bit address)
+;
 
+; When transition 8->16 16->8 on Accumulator, high 8-bits (B) retained
+; When transition 8->16 16->8 on X,Y -> high 8 bits set to 0
+
+; New instructions (vs 6502)
+;   TXY, TYX -- transfer X/Y
+;   TCD, TDC -- transfer A to DP
+;   TCS, TSC -- transfter A to Stack Pointer
+;   XBA      -- exchange low and high bits of A
+;   XCE      -- exchange emulation bit with carry flag
+;   PHX,PHY,PLX,PLY -- push/pull X and Y on stack
+;   PHB,PLB  -- push/pull the data register
+;   PHK      -- push program bank register (no pull)
+;   PHD,PLD  -- push/pull direct page register
+;   PEA      -- push effective absolute address
+;   PEI      -- push effecitive indirect address
+;   PER      -- push effective relative address
+;   MVN,MVP  -- memory block move in negative/positive direction
+;   STZ      -- store zero
+;   BRA      -- branch always
+;   BRL      -- branch to address in bank0
+;   RTL      -- return long (pulls bank off stack too)
+;   SEP,REP  -- Set or Clear bits in Status
+
+; New Addressing Modes
+; Program Counter Relative Long -- now +/- 32k
+; Stack relative -- LDA 14, S    S always points to next value
+; Stack Relative Indirect Index Y -- LDA (14,S),Y
+; Block Move
+; Absolute Long -- LDA $BEBEEF (24-bit)
+; Absolute Long Indexed X -- LDA $BEBEEF,X
+; Absolute Indexed Indirect -- JMP ($1111,X)
+; Absolute Indirect Long -- JMP [$5678]
+; Direct Page Indirect -- LDA ($56) -- indirect, 2 bytes
+; Direct Page Indirect Long -- LDA [$56] -- indirect, 3 bytes (including bank)
+; Direct Page Indirect Long Indexed Y -- LDA [$56],Y
+
+; other instructions
+; ADC -- add with carry
+; AND -- and accumuator with memory
+; ASL -- arithmetic shift left
+; BCC (BLT), BCS (BGE), BEQ, BNE, BMI, BPL, BVC, BVS -- branch of status
+; BIT -- test mem against accumulator
+; BRK -- software interrupt
+; CLC, CLD, CLI, CLV -- clear status
+; SEC, SED, SEI, SEV -- set status
+; CMP -- compare accumulator with memory
+; CPX, CPY -- compare X or Y with memory
+; COP -- co-processor
+; DEC -- decrement memory (can DEC A now)
+; DEA, DEX, DEY -- decrement A or X or Y
+; EOR -- exclusive or A with memory
+; INC -- incrememnt memory (can INC A now)
+; INA, INX, INY -- increment A or X or Y
+; JMP
+; JSR, JSL -- Jump to subroutine (long)
+; LDA -- load accumulator from memory
+; LDX, LDY -- load X or Y from memory
+; LSR -- logical shift right
+; MVP, MVN move positive (dest>source), negative (dest<source)
+;  source in X, dest in Y, 16-bit len is A-1
+;  operands are source bank and destination bank
+; NOP -- no op
+; ORA -- OR A with mem
+; PEA -- push immediate on stack
+; PEI -- push effective indirect
+; PER -- push PC relative indirect address
+; PHA, PLA, PHP, PLP -- push/pull A or status
+; ROL, ROR -- rotate mem or accumulator
+; RTI -- return from Interrupt (pulls P too)
+; RTS, RTL -- return from subroutine (long)
+; SBC -- subtract with borrow
+; STA -- Store A to mem
+; STP -- stop processor (maybe low power?)
+; STX, STY -- store X,Y to memory
+; TAX, TXA, TAY, TYA, TSX, TXS -- transfer between registers
+; TRB, TSB -- rest and set, test and reset memory bits
+; WAI -- wait for interrupt
+; WDM -- future expansion (initials of designer)
+; 
+ 
 
 ; Page zero locations
 ball_x = $0000
