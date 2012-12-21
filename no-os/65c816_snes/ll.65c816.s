@@ -414,6 +414,8 @@ tile_data2:
 
 .include "ll.tiles"
 
+.include "ll.ans.inc"
+
 hello_string:
         .asciiz "HELLO,_WORLD!"
 

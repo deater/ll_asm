@@ -4,8 +4,9 @@ LFLAGS =
 
 all:	bin2byte color_convert convert_font convert_font_bin \
 	dump_font make_pal pcx_to_sprite pcx_to_tiles \
-	ansi_to_tile
-
+	ansi_to_tile string_to_bytes
+	
+	
 ansi_to_tile:	ansi_to_tile.o
 	$(CC) $(LFLAGS) -o ansi_to_tile ansi_to_tile.o
 
@@ -60,9 +61,15 @@ pcx_to_tiles:	pcx_to_tiles.o
 pcx_to_tiles.o:	pcx_to_tiles.c
 	$(CC) $(CFLAGS) -c pcx_to_tiles.c
 
+string_to_bytes:	string_to_bytes.o
+	$(CC) $(LFLAGS) -o string_to_bytes string_to_bytes.o
+
+string_to_bytes.o:	string_to_bytes.c
+	$(CC) $(CFLAGS) -c string_to_bytes.c
+
 clean:	
 	rm -f *.o *~ bin2byte color_convert convert_font \
 		convert_font_bin dump_font make_pal pcx_to_sprite \
-		pcx_to_tiles ansi_to_tile
+		pcx_to_tiles ansi_to_tile string_to_bytes
 
 
