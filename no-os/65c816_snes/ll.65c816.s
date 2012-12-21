@@ -142,6 +142,159 @@ start_program:
 .i16
 
 
+convert_ansi_to_tiles:
+
+;   int offset=0;
+
+;   unsigned char font[3][8]={
+;      {0,0,0,0,0,0,0,0}, /* space */
+;      {2,2,7,2,2,7,2,2}, /* # */
+;      {2,5,5,5,5,5,5,2}, /* O */
+;   };
+
+;   unsigned char screen_byte[8][4]; /* four bit planes */
+
+;void putfont(unsigned char letter, int forecolor, int backcolor) {
+;   int fx,fy,plane,i;
+;   int symbol;
+
+;   if (letter=='#') symbol=1;
+;   else if (letter=='O') symbol=2;
+;   else symbol=0;
+
+;   for(fx=0;fx<3;fx++) {
+
+;      for(fy=0;fy<8;fy++) {
+ ;        for(plane=0;plane<4;plane++) {
+  ;          screen_byte[fy][plane]<<=1;
+;	    if (font[symbol][fy]&(1<<fx)) {
+ ;              /* foreground color */
+  ;             screen_byte[fy][plane]|=((forecolor>>plane)&1);
+   ;            printf("; fx=%d fy=%d fore=%d sb[%d]=%x\n",
+    ;                  fx,fy,(forecolor>>plane)&1,plane,screen_byte[fy][plane]);
+     ;       }
+;            else {
+ ;              /* background color */
+  ;             screen_byte[fy][plane]|=((backcolor>>plane)&1);
+   ;            printf("; fx=%d fy=%d back=%d sb[%d]=%x\n",
+    ;                  fx,fy,(backcolor>>plane)&1,plane,screen_byte[fy][plane]);
+;
+ ;           }
+  ;       }
+   ;   }
+    ;  offset++;
+;      if (offset==8) {
+;
+ ;        printf("\t; Planes 1 and 0\n");
+  ;       for(i=0;i<8;i++) {
+   ;         printf("\t.word $%02x%02x\n",screen_byte[i][1],screen_byte[i][0]);
+    ;     }
+     ;    printf("\t; Planes 3 and 2\n");
+      ;   for(i=0;i<8;i++) {
+;            printf("\t.word $%02x%02x\n",screen_byte[i][3],screen_byte[i][2]);
+ ;        }
+;
+ ;        offset=0;
+  ;    }
+   ;}
+;
+;}
+
+
+	ldx	#$0		; offset
+load_ansi_loop:
+
+	lda	logo_begin,x
+
+	cmp	#27		; is it escape character?
+	bne	not_escape
+
+	;=================
+	;== escape char ==
+	;=================
+
+	inx			; point past escape
+	inx			; assume we have a [
+
+color_loop:
+	lda	logo_begin,x	; load first byte of color
+
+    ;        color=0;
+     ;       while(1) {
+      ;         if ((buffer[i]=='m') || (buffer[i]==';')) {
+;                  if (color==0) {
+ ;                    newcolor&=0xbf;
+  ;                }
+   ;               else if (color==1) {
+    ;                 newcolor|=0x40;
+     ;             }
+      ;            else if ((color>=30) && (color<=39)) {
+       ;              newcolor&=0xc7;
+        ;             newcolor|=((color-30)&0x7)<<3;
+         ;         }
+          ;        else if ((color>=40) && (color<=49)) {
+;                     newcolor&=0xf8;
+ ;                    newcolor|=((color-40)&0x7);
+  ;                }
+;
+ ;                 color=0;
+;
+ ;                 if (buffer[i]=='m') {
+  ;                   printf("; Color=%02x\n",newcolor);
+   ;                  break;
+    ;              }
+     ;             i++;
+      ;            continue;
+       ;        }
+;
+ ;              color*=10;
+  ;             color+=buffer[i]-0x30;
+;
+ ;              i++;
+;	    }
+ ;        }
+
+	inx
+	cmp	#'m'
+	bne	color_loop
+	bra	next_char
+
+not_escape:
+
+;	 else {
+ ;           printf("; Color=%x\n",newcolor);
+;	    if (newcolor==0x47)       { 01 000 111 fore=1; back=7;}
+ ;           else if (newcolor==0x4f) { 01 001 111 fore=2; back=7;}
+  ;          else if (newcolor==0x5f) { 01 011 111 fore=4; back=7;}
+   ;         else if (newcolor==0x7f) { 01 111 111 fore=5; back=7;}
+    ;        else if (newcolor==0x7)  { 00 000 111 fore=0; back=7;}
+     ;       else if (newcolor==0x78) { 01 111 000 fore=5; back=0;}
+      ;      else printf("; Unknown color %x!\n",newcolor);
+       ;     putfont(buffer[i],fore,back);
+       ;  }
+
+bold_color:
+fore_color:
+back_color:
+
+next_char:
+
+	inx
+	cpx	#(logo_end-logo_begin)
+	bne	load_ansi_loop
+
+done_convert:
+
+
+	rep	#$10	; X/Y = 16 bit
+	sep	#$20	; mem/A = 8 bit
+.a8
+.i16
+
+
+
+
+
 	;==========================
 	; Setup Background
 	;==========================
@@ -166,7 +319,7 @@ start_program:
 .i16
         stz     $2121           ; CGRAM color-generator read/write address
 
-        ldy     #$000c          ; we only have 6 colors / 12 bytes
+        ldy     #$0010          ; we only have 8 colors / 16 bytes
 
         ldx     #$0000          ; pointer
 copypal:
@@ -198,7 +351,7 @@ copypal:
 
         ldx     #$0000
 copy_tile_data:
-        lda     tile_data2, x
+        lda     tile_data, x
         sta     $2118           ; write the data
         inx                     ; increment by 2 (16-bits)
         inx
@@ -390,39 +543,30 @@ wram_fill_byte:
 ;============================================================================
 
 
-; tile data
 
-tile_data2:
-        ; Planes 1 and 0
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        ; Planes 3 and 2
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
-        .word $0000
+; .include "ll.tiles"
 
-.include "ll.tiles"
-
+logo_begin:
 .include "ll.ans.inc"
+logo_end:
 
 hello_string:
         .asciiz "HELLO,_WORLD!"
 
+tile_palette:
+        .word $0        ; 0 black    r=0 g=0 b=0
+        .word $3def     ; 1 d. grey  r=7d g=7d b=7d
+        .word $3dff     ; 2 red      r=ff g=7d b=7d
+        .word $7fff     ; 3 white    r=ff g=ff b=ff
+        .word $3ff      ; 4 yellow   r=ff g=ff b=0
+	.word $0        ; 5
+	.word $0        ; 6
+        .word $56b5     ; 7 l. grey  r=aa g=aa b=aa
 
 
 .segment "BSS"
-x_direction:	.word 0
+tile_data:
+.res ((30*12)+1)*16
 
 .segment "CARTINFO"
         .byte   "LINUX_LOGO            "        ; Game Title
