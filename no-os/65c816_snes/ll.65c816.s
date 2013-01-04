@@ -141,68 +141,21 @@ start_program:
 .a8
 .i16
 
+	lda     #^screen_byte	; get bank for x_direction var (probably $7E)
+	pha			;
+	plb			; set the data bank to the one containing x_dir$
+
+
 
 convert_ansi_to_tiles:
 
-;   int offset=0;
 
-;   unsigned char font[3][8]={
-;      {0,0,0,0,0,0,0,0}, /* space */
-;      {2,2,7,2,2,7,2,2}, /* # */
-;      {2,5,5,5,5,5,5,2}, /* O */
-;   };
+	ldx	#$0
+	stx	logo_pointer		; offset
 
-;   unsigned char screen_byte[8][4]; /* four bit planes */
-
-;void putfont(unsigned char letter, int forecolor, int backcolor) {
-;   int fx,fy,plane,i;
-;   int symbol;
-
-;   if (letter=='#') symbol=1;
-;   else if (letter=='O') symbol=2;
-;   else symbol=0;
-
-;   for(fx=0;fx<3;fx++) {
-
-;      for(fy=0;fy<8;fy++) {
- ;        for(plane=0;plane<4;plane++) {
-  ;          screen_byte[fy][plane]<<=1;
-;	    if (font[symbol][fy]&(1<<fx)) {
- ;              /* foreground color */
-  ;             screen_byte[fy][plane]|=((forecolor>>plane)&1);
-   ;            printf("; fx=%d fy=%d fore=%d sb[%d]=%x\n",
-    ;                  fx,fy,(forecolor>>plane)&1,plane,screen_byte[fy][plane]);
-     ;       }
-;            else {
- ;              /* background color */
-  ;             screen_byte[fy][plane]|=((backcolor>>plane)&1);
-   ;            printf("; fx=%d fy=%d back=%d sb[%d]=%x\n",
-    ;                  fx,fy,(backcolor>>plane)&1,plane,screen_byte[fy][plane]);
-;
- ;           }
-  ;       }
-   ;   }
-    ;  offset++;
-;      if (offset==8) {
-;
- ;        printf("\t; Planes 1 and 0\n");
-  ;       for(i=0;i<8;i++) {
-   ;         printf("\t.word $%02x%02x\n",screen_byte[i][1],screen_byte[i][0]);
-    ;     }
-     ;    printf("\t; Planes 3 and 2\n");
-      ;   for(i=0;i<8;i++) {
-;            printf("\t.word $%02x%02x\n",screen_byte[i][3],screen_byte[i][2]);
- ;        }
-;
- ;        offset=0;
-  ;    }
-   ;}
-;
-;}
-
-
-	ldx	#$0		; offset
 load_ansi_loop:
+
+	ldx	logo_pointer
 
 	lda	logo_begin,x
 
@@ -257,32 +210,144 @@ color_loop:
 	inx
 	cmp	#'m'
 	bne	color_loop
+
+	lda	#$5
+	sta	fore_color
+	lda	#$7
+	sta	back_color
+
 	bra	next_char
 
 not_escape:
 
 ;	 else {
  ;           printf("; Color=%x\n",newcolor);
-;	    if (newcolor==0x47)       { 01 000 111 fore=1; back=7;}
+    ;        else if (newcolor==0x7)  { 00 000 111 fore=1; back=7;}
+;	    if (newcolor==0x47)       { 01 000 111 fore=0; back=7;}
  ;           else if (newcolor==0x4f) { 01 001 111 fore=2; back=7;}
   ;          else if (newcolor==0x5f) { 01 011 111 fore=4; back=7;}
    ;         else if (newcolor==0x7f) { 01 111 111 fore=5; back=7;}
-    ;        else if (newcolor==0x7)  { 00 000 111 fore=0; back=7;}
      ;       else if (newcolor==0x78) { 01 111 000 fore=5; back=0;}
       ;      else printf("; Unknown color %x!\n",newcolor);
        ;     putfont(buffer[i],fore,back);
        ;  }
 
-bold_color:
-fore_color:
-back_color:
+;   int offset=0;
+
+
+
+;   unsigned char screen_byte[8][4]; /* four bit planes */
+
+;void putfont(unsigned char letter, int forecolor, int backcolor) {
+;   int fx,fy,plane,i;
+;   int symbol;
+
+;   if (letter=='#') symbol=1;
+;   else if (letter=='O') symbol=2;
+;   else symbol=0;
+
+	stz	fx
+fx_loop:		; for(fx=0;fx<3;fx++) {
+
+	stz	fy
+
+fy_loop:		; for(fy=0;fy<8;fy++) {
+
+	stz	plane
+
+
+	lda	fy	; X = (8*plane) screen_byte[fy][0]
+	tax
+
+plane_loop:		; for(plane=0;plane<4;plane++) {
+
+	asl	screen_byte,X
+
+	lda	fore_color
+	sta	temp_color
+
+	ror	temp_color
+
+	lda	screen_byte,X
+	adc	#$0
+	sta	screen_byte,X
+
+	txa
+	clc
+	adc	#$8
+	tax
+
+done_plane:
+	inc	plane
+	lda	plane
+	cmp	#$4
+	bne	plane_loop
+
+
+;	    if (font[symbol][fy]&(1<<fx)) {
+ ;              /* foreground color */
+  ;             screen_byte[fy][plane]|=((forecolor>>plane)&1);
+   ;            printf("; fx=%d fy=%d fore=%d sb[%d]=%x\n",
+    ;                  fx,fy,(forecolor>>plane)&1,plane,screen_byte[fy][plane]);
+     ;       }
+;            else {
+ ;              /* background color */
+  ;             screen_byte[fy][plane]|=((backcolor>>plane)&1);
+   ;            printf("; fx=%d fy=%d back=%d sb[%d]=%x\n",
+    ;                  fx,fy,(backcolor>>plane)&1,plane,screen_byte[fy][plane]);
+;
+ ;           }
+  ;       }
+   ;   }
+
+	inc	offset
+	lda	offset
+	cmp	#$8
+	bne	no_write
+
+
+	ldx	#$0
+	lda	screen_byte,X
+blah:
+	ldy	#$0
+	sta	tile_data2,Y
+	iny
+	sta	tile_data2,Y
+
+ ;        printf("\t; Planes 1 and 0\n");
+  ;       for(i=0;i<8;i++) {
+   ;         printf("\t.word $%02x%02x\n",screen_byte[i][1],screen_byte[i][0]);
+    ;     }
+     ;    printf("\t; Planes 3 and 2\n");
+      ;   for(i=0;i<8;i++) {
+;            printf("\t.word $%02x%02x\n",screen_byte[i][3],screen_byte[i][2]);
+ ;        }
+
+	stz	offset
+no_write:
+
+
+
+done_fy:
+	inc	fy
+	lda	fy
+	cmp	#$8
+	bne	fy_loop
+
+done_fx:
+	inc	fx
+	lda	fx
+	cmp	#$3
+	bne	fx_loop
+
 
 next_char:
-
+	ldx	logo_pointer
 	inx
+	stx	logo_pointer
 	cpx	#(logo_end-logo_begin)
-	bne	load_ansi_loop
-
+	beq	done_convert
+	jmp	load_ansi_loop
 done_convert:
 
 
@@ -291,6 +356,9 @@ done_convert:
 .a8
 .i16
 
+	lda     #0	; get bank for x_direction var (probably $7E)
+	pha			;
+	plb			; set the data bank to the one containing x_dir$
 
 
 
@@ -351,7 +419,9 @@ copypal:
 
         ldx     #$0000
 copy_tile_data:
-        lda     tile_data, x
+	.byte $bf
+	.faraddr tile_data
+;        lda     tile_data, x
         sta     $2118           ; write the data
         inx                     ; increment by 2 (16-bits)
         inx
@@ -550,12 +620,29 @@ logo_begin:
 .include "ll.ans.inc"
 logo_end:
 
+bold_color:
+	.byte 0
+fore_color:
+	.byte 0
+back_color:
+	.byte 0
+temp_color:
+	.byte 0
+
+font_space:
+	.byte	0,0,0,0,0,0,0,0   ; space
+font_hash:
+	.byte   2,2,7,2,2,7,2,2   ; #
+font_o:
+	.byte   2,5,5,5,5,5,5,2   ; O
+
+
 hello_string:
         .asciiz "HELLO,_WORLD!"
 
 tile_palette:
-        .word $0        ; 0 black    r=0 g=0 b=0
-        .word $3def     ; 1 d. grey  r=7d g=7d b=7d
+        .word $3def     ; 0 d. grey  r=7d g=7d b=7d
+        .word $0        ; 1 black    r=0 g=0 b=0
         .word $3dff     ; 2 red      r=ff g=7d b=7d
         .word $7fff     ; 3 white    r=ff g=ff b=ff
         .word $3ff      ; 4 yellow   r=ff g=ff b=0
@@ -565,8 +652,25 @@ tile_palette:
 
 
 .segment "BSS"
+
+fx:
+.res 1
+fy:
+.res 1
+plane:
+.res 1
+offset:
+.res 1
+logo_pointer:
+.res 2
+
+screen_byte:
+.res 8*4	; 8 bytes, times four
+
 tile_data:
-.res ((30*12)+1)*16
+.res	16
+tile_data2:
+.res (30*12)*16
 
 .segment "CARTINFO"
         .byte   "LINUX_LOGO            "        ; Game Title
