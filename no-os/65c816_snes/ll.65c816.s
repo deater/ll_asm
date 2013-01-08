@@ -102,7 +102,6 @@
  
 
 ; Page zero locations
-ball_x = $0000
 
 .setcpu "65816"
 
@@ -137,18 +136,16 @@ Reset:
 start_program:
 
 	rep	#$10	; X/Y = 16 bit
+.i16
 	sep	#$20	; mem/A = 8 bit
 .a8
-.i16
 
 	lda     #^screen_byte	; get bank for x_direction var (probably $7E)
 	pha			;
 	plb			; set the data bank to the one containing x_dir$
 
 
-
 convert_ansi_to_tiles:
-
 
 	ldx	#$0
 	stx	logo_pointer		; offset
@@ -157,7 +154,13 @@ load_ansi_loop:
 
 	ldx	logo_pointer
 
-	lda	logo_begin,x
+
+;       load from 24-bit long offset (since B is set to 7e)
+;       ca65 doesn't support this as far as I can tell
+;	lda	logo_begin,x
+
+	.byte $bf,<logo_begin,>logo_begin,^logo_begin
+
 
 	cmp	#27		; is it escape character?
 	bne	not_escape
@@ -170,7 +173,10 @@ load_ansi_loop:
 	inx			; assume we have a [
 
 color_loop:
-	lda	logo_begin,x	; load first byte of color
+;	lda	logo_begin,x	; load first byte of color
+
+	.byte $bf,<logo_begin,>logo_begin,^logo_begin
+
 
     ;        color=0;
      ;       while(1) {
@@ -215,6 +221,8 @@ color_loop:
 	sta	fore_color
 	lda	#$7
 	sta	back_color
+
+	stx	logo_pointer
 
 	bra	next_char
 
@@ -346,7 +354,8 @@ next_char:
 	inx
 	stx	logo_pointer
 	cpx	#(logo_end-logo_begin)
-	beq	done_convert
+; bge
+	bcs	done_convert
 	jmp	load_ansi_loop
 done_convert:
 
