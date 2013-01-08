@@ -224,7 +224,7 @@ color_loop:
 
 	stx	logo_pointer
 
-	bra	next_char
+	jmp	next_char
 
 not_escape:
 
@@ -254,6 +254,26 @@ not_escape:
 ;   else if (letter=='O') symbol=2;
 ;   else symbol=0;
 
+test_hash:
+	cmp	#'#'
+	bne	test_O
+	ldy	#$8
+	bra	y_is_set
+test_O:
+	cmp	#'O'
+	bne	its_zero
+	ldy	#$16
+	bra	y_is_set
+
+its_zero:
+	ldy	#$0
+
+y_is_set:
+
+; A = trashed
+; X = screen_byte offset
+; Y = font_offset
+
 	stz	fx
 fx_loop:		; for(fx=0;fx<3;fx++) {
 
@@ -267,20 +287,32 @@ fy_loop:		; for(fy=0;fy<8;fy++) {
 	lda	fy	; X = (8*plane) screen_byte[fy][0]
 	tax
 
-plane_loop:		; for(plane=0;plane<4;plane++) {
+	lda	#$1
 
-	asl	screen_byte,X
+	bit	#$1
+	beq	use_back_color
 
+use_fore_color:
 	lda	fore_color
+	bra	store_color
+
+use_back_color:
+	lda	back_color
+
+store_color:
 	sta	temp_color
 
-	ror	temp_color
+plane_loop:		; for(plane=0;plane<4;plane++) {
 
-	lda	screen_byte,X
-	adc	#$0
-	sta	screen_byte,X
+	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
 
-	txa
+	ror	temp_color	; rotate temp_color into carry
+
+	lda	screen_byte,X	; get current color
+	adc	#$0		; add in carry bit
+	sta	screen_byte,X	; store back out
+
+	txa			; increment to next plane
 	clc
 	adc	#$8
 	tax
@@ -361,15 +393,13 @@ done_convert:
 
 
 	rep	#$10	; X/Y = 16 bit
+.i16
 	sep	#$20	; mem/A = 8 bit
 .a8
-.i16
 
-	lda     #0	; get bank for x_direction var (probably $7E)
+	lda     #0		; set data bank back to 0
 	pha			;
-	plb			; set the data bank to the one containing x_dir$
-
-
+	plb			; 
 
 
 	;==========================
@@ -638,12 +668,14 @@ back_color:
 temp_color:
 	.byte 0
 
+font:
+	; bits 7,6,0 (for use in bit instruction)
 font_space:
 	.byte	0,0,0,0,0,0,0,0   ; space
 font_hash:
-	.byte   2,2,7,2,2,7,2,2   ; #
+	.byte   $70,$70,$ff,$70,$70,$ff,$70,$70   ; #
 font_o:
-	.byte   2,5,5,5,5,5,5,2   ; O
+	.byte   $70,$81,$81,$81,$81,$81,$81,$70   ; O
 
 
 hello_string:
