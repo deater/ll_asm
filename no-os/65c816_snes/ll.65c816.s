@@ -13,7 +13,7 @@
 ;  Stack pointer S (can be anywhere bank 0)
 ;  Status register P  -- NVMXDIZC
 ;    Negative, oVerflow, M (Accum 8/16), X (X,y 8/16), Decimal,
-;    IRQ Disable, Zero, Carry 
+;    IRQ Disable, Zero, Carry
 ;  Direct (Zero) page register D (can be anywhere bank 0)
 ;     not being at multiple of 256 adds extra clock cycle
 ;  B -- data bank register (top 8 bits of 24-bit address)
@@ -36,7 +36,7 @@
 ;   PEA      -- push effective absolute address
 ;   PEI      -- push effecitive indirect address
 ;   PER      -- push effective relative address
-;   MVN,MVP  -- memory block move in negative/positive direction
+;   MVN,MVP  -- memory block move next/previous (direction is pos or neg)
 ;   STZ      -- store zero
 ;   BRA      -- branch always
 ;   BRL      -- branch to address in bank0
@@ -148,6 +148,10 @@ start_program:
 
 convert_ansi_to_tiles:
 
+	stz	offset
+	ldy	#.LOWORD(tile_data2)
+	sty	tile_offset
+
 	ldx	#$0
 	stx	logo_pointer		; offset
 
@@ -157,11 +161,8 @@ load_ansi_loop:
 
 
 ;       load from 24-bit long offset (since B is set to 7e)
-;       ca65 doesn't support this as far as I can tell
-;	lda	logo_begin,x
 
-	.byte $bf,<logo_begin,>logo_begin,^logo_begin
-
+	lda	f:logo_begin,x
 
 	cmp	#27		; is it escape character?
 	bne	not_escape
@@ -174,10 +175,7 @@ load_ansi_loop:
 	inx			; assume we have a [
 
 color_loop:
-;	lda	logo_begin,x	; load first byte of color
-
-	.byte $bf,<logo_begin,>logo_begin,^logo_begin
-
+	lda	f:logo_begin,x	; load first byte of color
 
     ;        color=0;
      ;       while(1) {
@@ -282,49 +280,72 @@ fx_loop:		; for(fx=0;fx<3;fx++) {
 
 fy_loop:		; for(fy=0;fy<8;fy++) {
 
-	stz	plane
 
 
 	lda	fy	; X = (8*plane) screen_byte[fy][0]
+	asl		; multiply by two
 	tax
 
 check_color:
-	lda	#$1
+;	lda	#$1
 
-	bit	#$1
-	beq	use_back_color
+;	bit	#$1
+;	beq	use_back_color
 
-use_fore_color:
-	lda	fore_color
-	bra	store_color
+;use_fore_color:
+;	lda	fore_color
+;	bra	store_color
 
-use_back_color:
-	lda	back_color
+;use_back_color:
+;	lda	back_color
 
-store_color:
+;store_color:
+	lda	#$4
 	sta	temp_color
 
 plane_loop:		; for(plane=0;plane<4;plane++) {
 
+	; plane 0
+
 	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
-
 	ror	temp_color	; rotate temp_color into carry
-
 	lda	screen_byte,X	; get current color
 	adc	#$0		; add in carry bit
 	sta	screen_byte,X	; store back out
 
-	txa			; increment to next plane
+	; plane 1
+	inx
+
+	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	ror	temp_color	; rotate temp_color into carry
+	lda	screen_byte,X	; get current color
+	adc	#$0		; add in carry bit
+	sta	screen_byte,X	; store back out
+
+
+	; plane 2
+	txa
 	clc
-	adc	#$8
+	adc	#15
 	tax
 
-done_plane:
-	inc	plane
-	lda	plane
-	cmp	#$4
-	bne	plane_loop
+	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	ror	temp_color	; rotate temp_color into carry
+	lda	screen_byte,X	; get current color
+	adc	#$0		; add in carry bit
+	sta	screen_byte,X	; store back out
 
+	; plane 3
+	inx
+
+	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	ror	temp_color	; rotate temp_color into carry
+	lda	screen_byte,X	; get current color
+	adc	#$0		; add in carry bit
+	sta	screen_byte,X	; store back out
+
+
+end_plane_loop:
 
 ;	    if (font[symbol][fy]&(1<<fx)) {
  ;              /* foreground color */
@@ -342,19 +363,32 @@ done_plane:
   ;       }
    ;   }
 
+
+done_fy:
+	inc	fy
+	lda	fy
+	cmp	#$8
+	bne	fy_loop
+
+
+check_if_x_is_mult_8:
 	inc	offset
 	lda	offset
 	cmp	#$8
 	bne	no_write
 
+;=================================
+; copy  screen_byte to tile memory
+;=================================
 
-	ldx	#$0
-	lda	screen_byte,X
-blah:
-	ldy	#$0
-	sta	tile_data2,Y
-	iny
-	sta	tile_data2,Y
+copy_screen_byte_to_tile2:
+
+	ldx	#.LOWORD(screen_byte)
+	ldy	tile_offset
+	lda	#31		; move 31 bytes
+	mvn	$7e,$7e
+
+	sty	tile_offset
 
  ;        printf("\t; Planes 1 and 0\n");
   ;       for(i=0;i<8;i++) {
@@ -365,22 +399,21 @@ blah:
 ;            printf("\t.word $%02x%02x\n",screen_byte[i][3],screen_byte[i][2]);
  ;        }
 
+	; fix top of A
+	lda	#$0
+	xba
+
 	stz	offset
 no_write:
 
-
-
-done_fy:
-	inc	fy
-	lda	fy
-	cmp	#$8
-	bne	fy_loop
 
 done_fx:
 	inc	fx
 	lda	fx
 	cmp	#$3
-	bne	fx_loop
+;	bne	fx_loop
+	beq	next_char
+	jmp	fx_loop
 
 
 next_char:
@@ -468,9 +501,7 @@ copypal:
 
         ldx     #$0000
 copy_tile_data:
-	.byte $bf
-	.faraddr tile_data
-;        lda     tile_data, x
+        lda     f:tile_data, x
         sta     $2118           ; write the data
         inx                     ; increment by 2 (16-bits)
         inx
@@ -687,7 +718,6 @@ font_hash:
 font_o:
 	.byte   $70,$81,$81,$81,$81,$81,$81,$70   ; O
 
-
 hello_string:
         .asciiz "HELLO,_WORLD!"
 
@@ -708,10 +738,10 @@ fx:
 .res 1
 fy:
 .res 1
-plane:
-.res 1
 offset:
 .res 1
+tile_offset:
+.res 2
 logo_pointer:
 .res 2
 
@@ -719,7 +749,7 @@ screen_byte:
 .res 8*4	; 8 bytes, times four
 
 tile_data:
-.res	16
+.res	32
 tile_data2:
 .res (30*12)*16
 
