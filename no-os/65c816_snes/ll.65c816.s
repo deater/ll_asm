@@ -242,17 +242,6 @@ not_escape:
 ;   int offset=0;
 
 
-
-;   unsigned char screen_byte[8][4]; /* four bit planes */
-
-;void putfont(unsigned char letter, int forecolor, int backcolor) {
-;   int fx,fy,plane,i;
-;   int symbol;
-
-;   if (letter=='#') symbol=1;
-;   else if (letter=='O') symbol=2;
-;   else symbol=0;
-
 test_hash:
 	cmp	#'#'
 	bne	test_O
@@ -287,20 +276,29 @@ fy_loop:		; for(fy=0;fy<8;fy++) {
 	tax
 
 check_color:
-;	lda	#$1
+	; Load bit from 
 
-;	bit	#$1
-;	beq	use_back_color
+	phx
 
-;use_fore_color:
-;	lda	fore_color
-;	bra	store_color
+	tyx
 
-;use_back_color:
-;	lda	back_color
+	lda	f:font,X
 
-;store_color:
-	lda	#$4
+	plx
+
+	iny
+
+	bit	#$1
+	bne	use_back_color
+
+use_fore_color:
+	lda	fore_color
+	bra	store_color
+
+use_back_color:
+	lda	back_color
+
+store_color:
 	sta	temp_color
 
 plane_loop:		; for(plane=0;plane<4;plane++) {
@@ -347,34 +345,31 @@ plane_loop:		; for(plane=0;plane<4;plane++) {
 
 end_plane_loop:
 
-;	    if (font[symbol][fy]&(1<<fx)) {
- ;              /* foreground color */
-  ;             screen_byte[fy][plane]|=((forecolor>>plane)&1);
-   ;            printf("; fx=%d fy=%d fore=%d sb[%d]=%x\n",
-    ;                  fx,fy,(forecolor>>plane)&1,plane,screen_byte[fy][plane]);
-     ;       }
-;            else {
- ;              /* background color */
-  ;             screen_byte[fy][plane]|=((backcolor>>plane)&1);
-   ;            printf("; fx=%d fy=%d back=%d sb[%d]=%x\n",
-    ;                  fx,fy,(backcolor>>plane)&1,plane,screen_byte[fy][plane]);
-;
- ;           }
-  ;       }
-   ;   }
 
 
 done_fy:
+
 	inc	fy
 	lda	fy
 	cmp	#$8
 	bne	fy_loop
 
 
+	dey			; point Y back to beginning of font
+	dey
+	dey
+	dey
+	dey
+	dey
+	dey
+	dey
+
+
+
 check_if_x_is_mult_8:
 	inc	offset
 	lda	offset
-	cmp	#$8
+	cmp	#$9
 	bne	no_write
 
 ;=================================
@@ -383,27 +378,21 @@ check_if_x_is_mult_8:
 
 copy_screen_byte_to_tile2:
 
-	ldx	#.LOWORD(screen_byte)
-	ldy	tile_offset
-	lda	#31		; move 31 bytes
-	mvn	$7e,$7e
+	ldx	#.LOWORD(screen_byte)	; copy from screen_byte
+	ldy	tile_offset		; to tile_offset
+	lda	#31			; move 32 bytes
+	mvn	$7e,$7e			; both in bank $7E
 
-	sty	tile_offset
-
- ;        printf("\t; Planes 1 and 0\n");
-  ;       for(i=0;i<8;i++) {
-   ;         printf("\t.word $%02x%02x\n",screen_byte[i][1],screen_byte[i][0]);
-    ;     }
-     ;    printf("\t; Planes 3 and 2\n");
-      ;   for(i=0;i<8;i++) {
-;            printf("\t.word $%02x%02x\n",screen_byte[i][3],screen_byte[i][2]);
- ;        }
+	sty	tile_offset		; save the updated tile_offset
 
 	; fix top of A
+	; if we don't do this B ends up FF and that messes up
+	; things like TAX down the road
+
 	lda	#$0
 	xba
 
-	stz	offset
+	stz	offset			; reset offset to 0
 no_write:
 
 
@@ -710,13 +699,13 @@ temp_color:
 	.byte 0
 
 font:
-	; bits 7,6,0 (for use in bit instruction)
+	; bits 2,1,0
 font_space:
 	.byte	0,0,0,0,0,0,0,0   ; space
 font_hash:
-	.byte   $70,$70,$ff,$70,$70,$ff,$70,$70   ; #
+	.byte   $2,$2,$7,$2,$2,$7,$2,$2   ; #
 font_o:
-	.byte   $70,$81,$81,$81,$81,$81,$81,$70   ; O
+	.byte   $2,$5,$5,$5,$5,$5,$5,$2   ; O
 
 hello_string:
         .asciiz "HELLO,_WORLD!"
