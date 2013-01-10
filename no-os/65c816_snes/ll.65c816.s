@@ -383,7 +383,7 @@ done_fy:
 check_if_x_is_mult_8:
 	inc	offset
 	lda	offset
-	cmp	#$9
+	cmp	#$8
 	bne	no_write
 
 ;=================================
