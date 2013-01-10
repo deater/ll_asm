@@ -225,11 +225,38 @@ color_loop:
   ;                }
 
 done_color:
+	pha
 
-	lda	#$5
+	lda	color
+	cmp	#0
+	bne	not_zero
+	stz	bold_color
+	bra	done_set_color
+
+not_zero:
+	cmp	#1
+	bne	not_one
+	lda	#$8
+	sta	bold_color
+
+	bra	done_set_color
+not_one:
+
+	cmp	#38
+	bcs	background_color	; bge
+
+foreground_color:
+	and	#$7
+	ora	bold_color
 	sta	fore_color
-	lda	#$7
+	bra	done_set_color
+
+background_color:
+	and	#$7
 	sta	back_color
+done_set_color:
+
+	pla
 
 	cmp	#';'			; see if multiple color commands
 	beq	new_color		; if so, handle next color
@@ -300,7 +327,7 @@ check_color:
 
 	bit	fx
 
-	bne	use_back_color
+	beq	use_back_color
 
 use_fore_color:
 	lda	fore_color
