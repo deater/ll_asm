@@ -223,7 +223,7 @@ color_loop:
 	lda	#$7
 	sta	back_color
 
-	jmp	next_char
+	jmp	check_end
 
 not_escape:
 
@@ -407,6 +407,7 @@ next_char:
 	ldx	logo_pointer
 	inx
 	stx	logo_pointer
+check_end:
 	cpx	#(logo_end-logo_begin)
 ; bge
 	bcs	done_convert
