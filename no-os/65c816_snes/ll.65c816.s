@@ -274,61 +274,55 @@ its_zero:
 
 y_is_set:
 
-; A = trashed
-; X = screen_byte offset
-; Y = font_offset
+	lda	#$1	; fx has the values 1,4,8 rather than
+	sta	fx	; traditional 0,1,2 in a for loop.
+			; this makes things easier later
+fx_loop:
 
-	lda	#$1
-	sta	fx
-fx_loop:		; for(fx=0;fx<3;fx++) {
+	stz	fy	; set fy to 0
+fy_loop:		; we loop from 0 to 7
+			; as our chars are 8 lines high
 
-	stz	fy
-
-fy_loop:		; for(fy=0;fy<8;fy++) {
-
-
-
-	lda	fy	; X = (8*plane) screen_byte[fy][0]
-	asl		; multiply by two
-	tax
+	lda	fy	; load fy into A
+	asl		; multiply by two, as we do two planes at a time
+	tax		; move into X
 
 check_color:
-	; Load bit from 
 
-	phx
-	tyx
-	lda	f:font,X
-	plx
-	iny
+	phx			; save X (offset) on stack
+	tyx			; move Y (font pointer) into X
+	lda	f:font,X	; long load of font value, as font is in ROM
+	plx			; restore X (offset)
+	iny			; increment font pointer
 
-	bit	fx
+	bit	fx		; is xth bit of font set?
 
-	beq	use_back_color
+	beq	use_back_color	; if not, use background color
 
 use_fore_color:
-	lda	fore_color
+	lda	fore_color	; using foreground color
 	bra	store_color
 
 use_back_color:
-	lda	back_color
+	lda	back_color	; using background color
 
 store_color:
-	sta	temp_color
+	sta	temp_color	; store color to use to temp_color
 
-plane_loop:		; for(plane=0;plane<4;plane++) {
+plane_loop:			; plane loop is unrolled
 
 	; plane 0
 
-	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	asl	screen_byte,X	; screen_byte[0+(fy*2)]<<=1
 	ror	temp_color	; rotate temp_color into carry
 	lda	screen_byte,X	; get current color
 	adc	#$0		; add in carry bit
 	sta	screen_byte,X	; store back out
 
 	; plane 1
-	inx
+	inx			; point to plane1
 
-	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	asl	screen_byte,X	; screen_byte[1+(fy*2)]<<=1
 	ror	temp_color	; rotate temp_color into carry
 	lda	screen_byte,X	; get current color
 	adc	#$0		; add in carry bit
@@ -336,12 +330,12 @@ plane_loop:		; for(plane=0;plane<4;plane++) {
 
 
 	; plane 2
-	txa
+	txa			; plane 2 is 15 bytes ahead of plane1 value
 	clc
 	adc	#15
 	tax
 
-	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	asl	screen_byte,X	; screen_byte[16+(fy*2)]<<=1
 	ror	temp_color	; rotate temp_color into carry
 	lda	screen_byte,X	; get current color
 	adc	#$0		; add in carry bit
@@ -350,47 +344,43 @@ plane_loop:		; for(plane=0;plane<4;plane++) {
 	; plane 3
 	inx
 
-	asl	screen_byte,X	; screen_byte[fy][plane]<<=1
+	asl	screen_byte,X	; screen_byte[17+(fy*2)]<<=1
 	ror	temp_color	; rotate temp_color into carry
 	lda	screen_byte,X	; get current color
 	adc	#$0		; add in carry bit
 	sta	screen_byte,X	; store back out
 
-
 end_plane_loop:
 
+	inc	fy		; move to next line
 
-
-done_fy:
-
-	inc	fy
-	lda	fy
+	lda	fy		; see if we've reached line 8 yet
 	cmp	#$8
-	bne	fy_loop
+	bne	fy_loop		; if not, loop
 
 
 	dey			; point Y back to beginning of font
-	dey
-	dey
+	dey			; is this faster than subtract 8
+	dey			; or loading a constant?
 	dey
 	dey
 	dey
 	dey
 	dey
 
-
-
-check_if_x_is_mult_8:
-	inc	offset
-	lda	offset
+check_if_offset_is_mult_8:
+	inc	offset		; every 8 horizontal points
+	lda	offset		; we create a new tile
 	cmp	#$8
-	bne	no_write
+	bne	no_write	; it not, skip
 
 ;=================================
 ; copy  screen_byte to tile memory
 ;=================================
 
 copy_screen_byte_to_tile2:
+
+	phy
 
 	ldx	#.LOWORD(screen_byte)	; copy from screen_byte
 	ldy	tile_offset		; to tile_offset
@@ -406,28 +396,30 @@ copy_screen_byte_to_tile2:
 	lda	#$0
 	xba
 
+	ply
+
 	stz	offset			; reset offset to 0
+
 no_write:
-
-
 done_fx:
-	asl	fx
-	lda	fx
+	asl	fx			; shift fx left
+
+	lda	fx			; if we reach 8 (3 bits) we are done
 	cmp	#$8
-;	bne	fx_loop
-	beq	next_char
-	jmp	fx_loop
+	beq	next_char		; move onto the next char
+
+	jmp	fx_loop			; otherwise loop on fx
 
 
 next_char:
-	ldx	logo_pointer
+	ldx	logo_pointer		; increment the logo pointer
 	inx
 	stx	logo_pointer
 check_end:
-	cpx	#(logo_end-logo_begin)
-; bge
-	bcs	done_convert
-	jmp	load_ansi_loop
+	cpx	#(logo_end-logo_begin)	; have we reached the end?
+	bcs	done_convert		; if so, finish
+	jmp	load_ansi_loop		; otherwise, loop
+
 done_convert:
 
 
