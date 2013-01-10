@@ -189,13 +189,18 @@ color_loop:
 
 	pha			; save read-in value
 
-	lda	color		; multiply existing color by 10
+;	lda	color		; multiply existing color by 10
+;	asl	color
+;	asl	color
+;	clc
+;	adc	color
+;	asl	A
+;	sta	color
+
+	asl	color		; instead of mul x 10
+	asl	color		; mul x 16
+	asl	color		; easier to parse if hex digits
 	asl	color
-	asl	color
-	clc
-	adc	color
-	asl	A
-	sta	color
 
 
 	pla			; restore read-in value
@@ -208,21 +213,6 @@ color_loop:
 	sta	color		; store it
 
 	jmp	color_loop
-
-;                  if (color==0) {
- ;                    newcolor&=0xbf;
-  ;                }
-   ;               else if (color==1) {
-    ;                 newcolor|=0x40;
-     ;             }
-      ;            else if ((color>=30) && (color<=39)) {
-       ;              newcolor&=0xc7;
-        ;             newcolor|=((color-30)&0x7)<<3;
-         ;         }
-          ;        else if ((color>=40) && (color<=49)) {
-;                     newcolor&=0xf8;
- ;                    newcolor|=((color-40)&0x7);
-  ;                }
 
 done_color:
 	pha
@@ -242,7 +232,7 @@ not_zero:
 	bra	done_set_color
 not_one:
 
-	cmp	#38
+	cmp	#$38
 	bcs	background_color	; bge
 
 foreground_color:
@@ -266,20 +256,6 @@ done_set_color:
 	jmp	check_end		; and move to next char
 
 not_escape:
-
-;	 else {
- ;           printf("; Color=%x\n",newcolor);
-    ;        else if (newcolor==0x7)  { 00 000 111 fore=1; back=7;}
-;	    if (newcolor==0x47)       { 01 000 111 fore=0; back=7;}
- ;           else if (newcolor==0x4f) { 01 001 111 fore=2; back=7;}
-  ;          else if (newcolor==0x5f) { 01 011 111 fore=4; back=7;}
-   ;         else if (newcolor==0x7f) { 01 111 111 fore=5; back=7;}
-     ;       else if (newcolor==0x78) { 01 111 000 fore=5; back=0;}
-      ;      else printf("; Unknown color %x!\n",newcolor);
-       ;     putfont(buffer[i],fore,back);
-       ;  }
-
-;   int offset=0;
 
 
 test_hash:
