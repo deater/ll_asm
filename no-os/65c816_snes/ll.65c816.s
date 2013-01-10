@@ -216,12 +216,12 @@ color_loop:
 	cmp	#'m'
 	bne	color_loop
 
+	stx	logo_pointer
+
 	lda	#$5
 	sta	fore_color
 	lda	#$7
 	sta	back_color
-
-	stx	logo_pointer
 
 	jmp	next_char
 
@@ -262,7 +262,8 @@ y_is_set:
 ; X = screen_byte offset
 ; Y = font_offset
 
-	stz	fx
+	lda	#$1
+	sta	fx
 fx_loop:		; for(fx=0;fx<3;fx++) {
 
 	stz	fy
@@ -279,16 +280,13 @@ check_color:
 	; Load bit from 
 
 	phx
-
 	tyx
-
 	lda	f:font,X
-
 	plx
-
 	iny
 
-	bit	#$1
+	bit	fx
+
 	bne	use_back_color
 
 use_fore_color:
@@ -397,9 +395,9 @@ no_write:
 
 
 done_fx:
-	inc	fx
+	asl	fx
 	lda	fx
-	cmp	#$3
+	cmp	#$8
 ;	bne	fx_loop
 	beq	next_char
 	jmp	fx_loop
