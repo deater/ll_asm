@@ -266,7 +266,7 @@ test_hash:
 test_O:
 	cmp	#'O'
 	bne	its_zero
-	ldy	#$16
+	ldy	#$10
 	bra	y_is_set
 
 its_zero:
