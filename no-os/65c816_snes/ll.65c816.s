@@ -160,7 +160,7 @@ load_ansi_loop:
 	ldx	logo_pointer
 
 
-;       load from 24-bit long offset (since B is set to 7e)
+	; load from 24-bit long offset (since B is set to 7e)
 
 	lda	f:logo_begin,x
 
@@ -174,12 +174,41 @@ load_ansi_loop:
 	inx			; point past escape
 	inx			; assume we have a [
 
+new_color:
+	stz	color
+
 color_loop:
 	lda	f:logo_begin,x	; load first byte of color
 
-    ;        color=0;
-     ;       while(1) {
-      ;         if ((buffer[i]=='m') || (buffer[i]==';')) {
+	inx
+	cmp	#'m'
+	beq	done_color
+
+	cmp	#';'
+	beq	done_color
+
+	pha			; save read-in value
+
+	lda	color		; multiply existing color by 10
+	asl	color
+	asl	color
+	clc
+	adc	color
+	asl	A
+	sta	color
+
+
+	pla			; restore read-in value
+
+	sec
+	sbc	#$30		; convert ascii color to decimal
+
+	clc
+	adc	color		; have updated color
+	sta	color		; store it
+
+	jmp	color_loop
+
 ;                  if (color==0) {
  ;                    newcolor&=0xbf;
   ;                }
@@ -194,36 +223,20 @@ color_loop:
 ;                     newcolor&=0xf8;
  ;                    newcolor|=((color-40)&0x7);
   ;                }
-;
- ;                 color=0;
-;
- ;                 if (buffer[i]=='m') {
-  ;                   printf("; Color=%02x\n",newcolor);
-   ;                  break;
-    ;              }
-     ;             i++;
-      ;            continue;
-       ;        }
-;
- ;              color*=10;
-  ;             color+=buffer[i]-0x30;
-;
- ;              i++;
-;	    }
- ;        }
 
-	inx
-	cmp	#'m'
-	bne	color_loop
-
-	stx	logo_pointer
+done_color:
 
 	lda	#$5
 	sta	fore_color
 	lda	#$7
 	sta	back_color
 
-	jmp	check_end
+	cmp	#';'			; see if multiple color commands
+	beq	new_color		; if so, handle next color
+
+	stx	logo_pointer		; otherwise update pointer
+
+	jmp	check_end		; and move to next char
 
 not_escape:
 
@@ -457,7 +470,7 @@ done_convert:
 .i16
         stz     $2121           ; CGRAM color-generator read/write address
 
-        ldy     #$0010          ; we only have 8 colors / 16 bytes
+        ldy     #$0020          ; we only have 16 colors / 32 bytes
 
         ldx     #$0000          ; pointer
 copypal:
@@ -688,6 +701,8 @@ logo_begin:
 .include "ll.ans.inc"
 logo_end:
 
+color:
+	.byte 0
 bold_color:
 	.byte 0
 fore_color:
@@ -710,14 +725,23 @@ hello_string:
         .asciiz "HELLO,_WORLD!"
 
 tile_palette:
-        .word $3def     ; 0 d. grey  r=7d g=7d b=7d
-        .word $0        ; 1 black    r=0 g=0 b=0
-        .word $3dff     ; 2 red      r=ff g=7d b=7d
-        .word $7fff     ; 3 white    r=ff g=ff b=ff
-        .word $3ff      ; 4 yellow   r=ff g=ff b=0
-	.word $0        ; 5
-	.word $0        ; 6
+        .word $0        ; 0 black    r=0 g=0 b=0
+        .word $0        ; 1 d. red
+        .word $0        ; 2 d. green
+        .word $0        ; 3 d. yellow
+        .word $0        ; 4 d. blue
+        .word $0        ; 5 d. purple
+        .word $0        ; 6 d. cyan
         .word $56b5     ; 7 l. grey  r=aa g=aa b=aa
+        .word $3def     ; 8 d. grey  r=7d g=7d b=7d
+        .word $3dff     ; 9 b. red   r=ff g=7d b=7d
+	.word $0        ; 10 green
+        .word $3ff      ; 11 yellow   r=ff g=ff b=0
+	.word $0        ; 12 blue
+	.word $0        ; 13 pink
+	.word $0        ; 14 cyan
+        .word $7fff     ; 15 white    r=ff g=ff b=ff
+
 
 
 .segment "BSS"
