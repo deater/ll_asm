@@ -132,8 +132,6 @@ Reset:
 ;==============================================
 ;==============================================
 
-
-
 start_program:
 
 	rep	#$10	; X/Y = 16 bit
@@ -144,6 +142,148 @@ start_program:
 	lda     #^screen_byte	; get bank for x_direction var (probably $7E)
 	pha			;
 	plb			; set the data bank to the one containing x_dir$
+
+
+.define EQU =
+LOGOH     EQU $FF
+LOGOL     EQU $FE
+OUTPUTH   EQU $FD
+OUTPUTL   EQU $FC
+STORERH   EQU $FB
+STORERL   EQU $FA
+LOADRH    EQU $F9
+LOADRL    EQU $F8
+MSELECT   EQU $F5
+COUNT     EQU $F4
+
+
+;; LZSS Parameters
+
+N             EQU 1024
+F             EQU 64
+THRESHOLD     EQU 2
+P_BITS        EQU 10
+POSITION_MASK EQU 3
+
+
+	; X = logo offset
+	; Y = output offset
+start_lzss:
+
+	ldx	#logo			; load logo pointer
+	ldy	#.LOWORD(output)	; load output pointer
+
+	lda	#>(N-F)			; load R value
+	sta	STORERH
+	lda	#<(N-F)
+	sta	STORERL
+
+decompression_loop:
+
+	lda	#8		; set mask counter
+	sta	COUNT
+
+	lda	f:logo,X	; load byte
+	sta	MSELECT
+	inx			; increment pointer
+
+test_flags:
+
+	cpx	#(logo_end-logo)	; compare to see if we've reached end
+        bcs     done_logo		; if so, we are done
+
+not_match:
+	lsr     MSELECT			; shift byte mask into carry flag
+
+	lda	f:logo,X		; load byte
+	inx				; increment pointer
+
+	bcs	discrete_char		; if set we have discrete char
+
+offset_length:
+
+	sta	LOADRL			; bottom of R offset
+
+	lda	f:logo,X		; load another byte
+	inx				; increment pointer
+
+	sta	LOADRH			; top of R offset
+
+	lsr	A
+	lsr	A			; shift right by 10 (top byte by 2)
+
+	clc
+	adc	#3			; add threshold+1 (3)
+
+  ;      tax                             ; store out count in X
+output_loop:
+
+  ;      clc                             ; calculate R+LOADR
+   ;     lda     LOADRL
+   ;     adc     #<R
+   ;     sta     EFFECTRL
+
+   ;     lda     LOADRH
+   ;     and     #((N-1)>>8)             ; Mask so mod N
+   ;     sta     LOADRH
+
+   ;     adc     #>R
+   ;     sta     EFFECTRH
+
+   ;     lda     (EFFECTRL),Y            ; Load byte R[LOADR]
+
+   ;     inc     LOADRL                  ; increment address
+   ;     bne     load_carry1
+   ;     inc     LOADRH                  ; handle overflow
+load_carry1:
+
+store_byte:
+   ;     sta     (OUTPUTL),Y              ; store byte to output
+
+   ;     inc     OUTPUTL                  ; increment address
+   ;     bne     sb_carry
+   ;     inc     OUTPUTH                  ; handle overflow
+sb_carry:
+   ;     pha                              ; calculate R+STORER
+   ;     clc
+   ;     lda     STORERL
+   ;     adc     #<R
+   ;     sta     EFFECTRL
+
+   ;     lda     STORERH
+   ;     and     #((N-1)>>8)              ; mask so mod N
+
+   ;     sta     STORERH
+   ;     adc     #>R
+   ;     sta     EFFECTRH
+
+   ;     pla                              ; restore from stack
+
+   ;     sta     (EFFECTRL),Y             ; store A there too
+
+   ;     inc     STORERL                  ; increment address
+   ;     bne     store_carry2
+   ;     inc     STORERH                  ; handle overflow
+store_carry2:
+
+	dex				; count down the out counter
+	bne	output_loop		; loop to output_loop if not 0
+
+	dec     COUNT			; count down the mask counter
+	bne     test_flags		; loop to test_flags if not zero
+
+	beq	decompression_loop	; restart whole process
+
+discrete_char:
+	ldx	#1			; want to write a single byte
+	bne	store_byte		; go and store it (1 byte less than jmp)
+
+done_logo:
+
+
+
+
+
 
 
 convert_ansi_to_tiles:
@@ -162,7 +302,7 @@ load_ansi_loop:
 
 	; load from 24-bit long offset (since B is set to 7e)
 
-	lda	f:logo_begin,x
+	lda	f:output,x
 
 	cmp	#27		; is it escape character?
 	bne	not_escape
@@ -178,7 +318,7 @@ new_color:
 	stz	color
 
 color_loop:
-	lda	f:logo_begin,x	; load first byte of color
+	lda	f:output,x	; load first byte of color
 
 	inx
 	cmp	#'m'
@@ -416,7 +556,7 @@ next_char:
 	inx
 	stx	logo_pointer
 check_end:
-	cpx	#(logo_end-logo_begin)	; have we reached the end?
+	cpx	#(uncompressed_logo_end-output)	; have we reached the end?
 	bcs	done_convert		; if so, finish
 	jmp	load_ansi_loop		; otherwise, loop
 
@@ -692,10 +832,6 @@ wram_fill_byte:
 
 ; .include "ll.tiles"
 
-logo_begin:
-.include "ll.ans.inc"
-logo_end:
-
 color:
 	.byte 0
 bold_color:
@@ -715,6 +851,8 @@ font_hash:
 	.byte   $2,$2,$7,$2,$2,$7,$2,$2   ; #
 font_o:
 	.byte   $2,$5,$5,$5,$5,$5,$5,$2   ; O
+
+.include "logo.lzss"
 
 hello_string:
         .asciiz "HELLO,_WORLD!"
@@ -759,6 +897,15 @@ tile_data:
 .res	32
 tile_data2:
 .res (30*12)*16
+
+R:                .res (N-F)
+
+output:
+.res 4096
+;.include "ll.ans.inc"
+uncompressed_logo_end:
+
+
 
 .segment "CARTINFO"
         .byte   "LINUX_LOGO            "        ; Game Title
