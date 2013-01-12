@@ -145,17 +145,17 @@ start_program:
 
 
 .define EQU =
-LOGOH     EQU $FF
-LOGOL     EQU $FE
-OUTPUTH   EQU $FD
-OUTPUTL   EQU $FC
-STORERH   EQU $FB
-STORERL   EQU $FA
-LOADRH    EQU $F9
-LOADRL    EQU $F8
-MSELECT   EQU $F5
-COUNT     EQU $F4
-
+LOGOB     EQU $FA
+LOGOH     EQU $F9
+LOGOL     EQU $F8
+OUTPUTH   EQU $F7
+OUTPUTL   EQU $F6
+ROFFSETH  EQU $F5
+ROFFSETL  EQU $F4
+LOADRH    EQU $F3
+LOADRL    EQU $F2
+MSELECTH  EQU $F1
+MSELECTL  EQU $F0
 
 ;; LZSS Parameters
 
@@ -165,124 +165,135 @@ THRESHOLD     EQU 2
 P_BITS        EQU 10
 POSITION_MASK EQU 3
 
+;	sep	#$20	; mem/A = 8 bit
+;.a8
 
-	; X = logo offset
-	; Y = output offset
+	stz	LOGOB
+
+	rep	#$20	; mem/A = 16 bit
+.a16
+
+
 start_lzss:
 
-	ldx	#logo			; load logo pointer
-	ldy	#.LOWORD(output)	; load output pointer
+	lda	#logo			; load logo pointer
+	sta	LOGOL
 
-	lda	#>(N-F)			; load R value
-	sta	STORERH
-	lda	#<(N-F)
-	sta	STORERL
+	lda	#.LOWORD(output)	; load output pointer
+	sta	OUTPUTL
+
+	lda	#(N-F)			; load R value
+	sta	ROFFSETL
 
 decompression_loop:
 
-	lda	#8		; set mask counter
-	sta	COUNT
+	sep	#$20		; mem/A = 8 bit
+.a8
+	lda	#$ff		; set mask counter
+	xba
+	lda	[LOGOL]		; load byte from logo
 
-	lda	f:logo,X	; load byte
-	sta	MSELECT
-	inx			; increment pointer
+	rep	#$20		; mem/A = 16 bit
+.a16
+	sta	MSELECTL
+	inc	LOGOL		; increment pointer
 
 test_flags:
 
-	cpx	#(logo_end-logo)	; compare to see if we've reached end
-        bcs     done_logo		; if so, we are done
+	lda	#logo_end
+	cmp	LOGOL		; compare to see if we've reached end
+        bcc	done_logo	; if so, we are done
 
 not_match:
-	lsr     MSELECT			; shift byte mask into carry flag
+	lsr     MSELECTL	; shift byte mask into carry flag
 
-	lda	f:logo,X		; load byte
-	inx				; increment pointer
-
-	bcs	discrete_char		; if set we have discrete char
+	bcs	discrete_char	; if set we have discrete char
 
 offset_length:
 
-	sta	LOADRL			; bottom of R offset
+	lda	[LOGOL]		; load a little-endian word
+	inc	LOGOL		; increment pointer
 
-	lda	f:logo,X		; load another byte
-	inx				; increment pointer
+	tay			; copy value to Y
 
-	sta	LOADRH			; top of R offset
-
+	xba
+	and	#$ff
 	lsr	A
-	lsr	A			; shift right by 10 (top byte by 2)
-
+	lsr	A		; shift right by 10 (top byte by 2)
 	clc
-	adc	#3			; add threshold+1 (3)
+	adc	#3		; add threshold+1 (3)
 
-  ;      tax                             ; store out count in X
+	tax			; store out count in X
 output_loop:
 
-  ;      clc                             ; calculate R+LOADR
-   ;     lda     LOADRL
-   ;     adc     #<R
-   ;     sta     EFFECTRL
+	tya
+	and	#(N-1)		; Mask so mod N
+	tay
 
-   ;     lda     LOADRH
-   ;     and     #((N-1)>>8)             ; Mask so mod N
-   ;     sta     LOADRH
+	sep	#$20		; mem/A = 8 bit
+.a8
+	lda	text_buf,Y
 
-   ;     adc     #>R
-   ;     sta     EFFECTRH
+	rep	#$20		; mem/A = 16 bit
+.a16
 
-   ;     lda     (EFFECTRL),Y            ; Load byte R[LOADR]
-
-   ;     inc     LOADRL                  ; increment address
-   ;     bne     load_carry1
-   ;     inc     LOADRH                  ; handle overflow
-load_carry1:
+	iny
 
 store_byte:
-   ;     sta     (OUTPUTL),Y              ; store byte to output
+	phy
+	sep	#$20		; mem/A = 8 bit
+.a8
+	sta	(OUTPUTL)	; store byte to output
 
-   ;     inc     OUTPUTL                  ; increment address
-   ;     bne     sb_carry
-   ;     inc     OUTPUTH                  ; handle overflow
-sb_carry:
-   ;     pha                              ; calculate R+STORER
-   ;     clc
-   ;     lda     STORERL
-   ;     adc     #<R
-   ;     sta     EFFECTRL
+	ldy	ROFFSETL
+	sta	text_buf,Y	; store to text_buf[r]
 
-   ;     lda     STORERH
-   ;     and     #((N-1)>>8)              ; mask so mod N
+	rep	#$20		; mem/A = 16 bit
+.a16
+	inc	OUTPUTL		; increment address
 
-   ;     sta     STORERH
-   ;     adc     #>R
-   ;     sta     EFFECTRH
+	iny
+	tya
+	and	#(N-1)
+	sta	ROFFSETL
 
-   ;     pla                              ; restore from stack
-
-   ;     sta     (EFFECTRL),Y             ; store A there too
-
-   ;     inc     STORERL                  ; increment address
-   ;     bne     store_carry2
-   ;     inc     STORERH                  ; handle overflow
-store_carry2:
+	ply
 
 	dex				; count down the out counter
 	bne	output_loop		; loop to output_loop if not 0
 
-	dec     COUNT			; count down the mask counter
+	lda	MSELECTL
+	xba
+
 	bne     test_flags		; loop to test_flags if not zero
 
 	beq	decompression_loop	; restart whole process
 
 discrete_char:
-	ldx	#1			; want to write a single byte
-	bne	store_byte		; go and store it (1 byte less than jmp)
+	sep	#$20		; mem/A = 8 bit
+.a8
+	lda	[LOGOL]		; load byte from logo
+
+	rep	#$20		; mem/A = 16 bit
+.a16
+	inc	LOGOL		; increment pointer
+
+	ldx	#1		; want to write a single byte
+	bne	store_byte	; go and store it (1 byte less than jmp)
 
 done_logo:
 
+	lda	OUTPUTL
+	sec
+	sbc	#.LOWORD(output)
+	sta	OUTPUTL
 
+	lda	#$0
 
-
+	rep	#$10	; X/Y = 16 bit
+.i16
+	sep	#$20	; mem/A = 8 bit
+.a8
 
 
 
@@ -302,7 +313,7 @@ load_ansi_loop:
 
 	; load from 24-bit long offset (since B is set to 7e)
 
-	lda	f:output,x
+	lda	output,x
 
 	cmp	#27		; is it escape character?
 	bne	not_escape
@@ -556,7 +567,7 @@ next_char:
 	inx
 	stx	logo_pointer
 check_end:
-	cpx	#(uncompressed_logo_end-output)	; have we reached the end?
+	cpx	OUTPUTL			; have we reached the end?
 	bcs	done_convert		; if so, finish
 	jmp	load_ansi_loop		; otherwise, loop
 
@@ -898,12 +909,11 @@ tile_data:
 tile_data2:
 .res (30*12)*16
 
-R:                .res (N-F)
+text_buf:	.res (N+F-1)
 
 output:
 .res 4096
 ;.include "ll.ans.inc"
-uncompressed_logo_end:
 
 
 
