@@ -202,7 +202,7 @@ test_flags:
 
 	lda	#logo_end
 	cmp	LOGOL		; compare to see if we've reached end
-        bcc	done_logo	; if so, we are done
+        beq	done_logo	; if so, we are done
 
 not_match:
 	lsr     MSELECTL	; shift byte mask into carry flag
@@ -213,6 +213,7 @@ offset_length:
 
 	lda	[LOGOL]		; load a little-endian word
 	inc	LOGOL		; increment pointer
+	inc	LOGOL		; increment pointer (urgh forgot this at first)
 
 	tay			; copy value to Y
 
@@ -221,7 +222,7 @@ offset_length:
 	lsr	A
 	lsr	A		; shift right by 10 (top byte by 2)
 	clc
-	adc	#3		; add threshold+1 (3)
+	adc	#(THRESHOLD+1)	; add threshold+1 (3)
 
 	tax			; store out count in X
 output_loop:
@@ -251,7 +252,6 @@ store_byte:
 	rep	#$20		; mem/A = 16 bit
 .a16
 	inc	OUTPUTL		; increment address
-
 	iny
 	tya
 	and	#(N-1)
@@ -284,6 +284,7 @@ discrete_char:
 done_logo:
 
 	lda	OUTPUTL
+	dec	A			; points one too far
 	sec
 	sbc	#.LOWORD(output)
 	sta	OUTPUTL
@@ -310,7 +311,6 @@ load_ansi_loop:
 
 	ldx	logo_pointer
 
-
 	; load from 24-bit long offset (since B is set to 7e)
 
 	lda	output,x
@@ -329,7 +329,7 @@ new_color:
 	stz	color
 
 color_loop:
-	lda	f:output,x	; load first byte of color
+	lda	output,x	; load first byte of color
 
 	inx
 	cmp	#'m'
@@ -567,6 +567,7 @@ next_char:
 	inx
 	stx	logo_pointer
 check_end:
+;	cpx	#$800
 	cpx	OUTPUTL			; have we reached the end?
 	bcs	done_convert		; if so, finish
 	jmp	load_ansi_loop		; otherwise, loop
@@ -907,7 +908,7 @@ screen_byte:
 tile_data:
 .res	32
 tile_data2:
-.res (30*12)*16
+.res (30*12)*32
 
 text_buf:	.res (N+F-1)
 
