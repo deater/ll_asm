@@ -809,25 +809,16 @@ setup_video:
 	sta	$2100		; Turn on screen, full Brightness
 
 
-	lda	#$81		; Enable NMI (VBlank Interrupt) and joypads
-	sta	$4200		;
+;	lda	#$81		; Enable NMI (VBlank Interrupt) and joypads
+;	sta	$4200		;
 
 
 main_loop:
 
-	; all work done in interrupt handler
-
+	; repeat forever
 	; stp?
 
 	bra	main_loop
-
-
-;=============================
-; VBLank Routine
-;=============================
-
-VBlank:
-	rti		; return from interrupt
 
 
 ;============================================================================
@@ -839,10 +830,6 @@ wram_fill_byte:
 ;============================================================================
 ; Character Data
 ;============================================================================
-
-
-
-; .include "ll.tiles"
 
 color:
 	.byte 0
@@ -914,9 +901,6 @@ text_buf:	.res (N+F-1)
 
 output:
 .res 4096
-;.include "ll.ans.inc"
-
-
 
 .segment "CARTINFO"
         .byte   "LINUX_LOGO            "        ; Game Title
@@ -933,7 +917,7 @@ output:
         .word   $0000	; Native:COP
         .word   $0000	; Native:BRK
         .word   $0000	; Native:ABORT
-        .word   VBlank	; Native:NMI
+        .word   $0000	; Native:NMI
         .word   $0000	;
         .word   $0000	; Native:IRQ
 
