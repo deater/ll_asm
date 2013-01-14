@@ -657,6 +657,35 @@ copy_tile_data:
         bne     copy_tile_data
 
 
+	;=====================
+	; Load TB_FONT Data
+	;=====================
+
+	; replace with DMA!
+
+
+	rep     #$20            ; set accumulator/mem to 16bit
+.a16
+.i16
+	lda     #$6000          ;
+        sta     $2116           ; set adddress for VRAM read/write
+				; multiply by 2, so 0xc000
+
+        ldy     #$600		; Copy 96 tiles, which are 32 bytes each
+                                ;  8x8 tile with 4bpp (four bits per pixel)
+				; in 2-byte chunks, so
+				; (96*32)/2 = 1536 = 0x600
+
+        ldx     #$0000
+copy_font_data:
+        lda     f:tb_font, x
+        sta     $2118           ; write the data
+        inx                     ; increment by 2 (16-bits)
+        inx
+        dey                     ; decrement counter
+        bne     copy_font_data
+
+
 	;===================================
 	; clear background to linear tilemap
 	;===================================
@@ -713,57 +742,49 @@ no_skip:
 
 
         ; Write String to Background
-;put_string:
+put_string:
 
-;        lda     #$05a9          ; set VRAM address
+        lda     #$05a9          ; set VRAM address
                                 ; 0400 = upper left (0,0)
                                 ; 0420 =            (0,1)
                                 ; 05a0 =            (0,13)
                                 ; 05a9 =            (9,13)
 
-;        sta     $2116           ; set VRAM r/w address
+        sta     $2116           ; set VRAM r/w address
                                 ; 2116 = 05
                                 ; 2117 = a9
 
-;        ldy     #$000d          ; length of string
+        ldy     #$000d          ; length of string
 
 
-;        ldx     #$0000          ; string index
+        ldx     #$0000          ; string index
 
-;        lda     #$0000          ; clear A
+        lda     #$0200          ; clear A
 
-;copy_string:
-;        txa                     ; put color in A and shift left by 10
-;        asl
-;        asl
-;        asl
-;        asl
-;        asl
-;        asl
-;        asl
-;        asl
-;        asl
-;        asl
+copy_string:
 
-;        sep     #$20            ; set accumulator to 8 bit
+        sep     #$20            ; set accumulator to 8 bit
                                 ; as we only want to do an 8-bit load
-;.a8
-;        lda     hello_string, x       ; load string character
+.a8
+        lda     hello_string, x       ; load string character
                                 ; while leaving top 8-bits alone
-;        beq     done_copy_string
+        beq     done_copy_string
 
-;        rep     #$20            ; set accumulator back to 16 bit
-;.a16
-;        sta     $2118           ; store to VRAM
+	sec
+	sbc	#$20
+
+        rep     #$20            ; set accumulator back to 16 bit
+.a16
+        sta     $2118           ; store to VRAM
                                 ; the bottom 8 bits is the tile to use
                                 ; the top 8 bits is vhopppcc
                                 ; vert flip, horiz flip o=priority
                                 ; p = palette, c=top bits of tile#
 
-;        inx                     ; increment string pointer
+        inx                     ; increment string pointer
 
-;        bra     copy_string
-;done_copy_string:
+        bra     copy_string
+done_copy_string:
 
 
 
@@ -874,7 +895,8 @@ tile_palette:
 	.word $0        ; 14 cyan
         .word $7fff     ; 15 white    r=ff g=ff b=ff
 
-
+tb_font:
+.include "tbfont.inc"
 
 .segment "BSS"
 

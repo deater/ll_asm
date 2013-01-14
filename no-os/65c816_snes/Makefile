@@ -7,7 +7,7 @@ all:	ll.65c816.sfc
 ll.65c816.sfc:	ll.65c816.o 
 	$(LD) -o ll.65c816.sfc --config snes.cfg --obj ll.65c816.o
 
-ll.65c816.o:	ll.65c816.s snes_init.s
+ll.65c816.o:	ll.65c816.s snes_init.s logo.lzss tbfont.inc
 	$(AS) -t none -o ll.65c816.o -l ll.65c816.lst -c ll.65c816.s
 
 ll.tiles:	ll.ans ./tools/ansi_to_tile
