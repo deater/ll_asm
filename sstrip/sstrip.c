@@ -3,18 +3,18 @@
  *  Various changes by Vince Weaver
  */
 
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<errno.h>
-#include	<unistd.h>
-#include	<fcntl.h>
-#include	<elf.h>
-#include        <endian.h>
-#include        <byteswap.h>
-#include	ARCHITECTURE /* made local as new distros don't have it */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <elf.h>
+#include <endian.h>
+#include <byteswap.h>
+#include ARCHITECTURE /* made local as new distros don't have it */
 
-#if ELF_CLASS == ELFCLASS32
+#if (ELF_CLASS == ELFCLASS32) || (OVERRIDE_32 == 1)
 #define	Elf_Ehdr	Elf32_Ehdr
 #define	Elf_Phdr	Elf32_Phdr
 #else
@@ -63,7 +63,7 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
     if (read(fd, ehdr, sizeof *ehdr) != sizeof *ehdr) {
 	return ferr("missing or incomplete ELF header.");
     }
-   
+
     /* Check the ELF signature.
      */
     if (!(ehdr->e_ident[EI_MAG0] == ELFMAG0 &&
@@ -72,6 +72,10 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
 	  ehdr->e_ident[EI_MAG3] == ELFMAG3)) {
 	printf("missing ELF signature.");
         exit(0);
+    }
+
+    if (ehdr->e_ident[EI_CLASS] != ELF_CLASS) {
+       err("ELF file has different word size.");
     }
 
     /* Compare the file's class and endianness with the program's.
@@ -92,7 +96,7 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
    else {
       err("Unknown endianess type.");
    }
-   
+
    if (ELF_CLASS == ELFCLASS64) {
       if (sizeof(void *)!=8) err("host!=elf word size not supported");
    }
@@ -102,13 +106,9 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
    else {
       err("Unknown word size");
    }
-   
+
     if (ehdr->e_ident[EI_DATA] != ELF_DATA) {
        err("ELF file has different endianness.");
-    }
-
-    if (ehdr->e_ident[EI_CLASS] != ELF_CLASS) {
-       err("ELF file has different word size.");
     }
 
     /* Check the target architecture.
@@ -116,7 +116,7 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
      { unsigned short machine;
        machine=ehdr->e_machine;
        if (swap_bytes) machine=bswap_16(machine);
-	
+
        if (machine != ELF_ARCH) {
           fprintf(stderr, "Warning!  "
 	       "ELF file created for different architecture: %d\n",
@@ -130,26 +130,26 @@ static int readelfheader(int fd, Elf_Ehdr *ehdr) {
      { short ehsize;
 	ehsize=ehdr->e_ehsize;
 	if (swap_bytes) ehsize=bswap_16(ehsize);
-    
+
 	if (ehsize != sizeof(Elf_Ehdr)) {
            fprintf(stderr,"Warning! "
 	       "unrecognized ELF header size: %d != %ld\n",
 	       ehdr->e_ehsize,(long)sizeof(Elf_Ehdr));
 	}
      }
-   
+
      {
 	short phentsize;
 	phentsize=ehdr->e_phentsize;
 	if (swap_bytes) phentsize=bswap_16(phentsize);
-	
+
         if (phentsize != sizeof(Elf_Phdr)) {
            fprintf(stderr,"Warning! "
 	      "unrecognized program segment header size: %d != %ld\n",
 	      ehdr->e_phentsize,(long)sizeof(Elf_Phdr));
 	}
      }
-   
+
     /* Finally, check the file type.
      */
      {short e_type;
