@@ -19,6 +19,16 @@ ifneq (,$(findstring 86,$(ARCH)))
    THUMB := ll_8086.com
 endif
 
+
+#
+# Handle x86_64
+#
+ifneq (,$(findstring x86_64,$(ARCH)))
+   SOURCE_ARCH := x86_64
+   THUMB := ll.x86_x32 ll.x86_x32.stripped ll.x86_x32.fakeproc ll.x86_x32.fakeproc.stripped ll.x86_x32.dis ll.x86_x32.output
+endif
+
+
 #
 # Handle various ARM variants
 #
@@ -103,6 +113,9 @@ export ARCH
 ./sstrip/sstrip:	./sstrip/sstrip.c
 	cd sstrip && make
 
+./sstrip/sstrip32:	./sstrip/sstrip.c
+	cd sstrip && make sstrip32
+
 ansi_compress:  ansi_compress.o lzss.o lzss_new.o 
 	$(CC) $(LDFLAFS) -o ansi_compress ansi_compress.o lzss.o lzss_new.o
 
@@ -156,6 +169,41 @@ ll.o:	ll.$(SOURCE_ARCH).s logo.lzss
 
 ll.fakeproc.o:	ll.s logo.lzss
 	$(CROSS)$(AS) $(C_EXTRA) $(LITTLE_ENDIAN) -defsym FAKE_PROC=1 -o ll.fakeproc.o ll.s
+
+
+#
+# x32
+#
+
+ll.x86_x32:	ll.x86_x32.o
+	$(CROSS)$(LD) -melf32_x86_64 -N -o ll.x86_x32 ll.x86_x32.o
+
+ll.x86_x32.o:	ll.x86_x32.s
+	$(CROSS)$(AS) --x32 -o ll.x86_x32.o ll.x86_x32.s
+
+ll.x86_x32.stripped:  ll.x86_x32 sstrip/sstrip32
+	cp ll.x86_x32 ll.x86_x32.stripped
+	sstrip/sstrip32 ll.x86_x32.stripped
+
+
+ll.x86_x32.fakeproc:	ll.x86_x32.fakeproc.o
+	$(CROSS)$(LD) -melf32_x86_64 -N -o ll.x86_x32.fakeproc ll.x86_x32.fakeproc.o
+
+ll.x86_x32.fakeproc.o:	ll.x86_x32.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 --x32 -o ll.x86_x32.fakeproc.o ll.x86_x32.s
+
+ll.x86_x32.fakeproc.stripped:  ll.x86_x32.fakeproc sstrip/sstrip32
+	cp ll.x86_x32.fakeproc ll.x86_x32.fakeproc.stripped
+	sstrip/sstrip32 ll.x86_x32.fakeproc.stripped
+
+
+ll.x86_x32.dis:	ll.x86_x32
+	$(CROSS)objdump --disassemble-all ll.x86_x32 > ll.x86_x32.dis
+
+ll.x86_x32.output:	ll.x86_x32.fakeproc
+	$(SIM) ./ll.x86_x32.fakeproc > ll.x86_x32.output
+
+
 
 #
 # Thumb
@@ -236,7 +284,7 @@ logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 
 clean:
 	rm -f ll ll_c ll.$(ARCH) ll.$(SOURCE_ARCH) *.fakeproc *.stripped \
-	*.o *~ ll.s ll.thumb ll.thumb2 \
+	*.o *~ ll.s ll.thumb ll.thumb2 ll.x86_x32 \
 	ll.mips16 ansi_compress logo.inc logo.lzss logo.lzss_new \
 	core logo.include logo_optimize logo.include.parisc \
 	logo.lzss_new.parisc a.out *.dis *.output *.com

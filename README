@@ -35,9 +35,10 @@ Some Statistics
      PPC		1165 bytes   (as 2.19.51.20090805)
      6502		1130*bytes   (ca64 2.12.0)
      s390	        1064 bytes   (as 2.19.51.20090805)
-     x86_64		1033 bytes   (as 2.19.51.20090723)
+     x86_64		1030 bytes   (as 2.23.52.20130727)
      vax		1010 bytes   (as 2.16.1)
      sh3		 994 bytes   (as 2.17.50.0.5)
+     x86_x32             994 bytes   (as 2.23.52.20130727)
      m68k		 982 bytes   (as 2.18.0.20080103)
      x86                 969 bytes   (as 2.19.51.20090723)
      arm_thumb		 937 bytes   (as 2.22)
@@ -287,6 +288,12 @@ x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
 	Also added in a few bytes extra to print the name better
         (gratuitous spaces on some cpuinfos).  Also we have to
 	handle 4GB of RAM so we lose a few bytes for a 64-bit load.
+
+x32:	This code is more or less the same as x86_64
+
+	The x32 changes don't really help us much, as we weren't
+	using 64-bit pointers before, and we try not to use
+	the R8-R15 because they take extra bytes.
 
 vax:
     	vax is crazy CISC.  
