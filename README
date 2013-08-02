@@ -289,11 +289,14 @@ x86_64: When doing a straight x86 -> x86_64 conversion (which involves making
         (gratuitous spaces on some cpuinfos).  Also we have to
 	handle 4GB of RAM so we lose a few bytes for a 64-bit load.
 
-x32:	This code is more or less the same as x86_64
+x86_x32:	This code is more or less the same as x86_64
 
 	The x32 changes don't really help us much, as we weren't
 	using 64-bit pointers before, and we try not to use
 	the R8-R15 because they take extra bytes.
+
+	In fact, almost all of the size saving comes from the fact
+	that a 32-bit ELF header is smaller than a 64-bit one.
 
 vax:
     	vax is crazy CISC.  
