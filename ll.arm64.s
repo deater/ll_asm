@@ -493,7 +493,7 @@ last_line:
 //	@ Exit
 //	@================================
 exit:
-	mov	x0,#5				// result
+	mov	x0,#0				// result
 	mov	x8,#SYSCALL_EXIT
 	svc	0				// and exit
 
