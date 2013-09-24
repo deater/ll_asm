@@ -398,6 +398,11 @@ RELEASE 0.45
 + Overhaul ARM, add THUMB-2
 + Add more documetation
 
+14 January 2013
++ Work on SNES 65c816 code
+
+RELEASE 0.46
+
 1 August 2013
 + Add x86_x32 support
 
