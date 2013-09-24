@@ -9,8 +9,8 @@
 
 .include "logo.include"
 
-# Syscalls:    New EABI way, syscall num is in r7, do a "swi 0"
-#              for EABI you need kernel support and gcc > 4.0.0?
+# Syscalls:    Use the standard generic Linux numbers
+#              x0 - x7 are arguments, x8 has number, svc 0 does the call
 
 # ARM64 is a completely new ISA with little relation to ARM32/Thumb2
 #  it looks much more like a traditional RISC architecture
@@ -231,13 +231,13 @@
 .equ S_TOTALRAM,16
 
 # Sycscalls
-.equ SYSCALL_EXIT,	1
-.equ SYSCALL_READ,	3
-.equ SYSCALL_WRITE,	4
-.equ SYSCALL_OPEN,	5
-.equ SYSCALL_CLOSE,	6
-.equ SYSCALL_SYSINFO,	116
-.equ SYSCALL_UNAME,	122
+.equ SYSCALL_EXIT,	93
+.equ SYSCALL_READ,	63
+.equ SYSCALL_WRITE,	64
+.equ SYSCALL_OPEN,	1024
+.equ SYSCALL_CLOSE,	57
+.equ SYSCALL_SYSINFO,	179
+.equ SYSCALL_UNAME,	160
 
 #
 .equ STDIN,	0
@@ -493,9 +493,9 @@ last_line:
 //	@ Exit
 //	@================================
 exit:
-	mov	r0,#0				//@ result is zero
-	mov	r7,#SYSCALL_EXIT
-	swi	0x0				//@ and exit
+	mov	x0,#5				// result
+	mov	x8,#SYSCALL_EXIT
+	svc	0				// and exit
 
 
 //	@=================================
@@ -713,7 +713,7 @@ bss_begin:
 .lcomm ascii_buffer,10
 .lcomm  text_buf, (N+F-1)
 
-.lcomm	disk_buffer,4096	@ we cheat!!!!
+.lcomm	disk_buffer,4096	//@ we cheat!!!!
 .lcomm	out_buffer,16384
 
 
