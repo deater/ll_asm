@@ -18,6 +18,7 @@
 # ARM64 has 31 general-purpose 64-bit registers
 # x0 - x30
 # x30 is the link register
+# x29 is the frame pointer
 # The encoding of x31 is a special case that may mean zero or SP
 # w0-w30 are the lower 32-bits of the X registers
 # can also use r0 - r31?
@@ -255,86 +256,94 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-//	@ r1 = out_addr (buffer we are printing to)
-//	@ r2 = N-F (R)
-//	@ r3 = logo data
-//	@ r8 = logo end
-//	@ r9 = text_buf_addr
-//	@ r11 = data_begin
-//	@ r12 = bss_begin
+	// r1 = out_addr (buffer we are printing to)
+	// r2 = N-F (R)
+	// r3 = logo data
+	// r8 = logo end
+	// r9 = text_buf_addr
+	// r11 = data_begin
+	// r12 = bss_begin
 
 //	ldr	r0,=addresses
 //	ldmia	r0,{r1,r2,r3,r8,r9,r11,r12}
 
-//decompression_loop:
-//	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
-//
-//	mov	r5,#0xff		@ load top as a hackish 8-bit counter
-//	orr 	r5,r4,r5,LSL #8		@ shift 0xff left by 8 and or in the byte we loaded
-//
-//test_flags:
-//	cmp	r3,r8		@ have we reached the end?
-//	bge	done_logo  	@ if so, exit
+	ldr	x1,out_addr
+	ldr	x2,#(N-F)
+	ldr	x3,logo_data
+	ldr	x8,logo_end
+	ldr	x9,text_buf_addr
+	ldr	x11,data_begin
+	ldr	x12,bss_begin
 
-//	lsrs 	r5,#1		@ shift bottom bit into carry flag
-//@	bcc	offset_length	@ if not set, we jump to offset_length
-//				@ USE CONDITIONAL EXECUTION INSTEAD OF BRANCH
-//discrete_char:
-//	ldrcsb	r4,[r3],#+1		@ load a byte, increment pointer
-//	movcs	r6,#1			@ we set r6 to one so byte
-//					@ will be output once
-//
-//	bcs	store_byte		@ and store it
-//
+decompression_loop:
+	ldrb	x4,[x3],#+1		// load a byte, increment pointer
 
-//offset_length:
-//	ldrb	r0,[r3],#+1	@ load a byte, increment pointer
-//	ldrb	r4,[r3],#+1	@ load a byte, increment pointer
-//				@ we can't load halfword as no unaligned loads on arm
-//
-//	orr	r4,r0,r4,LSL #8	@ merge back into 16 bits
-//				@ this has match_length and match_position
-//
-//	mov	r7,r4		@ copy r4 to r7
-//				@ no need to mask r7, as we do it
-//				@ by default in output_loop
-//
-//	mov	r0,#(THRESHOLD+1)
-//	add	r6,r0,r4,LSR #(P_BITS)
-//				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
-//				@                       (=match_length)
-//
-//output_loop:
-//	ldr	r0,=((POSITION_MASK<<8)+0xff)
-//	                                @ urgh, can't handle simple constants
-//	and	r7,r7,r0		@ mask it
-//	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
-//	add	r7,r7,#1		@ advance pointer in text_buf
+	mov	x5,#0xff		// load top as a hackish 8-bit counter
+	orr 	x5,x4,x5,LSL #8		// shift 0xff left by 8 and or in the byte we loaded
+
+test_flags:
+	cmp	x3,x8		// have we reached the end?
+	b.ge	done_logo  	// if so, exit
+
+	lsrs 	x5,#1		// shift bottom bit into carry flag
+	b.cc	offset_length	// if not set, we jump to offset_length
+				// USE CONDITIONAL EXECUTION INSTEAD OF BRANCH
+discrete_char:
+	ldrb	x4,[x3],#+1		// load a byte, increment pointer
+	mov	x6,#1			// we set r6 to one so byte
+					// will be output once
+
+	b.cs	store_byte		// and store it
+
+
+offset_length:
+	ldrb	x0,[x3],#+1	// load a byte, increment pointer
+	ldrb	x4,[x3],#+1	// load a byte, increment pointer
+				// we can't load halfword as no unaligned loads on arm
+
+	orr	x4,x0,x4,LSL #8	// merge back into 16 bits
+				// this has match_length and match_position
+
+	mov	x7,x4		// copy r4 to r7
+				// no need to mask r7, as we do it
+				// by default in output_loop
+
+	mov	x0,#(THRESHOLD+1)
+	add	x6,x0,x4,LSR #(P_BITS)
+				// r6 = (r4 >> P_BITS) + THRESHOLD + 1
+				//                       (=match_length)
+
+output_loop:
+	ldr	x0,=((POSITION_MASK<<8)+0xff)
+	                                // urgh, can't handle simple constants
+	and	x7,x7,x0		// mask it
+	ldrb 	x4,[x9,x7]		// load byte from text_buf[]
+	add	x7,x7,#1		// advance pointer in text_buf
 
 store_byte:
-//	strb	r4,[r1],#+1		@ store a byte, increment pointer
-//	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
-//	add 	r2,r2,#1		@ r++
-//	mov	r0,#(N)			@ grr, N-1 won't fit in 12-bits
-//	sub	r0,r0,#1		@ grrr no way to get this easier
-//	and 	r2,r2,r0		@ mask r
+	strb	x4,[x1],#+1		// store a byte, increment pointer
+	strb	x4,[x9,x2]		// store a byte to text_buf[r]
+	add 	x2,x2,#1		// r++
+	mov	x0,#(N)			// grr, N-1 won't fit in 12-bits
+	sub	x0,x0,#1		// grrr no way to get this easier
+	and 	x2,x2,x0		// mask r
 
-//	subs	r6,r6,#1		@ decement count
-//	bne 	output_loop		@ repeat until k>j
+	subs	x6,x6,#1		// decement count
+	b.ne 	output_loop		// repeat until k>j
 
-//	cmp	r5,#0xff		@ are the top bits 0?
-//	bgt	test_flags		@ if not, re-load flags
+	cmp	x5,#0xff		// are the top bits 0?
+	b.gt	test_flags		// if not, re-load flags
 
-//	b	decompression_loop
+	b	decompression_loop
 
 
 
 # end of LZSS code
 
-//done_logo:
-//	ldr	r1,out_addr		@ buffer we are printing to
+done_logo:
+	ldr	x1,out_addr		// buffer we are printing to
 
-//	bl	write_stdout		@ print the logo
+	bl	write_stdout		// print the logo
 
 	#==========================
 	# PRINT VERSION
@@ -594,22 +603,22 @@ done_center:
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# r1 has string
-	# r0,r2,r3 trashed
+	# x1 has string
+	# x0,x2,x3 trashed
 write_stdout:
-//	mov	r2,#0				@ clear count
+	mov	x2,#0				// clear count
 
 str_loop1:
-//	add	r2,r2,#1
-//	ldrb	r3,[r1,r2]
-//	cmp	r3,#0
-//	bne	str_loop1			@ repeat till zero
+	add	x2,x2,#1
+	ldrb	x3,[x1,x2]
+	cmp	x3,#0
+	b.ne	str_loop1			// repeat till zero
 
 write_stdout_we_know_size:
-//	mov	r0,#STDOUT			@ print to stdout
-//	mov	r7,#SYSCALL_WRITE
-//	swi	0x0		 		@ run the syscall
-//	mov	pc,lr				@ return
+	mov	x0,#STDOUT			// print to stdout
+	mov	x8,#SYSCALL_WRITE
+	svc	0		 		// run the syscall
+	ret					// return
 
 
 //	@#############################
