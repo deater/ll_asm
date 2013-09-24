@@ -40,6 +40,15 @@ ifneq (,$(findstring arm,$(ARCH)))
 endif
 
 #
+# Give arm64 a sane name
+#
+ifneq (,$(findstring aarch64,$(ARCH)))
+   SOURCE_ARCH := arm64
+   ARCH := arm64
+endif
+
+
+#
 # Handle CRIS
 #
 ifneq (,$(findstring cris,$(ARCH)))

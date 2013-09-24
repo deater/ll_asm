@@ -385,11 +385,11 @@ middle_line:
 //	ldr	r10,out_addr		@ point r10 to out_buffer
 
 //	add	r0,r11,#(cpuinfo-data_begin)
-					@ '/proc/cpuinfo'
+//					@ '/proc/cpuinfo'
 //	mov	r1,#0			@ 0 = O_RDONLY <bits/fcntl.h>
 //	mov	r7,#SYSCALL_OPEN
 //	swi	0x0
-					@ syscall.  return in r0?
+//					@ syscall.  return in r0?
 //	mov	r5,r0			@ save our fd
 //	ldr	r1,=disk_buffer
 //	mov	r2,#4096
@@ -493,9 +493,9 @@ last_line:
 //	@ Exit
 //	@================================
 exit:
-	mov	r0,#0				@ result is zero
+	mov	r0,#0				//@ result is zero
 	mov	r7,#SYSCALL_EXIT
-	swi	0x0				@ and exit
+	swi	0x0				//@ and exit
 
 
 //	@=================================
