@@ -246,6 +246,23 @@ m88k:	This chip came after m68k and was motorola's first RISC chip.
 	a reg, not in flags.  a more powerful version of the equivelant
 	Alpha instruction.
 
+arm64:
+	New ISA different from arm32/thumb/thumb2
+	Fixed-width 32-bit instructions
+
+	Wider constants help *a lot*
+	Unaligned loads help too
+	New instructions, such as tbz also help
+	The conditional instructions like csel might, but at least in the
+		lzss code doesn't make a difference.	
+
+	Lack of conditional execution hurts
+
+	What we really need is an "increment multiple" instruction.
+		inc {r1,r2,r4}
+	And also an equivelent of x86 loop	
+	
+
 arm:	no integer division routine
 	Really painful to load constants > 8 bits that aren't powers of two or
 	  else 8-bit values shifted by power of two.

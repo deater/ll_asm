@@ -406,3 +406,6 @@ RELEASE 0.46
 1 August 2013
 + Add x86_x32 support
 
+25 September 2013
++ Working on arm64 support
+
