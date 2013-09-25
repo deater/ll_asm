@@ -256,27 +256,16 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	// r1 = out_addr (buffer we are printing to)
-	// r2 = N-F (R)
-	// r3 = logo data
-	// r8 = logo end
-	// r9 = text_buf_addr
-	// r11 = data_begin
-	// r12 = bss_begin
-
-//	ldr	r0,=addresses
-//	ldmia	r0,{r1,r2,r3,r8,r9,r11,r12}
-
-	ldr	x1,out_addr
-	ldr	x2,#(N-F)
-	ldr	x3,logo_data
-	ldr	x8,logo_end
-	ldr	x9,text_buf_addr
-	ldr	x11,data_begin
-	ldr	x12,bss_begin
+	adr	x1,out_buffer	// x1 = buffer we are printing to
+	mov	x2,#(N-F)	// x2 = N-F (R)
+	adr	x3,logo		// x3 = logo begin
+	adr	x8,logo_end	// x8 = logo end
+	adr	x9,text_buf	// x9 = text_buf
+	adr	x11,data_begin	// x11 = data_begin
+	adr	x12,bss_begin	// x12 = bss_begin
 
 decompression_loop:
-	ldrb	x4,[x3],#+1		// load a byte, increment pointer
+	ldrb	w4,[x3],#1		// load a byte, increment pointer
 
 	mov	x5,#0xff		// load top as a hackish 8-bit counter
 	orr 	x5,x4,x5,LSL #8		// shift 0xff left by 8 and or in the byte we loaded
@@ -285,20 +274,21 @@ test_flags:
 	cmp	x3,x8		// have we reached the end?
 	b.ge	done_logo  	// if so, exit
 
-	lsrs 	x5,#1		// shift bottom bit into carry flag
-	b.cc	offset_length	// if not set, we jump to offset_length
+	tst	x5,#1		// test low bit
+	lsr 	x5,x5,#1	// shift bottom bit into carry flag
+	b.eq	offset_length	// if not set, we jump to offset_length
 				// USE CONDITIONAL EXECUTION INSTEAD OF BRANCH
 discrete_char:
-	ldrb	x4,[x3],#+1		// load a byte, increment pointer
+	ldrb	w4,[x3],#+1		// load a byte, increment pointer
 	mov	x6,#1			// we set r6 to one so byte
 					// will be output once
 
-	b.cs	store_byte		// and store it
+	b	store_byte		// and store it
 
 
 offset_length:
-	ldrb	x0,[x3],#+1	// load a byte, increment pointer
-	ldrb	x4,[x3],#+1	// load a byte, increment pointer
+	ldrb	w0,[x3],#+1	// load a byte, increment pointer
+	ldrb	w4,[x3],#+1	// load a byte, increment pointer
 				// we can't load halfword as no unaligned loads on arm
 
 	orr	x4,x0,x4,LSL #8	// merge back into 16 bits
@@ -314,15 +304,15 @@ offset_length:
 				//                       (=match_length)
 
 output_loop:
-	ldr	x0,=((POSITION_MASK<<8)+0xff)
+	mov	x0,#((POSITION_MASK<<8)+0xff)
 	                                // urgh, can't handle simple constants
 	and	x7,x7,x0		// mask it
-	ldrb 	x4,[x9,x7]		// load byte from text_buf[]
+	ldrb 	w4,[x9,x7]		// load byte from text_buf[]
 	add	x7,x7,#1		// advance pointer in text_buf
 
 store_byte:
-	strb	x4,[x1],#+1		// store a byte, increment pointer
-	strb	x4,[x9,x2]		// store a byte to text_buf[r]
+	strb	w4,[x1],#+1		// store a byte, increment pointer
+	strb	w4,[x9,x2]		// store a byte to text_buf[r]
 	add 	x2,x2,#1		// r++
 	mov	x0,#(N)			// grr, N-1 won't fit in 12-bits
 	sub	x0,x0,#1		// grrr no way to get this easier
@@ -341,7 +331,7 @@ store_byte:
 # end of LZSS code
 
 done_logo:
-	ldr	x1,out_addr		// buffer we are printing to
+	adr	x1,out_buffer		// buffer we are printing to
 
 	bl	write_stdout		// print the logo
 
@@ -357,7 +347,7 @@ first_line:
 //	add	r1,r12,#(uname_info-bss_begin)
 //						@ os-name from uname "Linux"
 
-//	ldr	r10,out_addr			@ point r10 to out_buffer
+//	adr	r10,out_buffer			@ point r10 to out_buffer
 
 //	bl	strcat				@ call strcat
 
@@ -378,8 +368,8 @@ first_line:
 //	bl	strcat				@ call strcat
 //
 //	mov	r3,#0xa
-//	strb	r3,[r10],#+1		@ store a linefeed, increment pointer
-//	strb	r0,[r10],#+1		@ NUL terminate, increment pointer
+//	strb	w3,[x10],#+1		@ store a linefeed, increment pointer
+//	strb	w0,[x10],#+1		@ NUL terminate, increment pointer
 //
 //	bl	center_and_print	@ center and print
 //
@@ -391,7 +381,7 @@ middle_line:
 //	@ Load /proc/cpuinfo into buffer
 //	@=========
 
-//	ldr	r10,out_addr		@ point r10 to out_buffer
+//	adr	r10,out_buffer		@ point r10 to out_buffer
 
 //	add	r0,r11,#(cpuinfo-data_begin)
 //					@ '/proc/cpuinfo'
@@ -485,7 +475,7 @@ chip_name:
 //	# Print Host Name
 //	#=================================
 last_line:
-//	ldr	r10,out_addr		@ point r10 to out_buffer
+//	adr	r10,out_buffer		@ point r10 to out_buffer
 //
 //	add	r1,r12,#((uname_info-bss_begin)+U_NODENAME)
 //					@ host name from uname()
@@ -516,11 +506,11 @@ exit:
 find_string:
 //	ldr	r7,=disk_buffer		@ look in cpuinfo buffer
 find_loop:
-//	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
+//	ldrb	w5,[x7],#+1		@ load a byte, increment pointer
 //	cmp	r5,r0			@ compare against first byte
-//	ldrb	r5,[r7]			@ load next byte
+//	ldrb	w5,[x7]			@ load next byte
 //	cmpeq	r5,r1			@ if first byte matched, comp this one
-//	ldrb	r5,[r7,#+1]		@ load next byte
+//	ldrb	w5,[x7,#+1]		@ load next byte
 //	cmpeq	r5,r2			@ if first two matched, comp this one
 //	beq	find_colon		@ if all 3 matched, we are found
 
@@ -530,21 +520,21 @@ find_loop:
 //	b	find_loop
 
 find_colon:
-//	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
+//	ldrb	w5,[x7],#+1		@ load a byte, increment pointer
 //	cmp	r5,#':'
 //	bne	find_colon		@ repeat till we find colon
 
 //	add	r7,r7,#1		@ skip the space
 
 store_loop:
-//	ldrb	r5,[r7],#+1		@ load a byte, increment pointer
-//	strb	r5,[r10],#+1		@ store a byte, increment pointer
+//	ldrb	w5,[x7],#+1		@ load a byte, increment pointer
+//	strb	w5,[x10],#+1		@ store a byte, increment pointer
 //	cmp	r5,r3
 //	bne	store_loop
 
 almost_done:
 //	mov	r0,#0
-//	strb	r0,[r10],#-1		@ replace last value with NUL
+//	strb	w0,[x10],#-1		@ replace last value with NUL
 
 done:
 //	mov	pc,lr			@ return
@@ -556,8 +546,8 @@ done:
 //	# output buffer in r10
 //	# r3 trashed
 strcat:
-//	ldrb	r3,[r1],#+1		@ load a byte, increment pointer
-//	strb	r3,[r10],#+1		@ store a byte, increment pointer
+//	ldrb	w3,[x1],#+1		@ load a byte, increment pointer
+//	strb	w3,[x10],#+1		@ store a byte, increment pointer
 //	cmp	r3,#0			@ is it zero?
 //	bne	strcat			@ if not loop
 //	sub	r10,r10,#1		@ point to one less than null
@@ -578,7 +568,7 @@ center_and_print:
 //	bl	write_stdout
 
 str_loop2:
-//	ldr	r2,out_addr		@ point r2 to out_buffer
+//	adr	r2,out_buffer		@ point r2 to out_buffer
 //	sub	r2,r10,r2		@ get length by subtracting
 
 //	rsb	r2,r2,#81		@ reverse subtract!  r2=81-r2
@@ -597,7 +587,7 @@ str_loop2:
 //	bl	write_stdout
 
 done_center:
-//	ldr	r1,out_addr		@ point r1 to out_buffer
+//	adr	r1,out_buffer		@ point r1 to out_buffer
 //	ldmfd	SP!,{LR}		@ restore return address from stack
 
 	#================================
@@ -610,7 +600,7 @@ write_stdout:
 
 str_loop1:
 	add	x2,x2,#1
-	ldrb	x3,[x1,x2]
+	ldrb	w3,[x1,x2]
 	cmp	x3,#0
 	b.ne	str_loop1			// repeat till zero
 
@@ -657,7 +647,7 @@ divide_by_10:
 //	@ r7=Q, R8=R
 
 //	add	r8,r8,#0x30	@ convert to ascii
-//	strb	r8,[r10],#-1	@ store a byte, decrement pointer
+//	strb	w8,[x10],#-1	@ store a byte, decrement pointer
 //	adds	r3,r7,#0	@ move Q in for next divide, update flags
 //	bne	div_by_10	@ if Q not zero, loop
 
@@ -671,16 +661,6 @@ write_out:
 
 //	b write_stdout		@ else, fallthrough to stdout
 
-addresses:
-out_addr:	.word out_buffer
-R_val:		.word (N-F)
-logo_addr:	.word logo
-logo_end_addr:	.word logo_end
-text_addr:	.word text_buf
-data_begin_addr:.word data_begin
-bss_begin_addr:	.word bss_begin
-
-literals:
 # Put literal values here
 .ltorg
 
