@@ -224,6 +224,7 @@
 #    - 112 bytes = use bigger immediates available with ARM64
 #    - 108 bytes = use tbnz instead of separate compare and branch
 #    - 100 bytes = use unaligned halfword load
+#    -  96 bytes = another use of tbnz
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -277,16 +278,15 @@ test_flags:
 	cmp	x3,x8		// have we reached the end?
 	b.ge	done_logo  	// if so, exit
 
-	tst	x5,#1		// test low bit
-	lsr 	x5,x5,#1	// shift bottom bit into carry flag
-	b.eq	offset_length	// if not set, we jump to offset_length
-				// USE CONDITIONAL EXECUTION INSTEAD OF BRANCH
+	tbz	x5,#0,offset_length	// if low bit not set
+					// jump to offset_length
+
 discrete_char:
 	ldrb	w4,[x3],#+1	// load a byte, increment pointer
 	mov	x6,#1		// we set r6 to one so byte
 				// will be output once
 
-	b	store_byte	// and store it
+	b.ne	store_byte	// and store it
 
 
 offset_length:
@@ -315,6 +315,8 @@ store_byte:
 
 	subs	x6,x6,#1		// decement count
 	b.ne 	output_loop		// repeat until k>j
+
+	lsr 	x5,x5,#1		// shift for next time
 
 	tbnz	w5,#8,test_flags	// have we shifted by 8 bits?
 					// if so bit 8 is clear and
