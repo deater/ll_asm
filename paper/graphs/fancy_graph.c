@@ -35,6 +35,10 @@ int main(int argc, char **argv) {
 	int i,j,num_points=0;
 	char string[BUFSIZ],*result=NULL;
 	char temp_type[BUFSIZ];
+	int max_size=0,xmax,xhash;
+	char xlabel[BUFSIZ];
+
+	result=fgets(xlabel,BUFSIZ,stdin);
 
 	while(1) {
 		result=fgets(string,BUFSIZ,stdin);
@@ -50,17 +54,42 @@ int main(int argc, char **argv) {
 		if (!strcmp(temp_type,"CISC")) points[num_points].type=CISC;
 		if (!strcmp(temp_type,"EMBED")) points[num_points].type=EMBED;
 
+		if (points[num_points].value > max_size) {
+			max_size=points[num_points].value;
+		}
+
 		num_points++;
 	}
 
+
+	/* Calculate offsets */
+	if (max_size>1024) {
+		xmax=((max_size/1024)+1)*1024;
+		xhash=512;
+	} else if (max_size>128) {
+		xmax=((max_size/128)+1)*128;
+		xhash=64;
+	} else {
+		xmax=((max_size/32)+1)*32;
+		xhash=16;
+	}
+
+	/* New Graph */
 	fprintf(stdout,"newgraph\n\n");
+
+	/* Make background black */
 	fprintf(stdout,"(* make background black *)\n");
-	fprintf(stdout,"newcurve marktype box cfill 0 0 0 marksize 11 60 pts 1.3 5\n");
+	fprintf(stdout,"newcurve marktype box cfill 0 0 0 "
+			"marksize 11 60 pts 1.3 5\n");
 	fprintf(stdout,"copygraph\n");
 	fprintf(stdout,"\n");
 	fprintf(stdout,"clip\n");
-	fprintf(stdout,"xaxis size 3 min 0 max 3000 hash 512 grid_lines grid_gray 0.8 color 1 1 1\n");
-	fprintf(stdout,"label font Helvetica fontsize 12 : bytes\n");
+
+	/* Setup Axes */
+	fprintf(stdout,"xaxis size 3 min 0 max %d "
+			"hash %d grid_lines grid_gray 0.8 color 1 1 1\n",
+			xmax,xhash);
+	fprintf(stdout,"label font Helvetica fontsize 12 : %s",xlabel);
 	fprintf(stdout,"hash_labels font Helvetica fontsize 12\n\n");
 
 	fprintf(stdout,"Y 7\n\n");
@@ -68,34 +97,56 @@ int main(int argc, char **argv) {
 	fprintf(stdout,"yaxis size 6 min -1 max %d color 1 1 1\n",num_points);
 	fprintf(stdout,"no_draw_hash_marks no_auto_hash_labels\n");
 
+	/* Setup Legend */
 	fprintf(stdout,"legend custom\n\n");
 
-	fprintf(stdout,"newcurve marktype box marksize 1200 5.5 color 0 0 0\n");
+	/* Black background for legend */
+	fprintf(stdout,"newcurve marktype box marksize %d %lf color 0 0 0.3\n",
+			xmax/2,5.5);
 	fprintf(stdout,"pts\n");
-	fprintf(stdout,"2350 20\n\n");
+	fprintf(stdout,"%d %d\n\n",
+			(xmax/3)*2,(num_points-4));
 
+	/* Print all legend types */
 	for(i=0;i<TYPES;i++) {
-		fprintf(stdout,"newcurve marktype ybar marksize 100 0.9 color %s\n",colors[i][2]);
-		fprintf(stdout,"label vjc hjl font Helvetica fontsize 14 lcolor 1 1 1 ");
-		fprintf(stdout,"label x 2000 y %d : %s\n",22-i,type_names[i]);
+		fprintf(stdout,"newcurve marktype ybar "
+				"marksize %d 0.9 color %s\n",
+				xmax/30,colors[i][2]);
+		fprintf(stdout,"label vjc hjl font Helvetica "
+				"fontsize 14 lcolor 1 1 1 ");
+		fprintf(stdout,"label x %d y %d : %s\n",
+				xmax/2,(num_points-2)-i,type_names[i]);
 		fprintf(stdout,"pts\n\n");
 	}
 
+
+	/* Plot the points */
+
 	for(i=0;i<num_points;i++) {
 		for(j=0;j<COLORS;j++) {
-			fprintf(stdout,"newcurve marktype ybar marksize 0.9 %.2f color %s\n",
-				1.0-(((double)(j+1)*0.1)),colors[points[i].type][j]);
+			fprintf(stdout,"newcurve marktype ybar "
+					"marksize 0.9 %.2f color %s\n",
+					1.0-(((double)(j+1)*0.1)),
+					colors[points[i].type][j]);
 			fprintf(stdout,"pts\n");
-			fprintf(stdout,"%d %d (* %s *)\n",points[i].value-10*j,i,points[i].name);	 
+			fprintf(stdout,"%d %d (* %s *)\n",
+				points[i].value-(xmax/300)*j,i,points[i].name);
 		}
-		fprintf(stdout,"newcurve color 0.0 0.0 0.0 marktype text hjl vjc ");
-		fprintf(stdout,"font Helvetica fontsize 14 : %s\n",points[i].name);
+
+		fprintf(stdout,"newcurve color 0.0 0.0 0.0 "
+				"marktype text hjl vjc ");
+		fprintf(stdout,"font Helvetica fontsize 14 : %s\n",
+				points[i].name);
 		fprintf(stdout,"pts\n");
-		fprintf(stdout,"118 %d  (* %s *)\n",i,points[i].name);
-		fprintf(stdout,"newcurve color 1.0 1.0 1.0 marktype text hjl vjc ");
-		fprintf(stdout,"font Helvetica fontsize 14 : %s\n",points[i].name);
+		fprintf(stdout,"%d %d  (* %s *)\n",
+				xmax/30,i,points[i].name);
+		fprintf(stdout,"newcurve color 1.0 1.0 1.0 "
+				"marktype text hjl vjc ");
+		fprintf(stdout,"font Helvetica fontsize 14 : %s\n",
+				points[i].name);
 		fprintf(stdout,"pts\n");
-		fprintf(stdout,"128 %d  (* %s *)\n",i,points[i].name);
+		fprintf(stdout,"%d %d  (* %s *)\n",
+				(xmax/30)+(xmax/300),i,points[i].name);
 	}
 
 	return 0;
