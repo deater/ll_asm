@@ -145,7 +145,7 @@
 #  B.cond	-- branch if one of below condition codes
 #    EQ/NE/CS/CC/HS/LO/MI/PL/VS/VC/HI/LS/GE/LT/GT/LE/AL
 #  CBNZ / CBZ	-- compare and branch if nonzero/zero
-#  TBNZ / TBZ	-- test and branch if nonzero/zero
+#  TBNZ / TBZ	-- test and branch if nonzero/zero (Specify bit to test)
 #  B		-- branch always
 #  BL		-- branch with link
 #  BLR		-- branch with link to register
@@ -222,7 +222,7 @@
 #  + LZSS
 #    - 132 bytes = original port of ARM32 code
 #    - 112 bytes = use bigger immediates available with ARM64
-
+#    - 108 bytes = use tbnz instead of separate compare and branch
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -270,7 +270,6 @@ _start:
 
 decompression_loop:
 	ldrb	w5,[x3],#1	// load a byte, increment pointer
-
 	orr	w5,w5,#0xff00	// load top as a hackish 8-bit counter
 
 test_flags:
@@ -321,9 +320,9 @@ store_byte:
 	subs	x6,x6,#1		// decement count
 	b.ne 	output_loop		// repeat until k>j
 
-	cmp	x5,#0xff		// are the top bits 0?
-	b.gt	test_flags		// if not, re-load flags
-
+	tbnz	w5,#8,test_flags	// have we shifted by 8 bits?
+					// if so bit 8 is clear and
+					// we need new flags
 	b	decompression_loop
 
 
