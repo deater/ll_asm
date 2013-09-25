@@ -3,7 +3,19 @@ LFLAGS =
 CFLAGS = -Wall -O3
 
 all:	ll_document.pdf ll_total_new.eps \
-	fancy_graph fancy_total_size.png
+	fancy_graph fancy_total_size.png \
+	fancy_lzss.png
+
+
+fancy_lzss.png:		fancy_lzss.eps
+			convert -density 600 -antialias -sample 400 fancy_lzss.eps fancy_lzss.png
+
+fancy_lzss.eps:		fancy_lzss.jgr
+			jgraph < fancy_lzss.jgr > fancy_lzss.eps
+			
+fancy_lzss.jgr:		fancy_graph data.lzss
+			./fancy_graph < data.lzss > fancy_lzss.jgr
+
 
 fancy_total_size.png:		fancy_total_size.eps
 			convert -density 600 -antialias -sample 400 fancy_total_size.eps fancy_total_size.png
@@ -86,6 +98,7 @@ clean:
 	tlb_graph.eps uop_graph.eps \
 	ll_findstring_size.eps libc_sizes.eps \
 	fancy_total_size.jgr fancy_total_size.eps *.png \
+	fancy_lzss.jgr fancy_lzss.eps \
 	*.o fancy_graph \
 	*.pdf *.aux *.dvi *.log *~
 	
