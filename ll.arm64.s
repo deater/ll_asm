@@ -218,6 +218,10 @@
 # comment character is //
 
 
+# Optimization:
+#  + LZSS
+#    - 132 bytes = original port of ARM32 code
+#    - 112 bytes = use bigger immediates available with ARM64
 
 
 # offsets into the results returned by the uname syscall
@@ -265,10 +269,9 @@ _start:
 	adr	x12,bss_begin	// x12 = bss_begin
 
 decompression_loop:
-	ldrb	w4,[x3],#1		// load a byte, increment pointer
+	ldrb	w5,[x3],#1	// load a byte, increment pointer
 
-	mov	x5,#0xff		// load top as a hackish 8-bit counter
-	orr 	x5,x4,x5,LSL #8		// shift 0xff left by 8 and or in the byte we loaded
+	orr	w5,w5,#0xff00	// load top as a hackish 8-bit counter
 
 test_flags:
 	cmp	x3,x8		// have we reached the end?
@@ -279,11 +282,11 @@ test_flags:
 	b.eq	offset_length	// if not set, we jump to offset_length
 				// USE CONDITIONAL EXECUTION INSTEAD OF BRANCH
 discrete_char:
-	ldrb	w4,[x3],#+1		// load a byte, increment pointer
-	mov	x6,#1			// we set r6 to one so byte
-					// will be output once
+	ldrb	w4,[x3],#+1	// load a byte, increment pointer
+	mov	x6,#1		// we set r6 to one so byte
+				// will be output once
 
-	b	store_byte		// and store it
+	b	store_byte	// and store it
 
 
 offset_length:
@@ -294,8 +297,8 @@ offset_length:
 	orr	x4,x0,x4,LSL #8	// merge back into 16 bits
 				// this has match_length and match_position
 
-	mov	x7,x4		// copy r4 to r7
-				// no need to mask r7, as we do it
+	mov	x7,x4		// copy x4 to x7
+				// no need to mask x7, as we do it
 				// by default in output_loop
 
 	mov	x0,#(THRESHOLD+1)
@@ -304,9 +307,8 @@ offset_length:
 				//                       (=match_length)
 
 output_loop:
-	mov	x0,#((POSITION_MASK<<8)+0xff)
-	                                // urgh, can't handle simple constants
-	and	x7,x7,x0		// mask it
+	and	x7,x7,#((POSITION_MASK<<8)+0xff)
+	                                // mask it
 	ldrb 	w4,[x9,x7]		// load byte from text_buf[]
 	add	x7,x7,#1		// advance pointer in text_buf
 
@@ -314,9 +316,7 @@ store_byte:
 	strb	w4,[x1],#+1		// store a byte, increment pointer
 	strb	w4,[x9,x2]		// store a byte to text_buf[r]
 	add 	x2,x2,#1		// r++
-	mov	x0,#(N)			// grr, N-1 won't fit in 12-bits
-	sub	x0,x0,#1		// grrr no way to get this easier
-	and 	x2,x2,x0		// mask r
+	and 	x2,x2,#(N-1)		// mask r with N-1
 
 	subs	x6,x6,#1		// decement count
 	b.ne 	output_loop		// repeat until k>j
