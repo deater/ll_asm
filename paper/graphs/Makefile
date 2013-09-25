@@ -2,16 +2,17 @@ CC = gcc
 LFLAGS =
 CFLAGS = -Wall -O3
 
-all:	ll_document.pdf ll_total_new.eps fancy_graph out.eps out.png
+all:	ll_document.pdf ll_total_new.eps \
+	fancy_graph fancy_total_size.png
 
-out.png:		out.eps
-			convert -density 600 -antialias -sample 400 out.eps out.png
+fancy_total_size.png:		fancy_total_size.eps
+			convert -density 600 -antialias -sample 400 fancy_total_size.eps fancy_total_size.png
 
-out.eps:		out.jgr
-			jgraph < out.jgr > out.eps
+fancy_total_size.eps:		fancy_total_size.jgr
+			jgraph < fancy_total_size.jgr > fancy_total_size.eps
 			
-out.jgr:		fancy_graph
-			./fancy_graph > out.jgr
+fancy_total_size.jgr:		fancy_graph data.overall
+			./fancy_graph < data.overall > fancy_total_size.jgr
 			
 
 fancy_graph:		fancy_graph.o
@@ -84,7 +85,8 @@ clean:
 	sizes_graph.eps sizes_normal.eps time_graph.eps \
 	tlb_graph.eps uop_graph.eps \
 	ll_findstring_size.eps libc_sizes.eps \
-	out.jgr out.eps out.png *.o fancy_graph \
+	fancy_total_size.jgr fancy_total_size.eps *.png \
+	*.o fancy_graph \
 	*.pdf *.aux *.dvi *.log *~
 	
 install:		       
