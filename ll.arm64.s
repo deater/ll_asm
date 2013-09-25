@@ -223,6 +223,7 @@
 #    - 132 bytes = original port of ARM32 code
 #    - 112 bytes = use bigger immediates available with ARM64
 #    - 108 bytes = use tbnz instead of separate compare and branch
+#    - 100 bytes = use unaligned halfword load
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -289,12 +290,7 @@ discrete_char:
 
 
 offset_length:
-	ldrb	w0,[x3],#+1	// load a byte, increment pointer
-	ldrb	w4,[x3],#+1	// load a byte, increment pointer
-				// we can't load halfword as no unaligned loads on arm
-
-	orr	x4,x0,x4,LSL #8	// merge back into 16 bits
-				// this has match_length and match_position
+	ldrh	w4,[x3],#+2	// load an unagligned halfword, increment
 
 	mov	x7,x4		// copy x4 to x7
 				// no need to mask x7, as we do it
