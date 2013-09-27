@@ -215,6 +215,9 @@
 
 # All instructions fixed-with 32-bits
 
+# Stack must always be 16-byte aligned.  No helpful
+#   push instruction, though you can use ldp/stp to store two at once
+
 # comment character is //
 
 
@@ -225,6 +228,13 @@
 #    - 108 bytes = use tbnz instead of separate compare and branch
 #    - 100 bytes = use unaligned halfword load
 #    -  96 bytes = another use of tbnz
+
+# Overall optimization TODO:
+# + cbz 
+# + divide instead of umull
+# + better constants
+# + remove unused registers (bss?)
+# + implement find string with unaligned load
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -337,157 +347,152 @@ done_logo:
 	#==========================
 first_line:
 
-//	add	x0,x12,#(uname_info-bss_begin)	// uname struct
-//	mov	r7,#SYSCALL_UNAME
-//	swi	0x0		 		// do syscall
+	adr	x0,uname_info			// uname struct
+	mov	x8,#SYSCALL_UNAME
+	svc	0		 		// do syscall
 
-//	add	r1,r12,#(uname_info-bss_begin)
-//						// os-name from uname "Linux"
+	adr	x1,uname_info			// os-name from uname "Linux"
 
-//	adr	r10,out_buffer			// point r10 to out_buffer
+	adr	x10,out_buffer			// point x10 to out_buffer
 
-//	bl	strcat				// call strcat
+	bl	strcat				// call strcat
 
-//
-//	add	r1,r11,#(ver_string-data_begin) // source is " Version "
-//	bl 	strcat			        // call strcat
+	adr	x1,ver_string			// source is " Version "
+	bl 	strcat			        // call strcat
 
-//	add	r1,r12,#((uname_info-bss_begin)+U_RELEASE)
-//						// version from uname, ie "2.6.20"
-//	bl	strcat				// call strcat
-//
-//	add	r1,r11,#(compiled_string-data_begin)
-//						// source is ", Compiled "
-//	bl	strcat				//  call strcat
-//
-//	add	r1,r12,#((uname_info-bss_begin)+U_VERSION)
-//						// compiled date
-//	bl	strcat				// call strcat
-//
-//	mov	r3,#0xa
-//	strb	w3,[x10],#+1		// store a linefeed, increment pointer
-//	strb	w0,[x10],#+1		// NUL terminate, increment pointer
-//
-//	bl	center_and_print	// center and print
-//
-//	//===============================
-//	// Middle-Line
-//	//===============================
+	adr	x1,(uname_info+U_RELEASE)
+						// version from uname, ie "2.6.20"
+	bl	strcat				// call strcat
+
+	adr	x1,compiled_string		// source is ", Compiled "
+	bl	strcat				//  call strcat
+
+	adr	x1,(uname_info+U_VERSION)	// compiled date
+	bl	strcat				// call strcat
+
+	mov	x3,#0xa
+	strb	w3,[x10],#+1		// store a linefeed, increment pointer
+	strb	wzr,[x10],#+1		// NUL terminate, increment pointer
+
+	bl	center_and_print	// center and print
+
+	#===============================
+	# Middle-Line
+	#===============================
 middle_line:
-//	//=========
-//	// Load /proc/cpuinfo into buffer
-//	//=========
+	#=========
+	# Load /proc/cpuinfo into buffer
+	#=========
 
-//	adr	r10,out_buffer		// point r10 to out_buffer
+	adr	x10,out_buffer		// point x10 to out_buffer
 
-//	add	r0,r11,#(cpuinfo-data_begin)
-//					// '/proc/cpuinfo'
-//	mov	r1,#0			// 0 = O_RDONLY <bits/fcntl.h>
-//	mov	r7,#SYSCALL_OPEN
-//	swi	0x0
-//					// syscall.  return in r0?
-//	mov	r5,r0			// save our fd
-//	ldr	r1,=disk_buffer
-//	mov	r2,#4096
-//				 	// 4096 is maximum size of proc file ;)
-//	mov	r7,#SYSCALL_READ
-//	swi	0x0
+	adr	x0,cpuinfo
+					// '/proc/cpuinfo'
+	mov	x1,#0			// 0 = O_RDONLY <bits/fcntl.h>
+	mov	x8,#SYSCALL_OPEN
+	svc	0
+					// syscall.  return in r0?
+	mov	x5,x0			// save our fd
+	adr	x1,disk_buffer
+	mov	x2,#4096
+				 	// 4096 is maximum size of proc file ;)
+	mov	x8,#SYSCALL_READ
+	svc	0
 
-//	mov	r0,r5
-//	mov	r7,#SYSCALL_CLOSE
-//	swi	0x0
-//					// close (to be correct)
+	mov	x0,x5
+	mov	x8,#SYSCALL_CLOSE
+	svc	0
+					// close (to be correct)
 
 
-//	//=============
-//	// Number of CPUs
-//	//=============
+	#=============
+	# Number of CPUs
+	#=============
 number_of_cpus:
 
-//	add	r1,r11,#(one-data_begin)
-//					# cheat.  Who has an SMP arm?
-//					# 2012 calling, my pandaboard is...
-//	bl	strcat
-//
-//	//=========
-//	// MHz
-//	//=========
+	adr	x1,one
+					// cheat.  Who has an SMP arm?
+					// 2012 calling, my pandaboard is...
+	bl	strcat
+
+	#=========
+	# MHz
+	#=========
 print_mhz:
 
-//	// the arm system I have does not report MHz
+	# the arm system I have does not report MHz
 
-//	//=========
-//	// Chip Name
-//	//=========
+	#=========
+	# Chip Name
+	#=========
 chip_name:
-//	mov	r0,#'s'
-//	mov	r1,#'o'
-//	mov	r2,#'r'
-//	mov	r3,#' '
+	mov	x0,#'s'
+	mov	x1,#'o'
+	mov	x2,#'r'
+	mov	x3,#' '
 //	bl	find_string
-//					// find 'sor\t: ' and grab up to ' '
+					// find 'sor\t: ' and grab up to ' '
 
 //	add	r1,r11,#(processor-data_begin)
 //					// print " Processor, "
 //	bl	strcat
 
-//	//========
-//	// RAM
-//	//========
+	#========
+	# RAM
+	#========
 
-//	add	r0,r12,#(sysinfo_buff-bss_begin)
-//	mov	r7,#SYSCALL_SYSINFO
-//	swi	0x0
-//					// sysinfo() syscall
-//
-//	ldr	r3,[r12,#((sysinfo_buff-bss_begin)+S_TOTALRAM)]
-//					// size in bytes of RAM
-//	movs	r3,r3,lsr #20		// divide by 1024*1024 to get M
-//	adc	r3,r3,#0		// round
-//
-//	mov	r0,#1
-//	bl num_to_ascii
-//
-//	add	r1,r11,#(ram_comma-data_begin)
-//					// print 'M RAM, '
-//	bl	strcat			// call strcat
+	adr	x0,sysinfo_buff
+	mov	x8,#SYSCALL_SYSINFO
+	svc	0
+					// sysinfo() syscall
+
+	ldr	x3,[x12,#(sysinfo_buff+S_TOTALRAM)]
+					// size in bytes of RAM
+	lsr	x3,x3,#20		// divide by 1024*1024 to get M
+//	adc	x3,x3,#0		// round
+
+	mov	x0,#1
+	bl num_to_ascii
+
+	adr	x1,ram_comma		// print 'M RAM, '
+	bl	strcat			// call strcat
 
 
-//	//========
-//	// Bogomips
-//	//========
-//
-//	mov	r0,#'I'
-//	mov	r1,#'P'
-//	mov	r2,#'S'
-//	mov	r3,#'\n'
+	#========
+	# Bogomips
+	#========
+
+	mov	x0,#'I'
+	mov	x1,#'P'
+	mov	x2,#'S'
+	mov	x3,#'\n'
 //	bl	find_string
 //
-//	add	r1,r11,#(bogo_total-data_begin)
-//	bl	strcat			// print bogomips total
-//
-//	bl	center_and_print	// center and print
+	adr	x1,bogo_total
+	bl	strcat			// print bogomips total
 
-//	#=================================
-//	# Print Host Name
-//	#=================================
+	bl	center_and_print	// center and print
+
+	#=================================
+	# Print Host Name
+	#=================================
 last_line:
-//	adr	r10,out_buffer		// point r10 to out_buffer
-//
-//	add	r1,r12,#((uname_info-bss_begin)+U_NODENAME)
-//					// host name from uname()
-//	bl	strcat			// call strcat
-//
-//	bl	center_and_print	// center and print
-//
-//	add	r1,r11,#(default_colors-data_begin)
-//					// restore colors, print a few linefeeds
-//	bl	write_stdout
-//
-//
-//	//================================
-//	// Exit
-//	//================================
+	adr	x10,out_buffer		// point x10 to out_buffer
+
+	adr	x1,(uname_info+U_NODENAME)
+					// host name from uname()
+	bl	strcat			// call strcat
+
+	bl	center_and_print	// center and print
+
+	adr	x1,default_colors
+					// restore colors, print a few linefeeds
+	bl	write_stdout
+
+
+	#================================
+	# Exit
+	#================================
 exit:
 	mov	x0,#0				// result
 	mov	x8,#SYSCALL_EXIT
@@ -536,19 +541,19 @@ almost_done:
 done:
 //	mov	pc,lr			// return
 
-//	#================================
-//	# strcat
-//	#================================
-//	# value to cat in r1
-//	# output buffer in r10
-//	# r3 trashed
+	#================================
+	# strcat
+	#================================
+	# value to cat in x1
+	# output buffer in x10
+	# x3 trashed
 strcat:
-//	ldrb	w3,[x1],#+1		// load a byte, increment pointer
-//	strb	w3,[x10],#+1		// store a byte, increment pointer
-//	cmp	r3,#0			// is it zero?
-//	bne	strcat			// if not loop
-//	sub	r10,r10,#1		// point to one less than null
-//	mov	pc,lr			// return
+	ldrb	w3,[x1],#+1		// load a byte, increment pointer
+	strb	w3,[x10],#+1		// store a byte, increment pointer
+	cmp	x3,#0			// is it zero?
+	bne	strcat			// if not loop
+	sub	x10,x10,#1		// point to one less than null
+	ret				// return
 
 
 	#==============================
@@ -558,34 +563,35 @@ strcat:
 
 center_and_print:
 
-//	stmfd	SP!,{LR}		// store return address on stack
-//
-//	add	r1,r11,#(escape-data_begin)
-//					// we want to output ^[[
-//	bl	write_stdout
+	str	x30,[sp,#-16]!		// store return address on stack
+
+	adr	x1,escape		// we want to output ^[[
+	bl	write_stdout
 
 str_loop2:
-//	adr	r2,out_buffer		// point r2 to out_buffer
-//	sub	r2,r10,r2		// get length by subtracting
+	adr	x2,out_buffer		// point r2 to out_buffer
+	sub	x2,x10,x2		// get length by subtracting
 
-//	rsb	r2,r2,#81		// reverse subtract!  r2=81-r2
-//					// we use 81 to not count ending \n
+	mov	x0,#81
+	sub	x2,x0,x2		// reverse subtract!  r2=81-r2
+					// we use 81 to not count ending \n
 
-//	bne	done_center		// if result negative, don't center
-//
-//	lsrs	r3,r2,#1		// divide by 2
-//	adc	r3,r3,#0		// round?
+	b.ne	done_center		// if result negative, don't center
 
-//	mov	r0,#0			// print to stdout
-//	bl	num_to_ascii		// print number of spaces
-//
-//	add	r1,r11,#(C-data_begin)
-//					// we want to output C
-//	bl	write_stdout
+	lsr	x3,x2,#1		// divide by 2
+//	adc	x3,x3,#0		// round?
+
+	mov	x0,#0			// print to stdout
+	bl	num_to_ascii		// print number of spaces
+
+	adr	x1,C			// we want to output C
+
+	bl	write_stdout
 
 done_center:
-//	adr	r1,out_buffer		// point r1 to out_buffer
-//	ldmfd	SP!,{LR}		// restore return address from stack
+	adr	x1,out_buffer		// point r1 to out_buffer
+
+	ldr	x30,[sp],#16		// restore return address from stack
 
 	#================================
 	# WRITE_STDOUT
@@ -608,55 +614,42 @@ write_stdout_we_know_size:
 	ret					// return
 
 
-//	//#############################
-//	// num_to_ascii
-//	//#############################
-//	// r3 = value to print
-//	// r0 = 0=stdout, 1=strcat
+	##############################
+	# num_to_ascii
+	#############################
+	# r3 = value to print
+	# r0 = 0=stdout, 1=strcat
 
 num_to_ascii:
-//	stmfd	SP!,{r10,LR}		// store return address on stack
-//	add	r10,r12,#((ascii_buffer-bss_begin))
-//	add	r10,r10,#10
-//					// point to end of our buffer
+	stp	x10,x30,[sp,#-16]!	// store return address on stack
+	adr	x10,ascii_buffer
+	add	x10,x10,#10
+					// point to end of our buffer
 
 div_by_10:
-//	//================================================================
-//	// Divide by 10 - because ARM has no hardware divide instruction
-//	//    the algorithm multiplies by 1/10 * 2^32
-//	//    then divides by 2^32 (by ignoring the low 32-bits of result)
-//	//================================================================
-//	// r3=numerator
-//	// r7=quotient    r8=remainder
-//	// r5=trashed
-divide_by_10:
-//	ldr	r4,=429496730			// 1/10 * 2^32
-//	sub	r5,r3,r3,lsr #30
-//	umull	r8,r7,r4,r5			// {r8,r7}=r4*r5
+	# Divide by 10
+	# r3=numerator
+	# r7=quotient    r8=remainder
+	# r5=trashed
 
-//	mov	r4,#10				// calculate remainder
-
-//						// could use "mls" on
-//						// armv6/armv7
-//	mul	r8,r7,r4
-//	sub	r8,r3,r8
-
-//	// r7=Q, R8=R
-
-//	add	r8,r8,#0x30	// convert to ascii
-//	strb	w8,[x10],#-1	// store a byte, decrement pointer
-//	adds	r3,r7,#0	// move Q in for next divide, update flags
-//	bne	div_by_10	// if Q not zero, loop
+	mov	x5,#10
+	udiv	x7,x3,x5		// x7=x3/10
+	umsubl	x8,w7,w5,x3		// x8=x3-(w7*10)
+	
+	add	x8,x8,#0x30	// convert to ascii
+	strb	w8,[x10],#-1	// store a byte, decrement pointer
+	adds	x3,x7,#0	// move Q in for next divide, update flags
+	b.ne	div_by_10	// if Q not zero, loop
 
 
 write_out:
-//	add	r1,r10,#1	// adjust pointer
-//	ldmfd	SP!,{r10,LR}	// restore return address from stack
+	add	x1,x10,#1		// adjust pointer
+	ldp	x10,x30,[SP],#16	// restore return address from stack
 
-//	cmp	r0,#0
-//	bne	strcat		// if 1, strcat
+	cmp	x0,#0
+	b.ne	strcat		// if 1, strcat
 
-//	b write_stdout		// else, fallthrough to stdout
+	b write_stdout		// else, fallthrough to stdout
 
 # Put literal values here
 .ltorg
