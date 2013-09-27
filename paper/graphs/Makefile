@@ -2,7 +2,7 @@ CC = gcc
 LFLAGS =
 CFLAGS = -Wall -O3
 
-all:	ll_document.pdf ll_total_new.eps \
+all:	ll_document.pdf \
 	fancy_graph fancy_total_size.png \
 	fancy_lzss.png
 
@@ -47,10 +47,7 @@ ll_document.dvi:       ll_document.tex \
 		       time_graph.eps \
 		       libc_sizes.eps
 		       latex ll_document.tex
-		       
-ll_total_new.eps:	      ll_total_new.jgr
-		      jgraph < ll_total_new.jgr > ll_total_new.eps	
-	
+
 libc_sizes.eps:	      libc_sizes.jgr
 		      jgraph < libc_sizes.jgr > libc_sizes.eps
 
