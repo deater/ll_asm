@@ -96,11 +96,18 @@ ll_lzss_size.eps:	ll_lzss_size.jgr
 
 ####
 
+ll_strcat_size.jgr:	data.strcat regular_graph
+	./regular_graph < data.strcat > ll_strcat_size.jgr
+
+ll_strcat_size.eps:	ll_strcat_size.jgr
+	jgraph < ll_strcat_size.jgr > ll_strcat_size.eps
+
+####
+
+
 ll_num_ascii.eps:	   ll_num_ascii.jgr
 			   jgraph < ll_num_ascii.jgr > ll_num_ascii.eps
 
-ll_strcat_size.eps:	   ll_strcat_size.jgr
-			   jgraph < ll_strcat_size.jgr > ll_strcat_size.eps
 			 
 ll_findstring_size.eps:	   ll_findstring_size.jgr
 			   jgraph < ll_findstring_size.jgr > ll_findstring_size.eps
@@ -115,6 +122,7 @@ clean:
 	regular_graph \
 	ll_total_size.eps ll_total_size.jgr \
 	ll_lzss_size.eps ll_lzss_size.jgr \
+	ll_strcat_size.eps ll_strcat_size.jgr \
 	fancy_total_size.jgr fancy_total_size.eps *.png \
 	fancy_lzss.jgr fancy_lzss.eps \
 	*.o fancy_graph \
