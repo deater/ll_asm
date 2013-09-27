@@ -13,6 +13,9 @@
 
 %\pagestyle{fancy}
 
+\setlength{\abovecaptionskip}{1ex}
+
+
 \begin{document}
 
 %\chead{This paper appeared in ICCD 2009 --- IEEE Copyright Rules Apply}
@@ -55,11 +58,10 @@ string concatenation, and integer to string conversions.
 \end{abstract}
 
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=ll.eps,width=\columnwidth}
-\end{center}
-\caption{Sample output from the {\tt linux\_logo} benchmark}
-\label{figure:ll}
+  \centering
+  \epsfig{file=ll.eps,width=\columnwidth}
+  \caption{Sample output from the {\tt linux\_logo} benchmark}
+  \label{figure:ll}
 \end{figure}
 
 %
@@ -74,66 +76,59 @@ string concatenation, and integer to string conversions.
 
 % Figure on total code size
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=ll_total_size.eps,width=\textwidth}
-\end{center}
-\caption{Total size of benchmarks 
-(includes some platform-specific code, so does not
-strictly reflect code density)}
-\label{figure:total}
+  \centering
+  \epsfig{file=ll_total_size.eps,width=\textwidth}
+  \caption{Total size of benchmarks 
+           (includes some platform-specific code, so does not
+           strictly reflect code density)}
+  \label{figure:total}
 \end{figure}
 
 % Decompression Code
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=ll_lzss_size,width=\textwidth}
-\end{center}
-\caption{Size of LZSS decompression code}
-\label{figure:decomp}
+  \centering
+  \epsfig{file=ll_lzss_size,width=\textwidth}
+  \caption{Size of LZSS decompression code}
+  \label{figure:decomp}
 \end{figure}
 
 % String concatenation code
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=ll_strcat_size,width=\textwidth}
-\end{center}
-\caption{Size of string concatenation code (machines with 
-auto-increment addressing modes and dedicated
-string instructions perform better). 6502 behaves poorly as it
-lacks an increment-16-bit-register instruction.}
-\label{figure:strcat}
+  \centering
+  \epsfig{file=ll_strcat_size,width=\textwidth}
+  \caption{Size of string concatenation code (machines with 
+           auto-increment addressing modes and dedicated
+           string instructions perform better). 6502 behaves poorly as it
+           lacks an increment-16-bit-register instruction.}
+  \label{figure:strcat}
 \end{figure}
 
 % Findstring code
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=ll_findstring_size,width=\textwidth}
-\end{center}
-\caption{Size of string searching code (unaligned load
-instructions help, since four bytes at arbitrary offsets 
-can be compared at once.  CISC architectures as well as avr32 and MIPS
-benefit)
-}
-\label{figure:findstring}
+  \centering
+  \epsfig{file=ll_findstring_size,width=\textwidth}
+  \caption{Size of string searching code (unaligned load
+           instructions help, since four bytes at arbitrary offsets 
+           can be compared at once.  
+           CISC architectures as well as avr32 and MIPS benefit)}
+  \label{figure:findstring}
 \end{figure}
 
 % Integer printing code
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=ll_num_ascii.eps,width=\textwidth}
-\end{center}
-\caption{Size of integer printing code (hardware
-divide helps code density)}
-\label{figure:numascii}
+  \centering
+  \epsfig{file=ll_num_ascii.eps,width=\textwidth}
+  \caption{Size of integer printing code (hardware
+           divide helps code density)}
+  \label{figure:numascii}
 \end{figure}
 
-% Integer printing code
+% LibC Sizes
 \begin{figure}[tbp]
-\begin{center}
-\epsfig{file=libc_sizes.eps,width=\textwidth}
-\end{center}
-\caption{Size comparison}
-\label{figure:libc}
+  \centering
+  \epsfig{file=libc_sizes.eps,width=\textwidth}
+  \caption{Size comparison}
+  \label{figure:libc}
 \end{figure}
 
 {
