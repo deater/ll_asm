@@ -1,27 +1,29 @@
 strcat Size (bytes)
 76	# clip axis at 76 (RiSC is an outlier)
-RiSC		RISC	200
-ia64		VLIW	64
-alpha		RISC	56
-sparc		RISC	32
-mips		RISC	28
-pa-risc		RISC	28
-m88k		RISC	28
-microblaze	RISC	28
-6502		EBIT	27
-arm.eabi	RISC	24
-PowerPC		RISC	24
-vax		CISC	21
-THUMB		EMBED	18
-sh3		EMBED	14
-avr32		EMBED	12
-m68k		CISC	12
-s390		CISC	12
-crisv32		EMBED	10
-x86_64		CISC	9
-x86_x32		CISC	9
-i386		CISC	8
-pdp-11		EBIT	8
-z80		EBIT	8
-8086		EBIT	8
-arm64		RISC	0
+0	# No stripey divides
+RiSC		RISC	200	0
+ia64		VLIW	64	0
+alpha		RISC	56	0
+sparc		RISC	32	0
+mips		RISC	28	0
+pa-risc		RISC	28	0
+m88k		RISC	28	0
+microblaze	RISC	28	0
+6502		EBIT	27	0
+arm.eabi	RISC	24	0
+PowerPC		RISC	24	0
+vax		CISC	21	0
+THUMB		EMBED	18	0
+sh3		EMBED	14	0
+avr32		EMBED	12	0
+m68k		CISC	12	0
+s390		CISC	12	0
+crisv32		EMBED	10	0
+x86_64		CISC	9	0
+x86_x32		CISC	9	0
+i386		CISC	8	0
+pdp-11		EBIT	8	0
+z80		EBIT	8	0
+8086		EBIT	8	0
+arm64		RISC	0	0
+Thumb-2		EMBED	0	0

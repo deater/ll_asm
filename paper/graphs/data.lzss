@@ -1,28 +1,29 @@
 LZSS Decoder Size (bytes)
 0	# Autosize axis
-RiSC		RISC	316
-ia64		VLIW	272
-alpha		RISC	224
-pa-risc		RISC	152
-mips		RISC	152
-sparc		RISC	148
-microblaze	RISC	136
-6502		EBIT	134
-m88k		RISC	128   
-s390		CISC	122   
-arm.eabi	RISC	116      
-PowerPC		RISC	108         
-pdp-11		EBIT	108         
-vax		CISC	96
-z80		EBIT	96
-arm64		RISC	96
-m68k		CISC	88            
-avr32		EMBED	80   
-sh3		EMBED	76        
-THUMB		EMBED	76                  
-Thumb-2		EMBED	76                     
-x86_64		CISC	66      
-x86_x32		CISC	66
-crisv32		EMBED	66
-i386		CISC	63
-8086		EBIT	58   
+0	# No stripey divides
+RiSC		RISC	316	0
+ia64		VLIW	272	0
+alpha		RISC	224	0
+pa-risc		RISC	152	0
+mips		RISC	152	0
+sparc		RISC	148	0
+microblaze	RISC	136	0
+6502		EBIT	134	0
+m88k		RISC	128	0
+s390		CISC	122	0
+arm.eabi	RISC	116	0
+PowerPC		RISC	108	0
+pdp-11		EBIT	108	0
+vax		CISC	96	0
+z80		EBIT	96	0
+arm64		RISC	96	0
+m68k		CISC	88	0
+avr32		EMBED	80	0
+sh3		EMBED	76	0
+THUMB		EMBED	76	0
+Thumb-2		EMBED	76	0
+x86_64		CISC	66	0
+x86_x32		CISC	66	0
+crisv32		EMBED	66	0
+i386		CISC	63	0
+8086		EBIT	58	0

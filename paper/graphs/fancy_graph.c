@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
 	char temp_type[BUFSIZ];
 	int max_size=0,xmax,xhash;
 	char xlabel[BUFSIZ];
-	int clip_axis;
+	int clip_axis=0,stripey_divides=0;
 
 
 	/* read the xlabel */
@@ -46,6 +46,10 @@ int main(int argc, char **argv) {
 	/* read the clip_axis */
 	result=fgets(string,BUFSIZ,stdin);
 	sscanf(string,"%d",&clip_axis);
+
+	/* read stripey_divides */
+	result=fgets(string,BUFSIZ,stdin);
+	sscanf(string,"%d",&stripey_divides);
 
 	/* read the data */
 	while(1) {

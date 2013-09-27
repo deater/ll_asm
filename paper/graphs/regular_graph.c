@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
 	char temp_type[BUFSIZ];
 	int max_size=0,ymax,yhash;
 	char xlabel[BUFSIZ];
-	int clip_axis;
+	int clip_axis=0,stripey_divides=0;
 
 	/* read the xlabel */
 	result=fgets(xlabel,BUFSIZ,stdin);
@@ -52,6 +52,10 @@ int main(int argc, char **argv) {
 	/* read the clip_axis */
 	result=fgets(string,BUFSIZ,stdin);
 	sscanf(string,"%d",&clip_axis);
+
+	/* read stripey_divides */
+	result=fgets(string,BUFSIZ,stdin);
+	sscanf(string,"%d",&stripey_divides);
 
 	/* read the data */
 	while(1) {
@@ -163,3 +167,15 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
+#if 0
+newcurve marktype xbar marksize 0.9 pattern stripe 45 color 0.0 0.0 0.0
+label vjc hjl font Helvetica fontsize 12 label x 18 y 112 : No HW divide
+pts
+#endif
+
+
+#if 0
+newcurve marktype xbar marksize 0.9 pattern stripe 45 color 0.75 0.1 0.1 
+pts
+0 288 (* ia64 *)
+#endif
