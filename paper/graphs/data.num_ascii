@@ -1,9 +1,10 @@
 LZSS Decoder Size (bytes)
-0	# Autosize axis
+320	# Autosize axis
 1	# Make machines with divide stripey
 ia64		VLIW	288	1
 pa-risc		RISC	176	1
 6502		EBIT	123	1
+RiSC		RISC	120	1
 alpha		RISC	108	1
 m88k		RISC	84	0
 sparc		RISC	84	0
@@ -21,9 +22,8 @@ pdp-11		EBIT	40	0
 s390		CISC	36	0
 avr32		EMBED	28	0
 vax		CISC	26	0
+8086		EBIT	24	0
 x86_64		CISC	22	0
 x86_x32		CISC	22	0
 i386		CISC	21	0
 arm64		RISC	0	0
-8086		EBIT	0	0
-RiSC		RISC	0	0

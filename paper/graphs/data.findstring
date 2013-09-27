@@ -1,5 +1,5 @@
 Findstring Size (bytes)
-0	# Autosize axis
+320	# Autosize axis
 0	# No stripey divides
 ia64		VLIW	288	0
 alpha		RISC	140	0
@@ -8,6 +8,7 @@ microblaze	RISC	124	0
 m88k		RISC	116	0
 pa-risc		RISC	104	0
 mips		RISC	100	0
+RiSC		RISC	94	0
 PowerPC		RISC	88	0
 arm.eabi	RISC	88	0
 6502		EBIT	85	0
@@ -16,6 +17,7 @@ m68k		CISC	58	0
 sh3		EMBED	58	0
 THUMB		EMBED	58	0
 Thumb-2		EMBED	56	0
+8086		EBIT	54	0
 vax		CISC	51	0
 z80		EBIT	51	0
 x86_64		CISC	50	0
@@ -25,5 +27,3 @@ crisv32		EMBED	48	0
 avr32		EMBED	44	0
 s390		CISC	42	0
 arm64		RISC	0	0
-8086		EBIT	0	0
-RiSC		RISC	0	0
