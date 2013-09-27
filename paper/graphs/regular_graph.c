@@ -39,7 +39,7 @@ char colors[NUM_TYPES][COLORS][16]={
 
 int main(int argc, char **argv) {
 
-	int i,j,num_points=0;
+	int i,num_points=0;
 	char string[BUFSIZ],*result=NULL;
 	char temp_type[BUFSIZ];
 	int max_size=0,ymax,yhash;
