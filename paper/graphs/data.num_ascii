@@ -5,7 +5,7 @@ ia64		VLIW	288	1
 pa-risc		RISC	176	1
 6502		EBIT	123	1
 alpha		RISC	108	1
-arm		RISC	92	1
+arm.eabi	RISC	92	1
 m88k		RISC	84	0
 sparc		RISC	84	0
 z80		EBIT	81	1
@@ -25,4 +25,5 @@ x86_x32		CISC	22	0
 i386		CISC	21	0
 arm64		RISC	0	0
 thumb2		EMBED	0	0
-
+8086		EBIT	0	0
+RiSC		RISC	0	0

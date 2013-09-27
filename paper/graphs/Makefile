@@ -34,43 +34,57 @@ fancy_graph.o:		fancy_graph.c
 			$(CC) $(CFLAGS) -c fancy_graph.c
 
 
-ll_document.pdf:       ll_document.dvi
-		       dvipdf ll_document.dvi
+ll_document.pdf:	ll_document.dvi
+	dvipdf ll_document.dvi
 
-ll_document.dvi:       ll_document.tex \
-		       architecture_table.tex \
-		       correlations_table.tex \
-		       ll_findstring_size.eps  ll_lzss_size.eps  \
-		       ll_strcat_size.eps ll_total_size.eps \
-		       ll_num_ascii.eps \
-		       cache_graph.eps \
-		       time_graph.eps \
-		       libc_sizes.eps
+ll_document.dvi:	ll_document.tex \
+			architecture_table.tex \
+			correlations_table.tex \
+			ll_findstring_size.eps  ll_lzss_size.eps  \
+			ll_strcat_size.eps ll_total_size.eps \
+			ll_num_ascii.eps \
+			cache_graph.eps \
+			time_graph.eps \
+			libc_sizes.eps
 			latex ll_document.tex
 			bibtex ll_document
 			latex ll_document.tex
 			latex ll_document.tex
 
-libc_sizes.eps:	      libc_sizes.jgr
-		      jgraph < libc_sizes.jgr > libc_sizes.eps
+###
 
-cache_graph.eps:	   cache_graph.jgr
-			   jgraph < cache_graph.jgr > cache_graph.eps
+libc_sizes.eps:		libc_sizes.jgr
+	jgraph < libc_sizes.jgr > libc_sizes.eps
 
-cpi_graph.eps:	   cpi_graph.jgr
-			   jgraph < cpi_graph.jgr > cpi_graph.eps
-			   
-sizes_normal.eps:	   sizes_normal.jgr
-			   jgraph < sizes_normal.jgr > sizes_normal.eps
-			   
-time_graph.eps:	   time_graph.jgr
-			   jgraph < time_graph.jgr > time_graph.eps
-			   
-tlb_graph.eps:	   tlb_graph.jgr
-			   jgraph < tlb_graph.jgr > tlb_graph.eps
+###
 
-uop_graph.eps:	   uop_graph.jgr
-			   jgraph < uop_graph.jgr > uop_graph.eps
+cache_graph.eps:	cache_graph.jgr
+	jgraph < cache_graph.jgr > cache_graph.eps
+
+###
+
+cpi_graph.eps:		cpi_graph.jgr
+	jgraph < cpi_graph.jgr > cpi_graph.eps
+
+###
+
+sizes_normal.eps:	sizes_normal.jgr
+	jgraph < sizes_normal.jgr > sizes_normal.eps
+
+###
+
+time_graph.eps:		time_graph.jgr
+	jgraph < time_graph.jgr > time_graph.eps
+
+###
+
+tlb_graph.eps:		tlb_graph.jgr
+	jgraph < tlb_graph.jgr > tlb_graph.eps
+
+###
+
+uop_graph.eps:		uop_graph.jgr
+	jgraph < uop_graph.jgr > uop_graph.eps
 
 ####
 
@@ -115,9 +129,13 @@ ll_findstring_size.eps:	ll_findstring_size.jgr
 
 ####
 
-ll_num_ascii.eps:	   ll_num_ascii.jgr
-			   jgraph < ll_num_ascii.jgr > ll_num_ascii.eps
+ll_num_ascii.jgr:	data.num_ascii regular_graph
+	./regular_graph < data.num_ascii > ll_num_ascii.jgr
 
+ll_num_ascii.eps:	ll_num_ascii.jgr
+	jgraph < ll_num_ascii.jgr > ll_num_ascii.eps
+
+####
 			 
 			   
 
