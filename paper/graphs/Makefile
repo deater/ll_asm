@@ -141,7 +141,7 @@ ll_num_ascii.eps:	ll_num_ascii.jgr
 
 clean:	
 	rm -f ll_total_size.eps ll_lzss_size.eps ll_strcat_size.eps \
-	cache_graph.eps cpi_graph.eps ll_num_ascii.eps \
+	cache_graph.eps cpi_graph.eps \
 	sizes_graph.eps sizes_normal.eps time_graph.eps \
 	tlb_graph.eps uop_graph.eps \
 	libc_sizes.eps \
@@ -150,10 +150,11 @@ clean:
 	ll_lzss_size.eps ll_lzss_size.jgr \
 	ll_strcat_size.eps ll_strcat_size.jgr \
 	ll_findstring_size.eps ll_findstring_size.jgr \
+	ll_num_ascii.eps ll_num_ascii.jgr \
 	fancy_total_size.jgr fancy_total_size.eps *.png \
 	fancy_lzss.jgr fancy_lzss.eps \
 	*.o fancy_graph \
-	*.pdf *.aux *.dvi *.log *~
+	*.pdf *.aux *.dvi *.log *.bbl *.blg *~
 	
 install:		       
 			       scp ll_document.pdf vince@cluizel:public_html
