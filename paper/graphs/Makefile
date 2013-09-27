@@ -46,7 +46,10 @@ ll_document.dvi:       ll_document.tex \
 		       cache_graph.eps \
 		       time_graph.eps \
 		       libc_sizes.eps
-		       latex ll_document.tex
+			latex ll_document.tex
+			bibtex ll_document
+			latex ll_document.tex
+			latex ll_document.tex
 
 libc_sizes.eps:	      libc_sizes.jgr
 		      jgraph < libc_sizes.jgr > libc_sizes.eps
