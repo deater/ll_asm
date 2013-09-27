@@ -11,7 +11,7 @@ microblaze	RISC	136	0
 6502		EBIT	134	0
 m88k		RISC	128	0
 s390		CISC	122	0
-arm.eabi	RISC	116	0
+arm.eabi	RISC	120	0
 PowerPC		RISC	108	0
 pdp-11		EBIT	108	0
 vax		CISC	96	0

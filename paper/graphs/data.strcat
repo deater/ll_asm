@@ -14,6 +14,7 @@ arm.eabi	RISC	24	0
 PowerPC		RISC	24	0
 vax		CISC	21	0
 THUMB		EMBED	18	0
+Thumb-2		EMBED	18	0
 sh3		EMBED	14	0
 avr32		EMBED	12	0
 m68k		CISC	12	0
@@ -26,4 +27,3 @@ pdp-11		EBIT	8	0
 z80		EBIT	8	0
 8086		EBIT	8	0
 arm64		RISC	0	0
-Thumb-2		EMBED	0	0
