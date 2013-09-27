@@ -150,17 +150,33 @@ int main(int argc, char **argv) {
 	/* Plot the points */
 
 	for(i=0;i<num_points;i++) {
-		printf("newcurve marktype xbar marksize 0.9 "
-			"%s color %s\n",
-			(stripey_divides&&points[i].divide)?
-				"pattern stripe 45":" ",
-			colors[points[i].type][0]);
-		printf("pts\n");
-		printf("%d %d (* %s *)\n",
-			i,
-			points[i].value>ymax?ymax:points[i].value,
-			points[i].name);
-		printf("\n");
+
+		if (points[i].value==0) {
+			printf("newcurve marktype text fontsize 12 rotate 90 "
+				": N/A\n");
+			printf("pts\n");
+			printf("%d %d (* %s *)\n",
+				i,
+				yhash,
+				points[i].name);
+			printf("\n");
+
+		}
+
+		else {
+
+			printf("newcurve marktype xbar marksize 0.9 "
+				"%s color %s\n",
+				(stripey_divides&&points[i].divide)?
+					"pattern stripe 45":" ",
+				colors[points[i].type][0]);
+			printf("pts\n");
+			printf("%d %d (* %s *)\n",
+				i,
+				points[i].value>ymax?ymax:points[i].value,
+				points[i].name);
+			printf("\n");
+		}
 	}
 
 
