@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 	printf("newgraph\n");
 	//printf("clip\n");
 	printf("X 10\n");
-	printf("Y 2\n");
+	printf("Y 2.5\n");
 	printf("\n");
 	printf("(* legend defaults font Helvetica fontsize 14 *)\n");
 	printf("\n");
