@@ -24,6 +24,7 @@ struct point_type {
 	char name[64];
 	int type;
 	int value;
+	int divide;
 };
 
 struct point_type points[MAX_POINTS];
@@ -61,16 +62,16 @@ int main(int argc, char **argv) {
 	while(1) {
 		result=fgets(string,BUFSIZ,stdin);
 		if (result==NULL) break;
-		sscanf(string,"%s %s %d",
+		sscanf(string,"%s %s %d %d",
 			points[num_points].name,
 			temp_type,
-			&points[num_points].value);
+			&points[num_points].value,
+			&points[num_points].divide);
 
 		if (!strcmp(temp_type,"VLIW")) points[num_points].type=VLIW;
 		if (!strcmp(temp_type,"RISC")) points[num_points].type=RISC;
 		if (!strcmp(temp_type,"EBIT")) points[num_points].type=EBIT;
 		if (!strcmp(temp_type,"CISC")) points[num_points].type=CISC;
-		if (!strcmp(temp_type,"EMBED")) points[num_points].type=EMBED;
 		if (!strcmp(temp_type,"EMBED")) points[num_points].type=EMBED;
 
 		if (points[num_points].value > max_size) {
@@ -133,6 +134,15 @@ int main(int argc, char **argv) {
 		printf("pts\n");
 		printf("\n");
 	}
+	if (stripey_divides) {
+		printf("newcurve marktype xbar marksize 0.9 "
+			"pattern stripe 45 color 0.0 0.0 0.0\n");
+		printf("label vjc hjl font Helvetica fontsize 12 "
+			"label x %d y %d : No HW divide\n",
+			(num_points-4),ymax-((0+i)*ymax/8));
+		printf("pts\n");
+		printf("\n");
+	}
 
 	printf("\n");
 
@@ -141,7 +151,10 @@ int main(int argc, char **argv) {
 
 	for(i=0;i<num_points;i++) {
 		printf("newcurve marktype xbar marksize 0.9 "
-			"color %s\n",colors[points[i].type][0]);
+			"%s color %s\n",
+			(stripey_divides&&points[i].divide)?
+				"pattern stripe 45":" ",
+			colors[points[i].type][0]);
 		printf("pts\n");
 		printf("%d %d (* %s *)\n",
 			i,
@@ -167,15 +180,5 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
-#if 0
-newcurve marktype xbar marksize 0.9 pattern stripe 45 color 0.0 0.0 0.0
-label vjc hjl font Helvetica fontsize 12 label x 18 y 112 : No HW divide
-pts
-#endif
 
 
-#if 0
-newcurve marktype xbar marksize 0.9 pattern stripe 45 color 0.75 0.1 0.1 
-pts
-0 288 (* ia64 *)
-#endif
