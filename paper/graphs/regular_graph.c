@@ -95,6 +95,8 @@ int main(int argc, char **argv) {
 		yhash=16;
 	}
 
+	if (clip_axis) ymax=clip_axis;
+
 	/* New Graph */
 	printf("newgraph\n");
 	//printf("clip\n");
