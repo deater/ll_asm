@@ -11,32 +11,48 @@
 \newcommand\TT{\rule{0pt}{1.756ex}}
 \newcommand\B{\rule[-1.2ex]{0pt}{0pt}}
 
-\pagestyle{fancy}
+%\pagestyle{fancy}
 
 \begin{document}
 
 %\chead{This paper appeared in ICCD 2009 --- IEEE Copyright Rules Apply}
 
-%\title{\LARGE \bf
-%Code Density Concerns for New Architectures
-%Optimizing for Size: Exploring the Limits of Code Density
-%}
+\title{\LARGE \bf
+{\tt ll}: Exploring the Limits of Code Density
+}
 
-%\author{ \parbox{3 in}{\centering Vincent M. Weaver\\
-%         \textit{Cornell University}\\
-%         \textit{vince@csl.cornell.edu}}
+\author{ \parbox{3 in}{\centering Vincent M. Weaver\\
+         \textit{University of Maine}\\
+         {\tt vincent.weaver@maine.edu}}
+}
 %         \hspace*{0.5 in}
 %         \parbox{3 in}{ \centering Sally A. McKee\\
 %         \textit{Chalmers University of Technology}\\
 %         \textit{mckee@chalmers.se}}
 %}
 
-%\maketitle
+\maketitle
 %\thispagestyle{empty}
 %\pagestyle{empty}
 
-%\begin{abstract}
-%\end{abstract}
+\begin{abstract}
+This document is a continuation of my code density work as described
+in our ICCD'09~\cite{weaver+:iccd09} paper.  
+This is just a summary document meant to accompany the project sourcecode.  
+Included are updated versions of the graphs and tables from the original
+code density work, updated as new architectures are added.
+
+I hand-assemble a simple benchmark on a number of architectures with
+the end goal being the smallest code size.  
+A comparison can then be made of the code density of the architecture.  
+The benchmark is small and simple, so may not give a full accounting of 
+code density for larger benchmarks, but picking a larger benchmark would 
+make the hand-coded assembly task much larger.  
+The benchmark does have some useful routines in it, such as 
+LZSS compression~\cite{ziv+:lz77,storer+:lzss82}, 
+string concatenation, and integer to string conversions.
+
+\end{abstract}
 
 \begin{figure}[tbp]
 \begin{center}
@@ -83,7 +99,8 @@ strictly reflect code density)}
 \end{center}
 \caption{Size of string concatenation code (machines with 
 auto-increment addressing modes and dedicated
-string instructions perform better)}
+string instructions perform better). 6502 behaves poorly as it
+lacks an increment-16-bit-register instruction.}
 \label{figure:strcat}
 \end{figure}
 
@@ -119,6 +136,10 @@ divide helps code density)}
 \label{figure:libc}
 \end{figure}
 
+{
+\bibliographystyle{plain}
+\bibliography{ll_document}
+}
 
 
 \end{document}
