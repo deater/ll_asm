@@ -76,6 +76,8 @@ int main(int argc, char **argv) {
 		num_points++;
 	}
 
+	if (clip_axis) max_size=clip_axis;
+
 	/* Calculate offsets */
 	if (max_size>1024) {
 		ymax=((max_size/1024)+1)*1024;
@@ -90,7 +92,9 @@ int main(int argc, char **argv) {
 
 	/* New Graph */
 	printf("newgraph\n");
-	printf("clip\n");
+	//printf("clip\n");
+	printf("X 10\n");
+	printf("Y 2\n");
 	printf("\n");
 	printf("(* legend defaults font Helvetica fontsize 14 *)\n");
 	printf("\n");
@@ -125,25 +129,9 @@ int main(int argc, char **argv) {
 		printf("pts\n");
 		printf("\n");
 	}
-#if 0
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 2368 : RISC\n");
-	printf("pts\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9\n");
-	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 2048 : CISC\n");
-	printf("pts\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8\n");
-	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 1728 : embedded\n");
-	printf("pts\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8\n");
-	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 1408 : 8/16-bit\n");
-	printf("pts\n");
-#endif
 
 	printf("\n");
+
 
 	/* Plot the points */
 
@@ -151,9 +139,27 @@ int main(int argc, char **argv) {
 		printf("newcurve marktype xbar marksize 0.9 "
 			"color %s\n",colors[points[i].type][0]);
 		printf("pts\n");
-		printf("%d %d (* %s *)\n",i,points[i].value,points[i].name);
+		printf("%d %d (* %s *)\n",
+			i,
+			points[i].value>ymax?ymax:points[i].value,
+			points[i].name);
 		printf("\n");
 	}
+
+
+	/* Put the clipped labels */
+	for(i=0;i<num_points;i++) {
+		if (points[i].value>ymax) {
+			printf("newcurve "
+			"marktype text fontsize 12 : %d\n",
+			points[i].value);
+			printf("pts\n");
+			printf("%d %d (* %s *)\n",i,ymax,points[i].name);
+			printf("\n");
+
+		}
+	}
+
 
 	return 0;
 }
