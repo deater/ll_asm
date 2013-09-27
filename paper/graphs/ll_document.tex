@@ -57,6 +57,15 @@ string concatenation, and integer to string conversions.
 
 \end{abstract}
 
+\section{Additional Findings since ICCD'09}
+
+In theory the new x86 SSE4 string instructions should be great for
+doing some of these operations, such as strlen or strcat.
+I could not find a way to use them to find the results in fewer
+bytes than the discrete instructions.
+
+
+
 \begin{figure}[tbp]
   \centering
   \epsfig{file=ll.eps,width=\columnwidth}
