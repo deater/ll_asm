@@ -1,4 +1,5 @@
 LZSS Decoder Size (bytes)
+0	# Autosize axis
 RiSC		RISC	316
 ia64		VLIW	272
 alpha		RISC	224

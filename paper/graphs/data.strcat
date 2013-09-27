@@ -1,4 +1,5 @@
 strcat Size (bytes)
+76	# clip axis at 76 (RiSC is an outlier)
 RiSC		RISC	200
 ia64		VLIW	64
 alpha		RISC	56

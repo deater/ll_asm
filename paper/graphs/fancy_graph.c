@@ -37,9 +37,17 @@ int main(int argc, char **argv) {
 	char temp_type[BUFSIZ];
 	int max_size=0,xmax,xhash;
 	char xlabel[BUFSIZ];
+	int clip_axis;
 
+
+	/* read the xlabel */
 	result=fgets(xlabel,BUFSIZ,stdin);
 
+	/* read the clip_axis */
+	result=fgets(string,BUFSIZ,stdin);
+	sscanf(string,"%d",&clip_axis);
+
+	/* read the data */
 	while(1) {
 		result=fgets(string,BUFSIZ,stdin);
 		if (result==NULL) break;
