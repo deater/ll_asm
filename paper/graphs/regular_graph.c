@@ -112,8 +112,8 @@ int main(int argc, char **argv) {
 			"color %s\n",colors[i][0]);
 		printf("label vjc hjl font Helvetica fontsize 12 "
 			"label x %d y %d : %s\n",
-			(num_points/5)*4,
-			ymax-((1+i)*ymax/10),
+			(num_points-4),
+			ymax-((0+i)*ymax/8),
 			type_names[i]);
 		printf("pts\n");
 		printf("\n");
