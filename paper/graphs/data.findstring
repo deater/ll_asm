@@ -1,0 +1,24 @@
+Findstring Size (bytes)
+0	# Autosize axis
+ia64		VLIW	288
+alpha		RISC	140
+sparc		RISC	136
+microblaze	RISC	124
+m88k		RISC	116
+pa-risc		RISC	104
+mips		RISC	100
+arm		RISC	88
+PowerPC		RISC	88
+6502		EBIT	85
+pdp-11		EBIT	62
+m68k		CISC	58
+sh3		EMBED	58
+THUMB		EMBED	58
+vax		CISC	51
+z80		EBIT	51
+x86_64		CISC	50
+i386		CISC	49
+crisv32		EMBED	48
+avr32		EMBED	44
+s390		CISC	42
+arm64		RISC	0
