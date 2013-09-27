@@ -3,7 +3,7 @@ LFLAGS =
 CFLAGS = -Wall -O3
 
 all:	ll_document.pdf \
-	fancy_graph fancy_total_size.png \
+	fancy_total_size.png \
 	fancy_lzss.png
 
 
@@ -68,13 +68,26 @@ tlb_graph.eps:	   tlb_graph.jgr
 
 uop_graph.eps:	   uop_graph.jgr
 			   jgraph < uop_graph.jgr > uop_graph.eps
-			   
-			   
 
+####
 
-ll_total_size.eps:	   ll_total_size.jgr
-			   jgraph < ll_total_size.jgr > ll_total_size.eps
+regular_graph:		regular_graph.o
+	$(CC) $(LFLAGS) -o regular_graph regular_graph.o
+
+regular_graph.o:	regular_graph.c
+	$(CC) $(CFLAGS) -c regular_graph.c
+
 			   
+####			   
+
+ll_total_size.jgr:	data.overall regular_graph
+	./regular_graph < data.overall > ll_total_size.jgr
+
+ll_total_size.eps:	ll_total_size.jgr
+	jgraph < ll_total_size.jgr > ll_total_size.eps
+
+####
+
 ll_lzss_size.eps:	   ll_lzss_size.jgr
 			   jgraph < ll_lzss_size.jgr > ll_lzss_size.eps
 
@@ -94,6 +107,8 @@ clean:
 	sizes_graph.eps sizes_normal.eps time_graph.eps \
 	tlb_graph.eps uop_graph.eps \
 	ll_findstring_size.eps libc_sizes.eps \
+	regular_graph \
+	ll_total_size.eps ll_total_size.jgr \
 	fancy_total_size.jgr fancy_total_size.eps *.png \
 	fancy_lzss.jgr fancy_lzss.eps \
 	*.o fancy_graph \
