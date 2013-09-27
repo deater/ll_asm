@@ -1,7 +1,87 @@
 #include <stdio.h>
+#include <string.h>
+
+#define VLIW  0
+#define RISC  1
+#define CISC  2
+#define EMBED 3
+#define EBIT  4
+
+#define MAX_POINTS 50
+#define COLORS 3
+
+#define NUM_TYPES  5
+
+char type_names[NUM_TYPES][32]={
+	"VLIW",
+	"RISC",
+	"CISC",
+	"embedded",
+	"8/16-bit",
+};
+
+struct point_type {
+	char name[64];
+	int type;
+	int value;
+};
+
+struct point_type points[MAX_POINTS];
+
+char colors[NUM_TYPES][COLORS][16]={
+	{ "0.7 0.1 0.1", "0.8 0.1 0.1", "0.9 0.1 0.1" },	/* VLIW */
+	{ "0.3 0.7 0.3", "0.3 0.8 0.3", "0.3 0.9 0.3" },	/* RISC */
+	{ "0.3 0.7 0.7",  "0.3 0.8 0.8",  "0.3 0.9 0.9"},	/* CISC */
+	{ "0.25 0.25 0.7", "0.25 0.25 0.8", "0.25 0.25 0.9"},	/* embed */
+	{ "0.7 0.25 0.7", "0.8 0.25 0.8", "0.9 0.25 0.9"},	/* 8-bit */
+};
+
 
 int main(int argc, char **argv) {
 
+	int i,j,num_points=0;
+	char string[BUFSIZ],*result=NULL;
+	char temp_type[BUFSIZ];
+	int max_size=0,ymax,yhash;
+	char xlabel[BUFSIZ];
+
+	result=fgets(xlabel,BUFSIZ,stdin);
+
+	while(1) {
+		result=fgets(string,BUFSIZ,stdin);
+		if (result==NULL) break;
+		sscanf(string,"%s %s %d",
+			points[num_points].name,
+			temp_type,
+			&points[num_points].value);
+
+		if (!strcmp(temp_type,"VLIW")) points[num_points].type=VLIW;
+		if (!strcmp(temp_type,"RISC")) points[num_points].type=RISC;
+		if (!strcmp(temp_type,"EBIT")) points[num_points].type=EBIT;
+		if (!strcmp(temp_type,"CISC")) points[num_points].type=CISC;
+		if (!strcmp(temp_type,"EMBED")) points[num_points].type=EMBED;
+		if (!strcmp(temp_type,"EMBED")) points[num_points].type=EMBED;
+
+		if (points[num_points].value > max_size) {
+			max_size=points[num_points].value;
+		}
+
+		num_points++;
+	}
+
+	/* Calculate offsets */
+	if (max_size>1024) {
+		ymax=((max_size/1024)+1)*1024;
+		yhash=512;
+	} else if (max_size>128) {
+		ymax=((max_size/128)+1)*128;
+		yhash=64;
+	} else {
+		ymax=((max_size/32)+1)*32;
+		yhash=16;
+	}
+
+	/* New Graph */
 	printf("newgraph\n");
 	printf("clip\n");
 	printf("\n");
@@ -12,46 +92,33 @@ int main(int argc, char **argv) {
 	printf("\n");
 	printf("legend custom\n");
 	printf("\n");
-	printf("yaxis size 1.25 min 0 max 3000 hash 512 "
-		"grid_lines grid_gray 0.8\n");
+	printf("yaxis size 1.25 min 0 max %d hash %d "
+		"grid_lines grid_gray 0.8\n",
+		ymax,yhash);
 	printf("label font Helvetica fontsize 12 : bytes\n");
 	printf("hash_labels font Helvetica fontsize 12\n");
 	printf("\n");
-	printf("xaxis size 9 min -1 max 24\n");
+	printf("xaxis size 9 min -1 max %d\n",num_points);
 	printf("no_draw_hash_marks no_auto_hash_labels\n");
 	printf("hash_labels hjr vjc rotate 45 font Helvetica fontsize 12\n");
-	printf("hash_label at 0 : ia64\n");
-	printf("hash_label at 1 : alpha\n");
-	printf("hash_label at 2 : RiSC\n");
-	printf("hash_label at 3 : parisc\n");
-	printf("hash_label at 4 : sparc\n");
-	printf("hash_label at 5 : mblaze\n");
-	printf("hash_label at 6 : mips\n");
-	printf("hash_label at 7 : m88k\n");
-	printf("hash_label at 8 : arm\n");
-	printf("hash_label at 9 : ppc\n");
-	printf("hash_label at 10 : 6502\n");
-	printf("hash_label at 11 : s390\n");
-	printf("hash_label at 12 : x86_64\n");
-	printf("hash_label at 13 : vax\n");
-	printf("hash_label at 14 : sh3\n");
-	printf("hash_label at 15 : m68k\n");
-	printf("hash_label at 16 : i386\n");
-	printf("hash_label at 17 : thumb\n");
-	printf("hash_label at 18 : thumb-2\n");
-	printf("hash_label at 19 : avr32\n");
-	printf("hash_label at 20 : crisv32\n");
-	printf("hash_label at 21 : z80\n");
-	printf("hash_label at 22 : pdp-11\n");
-	printf("hash_label at 23 : 8086\n");
+	for(i=0;i<num_points;i++) {
+		printf("hash_label at %d : %s\n",i,points[i].name);
+	}
 	printf("\n");
 
 	/* make the legend */
-
-	printf("newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1\n");
-	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 2688 : VLIW\n");
-	printf("pts\n");
-	printf("\n");
+	for(i=0;i<NUM_TYPES;i++) {
+		printf("newcurve marktype xbar marksize 0.9 "
+			"color %s\n",colors[i][0]);
+		printf("label vjc hjl font Helvetica fontsize 12 "
+			"label x %d y %d : %s\n",
+			(num_points/5)*4,
+			ymax-((1+i)*ymax/10),
+			type_names[i]);
+		printf("pts\n");
+		printf("\n");
+	}
+#if 0
 	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
 	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 2368 : RISC\n");
 	printf("pts\n");
@@ -67,106 +134,19 @@ int main(int argc, char **argv) {
 	printf("newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8\n");
 	printf("label vjc hjl font Helvetica fontsize 12 label x 20 y 1408 : 8/16-bit\n");
 	printf("pts\n");
+#endif
+
+	printf("\n");
 
 	/* Plot the points */
 
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.75 0.1 0.1\n");
-	printf("pts\n");
-	printf("0 2826 (* ia64 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("1 1821 (* alpha *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("2 1418 (* RiSC *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("3 1400  (* parisc *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("4 1397  (* sparc *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("5 1298  (* microblaze *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("6 1276  (* mips *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("7 1240  (* m88k *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("8 1186 (* arm *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.7 0.3\n");
-	printf("pts\n");
-	printf("9 1165  (* ppc *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8\n");
-	printf("pts\n");
-	printf("10 1130  (* 6502 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9\n");
-	printf("pts\n");
-	printf("11 1064  (* s390 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9\n");
-	printf("pts\n");
-	printf("12  1033 (* x86_64 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9\n");
-	printf("pts\n");
-	printf("13  1010 (* vax *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8\n");
-	printf("pts\n");
-	printf("14 994  (* sh3 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9\n");
-	printf("pts\n");
-	printf("15 982  (* m68k *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.3 0.9 0.9\n");
-	printf("pts\n");
-	printf("16 969  (* i386 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8\n");
-	printf("pts\n");
-	printf("17  957  (* thumb *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8\n");
-	printf("pts\n");
-	printf("18  925  (* thumb-2 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8\n");
-	printf("pts\n");
-	printf("19 914  (* avr32 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.25 0.25 0.8\n");
-	printf("pts\n");
-	printf("20 905 (* crisv32 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8\n");
-	printf("pts\n");
-	printf("21 891  (* z80 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8\n");
-	printf("pts\n");
-	printf("22 890  (* pdp-11 *)\n");
-	printf("\n");
-	printf("newcurve marktype xbar marksize 0.9 color 0.8 0.25 0.8\n");
-	printf("pts\n");
-	printf("23 780  (* 8086 *)\n");
-	printf("\n");
+	for(i=0;i<num_points;i++) {
+		printf("newcurve marktype xbar marksize 0.9 "
+			"color %s\n",colors[points[i].type][0]);
+		printf("pts\n");
+		printf("%d %d (* %s *)\n",i,points[i].value,points[i].name);
+		printf("\n");
+	}
 
 	return 0;
 }
