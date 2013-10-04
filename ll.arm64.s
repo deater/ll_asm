@@ -227,10 +227,12 @@
 #    - 108 bytes = use tbnz instead of separate compare and branch
 #    - 100 bytes = use unaligned halfword load
 #    -  96 bytes = another use of tbnz
+#  + Overall
+#    - 1138 bytes = original working version
+
 
 # Overall optimization TODO:
 # + cbz
-# + divide instead of umull
 # + better constants
 # + remove unused registers (bss?)
 # + implement find string with unaligned load
@@ -280,8 +282,6 @@ _start:
 	adr	x3,logo		// x3 = logo begin
 	adr	x8,logo_end	// x8 = logo end
 	adr	x9,text_buf	// x9 = text_buf
-	adr	x11,data_begin	// x11 = data_begin
-	adr	x12,bss_begin	// x12 = bss_begin
 
 decompression_loop:
 	ldrb	w5,[x3],#1	// load a byte, increment pointer
@@ -445,11 +445,12 @@ chip_name:
 	#========
 
 	adr	x0,sysinfo_buff
+	mov	x3,x0
 	mov	x8,#SYSCALL_SYSINFO
 	svc	0
 					// sysinfo() syscall
 
-	ldr	x3,[x12,#(sysinfo_buff+S_TOTALRAM)]
+	ldr	x3,[x3,#S_TOTALRAM]
 					// size in bytes of RAM
 	lsr	x3,x3,#20		// divide by 1024*1024 to get M
 //	adc	x3,x3,#0		// round
@@ -657,7 +658,6 @@ write_out:
 #	section .data
 #===========================================================================
 .data
-data_begin:
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 processor:	.ascii	" Processor, \0"
@@ -684,7 +684,6 @@ one:	.ascii	"One \0"
 #	section .bss
 #============================================================================
 .bss
-bss_begin:
 .lcomm uname_info,(65*6)
 .lcomm sysinfo_buff,(64)
 .lcomm ascii_buffer,10
