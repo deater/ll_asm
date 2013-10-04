@@ -234,6 +234,8 @@
 #    - 1114 bytes = optimize branches, zero register, in find_string
 #    - 1110 bytes = use cbnz in strcat
 #    - 1106 bytes = use cbnz in write_stdout
+#    - 1098 bytes = use cbnz and better constants in num_to_ascii
+#    - 1094 bytes = have num_to_ascii fall through to strcat
 
 # Overall optimization TODO:
 # + cbz
@@ -537,19 +539,6 @@ almost_done:
 done:
 	ret			// return
 
-	#================================
-	# strcat
-	#================================
-	# value to cat in x1
-	# output buffer in x10
-	# x3 trashed
-strcat:
-	ldrb	w3,[x1],#+1		// load a byte, increment pointer
-	strb	w3,[x10],#+1		// store a byte, increment pointer
-	cbnz	w3,strcat		// is not NUL, loop
-	sub	x10,x10,#1		// point to one less than null
-	ret				// return
-
 
 	#==============================
 	# center_and_print
@@ -615,35 +604,46 @@ write_stdout_we_know_size:
 
 num_to_ascii:
 	stp	x10,x30,[sp,#-16]!	// store return address on stack
-	adr	x10,ascii_buffer
-	add	x10,x10,#10
-					// point to end of our buffer
+	adr	x10,ascii_buffer+10	// point to end of our buffer
 
 div_by_10:
 	# Divide by 10
-	# r3=numerator
-	# r7=quotient    r8=remainder
-	# r5=trashed
+	# x3=numerator
+	# x7=quotient    x8=remainder
+	# x5=trashed
 
 	mov	x5,#10
-	udiv	x7,x3,x5	// x7=x3/10
-	umsubl	x8,w7,w5,x3	// x8=x3-(w7*10)
+	udiv	x7,x3,x5	// Q=x7=x3/10
+	umsubl	x8,w7,w5,x3	// R=x8=x3-(w7*10)
 
 	add	x8,x8,#0x30	// convert to ascii
 	strb	w8,[x10],#-1	// store a byte, decrement pointer
 	adds	x3,x7,#0	// move Q in for next divide, update flags
 	b.ne	div_by_10	// if Q not zero, loop
 
-
 write_out:
 	add	x1,x10,#1		// adjust pointer
 	ldp	x10,x30,[SP],#16	// restore return address from stack
 
-	cmp	x0,#0
-	b.ne	strcat		// if 1, strcat
+	cbz	x0,write_stdout		// if 0, write_stdout
 
-	b write_stdout		// else, fallthrough to stdout
+					// else, strcat
 
+	#================================
+	# strcat
+	#================================
+	# value to cat in x1
+	# output buffer in x10
+	# x3 trashed
+strcat:
+	ldrb	w3,[x1],#+1		// load a byte, increment pointer
+	strb	w3,[x10],#+1		// store a byte, increment pointer
+	cbnz	w3,strcat		// is not NUL, loop
+	sub	x10,x10,#1		// point to one less than null
+	ret				// return
+
+
+literals:
 # Put literal values here
 .ltorg
 
