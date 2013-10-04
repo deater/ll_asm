@@ -251,10 +251,13 @@
 .equ SYSCALL_EXIT,	93
 .equ SYSCALL_READ,	63
 .equ SYSCALL_WRITE,	64
-.equ SYSCALL_OPEN,	1024
+.equ SYSCALL_OPENAT,	56
 .equ SYSCALL_CLOSE,	57
 .equ SYSCALL_SYSINFO,	179
 .equ SYSCALL_UNAME,	160
+
+# From linux/fcntl.h
+.equ AT_FDCWD,		-100
 
 #
 .equ STDIN,	0
@@ -380,29 +383,31 @@ first_line:
 	# Middle-Line
 	#===============================
 middle_line:
-	#=========
+	#===============================
 	# Load /proc/cpuinfo into buffer
-	#=========
+	#===============================
 
 	adr	x10,out_buffer		// point x10 to out_buffer
 
-	adr	x0,cpuinfo
-					// '/proc/cpuinfo'
-	mov	x1,#0			// 0 = O_RDONLY <bits/fcntl.h>
-	mov	x8,#SYSCALL_OPEN
+	// regular SYSCALL_OPEN not supported on arm64?
+
+	mov	x0,#AT_FDCWD		// dirfd.  AT_FDWCD is old open behavior
+
+	adr	x1,cpuinfo		// '/proc/cpuinfo'
+	mov	x2,#0			// 0 = O_RDONLY <bits/fcntl.h>
+	mov	x8,#SYSCALL_OPENAT
 	svc	0
+
 					// syscall.  return in r0?
 	mov	x5,x0			// save our fd
 	adr	x1,disk_buffer
-	mov	x2,#4096
-				 	// 4096 is maximum size of proc file ;)
+	mov	x2,#4096	 	// cheat and assume maximum of 4kB
 	mov	x8,#SYSCALL_READ
 	svc	0
 
 	mov	x0,x5
 	mov	x8,#SYSCALL_CLOSE
-	svc	0
-					// close (to be correct)
+	svc	0			// close (to be correct)
 
 
 	#=============
@@ -426,12 +431,12 @@ print_mhz:
 	# Chip Name
 	#===========
 chip_name:
-	mov	x0,#( ('c'<<24) | ('o'<<16) | ('r'<<8) | 'P')
+	ldr	w0,=( ('c'<<24) | ('o'<<16) | ('r'<<8) | 'P')
 	mov	x3,#' '
 	bl	find_string
 					// find 'sor\t: ' and grab up to ' '
 
-	adr	r1,processor
+	adr	x1,processor
 					// print " Processor, "
 	bl	strcat
 
@@ -460,7 +465,7 @@ chip_name:
 	# Bogomips
 	#==========
 
-	mov	x0,#( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
+	ldr	w0,=( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
 	mov	x3,#'\n'
 	bl	find_string
 
@@ -502,32 +507,32 @@ exit:
 	# r3 = char to end at
 	# r5 trashed
 find_string:
-	adr	r7,disk_buffer	// look in cpuinfo buffer
+	adr	x7,disk_buffer	// look in cpuinfo buffer
 find_loop:
 	ldr	w5,[x7],#+1	// load a byte, increment pointer
-	cmp	r5,r0		// compare against first byte
+	cmp	x5,x0		// compare against first byte
 	b.eq	find_colon	// if match, we are found
 
-	cmp	r5,#0		// are we at EOF?
+	cmp	x5,#0		// are we at EOF?
 	b.eq	done		// if so, done
 
 	b	find_loop
 
 find_colon:
 	ldrb	w5,[x7],#+1	// load a byte, increment pointer
-	cmp	r5,#':'
+	cmp	x5,#':'
 	b.ne	find_colon	// repeat till we find colon
 
-	add	r7,r7,#1	// skip the space
+	add	x7,x7,#1	// skip the space
 
 store_loop:
 	ldrb	w5,[x7],#+1	// load a byte, increment pointer
 	strb	w5,[x10],#+1	// store a byte, increment pointer
-	cmp	r5,r3
+	cmp	x5,x3
 	b.ne	store_loop
 
 almost_done:
-	mov	r0,#0
+	mov	x0,#0
 	strb	w0,[x10],#-1	// replace last value with NUL
 				// use zero register
 
@@ -582,7 +587,7 @@ str_loop2:
 	bl	write_stdout
 
 done_center:
-	adr	x1,out_buffer		// point r1 to out_buffer
+	adr	x1,out_buffer		// point x1 to out_buffer
 
 	ldr	x30,[sp],#16		// restore return address from stack
 
