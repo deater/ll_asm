@@ -232,6 +232,7 @@
 #    - 1134 bytes = remove bss_start and data_start values
 #    - 1130 bytes = store a halfword rather than two bytes
 #    - 1114 bytes = optimize branches, zero register, in find_string
+#    - 1110 bytes = use cbnz in strcat
 
 # Overall optimization TODO:
 # + cbz
@@ -544,8 +545,7 @@ done:
 strcat:
 	ldrb	w3,[x1],#+1		// load a byte, increment pointer
 	strb	w3,[x10],#+1		// store a byte, increment pointer
-	cmp	x3,#0			// is it zero?
-	bne	strcat			// if not loop
+	cbnz	w3,strcat		// is not NUL, loop
 	sub	x10,x10,#1		// point to one less than null
 	ret				// return
 
