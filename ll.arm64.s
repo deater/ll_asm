@@ -230,7 +230,7 @@
 #    -  96 bytes = another use of tbnz
 
 # Overall optimization TODO:
-# + cbz 
+# + cbz
 # + divide instead of umull
 # + better constants
 # + remove unused registers (bss?)
@@ -422,20 +422,18 @@ print_mhz:
 
 	# the arm system I have does not report MHz
 
-	#=========
+	#===========
 	# Chip Name
-	#=========
+	#===========
 chip_name:
-	mov	x0,#'s'
-	mov	x1,#'o'
-	mov	x2,#'r'
+	mov	x0,#( ('c'<<24) | ('o'<<16) | ('r'<<8) | 'P')
 	mov	x3,#' '
-//	bl	find_string
+	bl	find_string
 					// find 'sor\t: ' and grab up to ' '
 
-//	add	r1,r11,#(processor-data_begin)
-//					// print " Processor, "
-//	bl	strcat
+	adr	r1,processor
+					// print " Processor, "
+	bl	strcat
 
 	#========
 	# RAM
@@ -458,16 +456,14 @@ chip_name:
 	bl	strcat			// call strcat
 
 
-	#========
+	#==========
 	# Bogomips
-	#========
+	#==========
 
-	mov	x0,#'I'
-	mov	x1,#'P'
-	mov	x2,#'S'
+	mov	x0,#( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
 	mov	x3,#'\n'
-//	bl	find_string
-//
+	bl	find_string
+
 	adr	x1,bogo_total
 	bl	strcat			// print bogomips total
 
@@ -499,47 +495,44 @@ exit:
 	svc	0				// and exit
 
 
-//	//=================================
-//	// FIND_STRING
-//	//=================================
-//	// r0,r1,r2 = string to find
-//	// r3 = char to end at
-//	// r5 trashed
+	#=================================
+	# FIND_STRING
+	#=================================
+	# r0 = string to find
+	# r3 = char to end at
+	# r5 trashed
 find_string:
-//	ldr	r7,=disk_buffer		// look in cpuinfo buffer
+	adr	r7,disk_buffer	// look in cpuinfo buffer
 find_loop:
-//	ldrb	w5,[x7],#+1		// load a byte, increment pointer
-//	cmp	r5,r0			// compare against first byte
-//	ldrb	w5,[x7]			// load next byte
-//	cmpeq	r5,r1			// if first byte matched, comp this one
-//	ldrb	w5,[x7,#+1]		// load next byte
-//	cmpeq	r5,r2			// if first two matched, comp this one
-//	beq	find_colon		// if all 3 matched, we are found
+	ldr	w5,[x7],#+1	// load a byte, increment pointer
+	cmp	r5,r0		// compare against first byte
+	b.eq	find_colon	// if match, we are found
 
-//	cmp	r5,#0			// are we at EOF?
-//	beq	done			// if so, done
+	cmp	r5,#0		// are we at EOF?
+	b.eq	done		// if so, done
 
-//	b	find_loop
+	b	find_loop
 
 find_colon:
-//	ldrb	w5,[x7],#+1		// load a byte, increment pointer
-//	cmp	r5,#':'
-//	bne	find_colon		// repeat till we find colon
+	ldrb	w5,[x7],#+1	// load a byte, increment pointer
+	cmp	r5,#':'
+	b.ne	find_colon	// repeat till we find colon
 
-//	add	r7,r7,#1		// skip the space
+	add	r7,r7,#1	// skip the space
 
 store_loop:
-//	ldrb	w5,[x7],#+1		// load a byte, increment pointer
-//	strb	w5,[x10],#+1		// store a byte, increment pointer
-//	cmp	r5,r3
-//	bne	store_loop
+	ldrb	w5,[x7],#+1	// load a byte, increment pointer
+	strb	w5,[x10],#+1	// store a byte, increment pointer
+	cmp	r5,r3
+	b.ne	store_loop
 
 almost_done:
-//	mov	r0,#0
-//	strb	w0,[x10],#-1		// replace last value with NUL
+	mov	r0,#0
+	strb	w0,[x10],#-1	// replace last value with NUL
+				// use zero register
 
 done:
-//	mov	pc,lr			// return
+	ret			// return
 
 	#================================
 	# strcat
@@ -633,9 +626,9 @@ div_by_10:
 	# r5=trashed
 
 	mov	x5,#10
-	udiv	x7,x3,x5		// x7=x3/10
-	umsubl	x8,w7,w5,x3		// x8=x3-(w7*10)
-	
+	udiv	x7,x3,x5	// x7=x3/10
+	umsubl	x8,w7,w5,x3	// x8=x3-(w7*10)
+
 	add	x8,x8,#0x30	// convert to ascii
 	strb	w8,[x10],#-1	// store a byte, decrement pointer
 	adds	x3,x7,#0	// move Q in for next divide, update flags
