@@ -13,7 +13,6 @@ Chips TODO:
 + Intel 432
 
 Linux:   
-+ arm64
 + blackfin
 + c6x
 + frv
@@ -31,4 +30,3 @@ Linux:
 + unicore32
 + v850
 + xtensa
-+ x86 x32

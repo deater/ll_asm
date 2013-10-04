@@ -34,6 +34,7 @@ Some Statistics
      arm.oabi		1186 bytes   (as 2.18.0.20080103)
      PPC		1165 bytes   (as 2.19.51.20090805)
      6502		1130*bytes   (ca64 2.12.0)
+     arm64		1094 bytes   (as 2.23.1)
      s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1030 bytes   (as 2.23.52.20130727)
      vax		1010 bytes   (as 2.16.1)
@@ -255,6 +256,7 @@ arm64:
 	New instructions, such as tbz also help
 	The conditional instructions like csel might, but at least in the
 		lzss code doesn't make a difference.	
+	The compare/branch/zero instructions also help.
 
 	Lack of conditional execution hurts
 
@@ -262,6 +264,8 @@ arm64:
 		inc {r1,r2,r4}
 	And also an equivelent of x86 loop	
 	
+	No open syscall, have to waste an instruction setting
+	AT_FDCWD and use openat() instead.
 
 arm:	no integer division routine
 	Really painful to load constants > 8 bits that aren't powers of two or
@@ -542,6 +546,7 @@ Special Thanks to:
 ------------------
 	my lovely wife
 	my beautiful daughter
+	my two sons
 
 AUTHOR:
 -------
