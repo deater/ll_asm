@@ -229,7 +229,8 @@
 #    -  96 bytes = another use of tbnz
 #  + Overall
 #    - 1138 bytes = original working version
-
+#    - 1134 bytes = remove bss_start and data_start values
+#    - 1130 bytes = store a halfword rather than two bytes
 
 # Overall optimization TODO:
 # + cbz
@@ -278,7 +279,7 @@ _start:
 # optimized some more by Vince Weaver
 
 	adr	x1,out_buffer	// x1 = buffer we are printing to
-	mov	x2,#(N-F)	// x2 = N-F (R)
+	mov	x2,#(N-F)	// x2 = R (starts as N-F)
 	adr	x3,logo		// x3 = logo begin
 	adr	x8,logo_end	// x8 = logo end
 	adr	x9,text_buf	// x9 = text_buf
@@ -363,8 +364,8 @@ first_line:
 	adr	x1,ver_string			// source is " Version "
 	bl 	strcat			        // call strcat
 
-	adr	x1,(uname_info+U_RELEASE)
-						// version from uname, ie "2.6.20"
+	adr	x1,(uname_info+U_RELEASE)	// version from uname, 
+						//   ie "2.6.20"
 	bl	strcat				// call strcat
 
 	adr	x1,compiled_string		// source is ", Compiled "
@@ -374,8 +375,8 @@ first_line:
 	bl	strcat				// call strcat
 
 	mov	x3,#0xa
-	strb	w3,[x10],#+1		// store a linefeed, increment pointer
-	strb	wzr,[x10],#+1		// NUL terminate, increment pointer
+	strh	w3,[x10],#+2		// store a linefeed, and NULL,
+					// increment pointer
 
 	bl	center_and_print	// center and print
 
