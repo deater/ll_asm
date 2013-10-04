@@ -231,12 +231,11 @@
 #    - 1138 bytes = original working version
 #    - 1134 bytes = remove bss_start and data_start values
 #    - 1130 bytes = store a halfword rather than two bytes
+#    - 1114 bytes = optimize branches, zero register, in find_string
 
 # Overall optimization TODO:
 # + cbz
 # + better constants
-# + remove unused registers (bss?)
-# + implement find string with unaligned load
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -416,9 +415,8 @@ middle_line:
 	#=============
 number_of_cpus:
 
-	adr	x1,one
-					// cheat.  Who has an SMP arm?
-					// 2012 calling, my pandaboard is...
+	adr	x1,one			// cheat and assume one cpu
+					// not really a good assumption
 	bl	strcat
 
 	#=========
@@ -434,11 +432,10 @@ print_mhz:
 chip_name:
 	ldr	w0,=( ('c'<<24) | ('o'<<16) | ('r'<<8) | 'P')
 	mov	x3,#' '
-	bl	find_string
-					// find 'sor\t: ' and grab up to ' '
+	bl	find_string		// find line starting with Proc
+					// and grab up to ' '
 
-	adr	x1,processor
-					// print " Processor, "
+	adr	x1,processor		// print " Processor, "
 	bl	strcat
 
 	#========
@@ -451,13 +448,12 @@ chip_name:
 	svc	0
 					// sysinfo() syscall
 
-	ldr	x3,[x3,#S_TOTALRAM]
-					// size in bytes of RAM
+	ldr	x3,[x3,#S_TOTALRAM]	// size in bytes of RAM
 	lsr	x3,x3,#20		// divide by 1024*1024 to get M
 //	adc	x3,x3,#0		// round
 
 	mov	x0,#1
-	bl num_to_ascii
+	bl num_to_ascii			// print to string
 
 	adr	x1,ram_comma		// print 'M RAM, '
 	bl	strcat			// call strcat
@@ -469,7 +465,7 @@ chip_name:
 
 	ldr	w0,=( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
 	mov	x3,#'\n'
-	bl	find_string
+	bl	find_string		// Find MIPS then get to \n
 
 	adr	x1,bogo_total
 	bl	strcat			// print bogomips total
@@ -488,8 +484,7 @@ last_line:
 
 	bl	center_and_print	// center and print
 
-	adr	x1,default_colors
-					// restore colors, print a few linefeeds
+	adr	x1,default_colors	// restore colors, print a few linefeeds
 	bl	write_stdout
 
 
@@ -512,31 +507,30 @@ find_string:
 	adr	x7,disk_buffer	// look in cpuinfo buffer
 find_loop:
 	ldr	w5,[x7],#+1	// load a byte, increment pointer
-	cmp	x5,x0		// compare against first byte
-	b.eq	find_colon	// if match, we are found
 
-	cmp	x5,#0		// are we at EOF?
-	b.eq	done		// if so, done
+	cbz	w5,done		// are we at EOF?
+				// if so, done
 
-	b	find_loop
+	cmp	w5,w0		// compare against first byte
+
+	b.ne	find_loop	// if no match, then loop
 
 find_colon:
 	ldrb	w5,[x7],#+1	// load a byte, increment pointer
 	cmp	x5,#':'
 	b.ne	find_colon	// repeat till we find colon
 
-	add	x7,x7,#1	// skip the space
-
 store_loop:
-	ldrb	w5,[x7],#+1	// load a byte, increment pointer
+	ldrb	w5,[x7,#+1]!	// load a byte, increment pointer
+				// by using pre-indexed increment
+				// we skip the leading space
+
 	strb	w5,[x10],#+1	// store a byte, increment pointer
 	cmp	x5,x3
 	b.ne	store_loop
 
 almost_done:
-	mov	x0,#0
-	strb	w0,[x10],#-1	// replace last value with NUL
-				// use zero register
+	strb	wzr,[x10],#-1	// replace last value with NUL
 
 done:
 	ret			// return
