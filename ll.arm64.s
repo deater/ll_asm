@@ -669,7 +669,7 @@ escape:		.ascii "\033[\0"
 C:		.ascii "C\0"
 
 .ifdef FAKE_PROC
-cpuinfo:	.ascii  "proc/c.arm64\0"
+cpuinfo:	.ascii  "proc/cp.arm64\0"
 .else
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 .endif
