@@ -21,7 +21,6 @@
 # x29 is the frame pointer
 # The encoding of x31 is a special case that may mean zero or SP
 # w0-w30 are the lower 32-bits of the X registers
-# can also use r0 - r31?
 # xsp/wsp and xzr/wzr can be used for zero and stack registers
 
 # Also a 64-bit PC (program counter) and SP (stack pointer)
@@ -34,12 +33,12 @@
 
 
 # Addressing modes
-#  Base register 		[r0,#0]
-#  Base plus offset		[r0,#imm]
-#  Base plus register shift	[r0,r1,LSL #imm]
-#  Base plus sign extended reg	[r0, W0, (S|U)XTW #imm]
-#  Pre-indexed (update r0)	[r0,#imm]!
-#  Post-indexed	(update r0)	[r0],#imm
+#  Base register 		[x0,#0]
+#  Base plus offset		[x0,#imm]
+#  Base plus register shift	[x0,x1,LSL #imm]
+#  Base plus sign extended reg	[x0, W0, (S|U)XTW #imm]
+#  Pre-indexed (update r0)	[x0,#imm]!
+#  Post-indexed	(update r0)	[x0],#imm
 #  Label			blah
 
 # Stack pointer must be quadword-aligned
@@ -245,7 +244,8 @@
 .equ U_DOMAINNAME,65*5
 
 # offset into the results returned by the sysinfo syscall
-.equ S_TOTALRAM,16
+# uptime=8 bytes, loads = 3*8 bytes, then totalram
+.equ S_TOTALRAM,32
 
 # Sycscalls
 .equ SYSCALL_EXIT,	93
@@ -398,7 +398,7 @@ middle_line:
 	mov	x8,#SYSCALL_OPENAT
 	svc	0
 
-					// syscall.  return in r0?
+					// syscall.  return in x0?
 	mov	x5,x0			// save our fd
 	adr	x1,disk_buffer
 	mov	x2,#4096	 	// cheat and assume maximum of 4kB
@@ -503,9 +503,9 @@ exit:
 	#=================================
 	# FIND_STRING
 	#=================================
-	# r0 = string to find
-	# r3 = char to end at
-	# r5 trashed
+	# x0 = string to find
+	# x3 = char to end at
+	# x5 trashed
 find_string:
 	adr	x7,disk_buffer	// look in cpuinfo buffer
 find_loop:
@@ -615,8 +615,8 @@ write_stdout_we_know_size:
 	##############################
 	# num_to_ascii
 	#############################
-	# r3 = value to print
-	# r0 = 0=stdout, 1=strcat
+	# x3 = value to print
+	# x0 = 0=stdout, 1=strcat
 
 num_to_ascii:
 	stp	x10,x30,[sp,#-16]!	// store return address on stack
