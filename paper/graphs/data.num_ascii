@@ -16,6 +16,7 @@ mips		RISC	56	0
 THUMB		EMBED	54	1
 microblaze	RISC	52	0
 m68k		CISC	48	0
+arm64		RISC	48	0
 Thumb-2		EMBED	42	1
 crisv32		EMBED	40	1
 pdp-11		EBIT	40	0
@@ -26,4 +27,3 @@ vax		CISC	26	0
 x86_64		CISC	22	0
 x86_x32		CISC	22	0
 i386		CISC	21	0
-arm64		RISC	0	0
