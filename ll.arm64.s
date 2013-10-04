@@ -233,6 +233,7 @@
 #    - 1130 bytes = store a halfword rather than two bytes
 #    - 1114 bytes = optimize branches, zero register, in find_string
 #    - 1110 bytes = use cbnz in strcat
+#    - 1106 bytes = use cbnz in write_stdout
 
 # Overall optimization TODO:
 # + cbz
@@ -567,10 +568,9 @@ str_loop2:
 	sub	x2,x10,x2		// get length by subtracting
 
 	mov	x0,#81
-	sub	x2,x0,x2		// reverse subtract!  r2=81-r2
-					// we use 81 to not count ending \n
+	subs	x2,x0,x2		// no reverse substract arm64!
 
-	b.ne	done_center		// if result negative, don't center
+	b.mi	done_center		// if result negative, don't center
 
 	lsr	x3,x2,#1		// divide by 2
 //	adc	x3,x3,#0		// round?
@@ -598,8 +598,7 @@ write_stdout:
 str_loop1:
 	add	x2,x2,#1
 	ldrb	w3,[x1,x2]
-	cmp	x3,#0
-	b.ne	str_loop1			// repeat till zero
+	cbnz	w3,str_loop1			// repeat till zero
 
 write_stdout_we_know_size:
 	mov	x0,#STDOUT			// print to stdout
