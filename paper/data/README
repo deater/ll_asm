@@ -1,0 +1,28 @@
+#  A.V = VLIW, B.R = RISC, C.E = Embedded, D.C = CISC, E.8=8/16bit
+#  F.Year = year introduced
+#  G.E = Endian.  0=little, 1=big
+#  H.bt = bits
+#  I.mi = size of smallest instruction
+#  J.mx = size of largest instruction
+#  K.A = number of arguments to typical assembly statement
+#  L.GPR = # of int general purpose registers
+#  M.0 = has a 0 register
+#  N.U = has unaligned memory accesses
+#  O.A = auto-incrementing addressing mode
+#  P.Div = Hardware divide instruction  1=full, 0.7=no remainder, 0.3=pipelined
+#  Q.F = has status flags register
+#  R.B = has branch delay slot
+#  S.P = has predication
+#  virt_addr = virtual address of first instruction
+#
+# 6502 results for total subtract off the graphics-output extras
+# RiSC results lzss=(lzss+stack_usage+read_byte+shift_left_8+shift_right)*2
+#              strcat = (strcat+read_byte+shift_right+write_byte+shift_left)*2
+#              find = (find_string+read_byte+shift_right+write_byte+shift_left)*2
+#              n2a  = (n2a+write_byte+shift_left)*2
+
+#
+# lzss = done_logo - decompression_loop
+#   sc = (whatever_after) - strcat
+#  fnd = (whatever_after) - find_string
+#  n2a = (whatever_after) - num_to_ascii  + any divide routine

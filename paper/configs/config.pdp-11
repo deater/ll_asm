@@ -1,0 +1,23 @@
+pdp-11
+0	# VLIW
+0	# RISC
+0	# Embedded
+0	# CISC
+0	# 16-bit
+1	# 8-bit
+1970	# Year introduced
+0	# Endian 0=little 1=big
+16	# Wordsize (bits)
+2	# size of smallest instruction (bytes)
+6	# size of largest instruction (bytes)
+2	# numer of arguments to typical opcode
+8	# number of general purpose registers
+0	# has a 0 register
+0	# has unaligned memory access
+1	# has auto-incrementing addressing mode
+1.000000	# hardware divide 1.0=full 0.7=no remainder 0.3=pipelined
+1	# has status flag register
+0	# has branch delay slot
+0	# has predication
+0.000000	# log2 of virt address of first instruction
+0x0	# virt address of first instruction
