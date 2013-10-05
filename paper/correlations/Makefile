@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O2 -Wall
-LFLAGS =
+LFLAGS = -lm
 
 all:	convert_grid correlate
 

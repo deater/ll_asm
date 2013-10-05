@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_ARCH	100
 
@@ -47,6 +48,8 @@ int main(int argc, char **argv) {
 	int arch=0,i;
 	char filename[BUFSIZ];
 	char *result,string[BUFSIZ];
+	double xbar,ybar,sx,sy;
+	double r;
 
 	struct {
 		char name[BUFSIZ];
@@ -174,6 +177,28 @@ int main(int argc, char **argv) {
 
 	closedir(dir);
 
+	xbar=0.0; ybar=0.0;
+	for(i=0;i<arch;i++) {
+		xbar+=hw_info[i].min_instr;
+		ybar+=hw_info[i].overall_size;
+	}
+	xbar/=arch;
+	ybar/=arch;
+
+	sx=0.0; sy=0.0;
+	for(i=0;i<arch;i++) {
+		sx+=(hw_info[i].min_instr-xbar)*(hw_info[i].min_instr-xbar);
+		sy+=(hw_info[i].overall_size-ybar)*(hw_info[i].overall_size-ybar);
+	}
+	sx=sqrt(sx/arch);
+	sy=sqrt(sy/arch);
+
+	r=0.0;
+	for(i=0;i<arch;i++) {
+		 r+=((hw_info[i].min_instr-xbar)/sx) * ((hw_info[i].overall_size-ybar)/sy);
+	}
+	r/=arch;
+
 	printf("newgraph\n");
 	//printf("clip\n");
 	printf("X 5\n");
@@ -204,6 +229,8 @@ int main(int argc, char **argv) {
 			hw_info[i].overall_size,
 			hw_info[i].name);
 	}
+
+	printf("(* %lf *)\n",r);
 
 	return 0;
 
