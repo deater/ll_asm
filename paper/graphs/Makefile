@@ -13,8 +13,8 @@ fancy_lzss.png:		fancy_lzss.eps
 fancy_lzss.eps:		fancy_lzss.jgr
 			jgraph < fancy_lzss.jgr > fancy_lzss.eps
 			
-fancy_lzss.jgr:		fancy_graph data.lzss
-			./fancy_graph < data.lzss > fancy_lzss.jgr
+fancy_lzss.jgr:		fancy_graph ../data/data.lzss
+			./fancy_graph < ../data/data.lzss > fancy_lzss.jgr
 
 
 fancy_total_size.png:		fancy_total_size.eps
@@ -23,8 +23,8 @@ fancy_total_size.png:		fancy_total_size.eps
 fancy_total_size.eps:		fancy_total_size.jgr
 			jgraph < fancy_total_size.jgr > fancy_total_size.eps
 			
-fancy_total_size.jgr:		fancy_graph data.overall
-			./fancy_graph < data.overall > fancy_total_size.jgr
+fancy_total_size.jgr:		fancy_graph ../data/data.overall
+			./fancy_graph < ../data/data.overall > fancy_total_size.jgr
 			
 
 fancy_graph:		fancy_graph.o
@@ -97,40 +97,40 @@ regular_graph.o:	regular_graph.c
 			   
 ####			   
 
-ll_total_size.jgr:	data.overall regular_graph
-	./regular_graph < data.overall > ll_total_size.jgr
+ll_total_size.jgr:	../data/data.overall regular_graph
+	./regular_graph < ../data/data.overall > ll_total_size.jgr
 
 ll_total_size.eps:	ll_total_size.jgr
 	jgraph < ll_total_size.jgr > ll_total_size.eps
 
 ####
 
-ll_lzss_size.jgr:	data.lzss regular_graph
-	./regular_graph < data.lzss > ll_lzss_size.jgr
+ll_lzss_size.jgr:	../data/data.lzss regular_graph
+	./regular_graph < ../data/data.lzss > ll_lzss_size.jgr
 
 ll_lzss_size.eps:	ll_lzss_size.jgr
 	jgraph < ll_lzss_size.jgr > ll_lzss_size.eps
 
 ####
 
-ll_strcat_size.jgr:	data.strcat regular_graph
-	./regular_graph < data.strcat > ll_strcat_size.jgr
+ll_strcat_size.jgr:	../data/data.strcat regular_graph
+	./regular_graph < ../data/data.strcat > ll_strcat_size.jgr
 
 ll_strcat_size.eps:	ll_strcat_size.jgr
 	jgraph < ll_strcat_size.jgr > ll_strcat_size.eps
 
 ####
 
-ll_findstring_size.jgr:	data.findstring regular_graph
-	./regular_graph < data.findstring > ll_findstring_size.jgr
+ll_findstring_size.jgr:	../data/data.findstring regular_graph
+	./regular_graph < ../data/data.findstring > ll_findstring_size.jgr
 
 ll_findstring_size.eps:	ll_findstring_size.jgr
 	jgraph < ll_findstring_size.jgr > ll_findstring_size.eps
 
 ####
 
-ll_num_ascii.jgr:	data.num_ascii regular_graph
-	./regular_graph < data.num_ascii > ll_num_ascii.jgr
+ll_num_ascii.jgr:	../data/data.num_ascii regular_graph
+	./regular_graph < ../data/data.num_ascii > ll_num_ascii.jgr
 
 ll_num_ascii.eps:	ll_num_ascii.jgr
 	jgraph < ll_num_ascii.jgr > ll_num_ascii.eps
