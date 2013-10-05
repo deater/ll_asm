@@ -3,8 +3,8 @@
 0	# RISC
 0	# Embedded
 0	# CISC
-0	# 16-bit
-1	# 8-bit
+1	# 16-bit
+0	# 8-bit
 1978	# Year introduced
 0	# Endian 0=little 1=big
 16	# Wordsize (bits)
