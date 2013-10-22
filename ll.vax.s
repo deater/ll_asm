@@ -192,6 +192,7 @@
 # -  994 bytes (use simple counter for the bit counter in lzss)
 # -  982 bytes (remove extraneous byte swapping.  Vax is little-endian)
 # -  978 bytes (use displacement sizing on constant?)
+# -  978 bytes (use clear instead of move 0 on stack)
 
 .include "logo.include"
 
@@ -343,7 +344,7 @@ middle_line:
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-	movq	$0,-(%sp)		# push $0 twice (this is shorter)
+	clrq	-(%sp)			# push $0 twice (this is shorter)
 					# arg3 (mode)
        					# arg2 (0) = O_RDONLY <bits/fcntl.h>
 	pushl   $cpuinfo  		# arg1 '/proc/cpuinfo'
