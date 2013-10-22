@@ -511,7 +511,7 @@ center_and_print:
 	bsbb	write_stdout
 
 					# get length of string (end-begin)
-	subl3	%r6,11,%r3		# r3=%r11-%r3
+	subl3	%r6,%r11,%r3		# r3=%r11-%r3
 
 	subl3	%r3,$80,%r2		# reverse subtract
 	blss	done_center		# if greater than 80, no center
