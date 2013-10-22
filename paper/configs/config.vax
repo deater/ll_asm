@@ -6,7 +6,7 @@ vax
 0	# 16-bit
 0	# 8-bit
 1977	# Year introduced
-1	# Endian 0=little 1=big
+0	# Endian 0=little 1=big
 32	# Wordsize (bits)
 1	# size of smallest instruction (bytes)
 54	# size of largest instruction (bytes)
