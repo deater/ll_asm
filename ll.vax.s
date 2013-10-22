@@ -185,9 +185,10 @@
 #               byte offset accesses instead of re-loading each time)
 # - 1010 bytes (another pass of bsbw/bsbb changes)
 
-# pause for a while
+# pause for a while.  Following were contributed by Anders Magnusson
 
 # - 1006 bytes (move text_buf to r8, use (%r11)+[%r8] style addressing)
+# -  998 bytes (move syscall to ap and call to register)
 
 .include "logo.include"
 
@@ -243,6 +244,7 @@ _start:
 	moval  	b`LOGO_OFFSET(%r9),%r1	# %r1 points to logo
 	moval	out_buffer,%r3		# point r3 to out_buffer
 	moval	text_buf,%r8		# point r8 to text_buf
+	movab	syscall,%ap		# put syscall address in %ap
 	movl	%r3,%r6	    		# store out_buffer in %r6 forever
 
 decompression_loop:
@@ -311,7 +313,7 @@ first_line:
 	moval	uname_info,%r7
 	pushl   %r7   			# uname_struct
 	movzbl	$SYSCALL_UNAME,%r0	# uname syscall
-	calls	$1,syscall		# call syscall handler, 1 parm
+	calls	$1,(%ap)		# call syscall handler, 1 parm
 
 	movl	%r7,%r5			# os-name from uname "Linux"
 	bsbb	strcat
@@ -348,7 +350,7 @@ middle_line:
        					# arg2 (0) = O_RDONLY <bits/fcntl.h>
 	pushl   $cpuinfo  		# arg1 '/proc/cpuinfo'
 	movzbl	$SYSCALL_OPEN,%r0	# open syscall
-	calls	$3,syscall		# call syscall handler, 3 parm
+	calls	$3,(%ap)		# call syscall handler, 3 parm
 
 	movl	%r0,%r5			# save our fd
 
@@ -356,11 +358,11 @@ middle_line:
 	pushl	$disk_buffer		# disk_buffer
 	pushl	%r5			# our fd
 	movzbl	$SYSCALL_READ,%r0	# read syscall
-	calls	$3,syscall		# call syscall, 3 parameters
+	calls	$3,(%ap)		# call syscall, 3 parameters
 
 	pushl	%r5			# push fd
 	movzbl	$SYSCALL_CLOSE,%r0	# close (to be correct)
-	calls	$1,syscall
+	calls	$1,(%ap)		# call syscall, 1 parameter
 
 	brb	number_of_cpus		# skip strcat
 
@@ -420,7 +422,7 @@ chip_name:
 	moval	sysinfo_buff,%r10
 	pushl	%r10		 	# sysinfo buffer
 	movzbl	$SYSCALL_SYSINFO,%r0	# sysinfo syscall
-	calls	$1,syscall		# call syscall, 1 parameter
+	calls	$1,(%ap)		# call syscall, 1 parameter
 
 	movl	b`S_TOTALRAM(%r10),%r3	# size in bytes of RAM
 	ashl	$-20,%r3,%r2		# divide by 1024*1024 to get M
@@ -466,7 +468,7 @@ third_line:
 exit:
 	pushl  $0x0			# exit value
 	movzbl $SYSCALL_EXIT,%r0	# syscall
-	calls  $1,syscall		# call syscall handler, 1 parm
+	calls  $1,(%ap)			# call syscall handler, 1 parm
 
 
 
@@ -551,7 +553,7 @@ write_stdout:
 	pushl   %r3		# argument 2 (string)
 	pushl   $STDOUT	     	# argument 1 (stdout)
 	movzbl	$SYSCALL_WRITE,%r0
-	calls	$3,syscall	# call the syscall
+	calls	$3,(%ap)	# call the syscall
 
 	rsb		  	# return
 
