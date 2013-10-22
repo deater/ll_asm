@@ -191,6 +191,7 @@
 # -  998 bytes (move syscall to ap and call to register)
 # -  994 bytes (use simple counter for the bit counter in lzss)
 # -  982 bytes (remove extraneous byte swapping.  Vax is little-endian)
+# -  978 bytes (use displacement sizing on constant?)
 
 .include "logo.include"
 
@@ -288,7 +289,7 @@ store_byte:
 	brb 	decompression_loop
 
 discrete_char:
-	movb	(%r1)+,%r10		# load in a byte
+	movb	(%r1)+,%r0		# load in a byte
 	movzbl	$1,%r2			# set count to one
 	brb	store_byte
 
@@ -297,7 +298,7 @@ discrete_char:
 
 done_logo:
 
-	movl	%r6,%r3			# move out_buffer to r3
+	movl	%r6,%r0			# move out_buffer to r0
 	bsbw	write_stdout		# print the logo
 
 
@@ -318,13 +319,13 @@ first_line:
 	movl	%r9,%r5			# source is " Version "
 	bsbb	strcat			# call strcat
 
-	moval	U_RELEASE(%r7),%r5	# version from uname "2.4.1"
+	moval	b`U_RELEASE(%r7),%r5	# version from uname "2.4.1"
 	bsbb	strcat			# call strcat
 
 	moval	b`COMP_OFFSET(%r9),%r5	# source is ", Compiled "
 	bsbb	strcat			# call strcat
 
-	moval	U_VERSION(%r7),%r5	# compiled date
+	moval	b`U_VERSION(%r7),%r5	# compiled date
 	bsbb 	strcat			# call strcat
 
 	movw	$0x000a,(%r11)		# store linefeed and 0 on end
@@ -455,7 +456,7 @@ third_line:
 
 	bsbb	center_and_print	# center and print
 
-	moval	b`COLORS_OFFSET(%r9),%r3	# restore colors
+	moval	b`COLORS_OFFSET(%r9),%r0	# restore colors
 	bsbb	write_stdout
 
 
