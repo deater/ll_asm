@@ -189,6 +189,7 @@
 
 # - 1006 bytes (move text_buf to r8, use (%r11)+[%r8] style addressing)
 # -  998 bytes (move syscall to ap and call to register)
+# -  994 bytes (use simple counter for the bit counter in lzss)
 
 .include "logo.include"
 
@@ -248,15 +249,15 @@ _start:
 	movl	%r3,%r6	    		# store out_buffer in %r6 forever
 
 decompression_loop:
-	clrl	%r5		# reload the shift count
-	movb	(%r1)+,%r7	# load in a byte
+	movzbl	$8,%r5		# reload the shift count
+	movzbl	(%r1)+,%r7	# load in a byte, zero extend
 
 test_flags:
 	cmpl	$logo_end, %r1 	# have we reached the end?
 	beql	done_logo  	# if so, exit
 
-	bbs	%r5,%r7,discrete_char
-				# branch on bit set
+	blbs	%r7,discrete_char
+				# branch if low bit set
 
 offset_length:
 	movzbl 	(%r1)+,%r2  	# get match_length and match_position
@@ -283,10 +284,11 @@ store_byte:
 	movb	%r0,(%r4)+[%r8]		# store also to text_buf[r], inc r4
 	bicw2	$~(N-1),%r4		# mask r
 
-	acbb 	$1,$-1,%r2,output_loop	# repeat until k>j
+	sobgtr 	%r2,output_loop		# subtract one and branch if >
+					# repeat until k>j
 
-	acbb	$7,$1,%r5,test_flags	# add to our bit offset and loop
-					# if not >7
+	divl2	$2,%r7			# shift right by one
+	sobgtr	%r5,test_flags		# subtract one and loop if not done
 
 	brb 	decompression_loop
 
