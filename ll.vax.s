@@ -194,6 +194,7 @@
 # -  978 bytes (use displacement sizing on constant?)
 # -  978 bytes (use clear instead of move 0 on stack)
 # -  962 bytes (use discrete instructions for strcat and find_string)
+# -  950 bytes (optimize center_and_print and write_stdout)
 
 .include "logo.include"
 
@@ -506,49 +507,43 @@ copy_rest:
 
 center_and_print:
 
-
-	moval	ESCAPE_OFFSET(%r9),%r3	# we want to output ^[[
+	moval	b`ESCAPE_OFFSET(%r9),%r0	# we want to output ^[[
 	bsbb	write_stdout
 
-	mnegl	%r6,%r3			# get length of string (end-begin)
-	addl2	%r11,%r3		# r3=%r11-%r3
+					# get length of string (end-begin)
+	subl3	%r6,11,%r3		# r3=%r11-%r3
 
-	movl	$80,%r1
+	subl3	%r3,$80,%r2		# reverse subtract
+	blss	done_center		# if greater than 80, no center
 
-	cmpb	%r3,%r1	    		# is it greater than 80?
-	bgeq	done_center		# if so, branch
-
-	subl3	%r3,%r1,%r3		# subtract size from 80
-
-	ashl	$-1,%r3,%r2     	# then divide by 2
+	divl2	$2,%r2			# then divide by 2
 
 	bsbb	num_to_ascii		# print number of spaces
-	movl	%r1,%r3
+	movl	%r1,%r0
 	bsbb	write_stdout
 
-	moval	C_OFFSET(%r9),%r3	# tack a 'C' on the end
+	moval	b`C_OFFSET(%r9),%r0	# tack a 'C' on the end
 	bsbb	write_stdout
 
 done_center:
-	movl	%r6,%r3			# fall through to write_stdout
+	movl	%r6,%r0			# fall through to write_stdout
 					# it will return for us
 
 
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# %r3 has string
+	# %r0 has string
 
 write_stdout:
 
+	clrl	%r1		# set r1 to zero
+write_loop:
+	tstb	(%r1)+[%r0]	# test for end NUL, auto-inc
+	bneq	write_loop	# repeat until found
 
-	locc 	$0,$65535,(%r3)	# look for byte 0, looking at up to 64k chars
-				# r0=bytes remaining, r1=address located
-
-	subl3	%r3,%r1,-(%sp)	# get the string length by subtracting
-				# and store it on the stack
-				# argument 3 (length)
-	pushl   %r3		# argument 2 (string)
+	movq    %r0,-(%sp)	# push length (in r1) and pointer (r0)
+				# in one instruction
 	pushl   $STDOUT	     	# argument 1 (stdout)
 	movzbl	$SYSCALL_WRITE,%r0
 	calls	$3,(%ap)	# call the syscall
