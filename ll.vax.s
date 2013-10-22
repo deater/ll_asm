@@ -28,7 +28,7 @@
 
 # 16 32-bit general purpose registers.  Processor status longword.
 #   r15=pc, r14=sp, r13=fp, r12=ap (argument pointer)
-# Big-endian
+# Little-endian
 # variable length instructions, 0-6 arguments
 # >32 bit values are stored in adjacent registers
 
@@ -190,6 +190,7 @@
 # - 1006 bytes (move text_buf to r8, use (%r11)+[%r8] style addressing)
 # -  998 bytes (move syscall to ap and call to register)
 # -  994 bytes (use simple counter for the bit counter in lzss)
+# -  982 bytes (remove extraneous byte swapping.  Vax is little-endian)
 
 .include "logo.include"
 
@@ -260,17 +261,11 @@ test_flags:
 				# branch if low bit set
 
 offset_length:
-	movzbl 	(%r1)+,%r2  	# get match_length and match_position
-	movzbl  (%r1)+,%r11
-	ashl 	$8,%r11,%r11
-	bisb2	%r2,%r11    	# have to swap bytes, big-endian
+	movzwl	(%r1)+,%r11	# load 16-bit value, zero extend
+				# not sure why the previous
+				# code though VAX was big-endian
 
-	movzwl 	%r11,%r2	# copy to r2
-	    			# no need to mask r2, as we do it
-				# by default in output_loop
-
-
-	ashl 	$-(P_BITS),%r2,%r2
+	ashl 	$-(P_BITS),%r11,%r2
 	addl2	$(THRESHOLD+1),%r2
 
 output_loop:
