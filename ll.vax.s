@@ -185,6 +185,10 @@
 #               byte offset accesses instead of re-loading each time)
 # - 1010 bytes (another pass of bsbw/bsbb changes)
 
+# pause for a while
+
+# - 1006 bytes (move text_buf to r8, use (%r11)+[%r8] style addressing)
+
 .include "logo.include"
 
 # offsets into the results returned by the uname syscall
@@ -238,6 +242,7 @@ _start:
 	movzwl 	$(N-F),%r4   	     	# R in %r4
 	moval  	b`LOGO_OFFSET(%r9),%r1	# %r1 points to logo
 	moval	out_buffer,%r3		# point r3 to out_buffer
+	moval	text_buf,%r8		# point r8 to text_buf
 	movl	%r3,%r6	    		# store out_buffer in %r6 forever
 
 decompression_loop:
@@ -268,14 +273,12 @@ offset_length:
 output_loop:
 	bicw2 	$~(POSITION_MASK<<8+0xff),%r11  	# mask it
 
-	movb 	text_buf(%r11), %r10	# load byte from text_buf[]
-	incl	%r11
+	movb 	(%r11)+[%r8], %r0	# load byte from text_buf[], inc r11
 
 store_byte:
-	movb	%r10,(%r3)+		# store it
+	movb	%r0,(%r3)+		# store it
 
-	movb	%r10,text_buf(%r4)	# store also to text_buf[r]
-	incl 	%r4 			# r++
+	movb	%r0,(%r4)+[%r8]		# store also to text_buf[r], inc r4
 	bicw2	$~(N-1),%r4		# mask r
 
 	acbb 	$1,$-1,%r2,output_loop	# repeat until k>j
