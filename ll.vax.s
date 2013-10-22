@@ -194,7 +194,7 @@
 # -  978 bytes (use displacement sizing on constant?)
 # -  978 bytes (use clear instead of move 0 on stack)
 # -  962 bytes (use discrete instructions for strcat and find_string)
-# -  950 bytes (optimize center_and_print and write_stdout)
+# -  946 bytes (optimize center_and_print and write_stdout)
 
 .include "logo.include"
 
