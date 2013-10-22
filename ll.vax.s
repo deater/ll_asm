@@ -193,6 +193,7 @@
 # -  982 bytes (remove extraneous byte swapping.  Vax is little-endian)
 # -  978 bytes (use displacement sizing on constant?)
 # -  978 bytes (use clear instead of move 0 on stack)
+# -  962 bytes (use discrete instructions for strcat and find_string)
 
 .include "logo.include"
 
@@ -371,20 +372,13 @@ middle_line:
 	#================================
 	# copy string from r5 to end of r11
 
+	# originally used CISC "locc" instruction
+	# but smaller to just use discrete instructions
 strcat:
-	locc 	$0,$65535,(%r5)	# look for byte 0, looking at up to 64k chars
-				# r0=bytes remaining, r1=address located
-
-strcat_know_size:
-	subl3	%r5,%r1,%r0	# get the string length by subtracting
-
-
-	movc3   %r0,(%r5),(%r11)  # move r1 bytes from (r3) to (r11)
-				  #  result: r1=end of source, r3=end of dest
-	movl	%r3,%r11	  # update output pointer
-	movb	$0,(%r11)	  # null terminate
-
-	rsb			  # return
+	movb	(%r5)+,(%r11)+	# copy and increment including zero
+	bneq	strcat
+	decl	%r11		# set ready for another string
+	rsb
 
 	#=============
 	# Number of CPUs
@@ -475,28 +469,33 @@ exit:
 	# FIND_STRING
 	#=================================
 	#   %r5 points to 4-char ascii string to look for
-	#   edi points at output buffer
+	#   %r11 points at output buffer
 
 find_string:
 
-	# NOTE!  The matchc instruction is optional
-	#        you have to hack the code to turn it on in simh 3.7
+	# This code previously used the optional matchc instruction
+	# but using discrete instructions was smaller
 
-	moval	disk_buffer,%r0		# look in cpuinfo buffer
-	matchc	$4,(%r5),$4096,(%r0)	# search for substring r5 (size 4)
-					# in string r0 (size 4096)
-					#  result we want is in r3
+	moval   disk_buffer,%r0		# look in cpuinfo buffer
 
-	movl	%r3,%r5			# copy the pointer
+find_loop:
+	cmpl	(%r5),(%r0)		# search for substring r5
+	beql	find_colon
+	incl	%r0			# increment pointer
+	brb	find_loop		# loop until found
 
 find_colon:
-	locc	$':',$65535,(%r5)	# find a colon
-	addl3	%r1,$2,%r5		# copy the pointer and skip space
+	cmpb	$':',(%r0)+		# find a colon
+	bneq    find_colon
+	incl	%r0			# skip space
 
-store_loop:
-	locc	$'\n',$65535,(%r5)	# find size
+copy_rest:
+	movb	(%r0)+,(%r11)+		# copy the rest
+	cmpb	$'\n',(%r0)
+	bneq    copy_rest
 
-	brw	strcat_know_size
+	clrb    (%r11)			# NUL-terminate output
+	rsb				# return
 
 
 	#==============================
