@@ -196,6 +196,9 @@
 # -  962 bytes (use discrete instructions for strcat and find_string)
 # -  946 bytes (optimize center_and_print and write_stdout)
 
+# Back to vince
+# -  950 bytes (lost a few when making it actually work under simh)
+
 .include "logo.include"
 
 # offsets into the results returned by the uname syscall
