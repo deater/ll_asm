@@ -15,7 +15,7 @@ Disassembly of section .text:
    1008a:	00 00 53 
    1008d:	de ef 25 03 	moval 103b8 <text_buf>,r8
    10091:	00 00 58 
-   10094:	9e cf 98 01 	movab 10230 <syscall>,ap
+   10094:	9e cf 9b 01 	movab 10233 <syscall>,ap
    10098:	5c 
    10099:	d0 53 56    	movl r3,r6
 
@@ -57,7 +57,7 @@ Disassembly of section .text:
 
 000100e1 <done_logo>:
    100e1:	d0 56 50    	movl r6,r0
-   100e4:	30 1a 01    	bsbw 10201 <write_stdout>
+   100e4:	30 1d 01    	bsbw 10204 <write_stdout>
 
 000100e7 <first_line>:
    100e7:	d0 56 5b    	movl r6,r11
@@ -79,7 +79,7 @@ Disassembly of section .text:
    10115:	55 
    10116:	10 38       	bsbb 10150 <strcat>
    10118:	b0 0a 6b    	movw $0xa,(r11)
-   1011b:	30 bc 00    	bsbw 101da <center_and_print>
+   1011b:	30 bf 00    	bsbw 101dd <center_and_print>
 
 0001011e <middle_line>:
    1011e:	d0 56 5b    	movl r6,r11
@@ -124,7 +124,7 @@ Disassembly of section .text:
    1017a:	d0 aa 10 53 	movl 0x10(r10),r3
    1017e:	78 8f ec 53 	ashl $0xec,r3,r2
    10182:	52 
-   10183:	30 90 00    	bsbw 10216 <num_to_ascii>
+   10183:	30 93 00    	bsbw 10219 <num_to_ascii>
    10186:	d0 51 55    	movl r1,r5
    10189:	10 c5       	bsbb 10150 <strcat>
    1018b:	de a9 28 55 	moval 0x28(r9),r5
@@ -133,15 +133,15 @@ Disassembly of section .text:
    10195:	10 21       	bsbb 101b8 <find_string>
    10197:	de a9 30 55 	moval 0x30(r9),r5
    1019b:	10 b3       	bsbb 10150 <strcat>
-   1019d:	10 3b       	bsbb 101da <center_and_print>
+   1019d:	10 3e       	bsbb 101dd <center_and_print>
 
 0001019f <third_line>:
    1019f:	d0 56 5b    	movl r6,r11
    101a2:	de a7 41 55 	moval 0x41(r7),r5
    101a6:	10 a8       	bsbb 10150 <strcat>
-   101a8:	10 30       	bsbb 101da <center_and_print>
+   101a8:	10 33       	bsbb 101dd <center_and_print>
    101aa:	de a9 41 50 	moval 0x41(r9),r0
-   101ae:	10 51       	bsbb 10201 <write_stdout>
+   101ae:	10 54       	bsbb 10204 <write_stdout>
 
 000101b0 <exit>:
    101b0:	dd 00       	pushl $0x0
@@ -154,73 +154,76 @@ Disassembly of section .text:
 
 000101bf <find_loop>:
    101bf:	d1 65 60    	cmpl (r5),(r0)
-   101c2:	13 04       	beql 101c8 <find_colon>
-   101c4:	d6 50       	incl r0
-   101c6:	11 f7       	brb 101bf <find_loop>
+   101c2:	13 07       	beql 101cb <find_colon>
+   101c4:	91 00 80    	cmpb $0x0,(r0)+
+   101c7:	13 11       	beql 101da <done_find>
+   101c9:	11 f4       	brb 101bf <find_loop>
 
-000101c8 <find_colon>:
-   101c8:	91 3a 80    	cmpb $0x3a,(r0)+
-   101cb:	12 fb       	bneq 101c8 <find_colon>
-   101cd:	d6 50       	incl r0
+000101cb <find_colon>:
+   101cb:	91 3a 80    	cmpb $0x3a,(r0)+
+   101ce:	12 fb       	bneq 101cb <find_colon>
+   101d0:	d6 50       	incl r0
 
-000101cf <copy_rest>:
-   101cf:	90 80 8b    	movb (r0)+,(r11)+
-   101d2:	91 0a 60    	cmpb $0xa,(r0)
-   101d5:	12 f8       	bneq 101cf <copy_rest>
-   101d7:	94 6b       	clrb (r11)
-   101d9:	05          	rsb
+000101d2 <copy_rest>:
+   101d2:	90 80 8b    	movb (r0)+,(r11)+
+   101d5:	91 0a 60    	cmpb $0xa,(r0)
+   101d8:	12 f8       	bneq 101d2 <copy_rest>
 
-000101da <center_and_print>:
-   101da:	de a9 48 50 	moval 0x48(r9),r0
-   101de:	10 21       	bsbb 10201 <write_stdout>
-   101e0:	c3 56 5b 53 	subl3 r6,r11,r3
-   101e4:	c3 53 8f 50 	subl3 r3,$0x00000050,r2
-   101e8:	00 00 00 52 
-   101ec:	19 10       	blss 101fe <done_center>
-   101ee:	c6 02 52    	divl2 $0x2,r2
-   101f1:	10 23       	bsbb 10216 <num_to_ascii>
-   101f3:	d0 51 50    	movl r1,r0
-   101f6:	10 09       	bsbb 10201 <write_stdout>
-   101f8:	de a9 4b 50 	moval 0x4b(r9),r0
-   101fc:	10 03       	bsbb 10201 <write_stdout>
+000101da <done_find>:
+   101da:	94 6b       	clrb (r11)
+   101dc:	05          	rsb
 
-000101fe <done_center>:
-   101fe:	d0 56 50    	movl r6,r0
+000101dd <center_and_print>:
+   101dd:	de a9 48 50 	moval 0x48(r9),r0
+   101e1:	10 21       	bsbb 10204 <write_stdout>
+   101e3:	c3 56 5b 53 	subl3 r6,r11,r3
+   101e7:	c3 53 8f 50 	subl3 r3,$0x00000050,r2
+   101eb:	00 00 00 52 
+   101ef:	19 10       	blss 10201 <done_center>
+   101f1:	c6 02 52    	divl2 $0x2,r2
+   101f4:	10 23       	bsbb 10219 <num_to_ascii>
+   101f6:	d0 51 50    	movl r1,r0
+   101f9:	10 09       	bsbb 10204 <write_stdout>
+   101fb:	de a9 4b 50 	moval 0x4b(r9),r0
+   101ff:	10 03       	bsbb 10204 <write_stdout>
 
-00010201 <write_stdout>:
-   10201:	d4 51       	clrf r1
+00010201 <done_center>:
+   10201:	d0 56 50    	movl r6,r0
 
-00010203 <write_loop>:
-   10203:	95 40 81    	tstb (r1)+[r0]
-   10206:	12 fb       	bneq 10203 <write_loop>
-   10208:	d7 51       	decl r1
-   1020a:	7d 50 7e    	movq r0,-(sp)
-   1020d:	dd 01       	pushl $0x1
-   1020f:	9a 04 50    	movzbl $0x4,r0
-   10212:	fb 03 6c    	calls $0x3,(ap)
-   10215:	05          	rsb
+00010204 <write_stdout>:
+   10204:	d4 51       	clrf r1
 
-00010216 <num_to_ascii>:
-   10216:	de ef e4 05 	moval 10800 <ascii_buffer+0x8>,r1
-   1021a:	00 00 51 
-   1021d:	d4 53       	clrf r3
+00010206 <write_loop>:
+   10206:	95 40 81    	tstb (r1)+[r0]
+   10209:	12 fb       	bneq 10206 <write_loop>
+   1020b:	d7 51       	decl r1
+   1020d:	7d 50 7e    	movq r0,-(sp)
+   10210:	dd 01       	pushl $0x1
+   10212:	9a 04 50    	movzbl $0x4,r0
+   10215:	fb 03 6c    	calls $0x3,(ap)
+   10218:	05          	rsb
 
-0001021f <div_by_10>:
-   1021f:	7b 0a 52 54 	ediv $0xa,r2,r4,r5
-   10223:	55 
+00010219 <num_to_ascii>:
+   10219:	de ef e1 05 	moval 10800 <ascii_buffer+0x8>,r1
+   1021d:	00 00 51 
+   10220:	d4 53       	clrf r3
 
-00010224 <write_out>:
-   10224:	c0 30 55    	addl2 $0x30,r5
-   10227:	90 55 71    	movb r5,-(r1)
-   1022a:	d0 54 52    	movl r4,r2
-   1022d:	12 f0       	bneq 1021f <div_by_10>
-   1022f:	05          	rsb
+00010222 <div_by_10>:
+   10222:	7b 0a 52 54 	ediv $0xa,r2,r4,r5
+   10226:	55 
 
-00010230 <syscall>:
-   10230:	00          	halt
-   10231:	00          	halt
-   10232:	bc 50       	chmk r0
-   10234:	04          	ret
+00010227 <write_out>:
+   10227:	c0 30 55    	addl2 $0x30,r5
+   1022a:	90 55 71    	movb r5,-(r1)
+   1022d:	d0 54 52    	movl r4,r2
+   10230:	12 f0       	bneq 10222 <div_by_10>
+   10232:	05          	rsb
+
+00010233 <syscall>:
+   10233:	00          	halt
+   10234:	00          	halt
+   10235:	bc 50       	chmk r0
+   10237:	04          	ret
 Disassembly of section .data:
 
 00010238 <data_begin>:

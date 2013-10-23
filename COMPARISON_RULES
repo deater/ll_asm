@@ -43,6 +43,8 @@ exit()
 
 find_string()
 23. can use minimum of 3 bytes in string search
+    in first search loop must also exit if encounter \0 (off end of file)
+       or alternately if it is bigger than 4096 (size of buffer)
 
 strcat()
 24. must have strcat

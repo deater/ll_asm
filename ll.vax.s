@@ -485,7 +485,10 @@ find_string:
 find_loop:
 	cmpl	(%r5),(%r0)		# search for substring r5
 	beql	find_colon
-	incl	%r0			# increment pointer
+	cmpb	$0,(%r0)+		# increment pointer
+					# check to see if we are off end
+					# of buffer
+	beql	done_find		# if reading 0's, off end, so done
 	brb	find_loop		# loop until found
 
 find_colon:
@@ -498,6 +501,7 @@ copy_rest:
 	cmpb	$'\n',(%r0)
 	bneq    copy_rest
 
+done_find:
 	clrb    (%r11)			# NUL-terminate output
 	rsb				# return
 

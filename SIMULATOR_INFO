@@ -4,12 +4,21 @@ Use at your own risk.
 #################################################
 Using simh to simulate vax:
 
+
    Obtain vax kernel and files.
    Export them over nfs
    
       /mnt/redhat/vax_emu/vaxroot     *(rw,sync)
    in /etc/exports
+
+   Make sure you start portmap
       
+   Compile up simh 3.9
+   Follow the directions for setting up a bridge.  
+   *do not* do it on your gateway.
+   The kernel we have expects to be on 192.168.5.67, easiest
+   to just use that.
+
    cd simh/src
    sudo ./BIN/vax ../vax.ini
 
@@ -17,7 +26,7 @@ Where vax.ini is:
    load -r VAX/ka655x.bin
    set rq0 ra92
    att rq0 /home/vince/ll_emulators/vax-linux/simh/vmlinux.dsk.simh
-   att xq mirror0
+   attach xq tap:tap0
    boot cpu
 
 Then type:
@@ -25,12 +34,9 @@ Then type:
    5
    boot dua0
    
-    - had to compile with extended string support enabled.  
-      Had to hack afile
-    - compile with USE_NETWORK=1
     - Use "^E" to break into monitor
  
-    - did I need to install mopd?  I forget
+    - did I need to install mopd?  I don't think so.
 
 
 #################################################
