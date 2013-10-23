@@ -322,13 +322,13 @@ first_line:
 	movl	%r9,%r5			# source is " Version "
 	bsbb	strcat			# call strcat
 
-	moval	b`U_RELEASE(%r7),%r5	# version from uname "2.4.1"
+	moval	U_RELEASE(%r7),%r5	# version from uname "2.4.1"
 	bsbb	strcat			# call strcat
 
 	moval	b`COMP_OFFSET(%r9),%r5	# source is ", Compiled "
 	bsbb	strcat			# call strcat
 
-	moval	b`U_VERSION(%r7),%r5	# compiled date
+	moval	U_VERSION(%r7),%r5	# compiled date
 	bsbb 	strcat			# call strcat
 
 	movw	$0x000a,(%r11)		# store linefeed and 0 on end
@@ -541,6 +541,8 @@ write_stdout:
 write_loop:
 	tstb	(%r1)+[%r0]	# test for end NUL, auto-inc
 	bneq	write_loop	# repeat until found
+
+	decl	%r1
 
 	movq    %r0,-(%sp)	# push length (in r1) and pointer (r0)
 				# in one instruction

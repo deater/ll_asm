@@ -413,3 +413,7 @@ RELEASE 0.46
 + Finish arm64 support
 
 RELEASE 0.47
+
+22 October 2013
++ Merge optimized vax code
+
