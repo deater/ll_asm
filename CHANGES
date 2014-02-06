@@ -417,3 +417,6 @@ RELEASE 0.47
 22 October 2013
 + Merge optimized vax code
 
+6 February 2014
++ Properly implement the x32 code.
+

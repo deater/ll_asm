@@ -37,8 +37,8 @@ Some Statistics
      arm64		1094 bytes   (as 2.23.1)
      s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1030 bytes   (as 2.23.52.20130727)
+     x86_x32            1006 bytes   (as 2.24)
      sh3		 994 bytes   (as 2.17.50.0.5)
-     x86_x32             994 bytes   (as 2.23.52.20130727)
      m68k		 982 bytes   (as 2.18.0.20080103)
      x86                 969 bytes   (as 2.19.51.20090723)
      vax		 950 bytes   (as 2.16.1)
@@ -318,6 +318,9 @@ x86_x32:	This code is more or less the same as x86_64
 
 	In fact, almost all of the size saving comes from the fact
 	that a 32-bit ELF header is smaller than a 64-bit one.
+
+	The move to having all syscalls with bit 30 set hurts us
+	by about 10 bytes or so.
 
 vax:
     	vax is crazy CISC.  

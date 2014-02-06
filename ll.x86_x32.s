@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 x32 assembler 0.47
+#  linux_logo in x86_64 x32 assembler 0.48
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
@@ -47,6 +47,11 @@
 #   args  %rdi=arg1, %rsi=arg2, %rdx=arg3,
 #	  %r10=arg4  %r8=arg5,  %r9=arg6
 #   syscall passed in %rax, %r11 and %rcx destroyed
+#
+# Size:
+#	1012 - after using "proper" x32 syscall numbers
+#	1006 - re-optimizing to use mov rather than push/pop to load
+#		syscall numbers into eax
 
 .include "logo.include"
 
@@ -91,6 +96,8 @@ _start:
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
 	mov     $(N-F), %ebp   	     	# R
+					# lose a byte if we use %bp
+					# are we guaranteed ebp starts at 0?
 
 	mov  	$logo, %esi		# %esi points to logo (for lodsb)
 
@@ -170,8 +177,7 @@ setup:
 	# PRINT VERSION
 	#==========================
 
-	push 	$SYSCALL_UNAME		# uname syscall
-	pop	%rax			# in 3 bytes
+	mov 	$SYSCALL_UNAME,%eax	# uname syscall
 	mov	$uname_info,%edi	# uname struct (0 extend address)
 	syscall				# do syscall
 
@@ -214,8 +220,7 @@ middle_line:
 
 	push	%rdx			# save call pointer
 
-	push	$SYSCALL_OPEN		# load 5 [ open() ]
-	pop	%rax			# in 3 bytes
+	mov	$SYSCALL_OPEN,%eax	# load 5 [ open() ]
 
 	mov	$cpuinfo,%edi		# '/proc/cpuinfo'
 	xor	%esi,%esi		# 0 = O_RDONLY <bits/fcntl.h>
@@ -235,8 +240,7 @@ middle_line:
 
 	syscall
 
-	push	$SYSCALL_CLOSE		# close (to be correct)
-	pop	%rax
+	mov	$SYSCALL_CLOSE,%eax	# close (to be correct)
 	syscall
 
 	#=============
@@ -333,8 +337,7 @@ print_s:
 	#========
 
 	push	%rdi
-	push    $SYSCALL_SYSINFO	# sysinfo() syscall
-	pop	%rax
+	mov	$SYSCALL_SYSINFO,%eax	# sysinfo() syscall
 	mov	$sysinfo_buff,%edi
 	syscall
 	pop	%rdi
@@ -394,8 +397,7 @@ last_line:
 	# Exit
 	#================================
 exit:
-	push	$SYSCALL_EXIT		# Put exit syscall in rax
-	pop	%rax
+	mov	$SYSCALL_EXIT,%eax	# Put exit syscall in rax
 
 	xor	%edi,%edi		# Make return value $0
 	syscall
@@ -519,8 +521,7 @@ done_center:
 	# eax,ebx,ecx,edx trashed
 write_stdout:
 	push    %rdx
-	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
-	pop     %rax     		# in 3 bytes of code
+	mov	$SYSCALL_WRITE,%eax	# put 4 in eax (write syscall)
 
 	cdq   	      			# clear edx
 
