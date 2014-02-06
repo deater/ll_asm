@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 x32 assembler 0.46
+#  linux_logo in x86_64 x32 assembler 0.47
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
@@ -19,10 +19,18 @@
 #  + Using RIP addressing
 #  + can assume up to SSE2 available
 #
+# The difference between calling convention is that you set bit 30 on
+# syscalls.  Most use the same number as the x86_64 version except
+# for the ones that need special compat handling, which are at offset
+# +512 (see arch/x86/include/generated/asm/unistd_64_x32.h)
+#
 # Most of these changes don't help us as using the high registers
 #  take extra bytes, we don't use floating point, and we already
 #  were assuming our addresses fit in 32-bits and were zero extended
-
+#
+# In fact, adding 0x40000000 to the syscall values hurts our
+# code density
+#
 # 16 64-bit regs RAX RBX RCX RDX RDI RSI RBP RSP R8-R15
 # 16 32-bit regs EAX EBX ECX EDX EDI ESI EBP ESP R8D-R15D
 # 16 16-bit regs  AX  BX  CX  DX  DI  SI  BP  SP R8W-R15W
@@ -35,9 +43,7 @@
 # 32 bit results are 0 extended to fill 64 bit register,
 #    while 8&16 bit operations ignore upper bits
 #
-# Syscalls have different numbers than x86
-#   you can use the compat int 0x80 with old args, or the
-# New "syscall" instruction with all new values, and
+# Uses the "syscall" instruction with all new values, and
 #   args  %rdi=arg1, %rsi=arg2, %rdx=arg3,
 #	  %r10=arg4  %r8=arg5,  %r9=arg6
 #   syscall passed in %rax, %r11 and %rcx destroyed
@@ -56,13 +62,13 @@
 .equ S_TOTALRAM,32
 
 # Sycscalls
-.equ SYSCALL_EXIT,    60
-.equ SYSCALL_READ,     0
-.equ SYSCALL_WRITE,    1
-.equ SYSCALL_OPEN,     2
-.equ SYSCALL_CLOSE,    3
-.equ SYSCALL_SYSINFO, 99
-.equ SYSCALL_UNAME,   63
+.equ SYSCALL_EXIT,    60 + 0x40000000
+.equ SYSCALL_READ,     0 + 0x40000000
+.equ SYSCALL_WRITE,    1 + 0x40000000
+.equ SYSCALL_OPEN,     2 + 0x40000000
+.equ SYSCALL_CLOSE,    3 + 0x40000000
+.equ SYSCALL_SYSINFO, 99 + 0x40000000
+.equ SYSCALL_UNAME,   63 + 0x40000000
 
 #
 .equ STDIN,0
