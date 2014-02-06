@@ -1,15 +1,23 @@
 #
-#  linux_logo in m68k assembler 0.25
+#  linux_logo in m68k assembler 0.48
 #
-#  Originally by 
+#  Originally by
 #       Vince Weaver <vince _at_ deater.net>
-#
-#  Crazy size-optimization hacks by
-#       Stephan Walter <stephan.walter _at_ gmx.ch>
 #
 #  assemble with     "as -o ll.o ll.m68k.s"
 #  link with         "ld -o ll ll.o"
 
+| Notes somewhat grumpily contributed by Matthew Hey:
+|  * The only thing consistent about your work is that all your branches
+|    are .w (word) size when most could be .b (byte) saving 2 bytes
+|    per occurrence.
+|  * Did you not see that there is a TST instruction for CMP #0
+|  * and ADDQ/SUBQ instead of LEA to add/sub small immediates including to
+|    address registers?
+|  * You can do MOVE EA,EA where EA is almost any addressing mode and MOVE 
+|    sets the condition codes for a Bcc without a CMP or TST
+|  * You use LEA where you shouldn't but not where you should which is 
+|    instead of MOVE.L #address,An. 
 
 | From the m68k programming manual:
 |   16 general purpose 32-bit registers, d7-d0, a7-a0
