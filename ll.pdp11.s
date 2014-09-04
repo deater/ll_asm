@@ -99,7 +99,7 @@
 # System calls:
 #
 # See great resource: http://mdfs.net/Docs/Comp/Unix/pdp11/SYSCalls
-#   by J.G. Harston
+#   by J.G.Harston
 #
 # + use "trap X" syntax
 # + somtimes the parameter is in r0 (such as exit)
