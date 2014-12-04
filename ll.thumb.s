@@ -35,6 +35,8 @@
 @	941  - eliminate use of r0 as temp, allowig moving of pointer low
 @	937  - change another mask to lsl/lsr
 @	933  - use PC-relative addressing to load addresses
+@	932  - rearrange the variable orders
+@	928  - use fancy ldm instruction to get logo address for free
 
 @
 @ Architectural info
@@ -134,63 +136,64 @@ _start:
 	@ r7 = match length
 	@ r8 = logo end
 
-	add	r0,pc,#(addresses-_start-4)
-	ldm	r0,{r0,r1,r2,r3,r4}
-	mov	r8,r4
+	add	r4,pc,#(addresses-_start-4)
+	ldm	r4!,{r0,r1,r2,r3}
+	mov	r8,r3
+//	mov	r3,r4
 
 decompression_loop:
-	ldrb	r4,[r3]			@ load a byte
-	add	r3,#1			@ increment pointer
+	ldrb	r3,[r4]			@ load a byte
+	add	r4,#1			@ increment pointer
 
 	mov	r5,#0xff		@ load top as a hackish 8-bit counter
 	lsl	r5,#8			@ shift 0xff left by 8
-	orr 	r5,r4			@ or in the byte we loaded
+	orr 	r5,r3			@ or in the byte we loaded
 
 test_flags:
-	cmp	r3,r8		@ have we reached the end?
+	cmp	r4,r8		@ have we reached the end?
 	bge	done_logo  	@ if so, exit
 
 	lsr 	r5,#1		@ shift bottom bit into carry flag
 	bcs	discrete_char	@ if set, we jump to discrete char
 
 offset_length:
-	ldrb	r4,[r3]		@ load a byte
-	add	r3,#1		@ increment pointer
-	ldrb	r6,[r3]		@ load a byte
-	add	r3,#1		@ increment pointer
+	ldrb	r3,[r4]		@ load a byte
+	add	r4,#1		@ increment pointer
+	ldrb	r6,[r4]		@ load a byte
+	add	r4,#1		@ increment pointer
 				@ we can't load halfword
 				@ as no unaligned loads on arm
 
 	lsl	r6,#8
-	orr	r6,r6,r4	@ merge back into 16 bits
+	orr	r6,r6,r3	@ merge back into 16 bits
 				@ this has match_length and match_position
 
 	mov	r7,r6		@ copy r6 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
-	mov	r4,#(THRESHOLD+1)
+	mov	r3,#(THRESHOLD+1)
 	lsr	r6,#(P_BITS)
-	add	r6,r4,r6
+	add	r6,r3,r6
 				@ r6 = (r6 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
-@	ldr	r4,pos_mask		@ urgh, can't handle simple constants
-@	and	r7,r4			@ mask it
+@	ldr	r3,pos_mask		@ urgh, can't handle simple constants
+@	and	r7,r3			@ mask it
 
 	@ Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
 	lsl	r7,#22			@ mask off high 22 bits
 	lsr	r7,#22			@ (wrap to N-1 bits)
 
 
-	ldrb 	r4,[r0,r7]		@ load byte from text_buf[]
+	ldrb 	r3,[r0,r7]		@ load byte from text_buf[]
 	add	r7,#1			@ advance pointer in text_buf
 
 store_byte:
-	strb	r4,[r1]			@ store a byte
+	strb	r3,[r1]			@ store a byte
 	add	r1,#1			@ increment pointer
-	strb	r4,[r0,r2]		@ store a byte to text_buf[r]
+	strb	r3,[r0,r2]		@ store a byte to text_buf[r]
 	add 	r2,#1			@ r++
 
 	lsl	r2,#22			@ mask off high 22 bits
@@ -205,8 +208,8 @@ store_byte:
 	b	decompression_loop
 
 discrete_char:
-	ldrb	r4,[r3]			@ load a byte
-	add	r3,#1			@ increment pointer
+	ldrb	r3,[r4]			@ load a byte
+	add	r4,#1			@ increment pointer
 	mov	r6,#1			@ we set r6 to one so byte
 					@ will be output once
 
@@ -584,15 +587,6 @@ write_stdout_we_know_size:
 
 .align 2
 
-addresses:
-@ These are loaded by LDM at init
-text_addr:	.word text_buf
-out_addr:	.word out_buffer
-R:		.word (N-F)
-logo_addr:	.word logo
-logo_end_addr:	.word logo_end
-
-
 @ data address
 ver_addr:	.word ver_string
 colors_addr:	.word default_colors
@@ -608,11 +602,24 @@ disk_addr:	.word disk_buffer
 
 @ function pointers
 strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
+
+
+addresses:
+@ These are loaded by LDM at init
+text_addr:	.word text_buf
+out_addr:	.word out_buffer
+R:		.word (N-F)
+@logo_addr:	.word logo
+logo_end_addr:	.word logo_end
+
 .align 1
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
+
+.include	"logo.lzss_new"
+
 ver_string:	.asciz	" Version "
 compiled_string:.asciz	", Compiled "
 linefeed:	.asciz	"\n"
@@ -631,7 +638,7 @@ C:		.asciz "C"
 
 
 
-.include	"logo.lzss_new"
+
 
 
 #============================================================================
