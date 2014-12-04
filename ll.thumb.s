@@ -34,6 +34,7 @@
 @	945  - much simpler masking code
 @	941  - eliminate use of r0 as temp, allowig moving of pointer low
 @	937  - change another mask to lsl/lsr
+@	933  - use PC-relative addressing to load addresses
 
 @
 @ Architectural info
@@ -123,18 +124,17 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	@ r0 = temp
+	@ r0 = text_addr
 	@ r1 = output_buffer
 	@ r2 = R
 	@ r3 = logo data inputting from
 	@ r4 = temp
-	@ r5 = counter
+	@ r5 = decompress_byte
 	@ r6 = position
 	@ r7 = match length
 	@ r8 = logo end
-	@ r9 = text_addr
 
-	ldr	r0,=addresses
+	add	r0,pc,#(addresses-_start-4)
 	ldm	r0,{r0,r1,r2,r3,r4}
 	mov	r8,r4
 
