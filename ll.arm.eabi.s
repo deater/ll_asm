@@ -1,7 +1,7 @@
 #
 #  linux_logo in ARM 32-bit EABI assembler 0.46
 #
-#  Originally by 
+#  Originally by
 #       Vince Weaver <vince _at_ deater.net>
 #
 #  assemble with     "as -o ll.arm.eabi.o ll.arm.eabi.s"
@@ -15,7 +15,7 @@
 # ARM has 16 registers
 #  (more visible in system mode: r0-r7 are unbanked, always the same.
 #   r8-r14 change depending on system status)
-# When writing user programs	
+# When writing user programs
 # + r0-r12 are general purpose
 # + r13 = stack pointer
 # + r14 = link register
@@ -26,7 +26,7 @@
 # prefix most instructions to handle the condition codes:
 # EQ, NE (equal/not equal)  CS, CC (carry set/clear)
 # MI, PL (minus/plus)       VS, VC (overflow set/clear)
-# HI, LS (unsigned higer/lowersame) 
+# HI, LS (unsigned higer/lowersame)
 # GE, LT (greaterequal,less than)
 # GT, LE (greater than, lessthanequal)
 # AL (always)
@@ -46,7 +46,7 @@
 #		      ROR (rotate right)
 #		      RRX (rotate right sign extend)
 #   Carry out is the last value shifted out, or C if no value shifted
-# 
+#
 
 # load store addressing modes for load word/store word/ unsigned byte
 #   [ r , #+/- 12bitoffset]            = load as expected
@@ -111,15 +111,15 @@ _start:
 
 	@ r1 = out_addr (buffer we are printing to)
 	@ r2 = N-F (R)
-	@ r3 = logo data	
+	@ r3 = logo data
 	@ r8 = logo end
 	@ r9 = text_buf_addr
-	@ r11 = data_begin	
+	@ r11 = data_begin
 	@ r12 = bss_begin
-	
+
 	ldr	r0,=addresses
 	ldmia	r0,{r1,r2,r3,r8,r9,r11,r12}
-	
+
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
 
@@ -140,7 +140,7 @@ discrete_char:
 
 	bcs	store_byte		@ and store it
 
-	
+
 offset_length:
 	ldrb	r0,[r3],#+1	@ load a byte, increment pointer
 	ldrb	r4,[r3],#+1	@ load a byte, increment pointer
@@ -245,7 +245,7 @@ middle_line:
 	swi	0x0
 					@ syscall.  return in r0?
 	mov	r5,r0			@ save our fd
-	ldr	r1,=disk_buffer	
+	ldr	r1,=disk_buffer
 	mov	r2,#4096
 				 	@ 4096 is maximum size of proc file ;)
 	mov	r7,#SYSCALL_READ
@@ -500,13 +500,13 @@ divide_by_10:
 	sub	r8,r3,r8
 
 	@ r7=Q, R8=R
-	
+
 	add	r8,r8,#0x30	@ convert to ascii
 	strb	r8,[r10],#-1	@ store a byte, decrement pointer
 	adds	r3,r7,#0	@ move Q in for next divide, update flags
 	bne	div_by_10	@ if Q not zero, loop
 
-	
+
 write_out:
 	add	r1,r10,#1	@ adjust pointer
 	ldmfd	SP!,{r10,LR}	@ restore return address from stack
@@ -524,10 +524,10 @@ logo_end_addr:	.word logo_end
 text_addr:	.word text_buf
 data_begin_addr:.word data_begin
 bss_begin_addr:	.word bss_begin
-		
+
 literals:
 # Put literal values here
-.ltorg	
+.ltorg
 
 
 #===========================================================================
