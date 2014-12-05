@@ -37,6 +37,7 @@
 @	933  - use PC-relative addressing to load addresses
 @	932  - rearrange the variable orders
 @	928  - use fancy ldm instruction to get logo address for free
+@	924  - combine two increments
 
 @
 @ Architectural info
@@ -158,9 +159,8 @@ test_flags:
 
 offset_length:
 	ldrb	r3,[r4]		@ load a byte
-	add	r4,#1		@ increment pointer
-	ldrb	r6,[r4]		@ load a byte
-	add	r4,#1		@ increment pointer
+	ldrb	r6,[r4,#1]	@ load a byte
+	add	r4,#2		@ increment pointer
 				@ we can't load halfword
 				@ as no unaligned loads on arm
 
