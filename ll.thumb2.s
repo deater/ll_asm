@@ -87,6 +87,8 @@
 @  --  925 bytes, load one more reg via ldm
 @  --  924 bytes, move logo to beginning of data segment
 @  --  920 bytes, use pc-relative to load addresses_begin
+@  --  916 bytes, get logo address for free after ldm
+@  --  912 bytes, or in 0x8000 rather than 0xff00
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -130,22 +132,23 @@ _start:
 	@ r0 = text_addr
 	@ r1 = output_buffer
 	@ r2 = R
-	@ r3 = logo data inputting from
+	@ r3 = logo_data
 	@ r4 = temp
 	@ r5 = counter
 	@ r6 = position
 	@ r7 = match length
 	@ r8 = logo end
 
-	add	r0,pc,#(addresses_begin-_start-4)
-	ldm	r0,{r0,r1,r2,r3,r8,r11}
+	adr	r3,addresses_begin
+	ldm	r3!,{r0,r1,r2,r8,r11,r12}
+					@ r12 is a dummy value to
+					@ skip a literal value
+
 
 decompression_loop:
 	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
-
-	movs	r5,#0xff		@ load top as a hackish 8-bit counter
-					@ shift 0xff left by 8
-	orr 	r5,r4,r5,LSL #8		@ or in the byte we loaded
+					@ load top as a hackish 8-bit counter
+	orr 	r5,r4,#0x8000		@ or in the byte we loaded
 
 test_flags:
 	cmp	r3,r8		@ have we reached the end?
@@ -599,7 +602,7 @@ addresses_begin:
 text_addr:	.word text_buf
 out_addr:	.word out_buffer
 R:		.word (N-F)
-logo_addr:	.word logo
+@logo_addr:	.word logo
 logo_end_addr:	.word logo_end
 strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
 
