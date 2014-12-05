@@ -16,6 +16,7 @@
 @	1177 -- use pc-relative to set addresses
 @	1173 -- use 0x8000 instead of 0xff00 for sentinel
 @	1165 -- mask by shifting
+@	1161 -- avoid unnecessary copy
 
 # Syscalls:    New EABI way, syscall num is in r7, do a "swi 0"
 #              for EABI you need kernel support and gcc > 4.0.0?
@@ -150,18 +151,18 @@ discrete_char:
 
 offset_length:
 	ldrb	r0,[r3],#+1	@ load a byte, increment pointer
-	ldrb	r4,[r3],#+1	@ load a byte, increment pointer
+	ldrb	r7,[r3],#+1	@ load a byte, increment pointer
 				@ we can't load halfword as no unaligned loads on arm
 
-	orr	r4,r0,r4,LSL #8	@ merge back into 16 bits
+	orr	r7,r0,r7,LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
 
-	mov	r7,r4		@ copy r4 to r7
+@	mov	r7,r4		@ copy r4 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
 	mov	r0,#(THRESHOLD+1)
-	add	r6,r0,r4,LSR #(P_BITS)
+	add	r6,r0,r7,LSR #(P_BITS)
 				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
