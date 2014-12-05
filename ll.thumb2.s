@@ -85,6 +85,8 @@
 @  --  929 bytes, can mask simply with lsl/lsr
 @  --  927 bytes, change another mask to lsl/lsr
 @  --  925 bytes, load one more reg via ldm
+@  --  924 bytes, move logo to beginning of data segment
+@  --  920 bytes, use pc-relative to load addresses_begin
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -135,7 +137,7 @@ _start:
 	@ r7 = match length
 	@ r8 = logo end
 
-	ldr	r0,=addresses_begin
+	add	r0,pc,#(addresses_begin-_start-4)
 	ldm	r0,{r0,r1,r2,r3,r8,r11}
 
 decompression_loop:
@@ -583,14 +585,6 @@ write_stdout_we_know_size:
 
 
 .align 2
-addresses_begin:
-@ These need to be consecutive; loaded by ldmia
-text_addr:	.word text_buf
-out_addr:	.word out_buffer
-R:		.word (N-F)
-logo_addr:	.word logo
-logo_end_addr:	.word logo_end
-strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
 
 ver_addr:	.word ver_string
 colors_addr:	.word default_colors
@@ -600,12 +594,24 @@ sysinfo_addr:	.word sysinfo_buff
 ascii_addr:	.word ascii_buffer
 disk_addr:	.word disk_buffer
 
+addresses_begin:
+@ These need to be consecutive; loaded by ldmia
+text_addr:	.word text_buf
+out_addr:	.word out_buffer
+R:		.word (N-F)
+logo_addr:	.word logo
+logo_end_addr:	.word logo_end
+strcat_addr:	.word (strcat_r4+1)	@ +1 to make it a thumb addr
+
+
+
 @ function pointers
 .align 1
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
+.include	"logo.lzss_new"
 ver_string:	.asciz	" Version "
 compiled_string:.asciz	", Compiled "
 linefeed:	.asciz	"\n"
@@ -622,7 +628,7 @@ bogo_total:	.asciz	" Bogomips Total\n"
 default_colors:	.asciz "\033[0m\n\n"
 C:		.asciz "C"
 
-.include	"logo.lzss_new"
+
 
 
 #============================================================================
@@ -636,6 +642,4 @@ bss_begin:
 .lcomm text_buf, (N+F-1)
 .lcomm	disk_buffer,4096	@ we cheat!!!!
 .lcomm	out_buffer,16384
-
-
 
