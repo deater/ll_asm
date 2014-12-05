@@ -89,6 +89,8 @@
 @  --  920 bytes, use pc-relative to load addresses_begin
 @  --  916 bytes, get logo address for free after ldm
 @  --  912 bytes, or in 0x8000 rather than 0xff00
+@  --  912 bytes, smaller loads with additional add rather than more complex
+@  --  908 bytes, remove unnecessary copy, take advantage of 3-operand
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -167,20 +169,21 @@ discrete_char:
 	bcs.n	store_byte		@ and store it
 
 offset_length:
-	ldrb	r4,[r3],#1		@ load a byte, increment pointer
-	ldrb	r6,[r3],#1		@ load a byte, increment pointer
+
+	ldrb	r4,[r3]		@ load a byte, increment pointer
+	ldrb	r7,[r3,#1]	@ load a byte, increment pointer
+	adds	r3,r3,#2
 				@ we can't load halfword
 				@ as no unaligned loads on arm
 
-	orrs	r6,r4,r6, LSL #8	@ merge back into 16 bits
+	orrs	r7,r4,r7, LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
 
-	mov	r7,r6		@ copy r6 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
 	movs	r4,#(THRESHOLD+1)
-	add	r6,r4,r6,LSR #(P_BITS)
+	add	r6,r4,r7,LSR #(P_BITS)
 				@ r6 = (r6 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
