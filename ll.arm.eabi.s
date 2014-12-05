@@ -293,10 +293,10 @@ print_mhz:
 	@ Chip Name
 	@=========
 chip_name:
-	mov	r0,#'s'
-	mov	r1,#'o'
-	mov	r2,#'r'
-	mov	r3,#' '
+	mov	r0,#'a'
+	mov	r1,#'r'
+	mov	r2,#'e'
+	mov	r3,#'\n'
 	bl	find_string
 					@ find 'sor\t: ' and grab up to ' '
 
