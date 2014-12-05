@@ -9,6 +9,14 @@
 
 .include "logo.include"
 
+@ Optimization
+@	1186 -- v0.46 starting point
+@	1185 -- move logo to beginning of data segment
+@	1181 -- have ldm auto-set r3 to logo
+@	1177 -- use pc-relative to set addresses
+@	1173 -- use 0x8000 instead of 0xff00 for sentinel
+@	1165 -- mask by shifting
+
 # Syscalls:    New EABI way, syscall num is in r7, do a "swi 0"
 #              for EABI you need kernel support and gcc > 4.0.0?
 
@@ -117,14 +125,13 @@ _start:
 	@ r11 = data_begin
 	@ r12 = bss_begin
 
-	ldr	r0,=addresses
-	ldmia	r0,{r1,r2,r3,r8,r9,r11,r12}
+	adr	r3,addresses
+	ldmia	r3!,{r1,r2,r8,r9,r11,r12}
 
 decompression_loop:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
+	ldrb	r4,[r3],#+1		@ load a byte, increment pointer/
 
-	mov	r5,#0xff		@ load top as a hackish 8-bit counter
-	orr 	r5,r4,r5,LSL #8		@ shift 0xff left by 8 and or in the byte we loaded
+	orr 	r5,r4,#0x8000	@ set bit 15 in the byte we loaded
 
 test_flags:
 	cmp	r3,r8		@ have we reached the end?
@@ -159,9 +166,13 @@ offset_length:
 				@                       (=match_length)
 
 output_loop:
-	ldr	r0,=((POSITION_MASK<<8)+0xff)
+@	ldr	r0,=((POSITION_MASK<<8)+0xff)
 	                                @ urgh, can't handle simple constants
-	and	r7,r7,r0		@ mask it
+@	and	r7,r7,r0		@ mask it
+
+	lsl	r7,#22			@ mask by shifting
+	lsr	r7,#22
+
 	ldrb 	r4,[r9,r7]		@ load byte from text_buf[]
 	add	r7,r7,#1		@ advance pointer in text_buf
 
@@ -169,9 +180,13 @@ store_byte:
 	strb	r4,[r1],#+1		@ store a byte, increment pointer
 	strb	r4,[r9,r2]		@ store a byte to text_buf[r]
 	add 	r2,r2,#1		@ r++
-	mov	r0,#(N)			@ grr, N-1 won't fit in 12-bits
-	sub	r0,r0,#1		@ grrr no way to get this easier
-	and 	r2,r2,r0		@ mask r
+
+@	mov	r0,#(N)			@ grr, N-1 won't fit in 12-bits
+@	sub	r0,r0,#1		@ grrr no way to get this easier
+@	and 	r2,r2,r0		@ mask r
+
+	lsl	r2,#22			@ mask by shifting
+	lsr	r2,#22
 
 	subs	r6,r6,#1		@ decement count
 	bne 	output_loop		@ repeat until k>j
@@ -516,24 +531,28 @@ write_out:
 
 	b write_stdout		@ else, fallthrough to stdout
 
+
+literals:
+# Put literal values here
+.ltorg
+
 addresses:
 out_addr:	.word out_buffer
 R_val:		.word (N-F)
-logo_addr:	.word logo
+@logo_addr:	.word logo
 logo_end_addr:	.word logo_end
 text_addr:	.word text_buf
 data_begin_addr:.word data_begin
 bss_begin_addr:	.word bss_begin
 
-literals:
-# Put literal values here
-.ltorg
+
 
 
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
+.include	"logo.lzss_new"
 data_begin:
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
@@ -554,7 +573,7 @@ cpuinfo:	.ascii	"/proc/cpuinfo\0"
 one:	.ascii	"One \0"
 
 
-.include	"logo.lzss_new"
+
 
 
 #============================================================================

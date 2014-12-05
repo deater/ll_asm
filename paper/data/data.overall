@@ -9,7 +9,7 @@ sparc		RISC	1397	0
 microblaze	RISC	1298	0
 mips		RISC	1276	0
 m88k		RISC	1240	0
-arm.eabi	RISC	1186	0
+arm.eabi	RISC	1165	0
 PowerPC		RISC	1165	0
 6502		EBIT	1130	0
 arm64		RISC	1094	0
