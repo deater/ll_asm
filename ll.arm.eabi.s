@@ -157,13 +157,12 @@ offset_length:
 	orr	r7,r0,r7,LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
 
-@	mov	r7,r4		@ copy r4 to r7
 				@ no need to mask r7, as we do it
 				@ by default in output_loop
 
 	mov	r0,#(THRESHOLD+1)
 	add	r6,r0,r7,LSR #(P_BITS)
-				@ r6 = (r4 >> P_BITS) + THRESHOLD + 1
+				@ r6 = (r7 >> P_BITS) + THRESHOLD + 1
 				@                       (=match_length)
 
 output_loop:
