@@ -307,15 +307,14 @@ discrete_char:
 
 
 offset_length:
-	ldrh	w4,[x3],#+2	// load an unagligned halfword, increment
+	ldrh	w7,[x3],#+2	// load an unagligned halfword, increment
 
-	mov	x7,x4		// copy x4 to x7
 				// no need to mask x7, as we do it
 				// by default in output_loop
 
 	mov	x0,#(THRESHOLD+1)
-	add	x6,x0,x4,LSR #(P_BITS)
-				// r6 = (r4 >> P_BITS) + THRESHOLD + 1
+	add	x6,x0,x7,LSR #(P_BITS)
+				// r6 = (r7 >> P_BITS) + THRESHOLD + 1
 				//                       (=match_length)
 
 output_loop:
