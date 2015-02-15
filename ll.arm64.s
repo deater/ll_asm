@@ -282,10 +282,10 @@ _start:
 # optimized some more by Vince Weaver
 
 	adr	x1,out_buffer	// x1 = buffer we are printing to
-	mov	x2,#(N-F)	// x2 = R (starts as N-F)
 	adr	x3,logo		// x3 = logo begin
 	adr	x8,logo_end	// x8 = logo end
-	adr	x9,text_buf	// x9 = text_buf
+	adr	x9,text_buf	// x9 = text_buf, guaranteed bottom N+1 bits are 0
+	add	x2,x9,#(N-F)	// x2 = &text_buf[R] (starts as N-F)
 
 decompression_loop:
 	ldrb	w5,[x3],#1	// load a byte, increment pointer
@@ -325,9 +325,8 @@ output_loop:
 
 store_byte:
 	strb	w4,[x1],#+1		// store a byte, increment pointer
-	strb	w4,[x9,x2]		// store a byte to text_buf[r]
-	add 	x2,x2,#1		// r++
-	and 	x2,x2,#(N-1)		// mask r with N-1
+	strb	w4,[x2],#+1		// store a byte to text_buf+r, increment pointer
+	bic 	x2,x2,#N		// clear any overflow
 
 	subs	x6,x6,#1		// decement count
 	b.ne 	output_loop		// repeat until k>j
@@ -677,13 +676,13 @@ one:	.ascii	"One \0"
 #	section .bss
 #============================================================================
 .bss
-.lcomm uname_info,(65*6)
-.lcomm sysinfo_buff,(64)
-.lcomm ascii_buffer,10
-.lcomm  text_buf, (N+F-1)
-
+.align (P_BITS+1)
+.lcomm  text_buf, N
 .lcomm	disk_buffer,4096	//// we cheat!!!!
 .lcomm	out_buffer,16384
+.lcomm uname_info,(65*6)
+.lcomm sysinfo_buff,(64)
+.lcomm ascii_buffer,32
 
 
 	# see /usr/src/linux/include/linux/kernel.h
