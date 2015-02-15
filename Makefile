@@ -153,6 +153,8 @@ ll.$(ARCH).dis:	ll.$(ARCH)
 
 ll.$(ARCH).output:	ll.$(ARCH).fakeproc
 	$(SIM) ./ll.$(ARCH).fakeproc > ll.$(ARCH).output
+	@cmp -n $(shell wc -c banner_logo.ansi) ll.$(ARCH).output || \
+	  echo '\n##### Error in logo decode #####\n'
 
 ll:	ll.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o	
