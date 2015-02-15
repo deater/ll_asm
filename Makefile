@@ -112,7 +112,7 @@ all:	ll ll.$(ARCH) \
 	ll.$(ARCH).fakeproc \
 	$(THUMB) ansi_compress ./sstrip/sstrip \
 	ll.$(ARCH).stripped ll.$(ARCH).fakeproc.stripped \
-	ll.$(ARCH).dis ll.$(ARCH).output
+	ll.$(ARCH).dis ll.$(ARCH).output lzss_code_size
 
 sstrip_ll: ll ./sstrip/sstrip
 	./sstrip/sstrip ll
@@ -290,6 +290,9 @@ logo.inc:	   $(ANSI_TO_USE) ansi_compress
 
 logo.lzss:	   $(ANSI_TO_USE) ansi_compress
 		   ./ansi_compress $(ANSI_TO_USE)
+
+lzss_code_size: ll.$(ARCH).dis
+	perl calc_lzss_size.pl ll.$(ARCH).dis
 
 clean:
 	rm -f ll ll_c ll.$(ARCH) ll.$(SOURCE_ARCH) *.fakeproc *.stripped \
