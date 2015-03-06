@@ -7,7 +7,7 @@
 ;  assemble with     "asmx -C1802 -w -e -o ll.hex ll.1802.s"
 ;  run in the simulator with "elf -baud 1200 -vt100 -r ./serial_test.hex"
 
-; .include "logo.include"
+;.include "logo.include"
 
 ; Optimization progress:
 
@@ -19,29 +19,6 @@
 ;_start:
 
 
-	ghi	r0		; POINT RC TO "DELAY"
-        phi	rc
-        ldi	LOW delay
-        plo	rc
-
-	ghi	r0		; POINT RB TO "OUT_CHAR"
-        phi	rb
-        ldi	LOW out_char
-        plo	rb
-
-	ghi	r0		; POINT R9 TO "WRITE_STDOUT"
-        phi	r9
-        ldi	LOW write_stdout
-        plo	r9
-
-        ldi	LOW hello_world
-	plo	r4
-	ldi	HIGH hello_world
-	phi	r4
-
-	sep	r9
-
-
 	;=========================
 	; PRINT LOGO
 	;=========================
@@ -50,97 +27,154 @@
 ; by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 ; optimized some more by Vince Weaver
 
-	; r0 = text_addr
-	; r1 = output_buffer
+	; r0 = instruction pointer
+	; r1 = out_buffer
 	; r2 = R
-	; r3 = logo data inputting from
-	; r4 = temp
+	; r3 = temp
+	; r4 = logo data inputting from
 	; r5 = decompress_byte
 	; r6 = position
 	; r7 = match length
 	; r8 = logo end
+	; r9 = bit_count
+	; ra = out_byte
+	; rb = current_byte
+	; rc = temp 16bit
+	; rd = text_buf
+	; re = temp_16bit
+	; rf =
 
-;	add	r4,pc,#(addresses-_start-4)
-;	ldm	r4!,{r0,r1,r2,r3}
-;	mov	r8,r3
+        ldi	LOW logo
+	plo	r4
+	ldi	HIGH logo
+	phi	r4
 
+        ldi	LOW out_buffer
+	plo	r1
+	ldi	HIGH out_buffer
+	phi	r1
 
-;decompression_loop:
-;	ldrb	r3,[r4]			; load a byte
-;	add	r4,#1			; increment pointer
+        ldi	LOW text_buf
+	plo	rd
+	ldi	HIGH text_buf
+	phi	rd
 
-;	mov	r5,#0xff		; load top as a hackish 8-bit counter
-;	lsl	r5,#8			; shift 0xff left by 8
-;	orr 	r5,r3			; or in the byte we loaded
+	ldi	HIGH 960		; N - F = 1024-64 = 960
+	phi	r2
+	ldi	LOW 960
+	plo	r2
 
-;test_flags:
-;	cmp	r4,r8		; have we reached the end?
-;	bge	done_logo  	; if so, exit
+	sex	r4			; set index to r4
 
-;	lsr 	r5,#1		; shift bottom bit into carry flag
-;	bcs	discrete_char	; if set, we jump to discrete char
+decompression_loop:
+	ldxa				; load a byte, increment pointer
+	plo	rb
 
-;offset_length:
-;	ldrb	r3,[r4]		; load a byte
-;	ldrb	r6,[r4,#1]	; load a byte
-;	add	r4,#2		; increment pointer
-				; we can't load halfword
-				; as no unaligned loads on arm
+	ldi	8			; bits left
+	plo	r9
 
-;	lsl	r6,#8
-;	orr	r6,r6,r3	; merge back into 16 bits
-				; this has match_length and match_position
+test_flags:
+	ghi	r4
+	smi	HIGH logo_end
+	bnz	not_done
 
-;	mov	r7,r6		; copy r6 to r7
-				; no need to mask r7, as we do it
-				; by default in output_loop
+	glo	r4
+	smi	LOW logo_end	; have we reached the end?
+	bz	done_logo	; if so, exit
 
-;	mov	r3,#(THRESHOLD+1)
-;	lsr	r6,#(P_BITS)
-;	add	r6,r3,r6
+not_done:
+
+	glo	rb
+	shr 			; shift bottom bit into DF flag
+	plo	rb
+	bdf	discrete_char	; if set, we jump to discrete char
+
+offset_length:
+	ldxa			; load a byte, increment
+	plo	rc
+	ldxa			; load a byte, increment
+	phi	rc
+
+	ghi	rc
+	shr
+	shr			; (rc>>P_BITS)
+	adi	3		; + THRESHOLD + 1
+
+				; P_BITS = 10
+				; THRESHOLD = 2
 				; r6 = (r6 >> P_BITS) + THRESHOLD + 1
 				;                       (=match_length)
 
-;output_loop:
-;	ldr	r3,pos_mask		; urgh, can't handle simple constants
-;	and	r7,r3			; mask it
-
-	; Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
-;	lsl	r7,#22			; mask off high 22 bits
-;	lsr	r7,#22			; (wrap to N-1 bits)
+	plo	r6		; put in r6
 
 
-;	ldrb 	r3,[r0,r7]		; load byte from text_buf[]
-;	add	r7,#1			; advance pointer in text_buf
+output_loop:
+				; Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
+	ghi	rc		; mask with 0x3ff
+	ani	3
+	phi	rc
 
-;store_byte:
-;	strb	r3,[r1]			; store a byte
-;	add	r1,#1			; increment pointer
-;	strb	r3,[r0,r2]		; store a byte to text_buf[r]
-;	add 	r2,#1			; r++
+	glo	rc
+	adi	LOW text_buf
+	plo	re
+	ghi	rc
+	adci	HIGH text_buf
+	phi	re
 
-;	lsl	r2,#22			; mask off high 22 bits
-;	lsr	r2,#22			; (wrap to N-1 bits)
+	ldn	re		; load byte from text_buf[rc]
+	inc	rc		; advance rc pointer
 
-;	sub	r6,#1			; decement count
-;	bne 	output_loop		; repeat until k>j
+store_byte:
+;	glo	ra			; get output_byte
+	str	r1			; store a byte
+	inc	r1			; increment pointer
 
-;	cmp	r5,#0xff		; are the top bits 0?
-;	bgt	test_flags		; if not, re-load flags
+	plo	ra
 
-;	b	decompression_loop
+	glo	r2
+	adi	LOW text_buf
+	plo	re
+	ghi	r2
+	adci	HIGH text_buf
+	phi	re
 
-;discrete_char:
-;	ldrb	r3,[r4]			; load a byte
-;	add	r4,#1			; increment pointer
-;	mov	r6,#1			; we set r6 to one so byte
+	glo	ra
+	str	re			; store a byte to text_buf[r]
+	inc 	r2			; r++
+
+
+				; Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
+	ghi	r2		; mask with 0x3ff
+	ani	3		; (wrap to N-1 bits)
+	phi	r2
+
+	dec	r6			; decement count
+
+	ghi	r6			; if count not zero, then loop
+	bnz	output_loop
+	glo	r6
+	bnz	output_loop
+
+	dec	r9
+	glo	r9			; get bit count; is it zero?
+	bnz	test_flags		; if not, re-load flags
+
+	br	decompression_loop
+
+discrete_char:
+
+	ldi	1
+	plo	r6			; we set r6 to one so byte
 					; will be output once
 
-;	b	store_byte		; and store it
+	ldxa				; load a byte, increment pointer
+;	plo	ra			; put in output_byte
+
+	br	store_byte		; and store it
 
 ; end of LZSS code
 
-;done_logo:
+done_logo:
 ;	ldr	r1,out_addr		; buffer we are printing to
 
 
@@ -155,6 +189,36 @@
 ;	mov	r8,r0
 
 ;	blx	r9			; print the logo
+
+
+	ldi	HIGH delay	; POINT RC TO "DELAY"
+        phi	rc
+        ldi	LOW delay
+        plo	rc
+
+	ldi	HIGH out_char	; POINT RB TO "OUT_CHAR"
+        phi	rb
+        ldi	LOW out_char
+        plo	rb
+
+	ldi	HIGH write_stdout	; POINT R9 TO "WRITE_STDOUT"
+        phi	r9
+        ldi	LOW write_stdout
+        plo	r9
+
+;	ldi	HIGH hello_world
+;	phi	r4
+;        ldi	LOW hello_world
+;	plo	r4
+
+        ldi	LOW out_buffer
+	plo	r4
+	ldi	HIGH out_buffer
+	phi	r4
+
+
+	sep	r9
+
 
 
 
@@ -488,6 +552,7 @@ exit:
 	;================================
 	; WRITE_STDOUT
 	;================================
+	; runs as r9
 	; expects to return to r0
 	; r4 = string to print
 
@@ -610,7 +675,12 @@ delay_loop:
 ;===========================================================================
 ;.data
 
-;.include	"logo.lzss_new"
+
+.include	"logo.lzss_new"
+
+hello_world:
+	db "Hello World!\r\n",0
+
 
 ;ver_string:	.asciz	" Version "
 ;compiled_string:.asciz	", Compiled "
@@ -643,12 +713,14 @@ delay_loop:
 ;.lcomm ascii_buffer,10
 ;.lcomm text_buf, (N+F-1)
 ;.lcomm	disk_buffer,4096	; we cheat!!!!
-;.lcomm	out_buffer,16384
 
+
+
+text_buf:	DS	1087 	; 1024 + 64 - 1 =  1087 (N+F-1)
+out_buffer:	DS	4096	; 4kb?
 
 ;	# see /usr/src/linux/include/linux/kernel.h
 
-hello_world:
-	db "Hello World!\r\n"
+
 
 
