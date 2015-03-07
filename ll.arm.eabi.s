@@ -581,10 +581,10 @@ one:	.ascii	"One \0"
 #============================================================================
 .bss
 bss_begin:
-.lcomm uname_info,(65*6)
-.lcomm sysinfo_buff,(64)
-.lcomm ascii_buffer,10
-.lcomm  text_buf, (N+F-1)
+.lcomm	uname_info,(65*6)
+.lcomm	sysinfo_buff,(64)
+.lcomm	ascii_buffer,10
+.lcomm	text_buf, (N+F-1)
 
 .lcomm	disk_buffer,4096	@ we cheat!!!!
 .lcomm	out_buffer,16384
