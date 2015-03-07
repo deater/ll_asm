@@ -676,13 +676,13 @@ one:	.ascii	"One \0"
 #	section .bss
 #============================================================================
 .bss
-.align (P_BITS+1)
-.lcomm  text_buf, N
+.align	(P_BITS+1)
+.lcomm	text_buf, N
 .lcomm	disk_buffer,4096	//// we cheat!!!!
 .lcomm	out_buffer,16384
-.lcomm uname_info,(65*6)
-.lcomm sysinfo_buff,(64)
-.lcomm ascii_buffer,32
+.lcomm	uname_info,(65*6)
+.lcomm	sysinfo_buff,(64)
+.lcomm	ascii_buffer,32
 
 
 	# see /usr/src/linux/include/linux/kernel.h
