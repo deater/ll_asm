@@ -130,8 +130,8 @@ _start:
 	@ r0 = text_addr
 	@ r1 = output_buffer
 	@ r2 = R
-	@ r3 = logo data inputting from
-	@ r4 = temp
+	@ r3 = temp
+	@ r4 = logo data inputting from
 	@ r5 = decompress_byte
 	@ r6 = position
 	@ r7 = match length
@@ -646,10 +646,10 @@ C:		.asciz "C"
 #============================================================================
 .bss
 bss_begin:
-.lcomm uname_info,(65*6)
-.lcomm sysinfo_buff,(64)
-.lcomm ascii_buffer,10
-.lcomm text_buf, (N+F-1)
+.lcomm	uname_info,(65*6)
+.lcomm	sysinfo_buff,(64)
+.lcomm	ascii_buffer,10
+.lcomm	text_buf, (N+F-1)
 .lcomm	disk_buffer,4096	@ we cheat!!!!
 .lcomm	out_buffer,16384
 
