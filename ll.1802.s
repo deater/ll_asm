@@ -14,6 +14,85 @@
 ;
 ; Architectural info
 ;
+;	The 1802 is a very non-typical architecture.
+;	+ D = 8-bit accumulator
+;	+ DF = 1-bit data flag (carry flag)
+;	+ R0-Rf = 16 16-bit index registers
+;	+ X = 4-bit index register select
+;	+ P = 4-bit program counter select (any of the Rx can be the PC)
+;	+ IE = 1-bit interrupt enable
+;	+ T = 8-bit X,P saved after interrupt
+;	+ Q = 1-bit output flip-flop
+;	No stack, but any Rx can act as one, there are auto inc/dec insns
+
+;	Instructions are variable width, 1 or 2 bytes
+;
+;	Register Operations
+;	+ INC Rn / DEC Rn
+;	+ INC Rx (x is selected by the X register)
+;	+ GLO Rn / GHI Rn (D=low or high byte of Rn)
+;	+ PLO Rn / PHI Rn (Rn low or high = D)
+;
+;	Memory Operations
+;	+ LDN Rn	(D= Mem[Rn] for Rn!=0)
+;	+ LDA Rn	like above, but increment Rn
+;	+ LDX		(D= Mem[Rx])
+;	+ LDXA		like above, but increment Rx
+;	+ LDI nn	load immediate byte
+;	+ STR Rn	store D to Mem[Rn]
+;	+ STXD		like above, but decrement Rn
+;
+;	Branch Instructions
+;	Short: only within current 256-byte page
+;	+ BR nn		branch always
+;	+ NBR nn	branch never (continue with next insn)
+;	+ BQ nn / BNQ nn	branch based on Q
+;	+ BZ nn / BNZ nn	branch if D is zero (or not)
+;	+ BDF nn / BNF nn	branch if DF is set/notset
+;	+	(BPZ,BGE or BM,BL branch pos/greatere/minus/less) are aliases
+;	+ B1/B2/B3/B4/BN1/BN2/BN3/BN4	branch based on EF external flags
+;	Long Branch
+;	+ LBR hhll / NLBR hhll
+;	+ LBQ hhll / LBNQ hhll
+;	+ LBZ hhll / LBNZ hhll
+;	+ LBDF hhll / LBNF hhll
+;
+;	Conditional execution / Skips
+;	+ LSNQ / LSQ	-- skip 2 if/if not Q
+;	+ LSNZ / LSZ
+;	+ LSNF / LSDF
+;	+ LSIE
+
+;	Arithmetic
+;	+ OR / AND / XOR	-- logic, D = D OP Mem[Rx]
+;	+ ADD / ADC		-- add, D = D + Mem[Rx] (+ DF if carry)
+;	+ SD / SDB		-- sub, D = Mem[Rx]-D (- Not DF if borrow)
+;	+ SM / SMB		-- subfrom, D = D - Mem[Rx]
+;	+ ORI nn / ANI nn / XRI nn 	-- immediate, D = D OP nn
+;	+ ADI nn / ADCI nn		-- immediate adds
+;	+ SDI / SDBI			-- immediate subs
+;	+ SMI / SMBI			-- immediate subfroms
+;
+;	Shifts
+;	+ SHR / SHL		-- shift right/left, into carry
+;	+ SHRC / SHLC		-- shift right/left carry in carry out
+
+;	Special register instructions
+;	+ SEQ / REQ	Set/reset Q
+;	+ SEX		Set X register (make it the index)
+;	+ SEP		Set P register (make it the program counter)
+
+;
+;
+;	Other
+;	+ NOP
+;	+ IDL	wait for interrupt or DMA
+;	+ RET/DIS/MARK/SAVE	interrupt handling instructions
+;	+ OUT1 .. OUT7		output on bus
+;	+ INP1 .. INP7		input from bus
+
+
+
 
 ;	.globl _start
 ;_start:
