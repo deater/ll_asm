@@ -5,7 +5,7 @@
 ;       Vince Weaver <vince _at_ deater.net>
 ;
 ;  assemble with     "asmx -C1802 -w -e -o ll.hex ll.1802.s"
-;  run in the simulator with "elf -baud 1200 -vt100 -r ./serial_test.hex"
+;  run in the simulator with "elf -baud 1200 -vt100 -r ./ll.hex"
 
 ;.include "logo.include"
 
@@ -24,7 +24,7 @@
 ;	+ T = 8-bit X,P saved after interrupt
 ;	+ Q = 1-bit output flip-flop
 ;	No stack, but any Rx can act as one, there are auto inc/dec insns
-
+;
 ;	Instructions are variable width, 1 or 2 bytes
 ;
 ;	Register Operations
@@ -62,7 +62,7 @@
 ;	+ LSNZ / LSZ
 ;	+ LSNF / LSDF
 ;	+ LSIE
-
+;
 ;	Arithmetic
 ;	+ OR / AND / XOR	-- logic, D = D OP Mem[Rx]
 ;	+ ADD / ADC		-- add, D = D + Mem[Rx] (+ DF if carry)
@@ -76,13 +76,11 @@
 ;	Shifts
 ;	+ SHR / SHL		-- shift right/left, into carry
 ;	+ SHRC / SHLC		-- shift right/left carry in carry out
-
+;
 ;	Special register instructions
 ;	+ SEQ / REQ	Set/reset Q
 ;	+ SEX		Set X register (make it the index)
 ;	+ SEP		Set P register (make it the program counter)
-
-;
 ;
 ;	Other
 ;	+ NOP
@@ -97,6 +95,7 @@
 ;	.globl _start
 ;_start:
 
+	br	done_logo		; while debugging (for speed)
 
 	;=========================
 	; PRINT LOGO
@@ -254,93 +253,124 @@ discrete_char:
 ; end of LZSS code
 
 done_logo:
-;	ldr	r1,out_addr		; buffer we are printing to
-
-
-;	ldr	r0,strcat_addr
-;	mov	r11,r0			; point r11 to "strcat_r4"
-;	sub	r0,#8
-;	mov	r10,r0			; point r10 to "strcat_r3"
-;	sub	r0,#(strcat_r5-write_stdout)
-;	mov	r9,r0			; point r9 to "write_stdout"
-
-;	sub	r0,#(write_stdout-center_and_print)
-;	mov	r8,r0
-
-;	blx	r9			; print the logo
-
-
-	ldi	HIGH delay	; POINT RC TO "DELAY"
-        phi	rc
-        ldi	LOW delay
-        plo	rc
-
-	ldi	HIGH out_char	; POINT RB TO "OUT_CHAR"
-        phi	rb
-        ldi	LOW out_char
-        plo	rb
 
 	ldi	HIGH write_stdout	; POINT R9 TO "WRITE_STDOUT"
         phi	r9
         ldi	LOW write_stdout
         plo	r9
 
-;	ldi	HIGH hello_world
-;	phi	r4
-;        ldi	LOW hello_world
-;	plo	r4
+	ldi	HIGH out_char	; POINT RB TO "OUT_CHAR"
+        phi	rb
+        ldi	LOW out_char
+        plo	rb
+
+	ldi	HIGH delay	; POINT RC TO "DELAY"
+        phi	rc
+        ldi	LOW delay
+        plo	rc
+
+	ldi	HIGH strcat	; POINT RD TO "STRCAT"
+        phi	rd
+        ldi	LOW strcat
+        plo	rd
+
+	ldi	HIGH center_and_print	; point re to center_and_print
+        phi	re
+        ldi	LOW center_and_print
+        plo	re
+
+
+
+
 
         ldi	LOW out_buffer
 	plo	r4
 	ldi	HIGH out_buffer
 	phi	r4
 
-
-	sep	r9
-
-
-
+;	sep	r9
 
 	;==========================
 	; PRINT VERSION
 	;==========================
 
-;first_line:
-;	ldr	r0,uname_addr
-;	mov	r5,r0
-;	mov	r7,#SYSCALL_UNAME
-;	swi	#0			; do uname syscall
+first_line:
+
+;uname_sysname:		db	"VMWos",0
+;uname_release:		db	"0.1",0
+;uname_version:		db	"#1 2015-03-12",0
+;uname_nodename:		db	"cosmac",0
+
+
+	ldi	LOW out_buffer
+	plo	r4
+	ldi	HIGH out_buffer
+	phi	r4
+
+					; no uname syscall, faking
+
+	ldi	LOW uname_sysname
+	plo	r5
+	ldi	HIGH uname_sysname
+	phi	r5
 
 					; os-name from uname "Linux"
 
-;	ldr	r6,out_addr		; point r6 to out_buffer
+	sep	rd			; call strcat
 
-;	blx	r10			; call strcat_r5
 
-;	ldr	r4,ver_addr		; source is " Version "
+	ldi	LOW ver_string
+	plo	r5
+	ldi	HIGH ver_string
+	phi	r5
+					; source is " Version "
 
-;	blx 	r11			; call strcat_r4
+	sep 	rd			; call strcat
 
-;	add	r5,#U_RELEASE
+	ldi	LOW uname_release
+	plo	r5
+	ldi	HIGH uname_release
+	phi	r5
+
 					; version from uname, ie "2.6.20"
-;	blx	r10			; call strcat_r5
+	sep	rd			; call strcat_r5
+
+	ldi	LOW compiled_string
+	plo	r5
+	ldi	HIGH compiled_string
+	phi	r5
 
 					; source is ", Compiled "
-;	blx	r11			; call strcat_r4
+	sep	rd			; call strcat
 
-;	add	r5,#(U_VERSION-U_RELEASE)
+	ldi	LOW uname_version
+	plo	r5
+	ldi	HIGH uname_version
+	phi	r5
+
 					; compiled date
-;	blx	r10			; call strcat_r5
+	sep	rd			; call strcat_r5
+
+	ldi	LOW linefeed
+	plo	r5
+	ldi	HIGH linefeed
+	phi	r5
 
 					; source is "\n"
-;	blx	r11			; call strcat_r4
+	sep	rd			; call strcat_r4
 
-;	blx	r8			; center and print
+	sep	re			; center and print
 
 	;===============================
 	; Middle-Line
 	;===============================
-;middle_line:
+middle_line:
+
+	ldi	LOW out_buffer
+	plo	r4
+	ldi	HIGH out_buffer
+	phi	r4
+
 	;=========
 	; Load /proc/cpuinfo into buffer
 	;=========
@@ -368,24 +398,30 @@ done_logo:
 	;=============
 	; Number of CPUs
 	;=============
-;number_of_cpus:
+number_of_cpus:
 
 					; cheat.  Who has an SMP arm?
 					; Print "One"
-;	add	r4,#14			; length of /proc/cpuinfo
-;	blx	r11			; call strcat_r4
+
+
+	ldi	LOW one
+	plo	r5
+	ldi	HIGH one
+	phi	r5
+
+	sep	rd			; call strcat
 
 	;=========
 	; MHz
 	;=========
-;print_mhz:
+print_mhz:
 
-	; the arm system I have does not report MHz
+	; the 1802 system does not report MHz
 
 	;=========
 	; Chip Name
 	;=========
-;chip_name:
+chip_name:
 
 ;	mov	r0,#'a'
 ;	mov	r1,#'r'
@@ -394,7 +430,12 @@ done_logo:
 ;	bl	find_string
 					; find 'sor\t: ' and grab up to ' '
 
-;	blx	r11			; print " Processor, "
+	ldi	LOW processor
+	plo	r5
+	ldi	HIGH processor
+	phi	r5
+
+	sep	rd			; print " Processor, "
 
 	;========
 	; RAM
@@ -413,12 +454,17 @@ done_logo:
 ;	mov	r0,#1
 ;	bl num_to_ascii
 
-					; print 'M RAM, '
-;	blx	r11			; call strcat
+	ldi	LOW ram_comma
+	plo	r5
+	ldi	HIGH ram_comma
+	phi	r5
 
-	;========
+					; print 'K RAM, '
+	sep	rd			; call strcat
+
+	;==========
 	; Bogomips
-	;========
+	;==========
 
 ;	mov	r0,#'I'
 ;	mov	r1,#'P'
@@ -426,32 +472,72 @@ done_logo:
 ;	mov	r3,#'\n'
 ;	bl	find_string
 
-;	blx	r11			; print bogomips total
+	ldi	LOW bogo_total
+	plo	r5
+	ldi	HIGH bogo_total
+	phi	r5
 
-;	blx	r8			; center and print
+	sep	rd			; print bogomips total
+
+	sep	re			; center and print
 
 	;=================================
 	; Print Host Name
 	;=================================
-;last_line:
-;	ldr	r6,out_addr		; point r6 to out_buffer
+last_line:
 
-;	sub	r5,#(U_VERSION-U_NODENAME)
+        ldi	LOW out_buffer
+	plo	r4
+	ldi	HIGH out_buffer
+	phi	r4			; point r4 to out_buffer
+
+	ldi	LOW uname_nodename
+	plo	r5
+	ldi	HIGH uname_nodename
+	phi	r5			; point r5 to out_buffer
+
 					; host name from uname()
-;	blx	r10			; call strcat_r5
 
-;	blx	r8			; center and print
+	sep	rd			; call strcat
 
-;	ldr	r1,colors_addr
+	sep	re			; center and print
+
+	ldi	LOW default_colors
+	plo	r4
+	ldi	HIGH default_colors
+	phi	r4			; point r5 to out_buffer
+
 
 					; restore colors, print a few linefeeds
-;	blx	r9			; write_stdout
+	sep	r9			; write_stdout
 
 	;================================
 	; Exit
 	;================================
 exit:
 	idl			; wait forever
+
+
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
 
 
 
@@ -513,9 +599,20 @@ exit:
 	;==============================
 	; center_and_print
 	;==============================
-	; string to center in at output_buffer
+	; string to center in output_buffer
+	; called as re
+	; returns to r0
 
-;center_and_print:
+center_and_print_return:
+	sep	r9
+
+center_and_print:
+
+        ldi	LOW out_buffer
+	plo	r4
+	ldi	HIGH out_buffer
+	phi	r4			; point r4 to out_buffer
+
 
 ;	push	{r3,r4,LR}		; store return address on stack
 
@@ -543,10 +640,11 @@ exit:
 ;	add	r1,#7			; we want to output C
 ;	blx	r9			; write_stdout
 
-;done_center:
+done_center:
 ;	ldr	r1,out_addr		; point r1 to out_buffer
-;	blx	r9			; write_stdout
-;	pop	{r3,r4,PC}		; restore return address from stack
+;	br	write_stdout		; write_stdout
+
+	br	center_and_print_return	; not needed, stdout returns?
 
 	;#############################
 	; num_to_ascii
@@ -554,7 +652,7 @@ exit:
 	; r3 = value to print
 	; r0 = 0=stdout, 1=strcat
 
-;num_to_ascii:
+num_to_ascii:
 
 ;	push	{r1,r2,r3,r4,r5,LR}	; store return address on stack
 ;	ldr	r2,ascii_addr
@@ -607,26 +705,23 @@ exit:
 	;================================
 	; strcat
 	;================================
-	; value to cat in r4
+	; called in rd
+	; returns to r0
+	; value to cat in r5
 	; output buffer in r6
-	; r3 trashed
-;strcat_r5:
-;	push	{r4,lr}
-;	mov	r4,r5
-;	blx	r11
-;	pop	{r4,pc}
 
-;strcat_r4:
-;	push	{r3,lr}
-;strcat_loop:
-;	ldrb	r3,[r4]			; load a byte
-;	add	r4,#1			; increment pointer
-;	strb	r3,[r6]			; store a byte
-;	add	r6,#1			; increment pointer
-;	cmp	r3,#0			; is it zero?
-;	bne	strcat_loop		; if not loop
-;	sub	r6,r6,#1		; point to one less than null
-;	pop	{r3,pc}			; return
+strcat_return:
+	sep	r0
+
+strcat:
+
+strcat_loop:
+	lda	r5			; load a byte, increment
+	str	r4			; store a byte
+	bz	strcat_return		; if zero, return
+	inc	r4			; if not, inc output pointer
+	br	strcat_loop		; and loop
+
 
 	;================================
 	; WRITE_STDOUT
@@ -634,7 +729,7 @@ exit:
 	; runs as r9
 	; expects to return to r0
 	; r4 = string to print
-
+	; ra,rf trashed
 
 write_stdout_return:
 
@@ -649,6 +744,11 @@ write_loop:
 	plo	rf			; put char into rf
 	sep	rb			; call out_char
 	br	write_loop		; loop
+
+
+
+
+
 
 
 	;================================
@@ -740,47 +840,29 @@ delay_loop:
 ;strcat_addr:	.word (strcat_r4+1)	; +1 to make it a thumb addr
 
 
-;addresses:
-; These are loaded by LDM at init
-;text_addr:	.word text_buf
-;out_addr:	.word out_buffer
-;R:		.word (N-F)
-;logo_addr:	.word logo
-;logo_end_addr:	.word logo_end
-
-;.align 1
 ;===========================================================================
 ;	section .data
 ;===========================================================================
 ;.data
 
-
 .include	"logo.lzss_new"
 
-hello_world:
-	db "Hello World!\r\n",0
+ver_string:		db	" Version ",0
+compiled_string:	db	", Compiled ",0
+linefeed:		db	"\r\n",0
+cpuinfo:		db	"proc/cpu.1802",0
+one:			db	"One ",0
+processor:		db	" Processor, ",0
+ram_comma:		db	"K RAM, ",0
+bogo_total:		db	" Bogomips Total\r\n",0
+default_colors:		db	27,"[0m\r\n\r\n",0
+C:			db	"C",0
 
-
-;ver_string:	.asciz	" Version "
-;compiled_string:.asciz	", Compiled "
-;linefeed:	.asciz	"\n"
-;.ifdef FAKE_PROC
-;cpuinfo:	.asciz  "proc/cpui.arm"
-;.else
-;cpuinfo:	.asciz	"/proc/cpuinfo"
-;.endif
-;one:		.asciz	"One "
-;processor:	.asciz	" Processor, "
-;ram_comma:	.asciz	"M RAM, "
-;bogo_total:	.asciz	" Bogomips Total\n"
-
-;default_colors:	.asciz "\033[0m\n\n"
-;C:		.asciz "C"
-
-
-
-
-
+; fake uname
+uname_sysname:		db	"VMWos",0
+uname_release:		db	"0.1",0
+uname_version:		db	"#1 2015-03-12",0
+uname_nodename:		db	"cosmac",0
 
 ;============================================================================
 ;	section .bss
@@ -793,12 +875,9 @@ hello_world:
 ;.lcomm text_buf, (N+F-1)
 ;.lcomm	disk_buffer,4096	; we cheat!!!!
 
-
-
 text_buf:	DS	1087 	; 1024 + 64 - 1 =  1087 (N+F-1)
 out_buffer:	DS	4096	; 4kb?
 
-;	# see /usr/src/linux/include/linux/kernel.h
 
 
 
