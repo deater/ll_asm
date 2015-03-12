@@ -6,7 +6,7 @@
 0	# 16-bit
 1	# 8-bit
 1976	# Year introduced
-2	# Endian 0=little 1=big 2=neither
+1	# Endian 0=little 1=big 2=neither
 8	# Wordsize (bits)
 1	# size of smallest instruction (bytes)
 3	# size of largest instruction (bytes)
