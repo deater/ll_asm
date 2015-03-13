@@ -445,19 +445,29 @@ chip_name:
 	;========
 	; RAM
 	;========
-
+ram:
 	; no RAM detection, assume 32k
+	; assume something put ram value at address total_ram
+
 	ldi	LOW total_ram
-	plo	r2
+	plo	r3
 	ldi	HIGH total_ram
+	phi	r3
+	lda	r3
 	phi	r2
+	ldn	r3
+	plo	r2
+
 
 	; divide by 1024
 	ghi	r2		; divide by 256
 	shr			; divide by 2
 	shr			; divide by 2
+	plo	r2		; put back in r2
 
 	sep 	r7		; call num_to_ascii
+
+	sep	rd		; call strcat
 
 	ldi	LOW ram_comma
 	plo	r5
@@ -538,15 +548,16 @@ exit:
 	nop
 	nop
 	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
+
+
+
+
+
+
+
+
+	
+
 
 
 
@@ -674,61 +685,101 @@ done_center:
 	;#############################
 	; num_to_ascii
 	;#############################
-	; r3 = value to print
-	; r0 = 0=stdout, 1=strcat
+	; r2 = value to print
 	; called in r7
 	; returns to r0
-
+	; r5 points to buffer with result
+	; trashes r2 and r3
 nta_return:
 	sep	r0
 
 num_to_ascii:
 
-;	push	{r1,r2,r3,r4,r5,LR}	; store return address on stack
-;	ldr	r2,ascii_addr
-;	add	r2,#9			; point to end of our buffer
+        ldi	LOW ascii_buffer
+	plo	r5
+	ldi	HIGH ascii_buffer
+	phi	r5			; point r5 to ascii_buffer
 
 	;===================================================
-	; div_by_10: because ARM has no divide instruction
+	; div_by_10: because 1802 has no mul/divide instruction
 	;==================================================
-	; r3=numerator
-	; r5=quotient    r4=remainder
+	; cheat and only convert a byte
 
-;	mov	r7,#10		; Divide by 10
-;div_by_10:
-;	mov     r5,#0           ; zero out quotient
-;divide_loop:
-;	mov     r1,r5           ; move Q temporarily to r1
-;	mul     r1,r7           ; multiply Q by denominator
-;	add     r5,#1           ; increment quotient
-;	cmp     r1,r3           ; is it greater than numerator?
-;	ble     divide_loop     ; if not, loop
-;	sub     r5,#2           ; otherwise went too far, decrement
-				; and done
-;	mov     r1,r5           ; move Q temporarily to r2
-;	mul     r1,r7           ; calculate remainder
-;	sub     r4,r3,r1        ; R=N-(Q*D)
+	ldi	0
+	plo	r3		; digit counter
+	phi	r3		; leading zero?
+	glo	r2		; get value to convert
+c_100s_loop:
+	smi	100
+	bm	count_10s
+	inc	r3
+	br	c_100s_loop
 
-	; Done Divide, Q=r5 R=r4
+count_10s:
+	adi	100		; restore positive
+	plo	r2
 
-;	add     r4,#0x30        ; convert to ascii
-;	strb    r4,[r2]         ; store a byte
-;	sub     r2,#1           ; decrement pointer
-;	mov     r3,r5           ; move Q in for next divide, update flags
-;	bne	div_by_10	; if Q not zero, loop
+	glo	r3
+	bz	zero_100s
 
-;write_out:
-;	add	r1,r2,#1	; adjust pointer
+	adi	0x30
+	str	r5
+	inc	r5
+	phi	r3		; make leading zero not true
 
-;	cmp	r0,#0
-;	beq	num_stdout
+zero_100s:
 
-;	mov	r5,r1
-;	blx	r10			; if 1, strcat_r5
-;	pop	{r1,r2,r3,r4,r5,pc}	; pop and return
+	ldi	0
+	plo	r3
+	glo	r2
+c_10s_loop:
+	smi	10
+	bm	count_1s
+	inc	r3
+	br	c_10s_loop
 
-;num_stdout:
-;	blx	r9			; else, fallthrough to stdout
+count_1s:
+	adi	10
+	plo	r2
+
+	ghi	r3
+	bnz	noleadzero
+
+	glo	r3
+	bz	notenszero
+
+noleadzero:
+
+	glo	r3
+
+	adi	0x30
+	str	r5
+	inc	r5
+
+notenszero:
+	ldi	0
+	plo	r3
+	glo	r2
+c_1s_loop:
+	smi	1
+	bm	nta_done
+	inc	r3
+	br	c_1s_loop
+
+nta_done:
+	adi	1
+	glo	r3
+	adi	0x30
+	str	r5
+	inc	r5
+	ldi	0
+	str	r5
+
+        ldi	LOW ascii_buffer
+	plo	r5
+	ldi	HIGH ascii_buffer
+	phi	r5			; point r5 to ascii_buffer
+
 
 	br	nta_return
 
@@ -821,7 +872,7 @@ not_one:
 
 	dec	ra		; decrement bit count
 	glo	ra		; load bit count
-	bnz	out_loop	; if not zero than loop
+	lbnz	out_loop	; if not zero than loop
 
 	seq			; mark parity
  	sep	rc		; delay
@@ -829,7 +880,7 @@ not_one:
 	req			; stop bit
  	sep	rc		; delay
 
-	br	out_char_return	; done and return
+	lbr	out_char_return	; done and return
 
 
 	;================================
@@ -912,9 +963,9 @@ disk_buffer:		db	"cpu\t: 1802\n"
 ;bss_begin:
 ;.lcomm uname_info,(65*6)
 ;.lcomm sysinfo_buff,(64)
-;.lcomm ascii_buffer,10
 ;.lcomm	disk_buffer,4096	; we cheat!!!!
 
+ascii_buffer:	DS	10
 text_buf:	DS	1087 	; 1024 + 64 - 1 =  1087 (N+F-1)
 out_buffer:	DS	4096	; 4kb?
 
