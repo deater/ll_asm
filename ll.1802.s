@@ -254,22 +254,32 @@ discrete_char:
 
 done_logo:
 
-	ldi	HIGH write_stdout	; POINT R9 TO "WRITE_STDOUT"
+	ldi	HIGH num_to_ascii	; point r7 to num_to_ascii
+        phi	r7
+        ldi	LOW num_to_ascii
+        plo	r7
+
+	ldi	HIGH find_string	; point r8 to find_string
+        phi	r8
+        ldi	LOW find_string
+        plo	r8
+
+	ldi	HIGH write_stdout	; point r9 to write_stdout
         phi	r9
         ldi	LOW write_stdout
         plo	r9
 
-	ldi	HIGH out_char	; POINT RB TO "OUT_CHAR"
+	ldi	HIGH out_char		; point rb to out_char
         phi	rb
         ldi	LOW out_char
         plo	rb
 
-	ldi	HIGH delay	; POINT RC TO "DELAY"
+	ldi	HIGH delay		; point rc to delay
         phi	rc
         ldi	LOW delay
         plo	rc
 
-	ldi	HIGH strcat	; POINT RD TO "STRCAT"
+	ldi	HIGH strcat		; point rd to strcat
         phi	rd
         ldi	LOW strcat
         plo	rd
@@ -278,9 +288,6 @@ done_logo:
         phi	re
         ldi	LOW center_and_print
         plo	re
-
-
-
 
 
         ldi	LOW out_buffer
@@ -295,12 +302,6 @@ done_logo:
 	;==========================
 
 first_line:
-
-;uname_sysname:		db	"VMWos",0
-;uname_release:		db	"0.1",0
-;uname_version:		db	"#1 2015-03-12",0
-;uname_nodename:		db	"cosmac",0
-
 
 	ldi	LOW out_buffer
 	plo	r4
@@ -374,26 +375,12 @@ middle_line:
 	;=========
 	; Load /proc/cpuinfo into buffer
 	;=========
+	; We have to fake this, no FILE I/O
 
-;	ldr	r6,out_addr		; point r6 to out_buffer
-
-;	mov	r0,r4
-					; '/proc/cpuinfo'
-;	mov	r1,#0			; 0 = O_RDONLY <bits/fcntl.h>
-;	mov	r7,#SYSCALL_OPEN
-;	swi	#0			; syscall.  return in r0?
-
-;	mov	r3,r0			; save our fd
-;	ldr	r1,disk_addr
-;	mov	r2,#128
-;	lsl	r2,#5		 	; 4096 is maximum size of proc file ;)
-;	mov	r7,#SYSCALL_READ
-;	swi	#0
-
-;	mov	r0,r3
-;	mov	r7,#SYSCALL_CLOSE
-;	swi	#0			; close (to be correct)
-
+	; open
+	; read
+	; close
+	; now in disk_buffer
 
 	;=============
 	; Number of CPUs
@@ -416,19 +403,37 @@ number_of_cpus:
 	;=========
 print_mhz:
 
-	; the 1802 system does not report MHz
+	ldi	'M'
+	plo	r2
+	ldi	'H'
+	phi	r2
+	ldi	'z'
+	plo	r3
+	ldi	'\n'
+	phi	r3
+	sep	r8
+
+	ldi	LOW mhz
+	plo	r5
+	ldi	HIGH mhz
+	phi	r5
+
+	sep	rd			; call strcat
 
 	;=========
 	; Chip Name
 	;=========
 chip_name:
-
-;	mov	r0,#'a'
-;	mov	r1,#'r'
-;	mov	r2,#'e'
-;	mov	r3,#'\n'
-;	bl	find_string
-					; find 'sor\t: ' and grab up to ' '
+	ldi	'c'
+	plo	r2
+	ldi	'p'
+	phi	r2
+	ldi	'u'
+	plo	r3
+	ldi	'\n'
+	phi	r3
+	sep	r8			; call find_string
+					; find 'cpu\t: ' and grab up to ' '
 
 	ldi	LOW processor
 	plo	r5
@@ -440,19 +445,19 @@ chip_name:
 	;========
 	; RAM
 	;========
-;	ldr	r0,sysinfo_addr
-;	mov	r2,r0
 
-;	mov	r7,#SYSCALL_SYSINFO
-;	swi	#0			; sysinfo() syscall
+	; no RAM detection, assume 32k
+	ldi	LOW total_ram
+	plo	r2
+	ldi	HIGH total_ram
+	phi	r2
 
-;	add	r2,#S_TOTALRAM
-;	ldr	r3,[r2]
-					; size in bytes of RAM
-;	lsr	r3,#20			; divide by 1024*1024 to get M
+	; divide by 1024
+	ghi	r2		; divide by 256
+	shr			; divide by 2
+	shr			; divide by 2
 
-;	mov	r0,#1
-;	bl num_to_ascii
+	sep 	r7		; call num_to_ascii
 
 	ldi	LOW ram_comma
 	plo	r5
@@ -466,11 +471,15 @@ chip_name:
 	; Bogomips
 	;==========
 
-;	mov	r0,#'I'
-;	mov	r1,#'P'
-;	mov	r2,#'S'
-;	mov	r3,#'\n'
-;	bl	find_string
+	ldi	'I'
+	plo	r2
+	ldi	'P'
+	phi	r2
+	ldi	'S'
+	plo	r3
+	ldi	'\n'
+	phi	r3
+	sep	r8
 
 	ldi	LOW bogo_total
 	plo	r5
@@ -544,55 +553,71 @@ exit:
 	;=================================
 	; FIND_STRING
 	;=================================
-	; r0,r1,r2 = string to find
-	; r3 = char to end at
-	; writes to r6
+	; r2/r3 = string to find
+	; rf = char to end at
+	; returns to r0
+	; called as r8
+	; trashes r6
+	; writes to r4
 
-;find_string:
-;	push	{r5,r7,lr}
-;	ldr	r7,disk_addr		; look in cpuinfo buffer
-;find_loop:
-;	ldrb	r5,[r7]			; load a byte
-;	cmp	r5,#0			; off the end?
-;	beq	done			; then finished
+find_string_return:
+	sep	r0
 
-;	add	r7,#1			; increment pointer
-;	cmp	r5,r0			; compare against first byte
-;	bne	find_loop
+find_string:
 
-;	ldrb	r5,[r7]			; load next byte
-;	cmp	r5,r1
-;	bne	find_loop		; if not equal, loop
+        ldi	LOW disk_buffer
+	plo	r6
+	ldi	HIGH disk_buffer
+	phi	r6			; point r4 to out_buffer
 
-;	ldrb	r5,[r7,#1]		; load next byte
-;	cmp	r5,r2
-;	bne	find_loop		; if not equal, loop
+	sex	r6
 
-					; if all 3 matched, we are found
+find_loop:
+	ldn	r6			; load a byte
+	bz	done			; if zero then done
 
-;find_colon:
-;	ldrb	r5,[r7]			; load a byte
-;	add	r7,#1			; increment pointer
-;	cmp	r5,#':'
-;	bne	find_colon		; repeat till we find colon
+	glo	r2			; get first byte
+	sm				; subtract with byte at r6
+	inc	r6
+	bnz	no_match		; loop if not zero
 
-;	add	r7,r7,#1		; skip the space
+	ghi	r2			; load next byte
+	sm
+	inc	r6
+	bnz	no_match1		; if not equal, loop
 
-;store_loop:
-;	ldrb	r5,[r7]			; load a byte, increment pointer
-;	strb	r5,[r6]			; store a byte, increment pointer
-;	add	r7,#1			; increment pointers
-;	add	r6,#1
-;	cmp	r5,r3
-;	bne	store_loop
+	glo	r3
+	sm
+	bz	find_colon
 
-;almost_done:
-;	mov	r0,#0
-;	strb	r0,[r6]			; replace last value with NUL
-;	sub	r6,#1			; adjust pointer
+no_match1:
+	dec	r6
+no_match:
+	br	find_loop
 
-;done:
-;	pop	{r5,r7,pc}		; return
+find_colon:
+	ldi	':'
+	sm
+	inc	r6
+	bnz	find_colon		; repeat till we find a colon
+
+	inc	r6			; skip the space
+
+store_loop:
+	ldxa				; load byte from r6, inc
+	str	r4			; store to r4
+	inc	r4			; increment r4
+
+	ghi	r3
+	sm
+	bnz	store_loop
+
+almost_done:
+	ldi	0
+	str	r4			; replace last value with NUL
+
+done:
+	br	find_string_return	; return
 
 
 
@@ -651,6 +676,11 @@ done_center:
 	;#############################
 	; r3 = value to print
 	; r0 = 0=stdout, 1=strcat
+	; called in r7
+	; returns to r0
+
+nta_return:
+	sep	r0
 
 num_to_ascii:
 
@@ -699,7 +729,8 @@ num_to_ascii:
 
 ;num_stdout:
 ;	blx	r9			; else, fallthrough to stdout
-;	pop	{r1,r2,r3,r4,r5,pc}	; pop and return
+
+	br	nta_return
 
 
 	;================================
@@ -852,6 +883,7 @@ compiled_string:	db	", Compiled ",0
 linefeed:		db	"\r\n",0
 cpuinfo:		db	"proc/cpu.1802",0
 one:			db	"One ",0
+mhz:			db	"MHz ",0
 processor:		db	" Processor, ",0
 ram_comma:		db	"K RAM, ",0
 bogo_total:		db	" Bogomips Total\r\n",0
@@ -864,6 +896,15 @@ uname_release:		db	"0.1",0
 uname_version:		db	"#1 2015-03-12",0
 uname_nodename:		db	"cosmac",0
 
+; fake RAM
+total_ram:		dw	32768
+
+; fake cpuinfo
+disk_buffer:		db	"cpu\t: 1802\n"
+			db	"cpu MHz\t: 0.33\n"
+			db	"BogoMIPS\t: 0.30\n",0
+
+
 ;============================================================================
 ;	section .bss
 ;============================================================================
@@ -872,7 +913,6 @@ uname_nodename:		db	"cosmac",0
 ;.lcomm uname_info,(65*6)
 ;.lcomm sysinfo_buff,(64)
 ;.lcomm ascii_buffer,10
-;.lcomm text_buf, (N+F-1)
 ;.lcomm	disk_buffer,4096	; we cheat!!!!
 
 text_buf:	DS	1087 	; 1024 + 64 - 1 =  1087 (N+F-1)
