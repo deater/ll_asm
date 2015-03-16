@@ -98,6 +98,12 @@
 ;	+ 1009 -- remove superflous set of D to zero
 ;	+ 1008 -- remove extraneous sex
 ;	+ 1004 -- inline out_char
+;	+ 1003 -- use skp instruction in out_char
+;	+ 1002 -- use lsdf instruction in out_char
+;	+ 1000 -- remove out_char initialization
+;	+  991 -- optimize center_and_print to need only 3 calls
+;	+  987 -- remove some now-unneeded long branches
+
 
 ;	.globl _start
 ;_start:
@@ -270,8 +276,6 @@ done_logo:
 	phi	r8
 ;	ldi	HIGH write_stdout	; point r9 to write_stdout
 	phi	r9
-;	ldi	HIGH out_char		; point rb to out_char
-	phi	rb
 ;	ldi	HIGH delay		; point rc to delay
 	phi	rc
 ;	ldi	HIGH strcat		; point rd to strcat
@@ -287,8 +291,6 @@ done_logo:
 	plo	r8
 	ldi	LOW write_stdout
 	plo	r9
-	ldi	LOW out_char
-	plo	rb
 	ldi	LOW delay
 	plo	rc
 	ldi	LOW strcat		; point rd to strcat
@@ -373,7 +375,7 @@ first_line:
 	sep	re			; center and print
 	sep	re
 	sep	re
-	sep	re
+;	sep	re
 
 	;===============================
 	; Middle-Line
@@ -478,12 +480,17 @@ ram:
 	shr			; divide by 2
 	plo	r2		; put back in r2
 
-        ldi	LOW ascii_buffer
+	ldi	LOW ascii_buffer
 	plo	r5
 	ldi	HIGH ascii_buffer
 	phi	r5			; point r5 to ascii_buffer
 
 	sep 	r7		; call num_to_ascii
+
+	ldi	LOW ascii_buffer
+	plo	r5
+	ldi	HIGH ascii_buffer
+	phi	r5			; point r5 to ascii_buffer
 
 	sep	rd		; call strcat
 
@@ -519,7 +526,7 @@ ram:
 	sep	re			; center and print
 	sep	re
 	sep	re
-	sep	re
+;	sep	re
 
 	;=================================
 	; Print Host Name
@@ -543,7 +550,7 @@ last_line:
 	sep	re			; center and print
 	sep	re
 	sep	re
-	sep	re
+;	sep	re
 
 	ldi	LOW default_colors
 	plo	r4
@@ -694,13 +701,13 @@ out_loop:
 	shr			; shift into carry
 	plo	rf		; store back to rf
 
-	bdf	out_one		; if carry set, output a 1
+	lsdf			; if carry set, skip to out_one, output a 1
 
 	seq			; otherwise, output a 0
 				; (note, we are assuming the serial
 				; hardware inverts Q)
 
-	br	not_one		; skip ahead
+	skp			; skip ahead to not_one
 
 out_one:
 	req			; output a 1 (inverted)
@@ -753,21 +760,23 @@ delay_loop:
 	; end of string in r4
 	; called as re
 	; returns to r0
+	; you need to call this three times in succession
 
 center_and_print_return:
-	sep	r9			; call write_stdout
+	sep	r9			; tail call write_stdout
 
 center_and_print:
 
-	glo	r4
-	smi	LOW out_buffer
+					; assume never more than 128 bytes
+	glo	r4			; get low value of end pointer
+	smi	LOW out_buffer		; subtract start pointer
 
 					; subtract length from 81
 	sdi	81			; we use 81 to not count ending \n
 
-	bpz	no_zero		; if result negative, don't center
+	lsdf				; if result negative, don't center
 
-	ldi	0
+	ldi	0			; skipped if positive
 
 no_zero:
 
@@ -778,39 +787,33 @@ no_zero:
         ldi	LOW after_escape
 	plo	r5
 	ldi	HIGH after_escape
-	phi	r5			; point r5 to ascii_buffer
+	phi	r5			; point r5 to where we want our value
 
 	sep	r7			; call num_to_ascii
+
+	ldi	'C'			; tack a 'C' onto the end
+	str	r5
 
         ldi	LOW escape
 	plo	r4
 	ldi	HIGH escape
-	phi	r4			; we want to output ^[[
+	phi	r4			; we want to output ^[[NNNC
 
-	sep	r9
-
-
-
-        ldi	LOW C
-	plo	r4
-	ldi	HIGH C
-	phi	r4			; we want to output C
-
-	sep	r9
+	sep	r9			; call write_stdout
 
 done_center:
 
-        ldi	LOW out_buffer
+        ldi	LOW out_buffer		; point to output_buffer
 	plo	r4
 	ldi	HIGH out_buffer
 	phi	r4			; point r4 to out_buffer
 
-
 	br	center_and_print_return
 
-	;#############################
+
+	;=============================
 	; num_to_ascii
-	;#############################
+	;=============================
 	; r2 = value to print
 	; called in r7
 	; returns to r0
@@ -865,10 +868,10 @@ count_1s:
 	plo	r2
 
 	ghi	r3
-	lbnz	noleadzero
+	bnz	noleadzero
 
 	glo	r3
-	lbz	notenszero
+	bz	notenszero
 
 noleadzero:
 
@@ -884,7 +887,7 @@ notenszero:
 	glo	r2
 c_1s_loop:
 	smi	1
-	bm	nta_done
+	bnf	nta_done	; bm branch minus
 	inc	r3
 	br	c_1s_loop
 
@@ -896,12 +899,6 @@ nta_done:
 	inc	r5
 	ldi	0
 	str	r5
-
-        ldi	LOW ascii_buffer
-	plo	r5
-	ldi	HIGH ascii_buffer
-	phi	r5			; point r5 to ascii_buffer
-
 
 	lbr	nta_return
 
@@ -926,8 +923,7 @@ ram_comma:		db	"K RAM, ",0
 bogo_total:		db	" Bogomips Total\r\n",0
 default_colors:		db	27,"[0m\r\n\r\n",0
 escape:			db	27,"["
-after_escape:		db	0,0,0,0
-C:			db	"C",0
+after_escape:		db	0,0,0,0,0
 
 ; fake uname
 uname_sysname:		db	"VMWos",0
