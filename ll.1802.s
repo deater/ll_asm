@@ -89,7 +89,9 @@
 ;	+ OUT1 .. OUT7		output on bus
 ;	+ INP1 .. INP7		input from bus
 
-
+;	Optimization:
+;	+ 1030 -- initial working code
+;	+ 1029 -- remove redundant instruction
 
 
 ;	.globl _start
@@ -137,24 +139,26 @@
 	ldi	HIGH text_buf
 	phi	rd
 
-	ldi	HIGH 960		; N - F = 1024-64 = 960
-	phi	r2
 	ldi	LOW 960
 	plo	r2
+	ldi	HIGH 960		; N - F = 1024-64 = 960
+	phi	r2
 
-	sex	r4			; set index to r4
+
+	sex	r4		; set index to r4
 
 decompression_loop:
-	ldxa				; load a byte, increment pointer
-	plo	rb
+	ldxa			; load a byte, increment pointer
+	plo	rb		; store byte in rb
 
-	ldi	8			; bits left
-	plo	r9
+	ldi	8		; bits left
+	plo	r9		; use r9 as a counter
 
 test_flags:
-	ghi	r4
-	smi	HIGH logo_end
-	bnz	not_done
+	ghi	r4		; full 16-bit compare
+	smi	HIGH logo_end	; is this necessary?
+	bnz	not_done	; TODO: convert to skip?
+				; but then skip into mid-instruction?
 
 	glo	r4
 	smi	LOW logo_end	; have we reached the end?
@@ -173,7 +177,6 @@ offset_length:
 	ldxa			; load a byte, increment
 	phi	rc
 
-	ghi	rc
 	shr
 	shr			; (rc>>P_BITS)
 	adi	3		; + THRESHOLD + 1

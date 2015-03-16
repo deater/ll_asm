@@ -38,6 +38,7 @@ Some Statistics
      s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1030 bytes   (as 2.23.52.20130727)
      x86_x32            1006 bytes   (as 2.24)
+     1802		1010 bytes   (asmx)
      sh3		 994 bytes   (as 2.17.50.0.5)
      m68k		 982 bytes   (as 2.18.0.20080103)
      x86                 969 bytes   (as 2.19.51.20090723)
@@ -321,6 +322,28 @@ x86_x32:	This code is more or less the same as x86_64
 
 	The move to having all syscalls with bit 30 set hurts us
 	by about 10 bytes or so.
+
+1802:	RCA cosmac 1802
+
+	This is an interesting architecture.
+
+	No dedicated PC (you can set any of the 16 index registers to be PC)
+	No stack (though there are auto-inc/dec insns to help).
+
+	This makes function calls interesting.  The traditional way
+	is to have dedicated index registers for each function, then
+	jump to just before the beginning before returning
+	(to "reset" that particular PC).
+
+	This is only workable if you have < 8 or so functions and
+	no leaf functions.  Otherwise you have to emulate a stack
+	with fairly high overhead instruction count wise.
+
+	Otherwise nothing unusual when optimizing, except for the
+	always troublesome problem of doing 16-bit math when you
+	can only do math in the 8-bit accumulator.
+
+
 
 vax:
     	vax is crazy CISC.  
