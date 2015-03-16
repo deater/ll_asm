@@ -95,6 +95,9 @@
 ;	+ 1025 -- remove extraneous NOPs
 ;	+ 1015 -- merge loading of high function addresses when the same
 ;	+ 1011 -- re-arrange functions so all start in page 1
+;	+ 1009 -- remove superflous set of D to zero
+;	+ 1008 -- remove extraneous sex
+;	+ 1004 -- inline out_char
 
 ;	.globl _start
 ;_start:
@@ -557,6 +560,8 @@ last_line:
 exit:
 	idl			; wait forever
 
+
+
 	;=================================
 	; FIND_STRING
 	;=================================
@@ -564,7 +569,7 @@ exit:
 	; rf = char to end at
 	; returns to r0
 	; called as r8
-	; trashes r6
+	; trashes/looks in r6
 	; writes to r4
 
 find_string_return:
@@ -575,9 +580,9 @@ find_string:
         ldi	LOW disk_buffer
 	plo	r6
 	ldi	HIGH disk_buffer
-	phi	r6			; point r4 to out_buffer
+	phi	r6			; point r6 to disk_buffer
 
-	sex	r6
+	sex	r6			; so we can use "sm" instruction
 
 find_loop:
 	ldn	r6			; load a byte
@@ -597,8 +602,6 @@ find_loop:
 	sm				; compare
 	bz	find_colon		; if same, we matched!
 
-;	lsz	we can do this, harmless load of register
-
 no_match1:
 	dec	r6
 no_match:
@@ -613,16 +616,17 @@ find_colon:
 	inc	r6			; skip the space
 
 store_loop:
-	ldxa				; load byte from r6, inc
+	lda	r6			; load byte from r6, inc
 	str	r4			; store to r4
 	inc	r4			; increment r4
 
-	ghi	r3
+	ghi	r3			; compare to end char
 	sm
 	bnz	store_loop
 
 almost_done:
-	ldi	0
+	; D is zero in order to fall through here
+
 	str	r4			; replace last value with NUL
 
 done:
@@ -637,6 +641,9 @@ done:
 	; returns to r0
 	; value to cat in r5
 	; output buffer in r4
+
+	; really want to make this 7 bytes but can't figure
+	; out how to make it smaller, even using skips
 
 strcat_return:
 	sep	r0
@@ -664,30 +671,15 @@ write_stdout_return:
 	sep	r0			; return to r0
 
 write_stdout:
-	sex	r4			; use r4 as index
 
 write_loop:
-	ldxa				; load from r4 and increment
+	lda	r4			; load from r4 and increment
 	bz	write_stdout_return	; if zero we are done
 	plo	rf			; put char into rf
-	sep	rb			; call out_char
-	br	write_loop		; loop
 
-
-
-
-
-
-
-	;================================
-	; OUT_CHAR
-	;================================
-	; expects to be run as rb
-	; expects to return to r9
-	; rf = byte to output
-
-out_char_return:
-	sep	r9		; return to write_stdout
+	;=======================
+	; begin out_char inline
+	;=======================
 
 out_char:
 	ldi	7		; load bit counter
@@ -726,17 +718,22 @@ not_one:
 	req			; stop bit
  	sep	rc		; delay
 
-	br	out_char_return	; done and return
+	;=====================
+	; end out_char inline
+	;=====================
+
+	br	write_loop		; loop
+
 
 
 	;================================
 	; DELAY
 	;================================
 	; expects to be run as rc
-	; expects to return to rb
+	; expects to return to r9
 
 delay_begin:
-	sep	rb		; return
+	sep	r9		; return
 
 delay:
 	ldi	49		; loop 49 times
