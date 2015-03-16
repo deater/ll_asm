@@ -95,7 +95,7 @@
 ;	.globl _start
 ;_start:
 
-	br	done_logo		; while debugging (for speed)
+;	br	done_logo		; while debugging (for speed)
 
 	;=========================
 	; PRINT LOGO
@@ -295,7 +295,7 @@ done_logo:
 	ldi	HIGH out_buffer
 	phi	r4
 
-;	sep	r9
+	sep	r9
 
 	;==========================
 	; PRINT VERSION
@@ -361,6 +361,9 @@ first_line:
 	sep	rd			; call strcat_r4
 
 	sep	re			; center and print
+	sep	re
+	sep	re
+	sep	re
 
 	;===============================
 	; Middle-Line
@@ -465,6 +468,11 @@ ram:
 	shr			; divide by 2
 	plo	r2		; put back in r2
 
+        ldi	LOW ascii_buffer
+	plo	r5
+	ldi	HIGH ascii_buffer
+	phi	r5			; point r5 to ascii_buffer
+
 	sep 	r7		; call num_to_ascii
 
 	sep	rd		; call strcat
@@ -499,6 +507,9 @@ ram:
 	sep	rd			; print bogomips total
 
 	sep	re			; center and print
+	sep	re
+	sep	re
+	sep	re
 
 	;=================================
 	; Print Host Name
@@ -520,6 +531,9 @@ last_line:
 	sep	rd			; call strcat
 
 	sep	re			; center and print
+	sep	re
+	sep	re
+	sep	re
 
 	ldi	LOW default_colors
 	plo	r4
@@ -542,12 +556,12 @@ exit:
 	nop
 	nop
 	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
+
+
+
+
+
+
 
 
 
@@ -635,14 +649,56 @@ done:
 	;==============================
 	; center_and_print
 	;==============================
-	; string to center in output_buffer
+	; string to center in out_buffer
+	; end of string in r4
 	; called as re
 	; returns to r0
 
 center_and_print_return:
-	sep	r9
+	sep	r9			; call write_stdout
 
 center_and_print:
+
+	glo	r4
+	smi	LOW out_buffer
+
+					; subtract length from 81
+	sdi	81			; we use 81 to not count ending \n
+
+	bpz	no_zero		; if result negative, don't center
+
+	ldi	0
+
+no_zero:
+
+	shr				; divide by 2
+
+	plo	r2			; put into r2
+
+        ldi	LOW after_escape
+	plo	r5
+	ldi	HIGH after_escape
+	phi	r5			; point r5 to ascii_buffer
+
+	sep	r7			; call num_to_ascii
+
+        ldi	LOW escape
+	plo	r4
+	ldi	HIGH escape
+	phi	r4			; we want to output ^[[
+
+	sep	r9
+
+
+
+        ldi	LOW C
+	plo	r4
+	ldi	HIGH C
+	phi	r4			; we want to output C
+
+	sep	r9
+
+done_center:
 
         ldi	LOW out_buffer
 	plo	r4
@@ -650,37 +706,7 @@ center_and_print:
 	phi	r4			; point r4 to out_buffer
 
 
-;	push	{r3,r4,LR}		; store return address on stack
-
-;	ldr	r1,colors_addr		; we want to output ^[[
-;	mov	r2,#2
-
-;	bl	write_stdout_we_know_size
-
-;str_loop2:
-;	ldr	r2,out_addr		; point r2 to out_buffer
-;	sub	r2,r2,r6		; get length by subtracting
-					; actually, negative value here
-					; an optimization...
-
-					; subtract r2 from 81
-;	add	r2,#81			; we use 81 to not count ending \n
-
-;	blt	done_center		; if result negative, don't center
-
-;	lsr	r3,r2,#1		; divide by 2
-
-;	mov	r0,#0			; print to stdout
-;	bl	num_to_ascii		; print number of spaces
-
-;	add	r1,#7			; we want to output C
-;	blx	r9			; write_stdout
-
-done_center:
-;	ldr	r1,out_addr		; point r1 to out_buffer
-;	br	write_stdout		; write_stdout
-
-	br	center_and_print_return	; not needed, stdout returns?
+	br	center_and_print_return
 
 	;#############################
 	; num_to_ascii
@@ -695,10 +721,6 @@ nta_return:
 
 num_to_ascii:
 
-        ldi	LOW ascii_buffer
-	plo	r5
-	ldi	HIGH ascii_buffer
-	phi	r5			; point r5 to ascii_buffer
 
 	;===================================================
 	; div_by_10: because 1802 has no mul/divide instruction
@@ -790,7 +812,7 @@ nta_done:
 	; called in rd
 	; returns to r0
 	; value to cat in r5
-	; output buffer in r6
+	; output buffer in r4
 
 strcat_return:
 	sep	r0
@@ -800,9 +822,9 @@ strcat:
 strcat_loop:
 	lda	r5			; load a byte, increment
 	str	r4			; store a byte
-	bz	strcat_return		; if zero, return
+	lbz	strcat_return		; if zero, return
 	inc	r4			; if not, inc output pointer
-	br	strcat_loop		; and loop
+	lbr	strcat_loop		; and loop
 
 
 	;================================
@@ -822,10 +844,10 @@ write_stdout:
 
 write_loop:
 	ldxa				; load from r4 and increment
-	bz	write_stdout_return	; if zero we are done
+	lbz	write_stdout_return	; if zero we are done
 	plo	rf			; put char into rf
 	sep	rb			; call out_char
-	br	write_loop		; loop
+	lbr	write_loop		; loop
 
 
 
@@ -902,26 +924,6 @@ delay_loop:
 	bnz	delay_loop	; repeat until empty
 	br	delay_begin	; goto return
 
-
-;.align 2
-
-; data address
-;ver_addr:	.word ver_string
-;colors_addr:	.word default_colors
-
-;bss addresses
-;uname_addr:	.word uname_info
-;sysinfo_addr:	.word sysinfo_buff
-;ascii_addr:	.word ascii_buffer
-;disk_addr:	.word disk_buffer
-
-; constant values
-;pos_mask:	.word ((POSITION_MASK<<8)+0xff)
-
-; function pointers
-;strcat_addr:	.word (strcat_r4+1)	; +1 to make it a thumb addr
-
-
 ;===========================================================================
 ;	section .data
 ;===========================================================================
@@ -939,6 +941,8 @@ processor:		db	" Processor, ",0
 ram_comma:		db	"K RAM, ",0
 bogo_total:		db	" Bogomips Total\r\n",0
 default_colors:		db	27,"[0m\r\n\r\n",0
+escape:			db	27,"["
+after_escape:		db	0,0,0,0
 C:			db	"C",0
 
 ; fake uname
