@@ -94,11 +94,12 @@
 ;	+ 1029 -- remove redundant instruction
 ;	+ 1025 -- remove extraneous NOPs
 ;	+ 1015 -- merge loading of high function addresses when the same
+;	+ 1011 -- re-arrange functions so all start in page 1
 
 ;	.globl _start
 ;_start:
 
-;	br	done_logo		; while debugging (for speed)
+	br	done_logo		; while debugging (for speed)
 
 	;=========================
 	; PRINT LOGO
@@ -266,10 +267,15 @@ done_logo:
 	phi	r8
 ;	ldi	HIGH write_stdout	; point r9 to write_stdout
 	phi	r9
+;	ldi	HIGH out_char		; point rb to out_char
+	phi	rb
+;	ldi	HIGH delay		; point rc to delay
+	phi	rc
 ;	ldi	HIGH strcat		; point rd to strcat
 	phi	rd
 ;	ldi	HIGH center_and_print	; point re to center_and_print
 	phi	re
+
 
 
 	ldi	LOW num_to_ascii	; point r7 to num_to_ascii
@@ -278,32 +284,25 @@ done_logo:
 	plo	r8
 	ldi	LOW write_stdout
 	plo	r9
+	ldi	LOW out_char
+	plo	rb
+	ldi	LOW delay
+	plo	rc
 	ldi	LOW strcat		; point rd to strcat
 	plo	rd
 	ldi	LOW center_and_print
 	plo	re
 
 
-	ldi	HIGH out_char		; point rb to out_char
-	phi	rb
-;	ldi	HIGH delay		; point rc to delay
-	phi	rc
-
-	ldi	LOW out_char
-	plo	rb
-	ldi	LOW delay
-	plo	rc
-
-
-
-
+	; Load out_buffer
 
         ldi	LOW out_buffer
 	plo	r4
 	ldi	HIGH out_buffer
 	phi	r4
 
-	sep	r9
+	; Print the logo
+;	sep	r9		; call write_stdout
 
 	;==========================
 	; PRINT VERSION
@@ -594,9 +593,11 @@ find_loop:
 	inc	r6
 	bnz	no_match1		; if not equal, loop
 
-	glo	r3
-	sm
-	bz	find_colon
+	glo	r3			; get third byte
+	sm				; compare
+	bz	find_colon		; if same, we matched!
+
+;	lsz	we can do this, harmless load of register
 
 no_match1:
 	dec	r6
@@ -627,6 +628,125 @@ almost_done:
 done:
 	br	find_string_return	; return
 
+
+
+	;================================
+	; strcat
+	;================================
+	; called in rd
+	; returns to r0
+	; value to cat in r5
+	; output buffer in r4
+
+strcat_return:
+	sep	r0
+
+strcat:
+
+strcat_loop:
+	lda	r5			; load a byte, increment
+	str	r4			; store a byte
+	bz	strcat_return		; if zero, return
+	inc	r4			; if not, inc output pointer
+	br	strcat_loop		; and loop
+
+
+	;================================
+	; WRITE_STDOUT
+	;================================
+	; runs as r9
+	; expects to return to r0
+	; r4 = string to print
+	; ra,rf trashed
+
+write_stdout_return:
+
+	sep	r0			; return to r0
+
+write_stdout:
+	sex	r4			; use r4 as index
+
+write_loop:
+	ldxa				; load from r4 and increment
+	bz	write_stdout_return	; if zero we are done
+	plo	rf			; put char into rf
+	sep	rb			; call out_char
+	br	write_loop		; loop
+
+
+
+
+
+
+
+	;================================
+	; OUT_CHAR
+	;================================
+	; expects to be run as rb
+	; expects to return to r9
+	; rf = byte to output
+
+out_char_return:
+	sep	r9		; return to write_stdout
+
+out_char:
+	ldi	7		; load bit counter
+	plo	ra		; and put in ra
+
+        seq			; begin start bit
+ 	sep	rc		; call delay
+
+out_loop:
+
+	glo	rf		; load in char to output
+	shr			; shift into carry
+	plo	rf		; store back to rf
+
+	bdf	out_one		; if carry set, output a 1
+
+	seq			; otherwise, output a 0
+				; (note, we are assuming the serial
+				; hardware inverts Q)
+
+	br	not_one		; skip ahead
+
+out_one:
+	req			; output a 1 (inverted)
+
+not_one:
+ 	sep	rc		; call delay
+
+	dec	ra		; decrement bit count
+	glo	ra		; load bit count
+	bnz	out_loop	; if not zero than loop
+
+	seq			; mark parity
+ 	sep	rc		; delay
+
+	req			; stop bit
+ 	sep	rc		; delay
+
+	br	out_char_return	; done and return
+
+
+	;================================
+	; DELAY
+	;================================
+	; expects to be run as rc
+	; expects to return to rb
+
+delay_begin:
+	sep	rb		; return
+
+delay:
+	ldi	49		; loop 49 times
+				; this isn't calculated but was found
+				; by trial and error
+
+delay_loop:
+	smi	1		; decrement counter
+	bnz	delay_loop	; repeat until empty
+	br	delay_begin	; goto return
 
 
 	;==============================
@@ -748,10 +868,10 @@ count_1s:
 	plo	r2
 
 	ghi	r3
-	bnz	noleadzero
+	lbnz	noleadzero
 
 	glo	r3
-	bz	notenszero
+	lbz	notenszero
 
 noleadzero:
 
@@ -786,126 +906,10 @@ nta_done:
 	phi	r5			; point r5 to ascii_buffer
 
 
-	br	nta_return
-
-
-	;================================
-	; strcat
-	;================================
-	; called in rd
-	; returns to r0
-	; value to cat in r5
-	; output buffer in r4
-
-strcat_return:
-	sep	r0
-
-strcat:
-
-strcat_loop:
-	lda	r5			; load a byte, increment
-	str	r4			; store a byte
-	lbz	strcat_return		; if zero, return
-	inc	r4			; if not, inc output pointer
-	lbr	strcat_loop		; and loop
-
-
-	;================================
-	; WRITE_STDOUT
-	;================================
-	; runs as r9
-	; expects to return to r0
-	; r4 = string to print
-	; ra,rf trashed
-
-write_stdout_return:
-
-	sep	r0			; return to r0
-
-write_stdout:
-	sex	r4			; use r4 as index
-
-write_loop:
-	ldxa				; load from r4 and increment
-	lbz	write_stdout_return	; if zero we are done
-	plo	rf			; put char into rf
-	sep	rb			; call out_char
-	lbr	write_loop		; loop
+	lbr	nta_return
 
 
 
-
-
-
-
-	;================================
-	; OUT_CHAR
-	;================================
-	; expects to be run as rb
-	; expects to return to r9
-	; rf = byte to output
-
-out_char_return:
-	sep	r9		; return to write_stdout
-
-out_char:
-	ldi	7		; load bit counter
-	plo	ra		; and put in ra
-
-        seq			; begin start bit
- 	sep	rc		; call delay
-
-out_loop:
-
-	glo	rf		; load in char to output
-	shr			; shift into carry
-	plo	rf		; store back to rf
-
-	bdf	out_one		; if carry set, output a 1
-
-	seq			; otherwise, output a 0
-				; (note, we are assuming the serial
-				; hardware inverts Q)
-
-	br	not_one		; skip ahead
-
-out_one:
-	req			; output a 1 (inverted)
-
-not_one:
- 	sep	rc		; call delay
-
-	dec	ra		; decrement bit count
-	glo	ra		; load bit count
-	lbnz	out_loop	; if not zero than loop
-
-	seq			; mark parity
- 	sep	rc		; delay
-
-	req			; stop bit
- 	sep	rc		; delay
-
-	lbr	out_char_return	; done and return
-
-
-	;================================
-	; DELAY
-	;================================
-	; expects to be run as rc
-	; expects to return to rb
-
-delay_begin:
-	sep	rb		; return
-
-delay:
-	ldi	49		; loop 49 times
-				; this isn't calculated but was found
-				; by trial and error
-
-delay_loop:
-	smi	1		; decrement counter
-	bnz	delay_loop	; repeat until empty
-	br	delay_begin	; goto return
 
 ;===========================================================================
 ;	section .data
