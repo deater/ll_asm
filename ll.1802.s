@@ -92,7 +92,8 @@
 ;	Optimization:
 ;	+ 1030 -- initial working code
 ;	+ 1029 -- remove redundant instruction
-
+;	+ 1025 -- remove extraneous NOPs
+;	+ 1015 -- merge loading of high function addresses when the same
 
 ;	.globl _start
 ;_start:
@@ -192,10 +193,10 @@ offset_length:
 output_loop:
 				; Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
 	ghi	rc		; mask with 0x3ff
-	ani	3
+	ani	3		; by anding high byte with 3
 	phi	rc
 
-	glo	rc
+	glo	rc		; index to text_buf[rc]
 	adi	LOW text_buf
 	plo	re
 	ghi	rc
@@ -206,21 +207,22 @@ output_loop:
 	inc	rc		; advance rc pointer
 
 store_byte:
-;	glo	ra			; get output_byte
+					; byte currently in D
+
 	str	r1			; store a byte
 	inc	r1			; increment pointer
 
-	plo	ra
+	plo	ra			; save temporarily to ra
 
-	glo	r2
+	glo	r2			; get address for text_buf[r2]
 	adi	LOW text_buf
 	plo	re
 	ghi	r2
 	adci	HIGH text_buf
 	phi	re
 
-	glo	ra
-	str	re			; store a byte to text_buf[r]
+	glo	ra			; restore byte to output
+	str	re			; store a byte to text_buf[r2]
 	inc 	r2			; r++
 
 
@@ -249,7 +251,6 @@ discrete_char:
 					; will be output once
 
 	ldxa				; load a byte, increment pointer
-;	plo	ra			; put in output_byte
 
 	br	store_byte		; and store it
 
@@ -257,40 +258,44 @@ discrete_char:
 
 done_logo:
 
+	; Group routines with high byte 1 together
+
 	ldi	HIGH num_to_ascii	; point r7 to num_to_ascii
-        phi	r7
-        ldi	LOW num_to_ascii
-        plo	r7
+	phi	r7
+;	ldi	HIGH find_string	; point r8 to find_string
+	phi	r8
+;	ldi	HIGH write_stdout	; point r9 to write_stdout
+	phi	r9
+;	ldi	HIGH strcat		; point rd to strcat
+	phi	rd
+;	ldi	HIGH center_and_print	; point re to center_and_print
+	phi	re
 
-	ldi	HIGH find_string	; point r8 to find_string
-        phi	r8
-        ldi	LOW find_string
-        plo	r8
 
-	ldi	HIGH write_stdout	; point r9 to write_stdout
-        phi	r9
-        ldi	LOW write_stdout
-        plo	r9
+	ldi	LOW num_to_ascii	; point r7 to num_to_ascii
+	plo	r7
+	ldi	LOW find_string		; point r8 to find_string
+	plo	r8
+	ldi	LOW write_stdout
+	plo	r9
+	ldi	LOW strcat		; point rd to strcat
+	plo	rd
+	ldi	LOW center_and_print
+	plo	re
+
 
 	ldi	HIGH out_char		; point rb to out_char
-        phi	rb
-        ldi	LOW out_char
-        plo	rb
+	phi	rb
+;	ldi	HIGH delay		; point rc to delay
+	phi	rc
 
-	ldi	HIGH delay		; point rc to delay
-        phi	rc
-        ldi	LOW delay
-        plo	rc
+	ldi	LOW out_char
+	plo	rb
+	ldi	LOW delay
+	plo	rc
 
-	ldi	HIGH strcat		; point rd to strcat
-        phi	rd
-        ldi	LOW strcat
-        plo	rd
 
-	ldi	HIGH center_and_print	; point re to center_and_print
-        phi	re
-        ldi	LOW center_and_print
-        plo	re
+
 
 
         ldi	LOW out_buffer
@@ -552,31 +557,6 @@ last_line:
 	;================================
 exit:
 	idl			; wait forever
-
-
-	nop
-	nop
-	nop
-	nop
-	nop
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-
-
-
 
 	;=================================
 	; FIND_STRING
