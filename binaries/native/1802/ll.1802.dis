@@ -1,0 +1,1041 @@
+                        ;
+                        ;  linux_logo in RCA COSMAC 1802 assembler 0.48
+                        ;
+                        ;  By:
+                        ;       Vince Weaver <vince _at_ deater.net>
+                        ;
+                        ;  assemble with     "asmx -C1802 -w -e -o ll.hex ll.1802.s"
+                        ;  run in the simulator with "elf -baud 1200 -vt100 -r ./ll.hex"
+
+                        ;.include "logo.include"
+
+                        ; Optimization progress:
+
+                        ;
+                        ; Architectural info
+                        ;
+                        ;	The 1802 is a very non-typical architecture.
+                        ;	+ D = 8-bit accumulator
+                        ;	+ DF = 1-bit data flag (carry flag)
+                        ;	+ R0-Rf = 16 16-bit index registers
+                        ;	+ X = 4-bit index register select
+                        ;	+ P = 4-bit program counter select (any of the Rx can be the PC)
+                        ;	+ IE = 1-bit interrupt enable
+                        ;	+ T = 8-bit X,P saved after interrupt
+                        ;	+ Q = 1-bit output flip-flop
+                        ;	No stack, but any Rx can act as one, there are auto inc/dec insns
+                        ;
+                        ;	Instructions are variable width, 1 or 2 bytes
+                        ;
+                        ;	Register Operations
+                        ;	+ INC Rn / DEC Rn
+                        ;	+ INC Rx (x is selected by the X register)
+                        ;	+ GLO Rn / GHI Rn (D=low or high byte of Rn)
+                        ;	+ PLO Rn / PHI Rn (Rn low or high = D)
+                        ;
+                        ;	Memory Operations
+                        ;	+ LDN Rn	(D= Mem[Rn] for Rn!=0)
+                        ;	+ LDA Rn	like above, but increment Rn
+                        ;	+ LDX		(D= Mem[Rx])
+                        ;	+ LDXA		like above, but increment Rx
+                        ;	+ LDI nn	load immediate byte
+                        ;	+ STR Rn	store D to Mem[Rn]
+                        ;	+ STXD		like above, but decrement Rn
+                        ;
+                        ;	Branch Instructions
+                        ;	Short: only within current 256-byte page
+                        ;	+ BR nn		branch always
+                        ;	+ NBR nn	branch never (continue with next insn)
+                        ;	+ BQ nn / BNQ nn	branch based on Q
+                        ;	+ BZ nn / BNZ nn	branch if D is zero (or not)
+                        ;	+ BDF nn / BNF nn	branch if DF is set/notset
+                        ;	+	(BPZ,BGE or BM,BL branch pos/greatere/minus/less) are aliases
+                        ;	+ B1/B2/B3/B4/BN1/BN2/BN3/BN4	branch based on EF external flags
+                        ;	Long Branch
+                        ;	+ LBR hhll / NLBR hhll
+                        ;	+ LBQ hhll / LBNQ hhll
+                        ;	+ LBZ hhll / LBNZ hhll
+                        ;	+ LBDF hhll / LBNF hhll
+                        ;
+                        ;	Conditional execution / Skips
+                        ;	+ LSNQ / LSQ	-- skip 2 if/if not Q
+                        ;	+ LSNZ / LSZ
+                        ;	+ LSNF / LSDF
+                        ;	+ LSIE
+                        ;
+                        ;	Arithmetic
+                        ;	+ OR / AND / XOR	-- logic, D = D OP Mem[Rx]
+                        ;	+ ADD / ADC		-- add, D = D + Mem[Rx] (+ DF if carry)
+                        ;	+ SD / SDB		-- sub, D = Mem[Rx]-D (- Not DF if borrow)
+                        ;	+ SM / SMB		-- subfrom, D = D - Mem[Rx]
+                        ;	+ ORI nn / ANI nn / XRI nn 	-- immediate, D = D OP nn
+                        ;	+ ADI nn / ADCI nn		-- immediate adds
+                        ;	+ SDI / SDBI			-- immediate subs
+                        ;	+ SMI / SMBI			-- immediate subfroms
+                        ;
+                        ;	Shifts
+                        ;	+ SHR / SHL		-- shift right/left, into carry
+                        ;	+ SHRC / SHLC		-- shift right/left carry in carry out
+                        ;
+                        ;	Special register instructions
+                        ;	+ SEQ / REQ	Set/reset Q
+                        ;	+ SEX		Set X register (make it the index)
+                        ;	+ SEP		Set P register (make it the program counter)
+                        ;
+                        ;	Other
+                        ;	+ NOP
+                        ;	+ IDL	wait for interrupt or DMA
+                        ;	+ RET/DIS/MARK/SAVE	interrupt handling instructions
+                        ;	+ OUT1 .. OUT7		output on bus
+                        ;	+ INP1 .. INP7		input from bus
+
+                        ;	Optimization:
+                        ;	+ 1030 -- initial working code
+                        ;	+ 1029 -- remove redundant instruction
+                        ;	+ 1025 -- remove extraneous NOPs
+                        ;	+ 1015 -- merge loading of high function addresses when the same
+                        ;	+ 1011 -- re-arrange functions so all start in page 1
+                        ;	+ 1009 -- remove superflous set of D to zero
+                        ;	+ 1008 -- remove extraneous sex
+                        ;	+ 1004 -- inline out_char
+                        ;	+ 1003 -- use skp instruction in out_char
+                        ;	+ 1002 -- use lsdf instruction in out_char
+                        ;	+ 1000 -- remove out_char initialization
+                        ;	+  991 -- optimize center_and_print to need only 3 calls
+                        ;	+  987 -- remove some now-unneeded long branches
+                        ;	+  983 -- make each digit of num_to_ascii separate reg
+                        ;	+  964 -- make num_to_ascii use a loop
+                        ;	+  963 -- remove extraneous phi
+                        ;	+  928 -- have strcat operate on Rx, switch between r5/rb to save loads
+                        ;	+  916 -- have write_stdout reset out_buffer on completion
+
+                        ;	.globl _start
+                        ;_start:
+
+                        ;	br	done_logo		; while debugging (for speed)
+
+                        	;=========================
+                        	; PRINT LOGO
+                        	;=========================
+
+                        ; LZSS decompression algorithm implementation
+                        ; by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
+                        ; optimized some more by Vince Weaver
+
+                        	; r0 = instruction pointer
+                        	; r1 = out_buffer
+                        	; r2 = R
+                        	; r3 = temp
+                        	; r4 = logo data inputting from
+                        	; r5 = decompress_byte
+                        	; r6 = position
+                        	; r7 = match length
+                        	; r8 = logo end
+                        	; r9 = bit_count
+                        	; ra = out_byte
+                        	; rb = current_byte
+                        	; rc = temp 16bit
+                        	; rd = text_buf
+                        	; re = temp_16bit
+                        	; rf =
+
+0000  F8 01             	ldi	HIGH logo
+0002  B4                	phi	r4
+0003  F8 07             	ldi	HIGH out_buffer
+0005  B1                	phi	r1
+0006  F8 03             	ldi	HIGH text_buf
+0008  BD                	phi	rd
+                        ;	ldi	HIGH 960		; N - F = 1024-64 = 960
+0009  B2                	phi	r2
+
+000A  F8 C0                     ldi	LOW logo
+000C  A4                	plo	r4
+000D  F8 DC                     ldi	LOW out_buffer
+000F  A1                	plo	r1
+0010  F8 9D                     ldi	LOW text_buf
+0012  AD                	plo	rd
+0013  F8 C0             	ldi	LOW 960
+0015  A2                	plo	r2
+
+0016  E4                	sex	r4		; set index to r4
+
+0017                    decompression_loop:
+0017  72                	ldxa			; load a byte, increment pointer
+0018  AB                	plo	rb		; store byte in rb
+
+0019  F8 08             	ldi	8		; bits left
+001B  A9                	plo	r9		; use r9 as a counter
+
+001C                    test_flags:
+001C  94                	ghi	r4		; full 16-bit compare
+001D  FF 02             	smi	HIGH logo_end	; is this necessary?
+001F  3A 26             	bnz	not_done	; TODO: convert to skip?
+                        				; but then skip into mid-instruction?
+
+0021  84                	glo	r4
+0022  FF DB             	smi	LOW logo_end	; have we reached the end?
+0024  32 67             	bz	done_logo	; if so, exit
+
+0026                    not_done:
+
+0026  8B                	glo	rb
+0027  F6                	shr 			; shift bottom bit into DF flag
+0028  AB                	plo	rb
+
+0029  3B 31             	bnf	offset_length	; if set, we jump to discrete char
+
+002B                    discrete_char:
+
+                        	; tried to hoist this up, but just can't get it small enough
+                        	; for a skip to be worth it.
+
+002B  F8 01             	ldi	1			; Z
+002D  A6                	plo	r6			; Z we set r6 to one so byte
+                        					; Z will be output once
+
+
+002E  72                	ldxa				; Z load a byte, increment pointer
+
+002F  30 48             	br	store_byte		; and store it
+
+
+0031                    offset_length:
+0031  72                	ldxa			; load a byte, increment
+0032  AC                	plo	rc
+0033  72                	ldxa			; load a byte, increment
+0034  BC                	phi	rc
+
+0035  F6                	shr
+0036  F6                	shr			; (rc>>P_BITS)
+0037  FC 03             	adi	3		; + THRESHOLD + 1
+
+                        				; P_BITS = 10
+                        				; THRESHOLD = 2
+                        				; r6 = (r6 >> P_BITS) + THRESHOLD + 1
+                        				;                       (=match_length)
+
+0039  A6                	plo	r6		; put in r6
+
+
+003A                    output_loop:
+                        				; Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
+003A  9C                	ghi	rc		; mask with 0x3ff
+003B  FA 03             	ani	3		; by anding high byte with 3
+003D  BC                	phi	rc
+
+003E  8C                	glo	rc		; index to text_buf[rc]
+003F  FC 9D             	adi	LOW text_buf
+0041  AE                	plo	re
+0042  9C                	ghi	rc
+0043  7C 03             	adci	HIGH text_buf
+0045  BE                	phi	re
+
+0046  0E                	ldn	re		; load byte from text_buf[rc]
+0047  1C                	inc	rc		; advance rc pointer
+
+0048                    store_byte:
+                        					; byte currently in D
+
+0048  51                	str	r1			; store a byte
+0049  11                	inc	r1			; increment pointer
+
+004A  AA                	plo	ra			; save temporarily to ra
+
+004B  82                	glo	r2			; get address for text_buf[r2]
+004C  FC 9D             	adi	LOW text_buf
+004E  AE                	plo	re
+004F  92                	ghi	r2
+0050  7C 03             	adci	HIGH text_buf
+0052  BE                	phi	re
+
+0053  8A                	glo	ra			; restore byte to output
+0054  5E                	str	re			; store a byte to text_buf[r2]
+0055  12                	inc 	r2			; r++
+
+
+                        				; Assume ((POSITION_MASK<<8)+0xff) is 0x3ff
+0056  92                	ghi	r2		; mask with 0x3ff
+0057  FA 03             	ani	3		; (wrap to N-1 bits)
+0059  B2                	phi	r2
+
+005A  26                	dec	r6			; decement count
+
+005B  96                	ghi	r6			; if count not zero, then loop
+005C  3A 3A             	bnz	output_loop
+005E  86                	glo	r6
+005F  3A 3A             	bnz	output_loop
+
+0061  29                	dec	r9
+0062  89                	glo	r9			; get bit count; is it zero?
+0063  3A 1C             	bnz	test_flags		; if not, re-load flags
+
+0065  30 17             	br	decompression_loop
+
+
+                        ; end of LZSS code
+
+0067                    done_logo:
+
+                        	; Group routines with high byte 1 together
+
+0067  F8 01             	ldi	HIGH num_to_ascii	; point r7 to num_to_ascii
+0069  B7                	phi	r7
+                        ;	ldi	HIGH find_string	; point r8 to find_string
+006A  B8                	phi	r8
+                        ;	ldi	HIGH write_stdout	; point r9 to write_stdout
+006B  B9                	phi	r9
+                        ;	ldi	HIGH delay		; point rc to delay
+006C  BC                	phi	rc
+                        ;	ldi	HIGH strcat		; point rd to strcat
+006D  BD                	phi	rd
+                        ;	ldi	HIGH center_and_print	; point re to center_and_print
+006E  BE                	phi	re
+
+
+
+006F  F8 92             	ldi	LOW num_to_ascii	; point r7 to num_to_ascii
+0071  A7                	plo	r7
+0072  F8 0E             	ldi	LOW find_string		; point r8 to find_string
+0074  A8                	plo	r8
+0075  F8 49             	ldi	LOW write_stdout
+0077  A9                	plo	r9
+0078  F8 65             	ldi	LOW delay
+007A  AC                	plo	rc
+007B  F8 3B             	ldi	LOW strcat		; point rd to strcat
+007D  AD                	plo	rd
+007E  F8 6E             	ldi	LOW center_and_print
+0080  AE                	plo	re
+
+
+                        	; Load out_buffer
+
+0081  F8 DC                     ldi	LOW out_buffer
+0083  A4                	plo	r4
+0084  F8 07             	ldi	HIGH out_buffer
+0086  B4                	phi	r4
+
+                        	; Print the logo
+0087  D9                	sep	r9		; call write_stdout
+
+                        	;==========================
+                        	; PRINT VERSION
+                        	;==========================
+
+0088                    first_line:
+
+                        	; write stdout resets out_buffer
+                        ;	ldi	LOW out_buffer
+                        ;	plo	r4
+                        ;	ldi	HIGH out_buffer
+                        ;	phi	r4			; point to output buffer
+
+                        					; no uname syscall, faking
+0088  F8 43             	ldi	LOW uname_sysname
+008A  A5                	plo	r5
+008B  F8 03             	ldi	HIGH uname_sysname
+008D  B5                	phi	r5
+                        					; os-name from uname "Linux"
+
+008E  E5                	sex	r5
+008F  DD                	sep	rd			; call strcat
+
+
+0090  F8 DB             	ldi	LOW ver_string
+0092  AB                	plo	rb
+0093  F8 02             	ldi	HIGH ver_string
+0095  BB                	phi	rb
+                        					; source is " Version "
+
+0096  EB                	sex	rb
+0097  DD                	sep 	rd			; call strcat
+
+                        ;	ldi	LOW uname_release
+                        ;	plo	r5
+                        ;	ldi	HIGH uname_release
+                        ;	phi	r5
+
+0098  E5                	sex	r5			; version from uname, ie "2.6.20"
+0099  DD                	sep	rd			; call strcat_r5
+
+                        ;	ldi	LOW compiled_string
+                        ;	plo	rb
+                        ;	ldi	HIGH compiled_string
+                        ;	phi	rb
+
+009A  EB                	sex	rb			; source is ", Compiled "
+009B  DD                	sep	rd			; call strcat
+
+                        ;	ldi	LOW uname_version
+                        ;	plo	r5
+                        ;	ldi	HIGH uname_version
+                        ;	phi	r5
+
+009C  E5                	sex	r5			; compiled date
+009D  DD                	sep	rd			; call strcat_r5
+
+                        ;	ldi	LOW linefeed
+                        ;	plo	rb
+                        ;	ldi	HIGH linefeed
+                        ;	phi	rb
+
+009E  EB                	sex	rb			; source is "\n"
+009F  DD                	sep	rd			; call strcat
+
+00A0  DE                	sep	re			; center and print
+00A1  DE                	sep	re			; call it thrice
+00A2  DE                	sep	re
+
+                        	;===============================
+                        	; Middle-Line
+                        	;===============================
+00A3                    middle_line:
+
+                        	; center and print resets out_buffer
+                        ;	ldi	LOW out_buffer
+                        ;	plo	r4
+                        ;	ldi	HIGH out_buffer
+                        ;	phi	r4
+
+                        	;=========
+                        	; Load /proc/cpuinfo into buffer
+                        	;=========
+                        	; We have to fake this, no FILE I/O
+
+                        	; open
+                        	; read
+                        	; close
+                        	; now in disk_buffer
+
+                        	;=============
+                        	; Number of CPUs
+                        	;=============
+00A3                    number_of_cpus:
+
+                        					; cheat.  Who has an SMP arm?
+                        					; Print "One"
+
+
+00A3  F8 02             	ldi	LOW one
+00A5  A5                	plo	r5
+00A6  F8 03             	ldi	HIGH one
+00A8  B5                	phi	r5
+
+00A9  E5                	sex	r5
+00AA  DD                	sep	rd			; call strcat
+
+                        	;=========
+                        	; MHz
+                        	;=========
+00AB                    print_mhz:
+
+00AB  F8 4D             	ldi	'M'
+00AD  A2                	plo	r2
+00AE  F8 48             	ldi	'H'
+00B0  B2                	phi	r2
+00B1  F8 7A             	ldi	'z'
+00B3  A3                	plo	r3
+00B4  F8 0A             	ldi	'\n'
+00B6  B3                	phi	r3
+00B7  D8                	sep	r8
+
+                        ;	ldi	LOW mhz
+                        ;	plo	r5
+                        ;	ldi	HIGH mhz
+                        ;	phi	r5
+
+00B8  E5                	sex	r5
+00B9  DD                	sep	rd			; call strcat
+
+                        	;=========
+                        	; Chip Name
+                        	;=========
+00BA                    chip_name:
+00BA  F8 63             	ldi	'c'
+00BC  A2                	plo	r2
+00BD  F8 70             	ldi	'p'
+00BF  B2                	phi	r2
+00C0  F8 75             	ldi	'u'
+00C2  A3                	plo	r3
+00C3  F8 0A             	ldi	'\n'
+00C5  B3                	phi	r3
+00C6  D8                	sep	r8			; call find_string
+                        					; find 'cpu\t: ' and grab up to ' '
+
+                        ;	ldi	LOW processor
+                        ;	plo	r5
+                        ;	ldi	HIGH processor
+                        ;	phi	r5
+
+00C7  E5                	sex	r5
+00C8  DD                	sep	rd			; print " Processor, "
+
+                        	;========
+                        	; RAM
+                        	;========
+00C9                    ram:
+                        	; no RAM detection, assume 32k
+                        	; assume something put ram value at address total_ram
+
+00C9  F8 62             	ldi	LOW total_ram
+00CB  A3                	plo	r3
+00CC  F8 03             	ldi	HIGH total_ram
+00CE  B3                	phi	r3
+00CF  43                	lda	r3
+00D0  B2                	phi	r2
+00D1  03                	ldn	r3
+00D2  A2                	plo	r2
+
+
+                        	; divide by 1024
+00D3  92                	ghi	r2		; divide by 256
+00D4  F6                	shr			; divide by 2
+00D5  F6                	shr			; divide by 2
+00D6  A2                	plo	r2		; put back in r2
+
+00D7  84                	glo	r4
+00D8  A5                	plo	r5
+00D9  94                	ghi	r4
+00DA  B5                	phi	r5		; point r5 to out_buffer
+
+00DB  D7                	sep 	r7		; call num_to_ascii
+
+00DC  85                	glo	r5		; point r4 to after the out buffer
+00DD  A4                	plo	r4
+00DE  95                	ghi	r5
+00DF  B4                	phi	r4
+
+00E0  F8 19             	ldi	LOW ram_comma
+00E2  A5                	plo	r5
+00E3  F8 03             	ldi	HIGH ram_comma
+00E5  B5                	phi	r5
+
+00E6  E5                	sex	r5			; print 'K RAM, '
+00E7  DD                	sep	rd			; call strcat
+
+                        	;==========
+                        	; Bogomips
+                        	;==========
+
+00E8  F8 49             	ldi	'I'
+00EA  A2                	plo	r2
+00EB  F8 50             	ldi	'P'
+00ED  B2                	phi	r2
+00EE  F8 53             	ldi	'S'
+00F0  A3                	plo	r3
+00F1  F8 0A             	ldi	'\n'
+00F3  B3                	phi	r3
+00F4  D8                	sep	r8
+
+                        ;	ldi	LOW bogo_total
+                        ;	plo	r5
+                        ;	ldi	HIGH bogo_total
+                        ;	phi	r5
+
+00F5  E5                	sex	r5
+00F6  DD                	sep	rd			; print bogomips total
+
+00F7  DE                	sep	re			; center and print
+00F8  DE                	sep	re			; call it thrice
+00F9  DE                	sep	re
+
+                        	;=================================
+                        	; Print Host Name
+                        	;=================================
+00FA                    last_line:
+
+                        	; center_and_print resets out_buffer
+
+00FA  F8 5B             	ldi	LOW uname_nodename
+00FC  A5                	plo	r5
+00FD  F8 03             	ldi	HIGH uname_nodename
+00FF  B5                	phi	r5			; point r5 to out_buffer
+
+                        					; host name from uname()
+
+0100  E5                	sex	r5
+0101  DD                	sep	rd			; call strcat
+
+0102  DE                	sep	re			; center and print
+0103  DE                	sep	re			; call it thrice
+0104  DE                	sep	re
+
+0105  F8 33             	ldi	LOW default_colors
+0107  A4                	plo	r4
+0108  F8 03             	ldi	HIGH default_colors
+010A  B4                	phi	r4			; point r4 to default colors
+                        					; restore colors, print a few linefeeds
+010B  D9                	sep	r9			; write_stdout
+
+                        	;================================
+                        	; Exit
+                        	;================================
+010C                    exit:
+010C  00                	idl			; wait forever
+
+
+
+                        	;=================================
+                        	; FIND_STRING
+                        	;=================================
+                        	; r2/r3 = string to find
+                        	; rf = char to end at
+                        	; returns to r0
+                        	; called as r8
+                        	; trashes/looks in r6
+                        	; writes to r4
+
+010D                    find_string_return:
+010D  D0                	sep	r0
+
+010E                    find_string:
+
+010E  F8 68                     ldi	LOW disk_buffer
+0110  A6                	plo	r6
+0111  F8 03             	ldi	HIGH disk_buffer
+0113  B6                	phi	r6			; point r6 to disk_buffer
+
+0114  E6                	sex	r6			; so we can use "sm" instruction
+
+0115                    find_loop:
+0115  06                	ldn	r6			; load a byte
+0116  32 38             	bz	done			; if zero then done
+
+0118  82                	glo	r2			; get first byte
+0119  F7                	sm				; subtract with byte at r6
+011A  16                	inc	r6
+011B  3A 27             	bnz	no_match		; loop if not zero
+
+011D  92                	ghi	r2			; load next byte
+011E  F7                	sm
+011F  16                	inc	r6
+0120  3A 26             	bnz	no_match1		; if not equal, loop
+
+0122  83                	glo	r3			; get third byte
+0123  F7                	sm				; compare
+0124  32 29             	bz	find_colon		; if same, we matched!
+
+0126                    no_match1:
+0126  26                	dec	r6
+0127                    no_match:
+0127  30 15             	br	find_loop
+
+0129                    find_colon:
+0129  F8 3A             	ldi	':'
+012B  F7                	sm
+012C  16                	inc	r6
+012D  3A 29             	bnz	find_colon		; repeat till we find a colon
+
+012F  16                	inc	r6			; skip the space
+
+0130                    store_loop:
+0130  46                	lda	r6			; load byte from r6, inc
+0131  54                	str	r4			; store to r4
+0132  14                	inc	r4			; increment r4
+
+0133  93                	ghi	r3			; compare to end char
+0134  F7                	sm
+0135  3A 30             	bnz	store_loop
+
+0137                    almost_done:
+                        	; D is zero in order to fall through here
+
+0137  54                	str	r4			; replace last value with NUL
+
+0138                    done:
+0138  30 0D             	br	find_string_return	; return
+
+
+
+                        	;================================
+                        	; strcat
+                        	;================================
+                        	; called in rd
+                        	; returns to r0
+                        	; value to cat in rX
+                        	; output buffer in r4
+
+                        	; really want to make this 7 bytes but can't figure
+                        	; out how to make it smaller, even using skips
+
+013A                    strcat_return:
+013A  D0                	sep	r0
+
+013B                    strcat:
+013B  72                	ldxa				; load a byte, increment
+013C  54                	str	r4			; store a byte
+013D  32 3A             	bz	strcat_return		; if zero, return
+013F  14                	inc	r4			; if not, inc output pointer
+0140  30 3B             	br	strcat			; and loop
+
+
+                        	;================================
+                        	; WRITE_STDOUT
+                        	;================================
+                        	; runs as r9
+                        	; expects to return to r0
+                        	; r4 = string to print
+                        	; ra,rf trashed
+
+0142                    write_stdout_return:
+
+0142  F8 DC                     ldi	LOW out_buffer
+0144  A4                	plo	r4
+0145  F8 07             	ldi	HIGH out_buffer
+0147  B4                	phi	r4			; point r4 to out_buffer
+
+0148  D0                	sep	r0			; return to r0
+
+0149                    write_stdout:
+
+0149                    write_loop:
+0149  44                	lda	r4			; load from r4 and increment
+014A  32 42             	bz	write_stdout_return	; if zero we are done
+014C  AF                	plo	rf			; put char into rf
+
+                        	;=======================
+                        	; begin out_char inline
+                        	;=======================
+
+014D                    out_char:
+014D  F8 07             	ldi	7		; load bit counter
+014F  AA                	plo	ra		; and put in ra
+
+0150  7B                        seq			; begin start bit
+0151  DC                 	sep	rc		; call delay
+
+0152                    out_loop:
+
+0152  8F                	glo	rf		; load in char to output
+0153  F6                	shr			; shift into carry
+0154  AF                	plo	rf		; store back to rf
+
+0155  CF                	lsdf			; if carry set, skip to out_one, output a 1
+
+0156  7B                	seq			; otherwise, output a 0
+                        				; (note, we are assuming the serial
+                        				; hardware inverts Q)
+
+0157  38                	skp			; skip ahead to not_one
+
+0158                    out_one:
+0158  7A                	req			; output a 1 (inverted)
+
+0159                    not_one:
+0159  DC                 	sep	rc		; call delay
+
+015A  2A                	dec	ra		; decrement bit count
+015B  8A                	glo	ra		; load bit count
+015C  3A 52             	bnz	out_loop	; if not zero than loop
+
+015E  7B                	seq			; mark parity
+015F  DC                 	sep	rc		; delay
+
+0160  7A                	req			; stop bit
+0161  DC                 	sep	rc		; delay
+
+                        	;=====================
+                        	; end out_char inline
+                        	;=====================
+
+0162  30 49             	br	write_loop		; loop
+
+
+
+                        	;================================
+                        	; DELAY
+                        	;================================
+                        	; expects to be run as rc
+                        	; expects to return to r9
+
+0164                    delay_begin:
+0164  D9                	sep	r9		; return
+
+0165                    delay:
+0165  F8 31             	ldi	49		; loop 49 times
+                        				; this isn't calculated but was found
+                        				; by trial and error
+
+0167                    delay_loop:
+0167  FF 01             	smi	1		; decrement counter
+0169  3A 67             	bnz	delay_loop	; repeat until empty
+016B  30 64             	br	delay_begin	; goto return
+
+
+                        	;==============================
+                        	; center_and_print
+                        	;==============================
+                        	; string to center in out_buffer
+                        	; end of string in r4
+                        	; called as re
+                        	; returns to r0
+                        	; you need to call this three times in succession
+
+016D                    center_and_print_return:
+016D  D9                	sep	r9			; tail call write_stdout
+
+016E                    center_and_print:
+
+                        					; assume never more than 128 bytes
+016E  84                	glo	r4			; get low value of end pointer
+016F  FF DC             	smi	LOW out_buffer		; subtract start pointer
+
+                        					; subtract length from 81
+0171  FD 51             	sdi	81			; we use 81 to not count ending \n
+
+0173  CF                	lsdf				; if result negative, don't center
+
+0174  F8 00             	ldi	0			; skipped if positive
+
+0176                    no_zero:
+
+0176  F6                	shr				; divide by 2
+
+0177  A2                	plo	r2			; put into r2
+
+0178  F8 3E                     ldi	LOW after_escape
+017A  A5                	plo	r5
+017B  F8 03             	ldi	HIGH after_escape
+017D  B5                	phi	r5			; point r5 to where we want our value
+
+017E  D7                	sep	r7			; call num_to_ascii
+
+017F  F8 43             	ldi	'C'			; tack a 'C' onto the end
+0181  55                	str	r5
+
+0182  F8 3C                     ldi	LOW escape
+0184  A4                	plo	r4
+0185  F8 03             	ldi	HIGH escape
+0187  B4                	phi	r4			; we want to output ^[[NNNC
+
+0188  D9                	sep	r9			; call write_stdout
+
+0189                    done_center:
+
+0189  F8 DC                     ldi	LOW out_buffer		; point to output_buffer
+018B  A4                	plo	r4
+018C  F8 07             	ldi	HIGH out_buffer
+018E  B4                	phi	r4			; point r4 to out_buffer
+
+018F  30 6D             	br	center_and_print_return
+
+
+                        	;=============================
+                        	; num_to_ascii
+                        	;=============================
+                        	; r2 = value to print
+                        	; called in r7
+                        	; returns to r0
+                        	; r5 points to buffer with result
+                        	; trashes r2 and r3
+                        	; r3 = hundreds, rb=tens, rf=ones
+
+0191                    nta_return:
+0191  D0                	sep	r0
+
+0192                    num_to_ascii:
+
+                        	;===================================================
+                        	; div_by_10: because 1802 has no mul/divide instruction
+                        	;==================================================
+                        	; cheat and only convert a byte
+
+0192  F8 01             	ldi	1
+0194  B3                	phi	r3		; leading zero indicator
+
+0195  F8 03             	ldi	HIGH powers_of_10
+0197  BF                	phi	rf
+0198  F8 64             	ldi	LOW powers_of_10
+019A  AF                	plo	rf
+
+019B  EF                	sex	rf
+
+019C                    big_loop:
+019C  F8 00             	ldi	0
+019E  A3                	plo	r3		; digit counter
+
+019F  82                	glo	r2		; get value to convert
+01A0                    subtract_loop:
+01A0  F7                	sm			; subtract power of 10
+01A1  3B A6             	bm	print_value	; if minus, jump to print_value
+01A3  13                	inc	r3		; increment digit
+01A4  30 A0             	br	subtract_loop	; loop
+
+01A6                    print_value:
+01A6  F4                	add			; restore back, we have gone too far
+01A7  A2                	plo	r2		; store back to r2
+
+01A8  83                	glo	r3		; get digit counter
+
+01A9  3A B1             	bnz	print_char	; if not zero, we can print
+
+                        				; leading zero removal
+
+01AB  A3                	plo	r3		; save r3 for later
+
+01AC  93                	ghi	r3		; if leading zero don't print,
+01AD  F2                	and			; unless power of 10=1, always print
+
+01AE  32 B8             	bz	dont_print
+
+01B0  83                	glo	r3
+
+01B1                    print_char:
+
+01B1  FC 30             	adi	0x30		; convert to ascii
+
+01B3  55                	str	r5		; store out to r5
+01B4  15                	inc	r5		; increment r5
+
+01B5  F8 00             	ldi	0
+01B7  B3                	phi	r3		; make leading zero not true
+
+01B8                    dont_print:
+01B8  60                	irx			; increment rf
+01B9  F0                	ldx			; load next power of 10
+01BA  CE                	lsz			; skip to done if zero
+
+01BB  30 9C             	br	big_loop	; loop
+
+01BD                    all_done:
+                        				; D should be zero at this point
+01BD  55                	str	r5		; nul terminate
+
+01BE  30 91             	br	nta_return	; return
+
+
+
+
+                        ;===========================================================================
+                        ;	section .data
+                        ;===========================================================================
+                        ;.data
+
+01C0                    .include	"logo.lzss_new"
+01C0                    logo:
+01C0  FF1B5B30 3B313B33 	.byte	255,27,91,48,59,49,59,51,55
+01C8  37
+01C9  9F3B3437 6D23CCF7 	.byte	159,59,52,55,109,35,204,247,192,7,51
+01D1  C00733
+01D4  8D30C81B 1B5BC407 	.byte	141,48,200,27,27,91,196,7,203,31,28,12,59
+01DC  CB1F1C0C 3B
+01E1  0F34306D 0AC0F701 	.byte	15,52,48,109,10,192,247,1,96,26,56,44,156
+01E9  601A382C 9C
+01EE  1F1B5B33 316DCC04 	.byte	31,27,91,51,49,109,204,4,65,172,13,36
+01F6  41AC0D24
+01FA  021C104F 0D201041 	.byte	2,28,16,79,13,32,16,65,147,152,131,52,28,52,204,16
+0202  93988334 1C34CC10
+020A  100C246F 39ECA71C 	.byte	16,12,36,111,57,236,167,28,8,51,22,20,137,85,44,96
+0212  08331614 89552C60
+021A  002B61D6 71E2C8CB 	.byte	0,43,97,214,113,226,200,203,8,212,9,211,16,43,89,245,209
+0222  08D409D3 102B59F5
+022A  D1
+022B  008011D2 180D281C 	.byte	0,128,17,210,24,13,40,28,20,13,44,28,28,240,74,26,91
+0233  140D2C1C 1CF04A1A
+023B  5B
+023C  000D505F 6587652B 	.byte	0,13,80,95,101,135,101,43,85,245,205,205,40,205,20,137,65
+0244  55F5CDCD 28CD1489
+024C  41
+024D  001D8742 4B72531C 	.byte	0,29,135,66,75,114,83,28,120,15,98,135,109,85,88,247,193
+0255  780F6287 6D5558F7
+025D  C1
+025E  00E82BF4 9749783D 	.byte	0,232,43,244,151,73,120,61,176,27,95,151,176,18,43,171,202
+0266  B01B5F97 B0122BAB
+026E  CA
+026F  10DF161A F55AF5D9 	.byte	16,223,22,26,245,90,245,217,63,51,27,86,146,91,176,2
+0277  3F331B56 925BB002
+027F  000C1DD3 C8AC3917 	.byte	0,12,29,211,200,172,57,23,102,50,246,110,109,236,68,96,94
+0287  6632F66E 6DEC4460
+028F  5E
+0290  08AF0AA6 69140130 	.byte	8,175,10,166,105,20,1,48,51,11,222,31,49,15,211,188
+0298  330BDE1F 310FD3BC
+02A0  00AF4F19 56AA4552 	.byte	0,175,79,25,86,170,69,82,219,40,82,70,127,8,83,219,35
+02A8  DB285246 7F0853DB
+02B0  23
+02B1  00A955AA 35182112 	.byte	0,169,85,170,53,24,33,18,104,145,42,200,34,178,104,112,45
+02B9  68912AC8 22B26870
+02C1  2D
+02C2  00C650B2 79914A70 	.byte	0,198,80,178,121,145,74,112,49,248,81,243,40,221,23,255,23
+02CA  31F851F3 28DD17FF
+02D2  17
+02D3  08023603 24E5420A 	.byte	8,2,54,3,36,229,66,10
+02DB                    logo_end:
+
+02DB  20566572 73696F6E ver_string:		db	" Version ",0
+02E3  2000
+02E5  2C20436F 6D70696C compiled_string:	db	", Compiled ",0
+02ED  65642000
+02F1  0D0A00            linefeed:		db	"\r\n",0
+02F4  70726F63 2F637075 cpuinfo:		db	"proc/cpu.1802",0
+02FC  2E313830 3200
+0302  4F6E6520 00       one:			db	"One ",0
+0307  4D487A20 00       mhz:			db	"MHz ",0
+030C  2050726F 63657373 processor:		db	" Processor, ",0
+0314  6F722C20 00
+0319  4B205241 4D2C2000 ram_comma:		db	"K RAM, ",0
+0321  20426F67 6F6D6970 bogo_total:		db	" Bogomips Total\r\n",0
+0329  7320546F 74616C0D
+0331  0A00
+0333  1B5B306D 0D0A0D0A default_colors:		db	27,"[0m\r\n\r\n",0
+033B  00
+033C  1B5B              escape:			db	27,"["
+033E  00000000 00       after_escape:		db	0,0,0,0,0
+
+                        ; fake uname
+0343  564D576F 7300     uname_sysname:		db	"VMWos",0
+0349  302E3100          uname_release:		db	"0.1",0
+034D  23312032 3031352D uname_version:		db	"#1 2015-03-12",0
+0355  30332D31 3200
+035B  636F736D 616300   uname_nodename:		db	"cosmac",0
+
+                        ; fake RAM
+0362  8000              total_ram:		dw	32768
+
+0364  640A0100          powers_of_10:		db	100,10,1,0
+
+                        ; fake cpuinfo
+0368  63707509 3A203138 disk_buffer:		db	"cpu\t: 1802\n"
+0370  30320A
+0373  63707520 4D487A09 			db	"cpu MHz\t: 0.33\n"
+037B  3A20302E 33330A
+0382  426F676F 4D495053 			db	"BogoMIPS\t: 0.30\n",0
+038A  093A2030 2E33300A
+0392  00
+
+
+                        ;============================================================================
+                        ;	section .bss
+                        ;============================================================================
+                        ;.bss
+
+0393   (000A)           ascii_buffer:	DS	10
+039D   (043F)           text_buf:	DS	1087 	; 1024 + 64 - 1 =  1087 (N+F-1)
+07DC   (1000)           out_buffer:	DS	4096	; 4kb?
+
+00000 Total Error(s)
+
+.                  01C0    AFTER_ESCAPE       033E    ALL_DONE           01BD
+ALMOST_DONE        0137    ASCII_BUFFER       0393    BIG_LOOP           019C
+BOGO_TOTAL         0321    CENTER_AND_PRINT   016E    
+CENTER_AND_PRINT_RETURN                       016D    CHIP_NAME          00BA
+COMPILED_STRING    02E5    CPUINFO            02F4    DECOMPRESSION_LOOP 0017
+DEFAULT_COLORS     0333    DELAY              0165    DELAY_BEGIN        0164
+DELAY_LOOP         0167    DISCRETE_CHAR      002B    DISK_BUFFER        0368
+DONE               0138    DONE_CENTER        0189    DONE_LOGO          0067
+DONT_PRINT         01B8    ESCAPE             033C    EXIT               010C
+FIND_COLON         0129    FIND_LOOP          0115    FIND_STRING        010E
+FIND_STRING_RETURN 010D    FIRST_LINE         0088    LAST_LINE          00FA
+LINEFEED           02F1    LOGO               01C0    LOGO_END           02DB
+MHZ                0307    MIDDLE_LINE        00A3    NOT_DONE           0026
+NOT_ONE            0159    NO_MATCH           0127    NO_MATCH1          0126
+NO_ZERO            0176    NTA_RETURN         0191    NUMBER_OF_CPUS     00A3
+NUM_TO_ASCII       0192    OFFSET_LENGTH      0031    ONE                0302
+OUTPUT_LOOP        003A    OUT_BUFFER         07DC    OUT_CHAR           014D
+OUT_LOOP           0152    OUT_ONE            0158    POWERS_OF_10       0364
+PRINT_CHAR         01B1    PRINT_MHZ          00AB    PRINT_VALUE        01A6
+PROCESSOR          030C    RAM                00C9    RAM_COMMA          0319
+STORE_BYTE         0048    STORE_LOOP         0130    STRCAT             013B
+STRCAT_RETURN      013A    SUBTRACT_LOOP      01A0    TEST_FLAGS         001C
+TEXT_BUF           039D    TOTAL_RAM          0362    UNAME_NODENAME     035B
+UNAME_RELEASE      0349    UNAME_SYSNAME      0343    UNAME_VERSION      034D
+VER_STRING         02DB    WRITE_LOOP         0149    WRITE_STDOUT       0149
+WRITE_STDOUT_RETURN                           0142
