@@ -105,7 +105,10 @@
 ;	+  987 -- remove some now-unneeded long branches
 ;	+  983 -- make each digit of num_to_ascii separate reg
 ;	+  964 -- make num_to_ascii use a loop
-;	+  962 -- remove extraneous phi
+;	+  963 -- remove extraneous phi
+;	+  928 -- have strcat operate on Rx, switch between r5/rb to save loads
+;	+  916 -- have write_stdout reset out_buffer on completion
+;	+  915 -- turn off debugging
 
 ;	.globl _start
 ;_start:
@@ -179,7 +182,23 @@ not_done:
 	glo	rb
 	shr 			; shift bottom bit into DF flag
 	plo	rb
-	bdf	discrete_char	; if set, we jump to discrete char
+
+	bnf	offset_length	; if set, we jump to discrete char
+
+discrete_char:
+
+	; tried to hoist this up, but just can't get it small enough
+	; for a skip to be worth it.
+
+	ldi	1			; Z
+	plo	r6			; Z we set r6 to one so byte
+					; Z will be output once
+
+
+	ldxa				; Z load a byte, increment pointer
+
+	br	store_byte		; and store it
+
 
 offset_length:
 	ldxa			; load a byte, increment
@@ -253,15 +272,6 @@ store_byte:
 
 	br	decompression_loop
 
-discrete_char:
-
-	ldi	1
-	plo	r6			; we set r6 to one so byte
-					; will be output once
-
-	ldxa				; load a byte, increment pointer
-
-	br	store_byte		; and store it
 
 ; end of LZSS code
 
@@ -314,77 +324,78 @@ done_logo:
 
 first_line:
 
-	ldi	LOW out_buffer
-	plo	r4
-	ldi	HIGH out_buffer
-	phi	r4
+	; write stdout resets out_buffer
+;	ldi	LOW out_buffer
+;	plo	r4
+;	ldi	HIGH out_buffer
+;	phi	r4			; point to output buffer
 
 					; no uname syscall, faking
-
 	ldi	LOW uname_sysname
 	plo	r5
 	ldi	HIGH uname_sysname
 	phi	r5
-
 					; os-name from uname "Linux"
 
+	sex	r5
 	sep	rd			; call strcat
 
 
 	ldi	LOW ver_string
-	plo	r5
+	plo	rb
 	ldi	HIGH ver_string
-	phi	r5
+	phi	rb
 					; source is " Version "
 
+	sex	rb
 	sep 	rd			; call strcat
 
-	ldi	LOW uname_release
-	plo	r5
-	ldi	HIGH uname_release
-	phi	r5
+;	ldi	LOW uname_release
+;	plo	r5
+;	ldi	HIGH uname_release
+;	phi	r5
 
-					; version from uname, ie "2.6.20"
+	sex	r5			; version from uname, ie "2.6.20"
 	sep	rd			; call strcat_r5
 
-	ldi	LOW compiled_string
-	plo	r5
-	ldi	HIGH compiled_string
-	phi	r5
+;	ldi	LOW compiled_string
+;	plo	rb
+;	ldi	HIGH compiled_string
+;	phi	rb
 
-					; source is ", Compiled "
+	sex	rb			; source is ", Compiled "
 	sep	rd			; call strcat
 
-	ldi	LOW uname_version
-	plo	r5
-	ldi	HIGH uname_version
-	phi	r5
+;	ldi	LOW uname_version
+;	plo	r5
+;	ldi	HIGH uname_version
+;	phi	r5
 
-					; compiled date
+	sex	r5			; compiled date
 	sep	rd			; call strcat_r5
 
-	ldi	LOW linefeed
-	plo	r5
-	ldi	HIGH linefeed
-	phi	r5
+;	ldi	LOW linefeed
+;	plo	rb
+;	ldi	HIGH linefeed
+;	phi	rb
 
-					; source is "\n"
-	sep	rd			; call strcat_r4
+	sex	rb			; source is "\n"
+	sep	rd			; call strcat
 
 	sep	re			; center and print
+	sep	re			; call it thrice
 	sep	re
-	sep	re
-;	sep	re
 
 	;===============================
 	; Middle-Line
 	;===============================
 middle_line:
 
-	ldi	LOW out_buffer
-	plo	r4
-	ldi	HIGH out_buffer
-	phi	r4
+	; center and print resets out_buffer
+;	ldi	LOW out_buffer
+;	plo	r4
+;	ldi	HIGH out_buffer
+;	phi	r4
 
 	;=========
 	; Load /proc/cpuinfo into buffer
@@ -410,6 +421,7 @@ number_of_cpus:
 	ldi	HIGH one
 	phi	r5
 
+	sex	r5
 	sep	rd			; call strcat
 
 	;=========
@@ -427,11 +439,12 @@ print_mhz:
 	phi	r3
 	sep	r8
 
-	ldi	LOW mhz
-	plo	r5
-	ldi	HIGH mhz
-	phi	r5
+;	ldi	LOW mhz
+;	plo	r5
+;	ldi	HIGH mhz
+;	phi	r5
 
+	sex	r5
 	sep	rd			; call strcat
 
 	;=========
@@ -449,11 +462,12 @@ chip_name:
 	sep	r8			; call find_string
 					; find 'cpu\t: ' and grab up to ' '
 
-	ldi	LOW processor
-	plo	r5
-	ldi	HIGH processor
-	phi	r5
+;	ldi	LOW processor
+;	plo	r5
+;	ldi	HIGH processor
+;	phi	r5
 
+	sex	r5
 	sep	rd			; print " Processor, "
 
 	;========
@@ -479,26 +493,24 @@ ram:
 	shr			; divide by 2
 	plo	r2		; put back in r2
 
-	ldi	LOW ascii_buffer
+	glo	r4
 	plo	r5
-	ldi	HIGH ascii_buffer
-	phi	r5			; point r5 to ascii_buffer
+	ghi	r4
+	phi	r5		; point r5 to out_buffer
 
 	sep 	r7		; call num_to_ascii
 
-	ldi	LOW ascii_buffer
-	plo	r5
-	ldi	HIGH ascii_buffer
-	phi	r5			; point r5 to ascii_buffer
-
-	sep	rd		; call strcat
+	glo	r5		; point r4 to after the out buffer
+	plo	r4
+	ghi	r5
+	phi	r4
 
 	ldi	LOW ram_comma
 	plo	r5
 	ldi	HIGH ram_comma
 	phi	r5
 
-					; print 'K RAM, '
+	sex	r5			; print 'K RAM, '
 	sep	rd			; call strcat
 
 	;==========
@@ -515,27 +527,24 @@ ram:
 	phi	r3
 	sep	r8
 
-	ldi	LOW bogo_total
-	plo	r5
-	ldi	HIGH bogo_total
-	phi	r5
+;	ldi	LOW bogo_total
+;	plo	r5
+;	ldi	HIGH bogo_total
+;	phi	r5
 
+	sex	r5
 	sep	rd			; print bogomips total
 
 	sep	re			; center and print
+	sep	re			; call it thrice
 	sep	re
-	sep	re
-;	sep	re
 
 	;=================================
 	; Print Host Name
 	;=================================
 last_line:
 
-        ldi	LOW out_buffer
-	plo	r4
-	ldi	HIGH out_buffer
-	phi	r4			; point r4 to out_buffer
+	; center_and_print resets out_buffer
 
 	ldi	LOW uname_nodename
 	plo	r5
@@ -544,19 +553,17 @@ last_line:
 
 					; host name from uname()
 
+	sex	r5
 	sep	rd			; call strcat
 
 	sep	re			; center and print
+	sep	re			; call it thrice
 	sep	re
-	sep	re
-;	sep	re
 
 	ldi	LOW default_colors
 	plo	r4
 	ldi	HIGH default_colors
-	phi	r4			; point r5 to out_buffer
-
-
+	phi	r4			; point r4 to default colors
 					; restore colors, print a few linefeeds
 	sep	r9			; write_stdout
 
@@ -645,7 +652,7 @@ done:
 	;================================
 	; called in rd
 	; returns to r0
-	; value to cat in r5
+	; value to cat in rX
 	; output buffer in r4
 
 	; really want to make this 7 bytes but can't figure
@@ -655,13 +662,11 @@ strcat_return:
 	sep	r0
 
 strcat:
-
-strcat_loop:
-	lda	r5			; load a byte, increment
+	ldxa				; load a byte, increment
 	str	r4			; store a byte
 	bz	strcat_return		; if zero, return
 	inc	r4			; if not, inc output pointer
-	br	strcat_loop		; and loop
+	br	strcat			; and loop
 
 
 	;================================
@@ -673,6 +678,11 @@ strcat_loop:
 	; ra,rf trashed
 
 write_stdout_return:
+
+        ldi	LOW out_buffer
+	plo	r4
+	ldi	HIGH out_buffer
+	phi	r4			; point r4 to out_buffer
 
 	sep	r0			; return to r0
 

@@ -17,6 +17,7 @@ THUMB		EMBED	54	1
 microblaze	RISC	52	0
 m68k		CISC	48	0
 arm64		RISC	48	0
+1802		EBIT	47	1
 Thumb-2		EMBED	42	1
 crisv32		EMBED	40	1
 pdp-11		EBIT	40	0
