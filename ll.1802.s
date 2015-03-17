@@ -103,12 +103,14 @@
 ;	+ 1000 -- remove out_char initialization
 ;	+  991 -- optimize center_and_print to need only 3 calls
 ;	+  987 -- remove some now-unneeded long branches
-
+;	+  983 -- make each digit of num_to_ascii separate reg
+;	+  964 -- make num_to_ascii use a loop
+;	+  962 -- remove extraneous phi
 
 ;	.globl _start
 ;_start:
 
-	br	done_logo		; while debugging (for speed)
+;	br	done_logo		; while debugging (for speed)
 
 	;=========================
 	; PRINT LOGO
@@ -135,26 +137,23 @@
 	; re = temp_16bit
 	; rf =
 
-        ldi	LOW logo
-	plo	r4
 	ldi	HIGH logo
 	phi	r4
-
-        ldi	LOW out_buffer
-	plo	r1
 	ldi	HIGH out_buffer
 	phi	r1
-
-        ldi	LOW text_buf
-	plo	rd
 	ldi	HIGH text_buf
 	phi	rd
-
-	ldi	LOW 960
-	plo	r2
-	ldi	HIGH 960		; N - F = 1024-64 = 960
+;	ldi	HIGH 960		; N - F = 1024-64 = 960
 	phi	r2
 
+        ldi	LOW logo
+	plo	r4
+        ldi	LOW out_buffer
+	plo	r1
+        ldi	LOW text_buf
+	plo	rd
+	ldi	LOW 960
+	plo	r2
 
 	sex	r4		; set index to r4
 
@@ -307,7 +306,7 @@ done_logo:
 	phi	r4
 
 	; Print the logo
-;	sep	r9		; call write_stdout
+	sep	r9		; call write_stdout
 
 	;==========================
 	; PRINT VERSION
@@ -819,88 +818,80 @@ done_center:
 	; returns to r0
 	; r5 points to buffer with result
 	; trashes r2 and r3
+	; r3 = hundreds, rb=tens, rf=ones
+
 nta_return:
 	sep	r0
 
 num_to_ascii:
-
 
 	;===================================================
 	; div_by_10: because 1802 has no mul/divide instruction
 	;==================================================
 	; cheat and only convert a byte
 
+	ldi	1
+	phi	r3		; leading zero indicator
+
+	ldi	HIGH powers_of_10
+	phi	rf
+	ldi	LOW powers_of_10
+	plo	rf
+
+	sex	rf
+
+big_loop:
 	ldi	0
 	plo	r3		; digit counter
-	phi	r3		; leading zero?
-	glo	r2		; get value to convert
-c_100s_loop:
-	smi	100
-	bm	count_10s
-	inc	r3
-	br	c_100s_loop
 
-count_10s:
-	adi	100		; restore positive
-	plo	r2
+	glo	r2		; get value to convert
+subtract_loop:
+	sm			; subtract power of 10
+	bm	print_value	; if minus, jump to print_value
+	inc	r3		; increment digit
+	br	subtract_loop	; loop
+
+print_value:
+	add			; restore back, we have gone too far
+	plo	r2		; store back to r2
+
+	glo	r3		; get digit counter
+
+	bnz	print_char	; if not zero, we can print
+
+				; leading zero removal
+
+	plo	r3		; save r3 for later
+
+	ghi	r3		; if leading zero don't print,
+	and			; unless power of 10=1, always print
+
+	bz	dont_print
 
 	glo	r3
-	bz	zero_100s
 
-	adi	0x30
-	str	r5
-	inc	r5
+print_char:
+
+	adi	0x30		; convert to ascii
+
+	str	r5		; store out to r5
+	inc	r5		; increment r5
+
+	ldi	0
 	phi	r3		; make leading zero not true
 
-zero_100s:
+dont_print:
+	irx			; increment rf
+	ldx			; load next power of 10
+	lsz			; skip to done if zero
 
-	ldi	0
-	plo	r3
-	glo	r2
-c_10s_loop:
-	smi	10
-	bm	count_1s
-	inc	r3
-	br	c_10s_loop
+	br	big_loop	; loop
 
-count_1s:
-	adi	10
-	plo	r2
+all_done:
+				; D should be zero at this point
+	str	r5		; nul terminate
 
-	ghi	r3
-	bnz	noleadzero
-
-	glo	r3
-	bz	notenszero
-
-noleadzero:
-
-	glo	r3
-
-	adi	0x30
-	str	r5
-	inc	r5
-
-notenszero:
-	ldi	0
-	plo	r3
-	glo	r2
-c_1s_loop:
-	smi	1
-	bnf	nta_done	; bm branch minus
-	inc	r3
-	br	c_1s_loop
-
-nta_done:
-	adi	1
-	glo	r3
-	adi	0x30
-	str	r5
-	inc	r5
-	ldi	0
-	str	r5
-
-	lbr	nta_return
+	br	nta_return	; return
 
 
 
@@ -934,6 +925,8 @@ uname_nodename:		db	"cosmac",0
 ; fake RAM
 total_ram:		dw	32768
 
+powers_of_10:		db	100,10,1,0
+
 ; fake cpuinfo
 disk_buffer:		db	"cpu\t: 1802\n"
 			db	"cpu MHz\t: 0.33\n"
@@ -944,16 +937,7 @@ disk_buffer:		db	"cpu\t: 1802\n"
 ;	section .bss
 ;============================================================================
 ;.bss
-;bss_begin:
-;.lcomm uname_info,(65*6)
-;.lcomm sysinfo_buff,(64)
-;.lcomm	disk_buffer,4096	; we cheat!!!!
 
 ascii_buffer:	DS	10
 text_buf:	DS	1087 	; 1024 + 64 - 1 =  1087 (N+F-1)
 out_buffer:	DS	4096	; 4kb?
-
-
-
-
-
