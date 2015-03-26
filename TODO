@@ -5,14 +5,20 @@
 
 
 Chips TODO:
-+ 6800?
-+ amd29k, att92k (crisp/hobbit), 1802, Renasas RX,
-+ 65c816, TI-990, CDC6600, 8051
-+ micromips?
-+ Z8000
++ 65c816
++ CDC6600
++ 8051
++ 6800 (68hc11?)
++ amd29k
++ att92k (crisp/hobbit)
 + Intel 432
++ micromips
++ Renasas RX	
++ TI-990
++ TI MSP430
++ Z8000
 
-Linux:   
+Linux:
 + blackfin
 + c6x
 + frv
@@ -23,6 +29,7 @@ Linux:
 + mn10300
 + openrisc
 + ppc book VLE
++ riscv
 + sh4
 + s+core
 + tile
