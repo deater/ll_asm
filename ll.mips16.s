@@ -1,7 +1,7 @@
 #
 #  linux_logo in mips16 assembler 0.46
 #
-#  By 
+#  By
 #       Vince Weaver <vince _at_ deater.net>
 #
 #  assemble with     "as -mips16 -o ll.mips16.o ll.mips16.s"
@@ -10,12 +10,12 @@
 .include "logo.include"
 
 #
-# Mips16 differences from MIPS
+# MIPS16 differences from MIPS
 #
 # Can do 64-bit ops on 64-bit procs
-#  Has 8 registers
-# 0,1,2,3,4,5,6,7 correpsond to MIPS32 16,17,2,3,4,5,6,7
-#    don't use 0-7 though, use $16,$17,$2 etc
+#  Has 8 registers:
+#	0,1,2,3,4,5,6,7 correpsond to MIPS32 16,17,2,3,4,5,6,7
+#	don't use 0-7 though, use $16,$17,$2 etc
 # MIPS32 reg 24 is used as a condition code register
 # MIPS32 reg 29 is SP and 31 is RA
 #   mips16 mov instruction can access all registers
@@ -28,17 +28,17 @@
 #   * lb ry, offset(rx)  -- offset=5bits (extnd to 16-bits)
 #   * lw can also be SP or PC relative
 # + store instructions: sb/sd/sh/sw
-# + stack frame       
+# + stack frame
 #   * restore ra,s0,s1,framesize - optinally copy ra,s0,s1 off stack
 #                                  then update stack with 4-bit imm
 #     extended version can also restore other registers
 #   * save is like restore, but in reverse
-# + ALU 
+# + ALU
 #   * addiu rx, imm : rx=rx+8-bit immediate  (extensible to 16-bit)
 #   * addiu ry, rx, imm : ry=rx+4-bit immediate (extensible to 15 bit)
 #   * addiu rx,pc, imm : generate pc relative address (8bit extend to 16bit)
-#   * addiu sp, imm    : adjust stack pointer (8bit extnd to 16bit) 
-#   * addiu rx,sp, imm    : generate sp relative address (8bit extnd to 16bit) 
+#   * addiu sp, imm    : adjust stack pointer (8bit extnd to 16bit)
+#   * addiu rx,sp, imm    : generate sp relative address (8bit extnd to 16bit)
 #   * addu rz,rx,ry    : rz = rx + ry
 #   * and  rx,ry       : rx = rx & ry
 #   * cmp  rx,ry       : T = rx ^ ry
@@ -79,9 +79,6 @@
 #    for a 32-bit instruction
 #    cannot be in branch delay slots
 
-
-
-
 #
 # Keep gas from handling branch-delay and load-delay slots automatically
 #
@@ -93,7 +90,7 @@
 #
 
 #.set noat
-		
+
 #
 # Register definitions.  Why does't gas know these?
 #
@@ -128,7 +125,7 @@
 #  -- the lower syscalls are compat with IRIX, etc
 #     syscalls trash r14?
 #  -- no branch delay after syscall
-		
+
 .equ SYSCALL_LINUX,	4000
 .equ SYSCALL_EXIT,      SYSCALL_LINUX+1
 .equ SYSCALL_READ,      SYSCALL_LINUX+3
@@ -146,23 +143,18 @@
 
 
 
-	.globl __start	
+	.globl __start
 
-__start:	
+__start:
 
-#     jal start16                       # I don't think thise should
-                                       # be necessary, how do I create
-				       # a native mips16 binary?
-
-#la	$16,start16
-#jr	$16
-#     nop
-
-
+	jal	start16		# I don't think this should
+				# be necessary, how do I create
+				# a native mips16 binary?
 
 .set mips16
 
 start16:
+
 	#=========================
 	# PRINT LOGO
 	#=========================
@@ -175,8 +167,8 @@ start16:
 #	la	$18,bss_begin		# point $18 at .bss segment begin
 
 	li      $6,(N-F)   	     	# R
-	
-#	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo 
+
+#	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo
 #	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
 #	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
 
@@ -191,12 +183,9 @@ decompression_loop:
 	lbu	$2,0($17)       # load in a byte
 	addiu	$17,$17,1	# increment source pointer
 
-
         move 	$3, $2	        # move in the flags
 	li      $7,0xff00	# 32-bit, zero extended
 	or 	$3,$7           # put 0xff in top as a hackish 8-bit counter
-
-
 
 test_flags:
         la      $7, logo_end
@@ -278,7 +267,7 @@ discrete_char:
 	lbu     $2,0($17)
 	addiu	$17,1		        # load a byte
 	li   	$5,1			# force a one-byte output	
-        b       store_byte		# and store it
+	b	store_byte		# and store it
 
 # end of LZSS code
 
