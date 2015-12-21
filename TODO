@@ -37,3 +37,10 @@ Linux:
 + unicore32
 + v850
 + xtensa
+
+Suggestions from the web:
+
+Stan Sieler <sieler _at_ allegro.com>
+suggests Burroughs B1700 (later B1800, B1900) due to code density
+from complicated microcode implementation (with multiple targets?)
+
