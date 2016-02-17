@@ -14,6 +14,7 @@
 !     + Instruction are OPCODE SOURCE1,SOURCE2,DESTINATION
 !     + Only a 13-bit immediate field	
 !     + Has a branch delay slot!  The annul bit can cancel that.
+!       annul on conditional branches only annuls when not-taken
 !     + Comments are the "!" character
 !     + Syscalls have number in %g1, options in %o0,%o1,...
 !	Result returned in %o0
@@ -48,7 +49,7 @@
 !
 ! On v9, branches can be against icc or xcc
 !   also {,a} indicates annulled (if taken, always execute delay.
-!        otherwise, annul it
+!        otherwise, annul it)
 !   also {,pn,pt} predict not taken or taken
 
 ! Initial size 1397
@@ -66,6 +67,9 @@
 !   * For some branches, if the first instruction in the untaken path does not
 !     affect the taken path (for example sets a register or cond code that
 !     is overwritten before use) we can let it be in the delay slot (1361)
+!   * Use the annul bit on conditional branches to skip the delay slot in the
+!     untaken case, allows us to avoid post-decrementing counter after loop in
+!     some cases (1349)
 
 
 ! offsets into the results returned by the uname syscall
@@ -488,13 +492,13 @@ strcat:
 	inc	%o0			! increment
 	stb	%l0,[%o5]		! store byte to output_buffer
 	cmp	%l0,0
-	bne	strcat			! if not zero, loop
-	# BRANCH DELAY SLOT
+	bne,a	strcat			! if not zero, loop
+	# BRANCH DELAY SLOT (ignored when falls through do to annul)
 	inc	%o5			! incrememnt
 		
 	retl				! return from leaf
 	# BRANCH DELAY SLOT
-	dec	%o5			! back up pointer to the zero	
+	nop				! remove later
 
 	!==============================
 	! center_and_print
@@ -558,11 +562,10 @@ write_stdout:
 str_loop1:
 	ldub	[%o1+%o2],%l0		! load byte
 	cmp	%l0,%g0			! compare against zero
-	bnz	str_loop1		! if not nul, repeat
+	bnz,a	str_loop1		! if not nul, repeat
 	# BRANCH DELAY SLOT
-	inc	%o2			! increment count
+	inc	%o2			! increment count (only if taken)
 
-	dec	%o2			! correct count	
 	ta	0x10			! run the syscall
 
 	ret				! return
