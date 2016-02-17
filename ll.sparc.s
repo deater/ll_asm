@@ -62,6 +62,10 @@
 !     that to get any address within 0..8K. This scheme is not supported by the
 !     assembler/linker interface so we have to manually manage a symbol for each
 !     section which we know in advance ends up at address 0x1000. (1361)
+!   * For ba instructions, you can use ba,a to get rid of delay slot
+!   * For some branches, if the first instruction in the untaken path does not
+!     affect the taken path (for example sets a register or cond code that
+!     is overwritten before use) we can let it be in the delay slot (1361)
 
 
 ! offsets into the results returned by the uname syscall
@@ -140,7 +144,7 @@ test_flags:
 	cmp	%l5,%l7		! have we reached the end?	
 	be	done_logo	! if so, exit
 	# BRANCH DELAY SLOT
-	nop
+	! nop delay slot removed, btst harmless in taken case
 	
 	btst	0x1,%l2		! test to see if discrete char
 	
@@ -282,7 +286,7 @@ middle_line:
 	cmp	%l0,1
 	bne	more_than_one
 	# BRANCH DELAY SLOT
-	nop
+	! nop skipped (unneccessary but harmless ldub)
 	
 	ldub	[%g4],%l1		! see if we have one cpu
 	cmp	%l1,'1'
