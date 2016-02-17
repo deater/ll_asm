@@ -73,6 +73,7 @@
 !   * Optimize center_and_print with delay slot tricks (1337 (!?))
 !   * Tail recursion for center_and_print/write_stdout (1329)
 !   * Tail recursion for num_to_ascii (1305)
+!   * Re-optimize find_string to use sliding window, tail recursion (1261)
 !
 ! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
 ! text and data/bss on a separate page (for no-execute protection),
@@ -444,61 +445,57 @@ exit:
 	!   %o0 is the 4-char ascii string to look for
 	!   %o1 is char to stop at
 
-find_string:
-	add	%g2,(disk_buffer-bss_ref)-1,%l2
-					! set up disk_buffer pointer
+	! The code does a sliding window through the disk buffer
+	!  Bringing in one byte at a time and then shifting it left for compare
+	!  It does depend on 4 consecutive zeroes at end of disk buffer
+	!  Maybe should only read in 4091 bytes from cpuinfo file?
 
+find_string:
+	add	%g2,(disk_buffer-bss_ref)-4,%l2
+					! set up disk_buffer pointer
+	set	-1, %l4
 find_loop:
-	ldub	[%l2+1],%l4		! Load in the 4 bytes to compare
-	sll	%l4,8,%l4		! I should think of a better way
-	ldub	[%l2+2],%l3		! to do this
-	or	%l4,%l3,%l4
-	sll	%l4,8,%l4
-	ldub	[%l2+3],%l3
-	or	%l4,%l3,%l4
-	sll	%l4,8,%l4
-	ldub	[%l2+4],%l3
-	or	%l4,%l3,%l4
-	
+	ldub	[%l2+4],%l3		! Load in the next byte to compare
+	sll	%l4,8,%l4		! Shift -1 by a byte
+	or	%l4,%l3,%l4		! Set high three bytes to 0xff
+					!  low byte is the value from disk
+
 	cmp	%l4,%g0			! Are we zero?
-	be	done			! If so, too far.  Stop
+	be	generic_retl		! If so, too far.  Stop
+
 	# BRANCH DELAY SLOT
-	inc	%l2			! Increment pointer
 
 	cmp	%l4,%o0			! are we the search value?
 	bne	find_loop		! If not, loop
 	# BRANCH DELAY SLOT
-	nop
-	
+	inc	%l2
+
 find_colon:
 	ldub	[%l2],%l3		! repeat till we find colon
 	cmp	%l3,':'			! are we a colon?
 	bne	find_colon
 	# BRANCH DELAY SLOT
 	inc	%l2			! Increment pointer
-	
-	add	%l2,1,%l2		! Skip a space character	
-	
+
 store_loop:
+	! increment first in loop to skip one space char
+	inc     %l2
 	ldub	[%l2],%l3		! load byte
 
 	cmp	%l3,0			! are we off the edge?
-	be	done			! if so, done
-	# BRANCH DELAY SLOT
-	inc	%l2			! increment pointer
-	
+	be	generic_retl		! if so, done
+	# BRANCH DELAY SLOT	
+
     	cmp	%l3,%o1			! is it end char?
-	be 	done			! if so, finish
+	be 	generic_retl		! if so, finish
 	# BRANCH DELAY SLOT
-	nop
 	
 	stb	%l3,[%o5]		! if not store and continue
+
 	ba	store_loop		! loop
 	inc	%o5			! incrememnt pointer
 
-done:
-	retl
-	nop
+	! fall through to strcat
 
 	!================================
 	! strcat
@@ -514,7 +511,7 @@ strcat:
 	bne,a	strcat			! if not zero, loop
 	# BRANCH DELAY SLOT (ignored when falls through do to annul)
 	inc	%o5			! incrememnt
-strcat_retl:
+generic_retl:
 	retl				! return from leaf
 	# BRANCH DELAY SLOT
 	# the cmp in the below center_and_print
