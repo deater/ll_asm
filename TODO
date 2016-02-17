@@ -3,6 +3,8 @@
 
 + Look into the lsl / lsr masking in store_byte on other arches
 
++ Look into using sliding window findstring from SPARC on other
+	architectures
 
 Chips TODO:
 + 65c816
@@ -10,6 +12,7 @@ Chips TODO:
 + 8051
 + 6800 (68hc11?)
 + amd29k
++ ARC
 + att92k (crisp/hobbit)
 + Intel 432
 + micromips
