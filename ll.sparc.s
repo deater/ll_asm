@@ -71,10 +71,7 @@
 !     untaken case, allows us to avoid post-decrementing counter after loop in
 !     some cases (1349)
 !   * Optimize center_and_print with delay slot tricks (1337 (!?))
-!   * For tail recursion scenarios, we can branch into the other function or
-!     use the call,restore pattern
-!   * For functions where we only branch into the ret,restore instrucions, we
-!     can borrow the ret,restore sequence from another function.
+!   * Tail recursion for center_and_print/write_stdout (1329)
 
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -499,7 +496,7 @@ strcat:
 	bne,a	strcat			! if not zero, loop
 	# BRANCH DELAY SLOT (ignored when falls through do to annul)
 	inc	%o5			! incrememnt
-		
+strcat_retl:
 	retl				! return from leaf
 	# BRANCH DELAY SLOT
 	# the cmp in the below center_and_print
@@ -543,12 +540,10 @@ done_center:
 	# BRANCH DELAY SLOT
 	mov	%g4,%o0
 
-	call	write_stdout
+	! tail recursion into write_stdout
+	ba	write_stdout_saved
 	# BRANCH DELAY SLOT
-	add	%g2,(linefeed-data_ref),%o0
-
-	ret
-	restore	
+	add	%g2,(linefeed-data_ref),%i0
 
 	#================================
 	# WRITE_STDOUT
@@ -557,6 +552,7 @@ done_center:
 
 write_stdout:
 	save	%sp,-128,%sp		! save reg window
+write_stdout_saved:
 	mov	%i0,%o1			! copy string to print
 	set	SYSCALL_WRITE,%g1	! Write syscall in %g1
 	set	STDOUT,%o0		! 1 in %o0 (stdout)
