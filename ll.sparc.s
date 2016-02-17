@@ -51,12 +51,17 @@
 !        otherwise, annul it
 !   also {,pn,pt} predict not taken or taken
 
+! Initial size 1397
 ! ============================================================================
 ! Further optimizations by Magnus Hjorth (mhjorth@gaisler.com), summary:
 !   * In the LZSS decoder, instead of OR:ing in 0xff00 and then testing the top
 !     8 bits, OR in 0x100 and test if less than 2, this can be done without
-!     precomputed constant.
+!     precomputed constant. (1388)
 !   * You can get the constant +4096 by doing "sub %g0,-4096,%reg"
+!   * Use sethi to get a pointer 4K into the address space, then add from
+!     that to get any address within 0..8K. This scheme is not supported by the
+!     assembler/linker interface so we have to manually manage a symbol for each
+!     section which we know in advance ends up at address 0x1000. (1361)
 
 
 ! offsets into the results returned by the uname syscall
@@ -89,6 +94,10 @@
 .equ STDOUT,1
 .equ STDERR,2	
 
+! Symbol that points to absolute address 0x11000 in each segment
+.equ data_ref,     0x11000
+.equ bss_ref,      0x11000
+       
 .include "logo.include"
 	
 	.globl _start
@@ -102,14 +111,16 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	set	data_begin,%g2		! point %g2 at .data segment
-	set	bss_begin,%g3		! point %g3 at .bss segment
-	set	out_buffer,%g4		! point %g4 to out_buffer
-	
+	sethi	%hi(data_ref),%g2		! point %g2 at data_ref/bss_ref
+	add	%g2,(out_buffer-bss_ref),%g4	! point %g4 to out_buffer
+
+	add	%g2,(text_buf-bss_ref),%g3	! point %g3 to text_buf
+
 	set	(N-F),%l6		! R
  	       
-	add	%g2,(logo-data_begin),%l7	! %l7 points to logo
-	add	%g2,(logo_end-data_begin),%l5	! %l5 points to end of logo
+	add	%g2,(logo-data_ref),%l7		! %l7 points to logo
+	add	%g2,(logo_end-data_ref),%l5	! %l5 points to end of logo
+
 	mov	%g4,%l4				! point %l4 to out_buffer
 
 decompression_loop:	
@@ -154,8 +165,7 @@ output_loop:
 	and	%l1,(POSITION_MASK<<8+0xff),%l1
 				! get the position bits
 	
-	add	%g3,(text_buf-bss_begin),%l3
-	ldub	[%l1+%l3],%l3              
+	ldub	[%l1+%g3],%l3              
 				! load byte from text_buf[]
 	inc	%l1             ! advance pointer in text_buf
 	
@@ -163,8 +173,7 @@ store_byte:
 	stb	%l3,[%l4]
 	inc	%l4		! store byte to output buffer
 	
-	add	%g3,(text_buf-bss_begin),%i0
-	stb	%l3, [%l6+%i0]	! store also to text_buf[r]
+	stb	%l3, [%l6+%g3]	! store also to text_buf[r]
 	inc	%l6		! r++
 	
 	
@@ -189,14 +198,13 @@ done_logo:
 	# BRANCH DELAY SLOT
         mov	%g4,%o0			! point %o0 to out_buffer
 			
-
 first_line:
 	!==========================
 	! PRINT VERSION
 	!==========================
 
 	mov	SYSCALL_UNAME,%g1	! uname syscall in %g1
-	add	%g3,(uname_info-bss_begin),%o0		
+	add	%g2,(uname_info-bss_ref),%o0		
 					! destination of uname in %o0
 	ta	0x10			! do syscall
 	
@@ -204,27 +212,27 @@ first_line:
 
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g3,((uname_info-bss_begin)+U_SYSNAME),%o0
+	add	%g2,((uname_info-bss_ref)+U_SYSNAME),%o0
 
 					! source is " Version "	
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(ver_string-data_begin),%o0
+	add	%g2,(ver_string-data_ref),%o0
 
 					! version from uname, ie "2.4.1"
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g3,((uname_info-bss_begin)+U_RELEASE),%o0
+	add	%g2,((uname_info-bss_ref)+U_RELEASE),%o0
 
 					! source is ", Compiled "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(compiled_string-data_begin),%o0	
+	add	%g2,(compiled_string-data_ref),%o0	
 
 					! compiled date
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g3,((uname_info-bss_begin)+U_VERSION),%o0	
+	add	%g2,((uname_info-bss_ref)+U_VERSION),%o0	
 
 	call	center_and_print	! center and print
 	nop				! branch delay slot
@@ -242,7 +250,7 @@ middle_line:
 	!=========
 
 	mov	SYSCALL_OPEN,%g1	! open()
-	add	%g2,(cpuinfo-data_begin),%o0		
+	add	%g2,(cpuinfo-data_ref),%o0		
 					! '/proc/cpuinfo'
 	clr	%o1			! O_RDONLY <bits/fcntl.h>
 	ta	0x10			! syscall.  fd in o0
@@ -251,7 +259,7 @@ middle_line:
 	
 	mov	SYSCALL_READ,%g1	! read()
 	mov	%l0,%o0			! copy fd
-	add	%g3,(disk_buffer-bss_begin),%o1
+	add	%g2,(disk_buffer-bss_ref),%o1
 	sub	%g0,-4096,%o2		! assume less than 4kB cpuinfo file
 					! (note trick to assign 4096)
 	ta	0x10
@@ -286,7 +294,7 @@ middle_line:
 					! print "One, "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(one-data_begin),%o0
+	add	%g2,(one-data_ref),%o0
 	
 	ba	print_mhz
 	# BRANCH DELAY SLOT
@@ -321,10 +329,10 @@ print_mhz:
 					! print "Processor"
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(processor-data_begin),%o0
+	add	%g2,(processor-data_ref),%o0
 
 
-	add	%g2,(comma-data_begin),%o0
+	add	%g2,(comma-data_ref),%o0
 	call	strcat
 	# BRANCH DELAY SLOT
 	add	%o0,%l6,%o0
@@ -336,11 +344,11 @@ print_mhz:
 	!========
 ram:
 	set	SYSCALL_SYSINFO,%g1	! sysinfo() syscall
-	add	%g3,(sysinfo_buff-bss_begin),%o0
+	add	%g2,(sysinfo_buff-bss_ref),%o0
 					! point to sysinfo buffer
 	ta	0x10
 
-	add	%g3,(sysinfo_buff-bss_begin),%o0	
+	add	%g2,(sysinfo_buff-bss_ref),%o0	
 	ld	[%o0+S_TOTALRAM],%o0
 
 	srl	%o0,20,%o0		! divide by 2**20 to get amount
@@ -351,7 +359,7 @@ ram:
 
 					! print 'M RAM, '
 	call	strcat                  ! call strcat
-	add	%g2,(ram_comma-data_begin),%o0
+	add	%g2,(ram_comma-data_ref),%o0
 	
 	!========
 	! Bogomips
@@ -366,7 +374,7 @@ ram:
 					! bogo total follows RAM
 	call	strcat			! call strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(bogo_total-data_begin),%o0
+	add	%g2,(bogo_total-data_ref),%o0
 	
 	call	center_and_print	! center and print
 	# BRANCH DELAY SLOT
@@ -382,7 +390,7 @@ last_line:
 					! host name from uname()
 	call	strcat                  
 	# BRANCH DELAY SLOT
-	add	%g3,(uname_info-bss_begin)+U_NODENAME,%o0
+	add	%g2,(uname_info-bss_ref)+U_NODENAME,%o0
 
 	call	center_and_print        ! center and print
 	# BRANCH DELAY SLOT
@@ -391,7 +399,7 @@ last_line:
 					! (.txt) pointer to default_colors
 	call	write_stdout
 	# BRANCH DELAY SLOT
-	add	%g2,(default_colors-data_begin),%o0
+	add	%g2,(default_colors-data_ref),%o0
 
 	!================================
 	! Exit
@@ -410,7 +418,7 @@ exit:
 	!   %o1 is char to stop at
 
 find_string:
-	add	%g3,(disk_buffer-bss_begin)-1,%l2
+	add	%g2,(disk_buffer-bss_ref)-1,%l2
 					! set up disk_buffer pointer
 
 find_loop:
@@ -507,7 +515,7 @@ center_and_print:
 
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
-	add	%g2,(escape-data_begin),%o0
+	add	%g2,(escape-data_ref),%o0
 	
 	call	num_to_ascii		! print number of spaces
 	# BRANCH DELAY SLOT
@@ -515,7 +523,7 @@ center_and_print:
 
 	call	write_stdout
 	# BRANCH DELAY SLOT
-	add	%g2,(c-data_begin),%o0		! print "C"
+	add	%g2,(c-data_ref),%o0		! print "C"
 
 
 done_center:
@@ -526,7 +534,7 @@ done_center:
 
 	call	write_stdout
 	# BRANCH DELAY SLOT
-	add	%g2,(linefeed-data_begin),%o0
+	add	%g2,(linefeed-data_ref),%o0
 
 	ret
 	restore	
@@ -567,7 +575,7 @@ str_loop1:
 		
 num_to_ascii:
 	save	%sp,-128,%sp	
-	add	%g3,(ascii_buffer-bss_begin)+10,%l0
+	add	%g2,(ascii_buffer-bss_ref)+10,%l0
 					! point to end of ascii buffer
 
 div_by_10:
