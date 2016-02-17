@@ -155,6 +155,7 @@ clean:
 	fancy_lzss.jgr fancy_lzss.eps \
 	*.o fancy_graph \
 	*.pdf *.aux *.dvi *.log *.bbl *.blg *~
-	
+
 install:		       
-			       scp ll_document.pdf vince@cluizel:public_html
+			       scp ll_document.pdf `cat ~/webserver`:public_html/papers/iccd09/ll_document.pdf
+
