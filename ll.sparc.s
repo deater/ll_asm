@@ -12,14 +12,14 @@
 
 ! Things to remember about SPARC assembly:
 !     + Instruction are OPCODE SOURCE1,SOURCE2,DESTINATION
-!     + Only a 13-bit immediate field	
+!     + Only a 13-bit immediate field
 !     + Has a branch delay slot!  The annul bit can cancel that.
 !       annul on conditional branches only annuls when not-taken
 !     + Comments are the "!" character
 !     + Syscalls have number in %g1, options in %o0,%o1,...
 !	Result returned in %o0
 !	Linux syscall is called by "ta 0x10"
-!     + See "Sparc Application Binary Interface"	
+!     + See "Sparc Application Binary Interface"
 !     + %g0 - %g7 regs always visible.  g5,g6,g7 reserved for kernel
 !	%g0 is always read as 0	
 !	Windowed registers:	8 in registers %i0..%i7
@@ -31,9 +31,9 @@
 !	(this is to hold space for reg window in case of overflow.
 !	(stack also must be double-word aligned.  96 bytes is safe...)
 !     + Call instruction writes to %o7
-!     + %o6 is the stack pointer	
+!     + %o6 is the stack pointer
 !     + Condition codes:	 xcc = 64 bit, icc= 32 bit nzvc
-			
+
 ! FIXME:
 !		 optimize the divide routine
 
@@ -103,13 +103,13 @@
 ! struct sysinfo {
 ! long uptime,loads[3],totalram,...;
 .equ S_TOTALRAM,4*4
-	
+
 ! offset into the results returned by the stat syscall
 .equ S_SIZE,32
 
 ! syscall numbers
 
-.equ SYSCALL_EXIT,1	
+.equ SYSCALL_EXIT,1
 .equ SYSCALL_READ,3
 .equ SYSCALL_WRITE,4
 .equ SYSCALL_CLOSE,6
@@ -120,17 +120,17 @@
 !
 .equ STDIN,0
 .equ STDOUT,1
-.equ STDERR,2	
+.equ STDERR,2
 
 ! Symbol that points to absolute address 0x11000 in each segment
 .equ data_ref,     0x11000
 .equ bss_ref,      0x11000
-       
+
 .include "logo.include"
-	
+
 	.globl _start
 _start:
-		
+
         !=========================
 	! PRINT LOGO
 	!=========================
@@ -145,13 +145,13 @@ _start:
 	add	%g2,(text_buf-bss_ref),%g3	! point %g3 to text_buf
 
 	set	(N-F),%l6		! R
- 	       
+
 	add	%g2,(logo-data_ref),%l7		! %l7 points to logo
 	add	%g2,(logo_end-data_ref),%l5	! %l5 points to end of logo
 
 	mov	%g4,%l4				! point %l4 to out_buffer
 
-decompression_loop:	
+decompression_loop:
 	ldub	[%l7],%l3	! load in a byte
 	inc	%l7		! increment source pointer
 
@@ -165,15 +165,15 @@ check_ctr:
 	! nop removed, following cmp harmless in taken case
 
 test_flags:
-	cmp	%l5,%l7		! have we reached the end?	
+	cmp	%l5,%l7		! have we reached the end?
 	be	done_logo	! if so, exit
 	# BRANCH DELAY SLOT
 	! nop delay slot removed, btst harmless in taken case
-	
+
 	btst	0x1,%l2		! test to see if discrete char
-	
+
 	bnz	discrete_char	! if set, we jump to discrete char
-	
+
 	! BRANCH DELAY SLOT
 	srl     %l2,1,%l2	! shift
 
@@ -189,22 +189,22 @@ offset_length:
 	add	%l0,THRESHOLD+1,%l0
 				! add in the threshold?
 
-output_loop:	
+output_loop:
 	and	%l1,(POSITION_MASK<<8+0xff),%l1
 				! get the position bits
-	
-	ldub	[%l1+%g3],%l3              
+
+	ldub	[%l1+%g3],%l3
 				! load byte from text_buf[]
 	inc	%l1             ! advance pointer in text_buf
-	
-store_byte:	
+
+store_byte:
 	stb	%l3,[%l4]
 	inc	%l4		! store byte to output buffer
-	
+
 	stb	%l3, [%l6+%g3]	! store also to text_buf[r]
 	inc	%l6		! r++
-	
-	
+
+
 	deccc   %l0		! decrement count
 	bnz	output_loop	! repeat until k>j
 	#BRANCH DELAY SLOT
@@ -214,7 +214,7 @@ store_byte:
 	# BRANCH DELAY SLOT
 	! nop annulled
 
-discrete_char:	
+discrete_char:
 	ldub	[%l7],%l3
 	inc	%l7			! load a byte
 	ba	store_byte		! and store it
@@ -225,24 +225,24 @@ done_logo:
 	call	write_stdout		! print the logo
 	# BRANCH DELAY SLOT
         mov	%g4,%o0			! point %o0 to out_buffer
-			
+
 first_line:
 	!==========================
 	! PRINT VERSION
 	!==========================
 
 	mov	SYSCALL_UNAME,%g1	! uname syscall in %g1
-	add	%g2,(uname_info-bss_ref),%o0		
+	add	%g2,(uname_info-bss_ref),%o0
 					! destination of uname in %o0
 	ta	0x10			! do syscall
-	
+
 	mov	%g4,%o5			! point %o5 to out_buffer
 
 	call	strcat
 	# BRANCH DELAY SLOT
 	add	%g2,((uname_info-bss_ref)+U_SYSNAME),%o0
 
-					! source is " Version "	
+					! source is " Version "
 	call	strcat
 	# BRANCH DELAY SLOT
 	add	%g2,(ver_string-data_ref),%o0
@@ -255,36 +255,36 @@ first_line:
 					! source is ", Compiled "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(compiled_string-data_ref),%o0	
+	add	%g2,(compiled_string-data_ref),%o0
 
 					! compiled date
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,((uname_info-bss_ref)+U_VERSION),%o0	
+	add	%g2,((uname_info-bss_ref)+U_VERSION),%o0
 
 	call	center_and_print	! center and print
 	sub     %o5,%g4,%o2		! branch delay slot
-	
+
 
 	!===============================
 	! Middle-Line
 	!===============================
 middle_line:
-	
+
 	mov	%g4,%o5			! restore output pointer
-		
+
 	!=========
 	! Load /proc/cpuinfo into buffer
 	!=========
 
 	mov	SYSCALL_OPEN,%g1	! open()
-	add	%g2,(cpuinfo-data_ref),%o0		
+	add	%g2,(cpuinfo-data_ref),%o0
 					! '/proc/cpuinfo'
 	clr	%o1			! O_RDONLY <bits/fcntl.h>
 	ta	0x10			! syscall.  fd in o0
 
 	mov	%o0,%l0			! save fd in %l0
-	
+
 	mov	SYSCALL_READ,%g1	! read()
 	mov	%l0,%o0			! copy fd
 	add	%g2,(disk_buffer-bss_ref),%o1
@@ -301,7 +301,7 @@ middle_line:
 	!=============
 	set	('t'<<24+'i'<<16+'v'<<8+'e'),%o0
 	                                ! find 'tive\t:' and grab up to '\n'
-	
+
 	call	find_string
 	# BRANCH DELAY SLOT
 	set	'\n',%o1
@@ -311,42 +311,42 @@ middle_line:
 	bne	more_than_one
 	# BRANCH DELAY SLOT
 	! nop skipped (unneccessary but harmless ldub)
-	
+
 	ldub	[%g4],%l1		! see if we have one cpu
 	cmp	%l1,'1'
 	bne	more_than_one
 	# BRANCH DELAY SLOT
 
 	mov	%g4,%o5			! restore output pointer
-	
+
 					! print "One, "
 	call	strcat
 	# BRANCH DELAY SLOT
 	add	%g2,(one-data_ref),%o0
-	
+
 	ba	print_mhz
 	# BRANCH DELAY SLOT
 	mov	1,%l6
-	
-	
+
+
 more_than_one:
 	mov	' ',%l6
 	stb	%l6,[%o5]		! store a space
 	inc	%o5			! increment pointer if not plural
 	mov	0,%l6
-		
+
 
         !=========
 	! MHz
 	!=========
-print_mhz:	
+print_mhz:
 	! Mips /proc/cpuinfo does not indicate MHz
-		
+
 
    	!==========
 	! Chip Name
 	!==========
-	
+
 	set	('c'<<24+'p'<<16+'u'<<8+'\t'),%o0
 	                                ! find 'cpu\t:' and grab up to '\n'
 
@@ -364,8 +364,8 @@ print_mhz:
 	call	strcat
 	# BRANCH DELAY SLOT
 	add	%o0,%l6,%o0
-	
-	
+
+
 
 	!========
 	! RAM
@@ -376,11 +376,11 @@ ram:
 					! point to sysinfo buffer
 	ta	0x10
 
-	add	%g2,(sysinfo_buff-bss_ref),%o0	
+	add	%g2,(sysinfo_buff-bss_ref),%o0
 	ld	[%o0+S_TOTALRAM],%o0
 
 	srl	%o0,20,%o0		! divide by 2**20 to get amount
-	
+
 	call	num_to_ascii
 	# BRANCH DELAY SLOT
 	set	1,%o1			! use strcat ,not stdout
@@ -388,27 +388,27 @@ ram:
 					! print 'M RAM, '
 	call	strcat                  ! call strcat
 	add	%g2,(ram_comma-data_ref),%o0
-	
+
 	!========
 	! Bogomips
 	!========
 	set	('B'<<24+'o'<<16+'g'<<8+'\o'),%o0
 	                                ! find 'Bogo' and grab up to '\n'
-	
+
 	call	find_string
 	# BRANCH DELAY SLOT
 	mov	'\n',%o1
-	
+
 					! bogo total follows RAM
 	call	strcat			! call strcat
 	# BRANCH DELAY SLOT
 	add	%g2,(bogo_total-data_ref),%o0
-	
+
 	call	center_and_print	! center and print
 	# BRANCH DELAY SLOT
 	sub     %o5,%g4,%o2		! branch delay slot
 
-	
+
 	!=================================
 	! Print Host Name
 	!=================================
@@ -416,7 +416,7 @@ last_line:
 	mov	%g4,%o5			! restore pointer to out_buffer
 
 					! host name from uname()
-	call	strcat                  
+	call	strcat
 	# BRANCH DELAY SLOT
 	add	%g2,(uname_info-bss_ref)+U_NODENAME,%o0
 
@@ -432,7 +432,7 @@ last_line:
 	!================================
 	! Exit
 	!================================
-exit:		
+exit:
         mov	0,%o0			! exit value
         mov	SYSCALL_EXIT,%g1        ! put the exit syscall number in g1
         ta      0x10			! and exit
@@ -440,7 +440,7 @@ exit:
 
 
 	!=================================
-	! FIND_STRING 
+	! FIND_STRING
 	!=================================
 	!   %o0 is the 4-char ascii string to look for
 	!   %o1 is char to stop at
@@ -484,12 +484,12 @@ store_loop:
 
 	cmp	%l3,0			! are we off the edge?
 	be	generic_retl		! if so, done
-	# BRANCH DELAY SLOT	
+	# BRANCH DELAY SLOT
 
     	cmp	%l3,%o1			! is it end char?
 	be 	generic_retl		! if so, finish
 	# BRANCH DELAY SLOT
-	
+
 	stb	%l3,[%o5]		! if not store and continue
 
 	ba	store_loop		! loop
@@ -539,7 +539,7 @@ center_and_print:
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
 	add	%g2,(escape-data_ref),%o0
-	
+
 	call	num_to_ascii		! print number of spaces
 	# BRANCH DELAY SLOT
 	srl	%i2,1,%o0		! divide by 2, print
@@ -584,18 +584,18 @@ str_loop1:
 
 	ret				! return
 	# BRANCH DELAY SLOT
-	restore				! restore reg window	
+	restore				! restore reg window
 
-	
+
 	!===========================
 	! num_to_ascii
 	!===========================
 	! o0 = num
 	! o1 = (0==stdout, 1==strcat)
 	! o5 =output
-		
+
 num_to_ascii:
-	save	%sp,-128,%sp	
+	save	%sp,-128,%sp
 	add	%g2,(ascii_buffer-bss_ref)+10,%l0
 					! point to end of ascii buffer
 
@@ -611,13 +611,13 @@ div_by_10:
 	bnz	div_by_10		! if not zero, loop
 	# BRANCH DELAY SLOT
 	mov	%l7,%i0			! copy for next divide
-		
+
 write_out:
 	cmp	%i1,1			! check where output goes
 	! Tail recursion directly into write_stdout
 	bne     write_stdout_saved
 	# BRANCH DELAY SLOT
-	mov	%l0,%i0			! move result to o0		
+	mov	%l0,%i0			! move result to o0
 
 	! Tail recursion into strcat
 	ba      strcat
@@ -641,13 +641,13 @@ c:			.ascii "C\0"
 .ifdef FAKE_PROC
 cpuinfo:		.ascii	"proc/cp.sparc\0"
 .else
-cpuinfo:	        .ascii  "/proc/cpuinfo\0"	
+cpuinfo:	        .ascii  "/proc/cpuinfo\0"
 .endif
 
 one:	.ascii	"One \0"
 processor:	.ascii " Processor\0"
 comma:		.ascii "s, \0"
-		
+
 .include "logo.lzss_new"
 
 #============================================================================
@@ -655,13 +655,13 @@ comma:		.ascii "s, \0"
 #============================================================================
 
 .lcomm bss_begin,1
-	
+
 .lcomm  text_buf, (N+F-1)
 .lcomm  ascii_buffer,10         ! 32 bit can't be > 9 chars
-	
+
    ! see /usr/src/linux/include/linux/kernel.h
 .lcomm sysinfo_buff,(64)
 .lcomm uname_info,(65*6)
-	
-.lcomm  disk_buffer,4096        ! we cheat!!!!	
-.lcomm  out_buffer,16384	
+
+.lcomm  disk_buffer,4096        ! we cheat!!!!
+.lcomm  out_buffer,16384
