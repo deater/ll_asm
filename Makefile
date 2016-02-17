@@ -61,6 +61,7 @@ endif
 #
 ifneq (,$(findstring sparc,$(ARCH)))
    SOURCE_ARCH := sparc
+   C_EXTRA := -Av8 
 endif
 
 #
