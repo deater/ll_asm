@@ -70,7 +70,11 @@
 !   * Use the annul bit on conditional branches to skip the delay slot in the
 !     untaken case, allows us to avoid post-decrementing counter after loop in
 !     some cases (1349)
-
+!   * Optimize center_and_print with delay slot tricks (1337 (!?))
+!   * For tail recursion scenarios, we can branch into the other function or
+!     use the call,restore pattern
+!   * For functions where we only branch into the ret,restore instrucions, we
+!     can borrow the ret,restore sequence from another function.
 
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -243,7 +247,7 @@ first_line:
 	add	%g2,((uname_info-bss_ref)+U_VERSION),%o0	
 
 	call	center_and_print	! center and print
-	nop				! branch delay slot
+	sub     %o5,%g4,%o2		! branch delay slot
 	
 
 	!===============================
@@ -386,7 +390,7 @@ ram:
 	
 	call	center_and_print	! center and print
 	# BRANCH DELAY SLOT
-	nop
+	sub     %o5,%g4,%o2		! branch delay slot
 
 	
 	!=================================
@@ -402,7 +406,7 @@ last_line:
 
 	call	center_and_print        ! center and print
 	# BRANCH DELAY SLOT
-	nop
+	sub     %o5,%g4,%o2		! branch delay slot
 
 					! (.txt) pointer to default_colors
 	call	write_stdout
@@ -498,28 +502,27 @@ strcat:
 		
 	retl				! return from leaf
 	# BRANCH DELAY SLOT
-	nop				! remove later
+	# the cmp in the below center_and_print
 
 	!==============================
 	! center_and_print
 	!==============================
-	! string is in o0 -> i1
+	! string is in g4 (out_buffer global)
 	! end of buffer is in o5 -> i5
+	! length of buffer (i5-g4) is precomputed in o2->i2
+	!     that is done in branch delay slot of caller
 
 center_and_print:
+	! Put cmp before save so it can be in delay slot of retl above
+	cmp	%o2,80
 	save	%sp,-128,%sp		! save reg window
 
-	mov	%g4,%l2			! point %l2 to beginning
-	sub	%i5,%g4,%l1		! subtract end pointer from start
-	                                ! (cheaty way to get size of string)
-
-	cmp	%l1,80
 	bgt     done_center		! don't center if > 80
 	# BRANCH DELAY SLOT
 	set	0,%o1			! print to stdout
 
-	neg	%l1			! negate length
-        add	%l1,80,%l1		! add to 80
+	neg	%i2			! negate length
+	add	%i2,80,%i2		! add to 80
 
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
@@ -527,7 +530,7 @@ center_and_print:
 	
 	call	num_to_ascii		! print number of spaces
 	# BRANCH DELAY SLOT
-	srl	%l1,1,%o0		! divide by 2, print
+	srl	%i2,1,%o0		! divide by 2, print
 
 	call	write_stdout
 	# BRANCH DELAY SLOT
