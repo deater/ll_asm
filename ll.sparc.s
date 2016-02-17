@@ -72,6 +72,7 @@
 !     some cases (1349)
 !   * Optimize center_and_print with delay slot tricks (1337 (!?))
 !   * Tail recursion for center_and_print/write_stdout (1329)
+!   * Tail recursion for num_to_ascii (1305)
 
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -599,27 +600,16 @@ div_by_10:
 		
 write_out:
 	cmp	%i1,1			! check where output goes
-	bne	to_stdout
+	! Tail recursion directly into write_stdout
+	bne     write_stdout_saved
 	# BRANCH DELAY SLOT
-	mov	%l0,%o0			! move result to o0		
+	mov	%l0,%i0			! move result to o0		
 
-
-	call	strcat			! call strcat
-	mov	%i5,%o5			! pass along string pointer
-		
-	ba	done_ascii		! we're done
-	mov	%o5,%i5			! return modified value
-	
-to_stdout:				! write to stdout
-	call	write_stdout
-	# BRANCH DELAY SLOT	
-	nop
-	
-done_ascii:
-	
-	ret
+	! Tail recursion into strcat
+	ba      strcat
+	# BRANCH DELAY SLOT
 	restore
-		
+
 !===========================================================================
 .data
 !===========================================================================
