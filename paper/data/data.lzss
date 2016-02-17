@@ -6,9 +6,9 @@ ia64		VLIW	272	0
 alpha		RISC	224	0
 pa-risc		RISC	152	0
 mips		RISC	152	0
-sparc		RISC	148	0
 microblaze	RISC	136	0
 6502		EBIT	134	0
+sparc		RISC	128	0
 m88k		RISC	128	0
 s390		CISC	122	0
 arm.eabi	RISC	108	0

@@ -7,11 +7,11 @@ pa-risc		RISC	176	1
 RiSC		RISC	120	1
 alpha		RISC	108	1
 m88k		RISC	84	0
-sparc		RISC	84	0
 z80		EBIT	81	1
 sh3		EMBED	76	1
 arm.eabi	RISC	72	1
 PowerPC		RISC	68	0
+sparc		RISC	60	0
 mips		RISC	56	0
 THUMB		EMBED	54	1
 microblaze	RISC	52	0

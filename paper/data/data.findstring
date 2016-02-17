@@ -3,12 +3,12 @@ Findstring Size (bytes)
 0	# No stripey divides
 ia64		VLIW	288	0
 alpha		RISC	140	0
-sparc		RISC	136	0
 microblaze	RISC	124	0
 m88k		RISC	116	0
 pa-risc		RISC	104	0
 mips		RISC	100	0
 RiSC		RISC	94	0
+sparc		RISC	92	0
 PowerPC		RISC	88	0
 arm.eabi	RISC	88	0
 6502		EBIT	85	0

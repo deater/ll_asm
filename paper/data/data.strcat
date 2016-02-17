@@ -4,7 +4,7 @@ strcat Size (bytes)
 RiSC		RISC	200	0
 ia64		VLIW	64	0
 alpha		RISC	56	0
-sparc		RISC	32	0
+sparc		RISC	28	0
 mips		RISC	28	0
 pa-risc		RISC	28	0
 m88k		RISC	28	0
