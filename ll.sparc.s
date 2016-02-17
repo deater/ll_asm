@@ -1,6 +1,5 @@
-
 !
-!  linux_logo in sparc assembler    0.38
+!  linux_logo in sparc assembler    0.48
 !
 !  Should in theory work for both sparc32 and sparc64
 !    but actually written as pure SPARCV8 I think
@@ -52,6 +51,11 @@
 !        otherwise, annul it
 !   also {,pn,pt} predict not taken or taken
 
+! ============================================================================
+! Further optimizations by Magnus Hjorth (mhjorth@gaisler.com), summary:
+!   * In the LZSS decoder, instead of OR:ing in 0xff00 and then testing the top
+!     8 bits, OR in 0x100 and test if less than 2, this can be done without
+!     precomputed constant.
 
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -105,14 +109,19 @@ _start:
 	add	%g2,(logo-data_begin),%l7	! %l7 points to logo
 	add	%g2,(logo_end-data_begin),%l5	! %l5 points to end of logo
 	mov	%g4,%l4				! point %l4 to out_buffer
-	set	0xff00,%i1			! we use this often...
 
 decompression_loop:	
 	ldub	[%l7],%l3	! load in a byte
 	inc	%l7		! increment source pointer
 
-				! put 0xff in top as a hackish 8-bit counter
-	or	%i1,%l3,%l2	! move in the flags
+				! put 0x01 in top as a hackish 8-bit counter
+	or	%l3,0x100,%l2	! move in the flags
+
+check_ctr:
+	cmp	%l2,2
+	bl	decompression_loop
+	! BRANCH DELAY SLOT
+	! nop removed, following cmp harmless in taken case
 
 test_flags:
 	cmp	%l5,%l7		! have we reached the end?	
@@ -161,15 +170,10 @@ store_byte:
 	bnz	output_loop	! repeat until k>j
 	#BRANCH DELAY SLOT
 	and	%l6,(N-1),%l6	! wrap r if we are too big
-	
-	btst	%i1,%l2		! if 0 we shifted through 8 and must
-	bnz	test_flags	! re-load flags
+
+	ba,a	check_ctr
 	# BRANCH DELAY SLOT
-	nop
-	
-	ba	decompression_loop
-	# BRANCH DELAY SLOT
-	nop
+	! nop annulled
 
 discrete_char:	
 	ldub	[%l7],%l3
