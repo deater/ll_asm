@@ -73,6 +73,23 @@
 !   * Optimize center_and_print with delay slot tricks (1337 (!?))
 !   * Tail recursion for center_and_print/write_stdout (1329)
 !   * Tail recursion for num_to_ascii (1305)
+!
+! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
+! text and data/bss on a separate page (for no-execute protection),
+! to avoid this overhead a custom linker script like below can be used:
+!
+! PHDRS { load PT_LOAD ; }
+! SECTIONS
+! {
+!  PROVIDE (__executable_start = SEGMENT_START("text-segment", 0x10000));
+!  . = SEGMENT_START("text-segment", 0x10000) + SIZEOF_HEADERS;
+!  .text  : { *(.text) } :load =0
+!  .data  : { *(.data) } :load =0
+!  .bss   : { *(.bss) *(COMMON) } :load
+! }
+!
+! ============================================================================
+
 
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
