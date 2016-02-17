@@ -56,6 +56,8 @@
 !   * In the LZSS decoder, instead of OR:ing in 0xff00 and then testing the top
 !     8 bits, OR in 0x100 and test if less than 2, this can be done without
 !     precomputed constant.
+!   * You can get the constant +4096 by doing "sub %g0,-4096,%reg"
+
 
 ! offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -250,9 +252,8 @@ middle_line:
 	mov	SYSCALL_READ,%g1	! read()
 	mov	%l0,%o0			! copy fd
 	add	%g3,(disk_buffer-bss_begin),%o1
-	mov	4095,%o2	 	! assume less than 4kB cpuinfo file
-					! one less to fit in 13-bit signed
-					! immediate
+	sub	%g0,-4096,%o2		! assume less than 4kB cpuinfo file
+					! (note trick to assign 4096)
 	ta	0x10
 
 	mov	%l0,%o0			! restore fd
