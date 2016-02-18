@@ -445,8 +445,6 @@ exit:
 
 	! The code does a sliding window through the disk buffer
 	!  Bringing in one byte at a time and then shifting it left for compare
-	!  It does depend on 4 consecutive zeroes at end of disk buffer
-	!  Maybe should only read in 4091 bytes from cpuinfo file?
 
 find_string:
 	add	%g2,(disk_buffer-bss_ref)-4,%l2
@@ -454,11 +452,10 @@ find_string:
 	set	-1, %l4
 find_loop:
 	ldub	[%l2+4],%l3		! Load in the next byte to compare
-	sll	%l4,8,%l4		! Shift -1 by a byte
-	or	%l4,%l3,%l4		! Set high three bytes to 0xff
-					!  low byte is the value from disk
+	sll	%l4,8,%l4		! Shift window by a byte
+	or	%l4,%l3,%l4		! Insert new byte
 
-	cmp	%l4,%g0			! Are we zero?
+	cmp	%l3,0			! Are we zero?
 	be	generic_retl		! If so, too far.  Stop
 
 	# BRANCH DELAY SLOT
@@ -661,5 +658,5 @@ comma:		.ascii "s, \0"
 .lcomm sysinfo_buff,(64)
 .lcomm uname_info,(65*6)
 
-.lcomm  disk_buffer,4096        ! we cheat!!!!
+.lcomm  disk_buffer,4097        ! we cheat!!!!
 .lcomm  out_buffer,16384
