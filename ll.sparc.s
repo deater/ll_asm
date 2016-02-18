@@ -284,7 +284,6 @@ middle_line:
 	mov	%o0,%l0			! save fd in %l0
 
 	mov	SYSCALL_READ,%g1	! read()
-	mov	%l0,%o0			! copy fd
 	add	%g2,(disk_buffer-bss_ref),%o1
 	sub	%g0,-4096,%o2		! assume less than 4kB cpuinfo file
 					! (note trick to assign 4096)
