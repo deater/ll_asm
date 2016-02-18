@@ -493,7 +493,7 @@ store_loop:
 	ba	store_loop		! loop
 	inc	%o5			! incrememnt pointer
 
-	! fall through to strcat
+        ! execution flow in find_string never goes below this point
 
 	!================================
 	! strcat
