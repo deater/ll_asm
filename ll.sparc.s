@@ -229,7 +229,7 @@ discrete_char:
 done_logo:
 	call	write_stdout		! print the logo
 	# BRANCH DELAY SLOT
-        mov	%g4,%o0			! point %o0 to out_buffer
+        mov	%g4,%o1			! point %o0 to out_buffer
 
 first_line:
 	!==========================
@@ -245,27 +245,27 @@ first_line:
 
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,((uname_info-bss_ref)+U_SYSNAME),%o0
+	add	%g2,((uname_info-bss_ref)+U_SYSNAME),%o1
 
 					! source is " Version "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(ver_string-data_ref),%o0
+	add	%g2,(ver_string-data_ref),%o1
 
 					! version from uname, ie "2.4.1"
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,((uname_info-bss_ref)+U_RELEASE),%o0
+	add	%g2,((uname_info-bss_ref)+U_RELEASE),%o1
 
 					! source is ", Compiled "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(compiled_string-data_ref),%o0
+	add	%g2,(compiled_string-data_ref),%o1
 
 					! compiled date
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,((uname_info-bss_ref)+U_VERSION),%o0
+	add	%g2,((uname_info-bss_ref)+U_VERSION),%o1
 
 	call	center_and_print	! center and print
 	sub     %o5,%g4,%o2		! branch delay slot
@@ -326,7 +326,7 @@ middle_line:
 					! print "One, "
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(one-data_ref),%o0
+	add	%g2,(one-data_ref),%o1
 
 	ba	print_mhz
 	# BRANCH DELAY SLOT
@@ -361,13 +361,13 @@ print_mhz:
 					! print "Processor"
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(processor-data_ref),%o0
+	add	%g2,(processor-data_ref),%o1
 
 
-	add	%g2,(comma-data_ref),%o0
+	add	%g2,(comma-data_ref),%o1
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%o0,%l6,%o0
+	add	%o1,%l6,%o1
 
 
 
@@ -387,11 +387,11 @@ ram:
 
 	call	num_to_ascii
 	# BRANCH DELAY SLOT
-	add	%g2,(strcat-text_ref),%o1			! use strcat ,not stdout
+	add	%g2,(strcat-text_ref),%o3			! use strcat ,not stdout
 
 					! print 'M RAM, '
 	call	strcat                  ! call strcat
-	add	%g2,(ram_comma-data_ref),%o0
+	add	%g2,(ram_comma-data_ref),%o1
 
 	!========
 	! Bogomips
@@ -406,7 +406,7 @@ ram:
 					! bogo total follows RAM
 	call	strcat			! call strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(bogo_total-data_ref),%o0
+	add	%g2,(bogo_total-data_ref),%o1
 
 	call	center_and_print	! center and print
 	# BRANCH DELAY SLOT
@@ -422,7 +422,7 @@ last_line:
 					! host name from uname()
 	call	strcat
 	# BRANCH DELAY SLOT
-	add	%g2,(uname_info-bss_ref)+U_NODENAME,%o0
+	add	%g2,(uname_info-bss_ref)+U_NODENAME,%o1
 
 	call	center_and_print        ! center and print
 	# BRANCH DELAY SLOT
@@ -431,7 +431,7 @@ last_line:
 					! (.txt) pointer to default_colors
 	call	write_stdout
 	# BRANCH DELAY SLOT
-	add	%g2,(default_colors-data_ref),%o0
+	add	%g2,(default_colors-data_ref),%o1
 
 	!================================
 	! Exit
@@ -495,18 +495,17 @@ store_loop:
 
 	ba	store_loop		! loop
 	inc	%o5			! incrememnt pointer
-
         ! execution flow in find_string never goes below this point
 
 	!================================
 	! strcat
 	!================================
-	! %o0 = "source"
+	! %o1 = "source"
 	! %o5 = "destination"
 	! %l0 = destroyed
 strcat:
-	ldub	[%o0],%l0		! load a byte from string
-	inc	%o0			! increment
+	ldub	[%o1],%l0		! load a byte from string
+	inc	%o1			! increment
 	stb	%l0,[%o5]		! store byte to output_buffer
 	cmp	%l0,0
 	bne,a	strcat			! if not zero, loop
@@ -534,27 +533,27 @@ center_and_print:
         addcc   %i2,80,%i2              ! add to 80
 	bneg     done_center		! don't center if > 80
 	# BRANCH DELAY SLOT
-	add	%g2,(linefeed-data_ref),%i0  ! Used at end of function
+	add	%g2,(linefeed-data_ref),%i1  ! Used at end of function
 
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
-	add	%g2,(escape-data_ref),%o0
+	add	%g2,(escape-data_ref),%o1
 
 	srl	%i2,1,%o2		! divide by 2, print
 	call	num_to_ascii		! print number of spaces
 	# BRANCH DELAY SLOT
-	add	%g2,(write_stdout-text_ref),%o1			! print to stdout
+	add	%g2,(write_stdout-text_ref),%o3			! print to stdout
 
 	call	write_stdout
 	# BRANCH DELAY SLOT
-	add	%g2,(c-data_ref),%o0		! print "C"
+	add	%g2,(c-data_ref),%o1		! print "C"
 
 
 done_center:
 					! point to the string to print
 	call	write_stdout
 	# BRANCH DELAY SLOT
-	mov	%g4,%o0
+	mov	%g4,%o1
 
 	! fall through into write_stdout (%i0 already set above)
         restore
@@ -562,11 +561,10 @@ done_center:
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# %o0 -> %i0 (a1) has string
+	# %o1 (a1) has string
 	# leaf function, trashes %o registers
 
 write_stdout:
-	mov	%o0,%o1			! copy string to print
 	set	SYSCALL_WRITE,%g1	! Write syscall in %g1
 	set	STDOUT,%o0		! 1 in %o0 (stdout)
 	set	0,%o2			! 0 (count) in %o2
@@ -589,29 +587,29 @@ str_loop1:
 	! num_to_ascii
 	!===========================
 	! o2 = num
-	! o1 = function address (stdout or strcat)
+	! o3 = function address (stdout or strcat)
 	! o5 =output
 
 num_to_ascii:
-	add	%g2,(ascii_buffer-bss_ref)+10,%o0
+	add	%g2,(ascii_buffer-bss_ref)+10,%o1
 					! point to end of ascii buffer
 
 div_by_10:
 
-	dec	%o0
+	dec	%o1
 	udivcc	%o2,10,%l7		! divide by 10, quotient in %l7
 	umul	%l7,10,%l6		! remultiply out
 	sub	%o2,%l6,%l6		! remainder in %l6
 
 	add	%l6,0x30,%l6		! conver to ascii
-	stb	%l6,[%o0]		! store to buffer
+	stb	%l6,[%o1]		! store to buffer
 	bnz	div_by_10		! if not zero, loop
 	# BRANCH DELAY SLOT
 	mov	%l7,%o2			! copy for next divide
 
 write_out:
-        ! Tail recursion into function given by %i1
-        jmpl    %o1, %g0
+        ! Tail recursion into function given by %o3
+        jmpl    %o3, %g0
         nop
 
 !===========================================================================
