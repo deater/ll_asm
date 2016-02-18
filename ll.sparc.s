@@ -60,9 +60,7 @@
 !     precomputed constant. (1388)
 !   * You can get the constant +4096 by doing "sub %g0,-4096,%reg"
 !   * Use sethi to get a pointer 4K into the address space, then add from
-!     that to get any address within 0..8K. This scheme is not supported by the
-!     assembler/linker interface so we have to manually manage a symbol for each
-!     section which we know in advance ends up at address 0x1000. (1361)
+!     that to get any address within 0..8K. (1361)
 !   * For ba instructions, you can use ba,a to get rid of delay slot
 !   * For some branches, if the first instruction in the untaken path does not
 !     affect the taken path (for example sets a register or cond code that
