@@ -511,6 +511,7 @@ generic_retl:
 	# BRANCH DELAY SLOT
 	# the cmp in the below center_and_print
 
+
 	!==============================
 	! center_and_print
 	!==============================
@@ -520,16 +521,14 @@ generic_retl:
 	!     that is done in branch delay slot of caller
 
 center_and_print:
-	! Put cmp before save so it can be in delay slot of retl above
-	cmp	%o2,80
+	! Put neg before save so it can be in delay slot of jmpl above
+        neg     %o2                     ! negate length
 	save	%sp,-128,%sp		! save reg window
 
-	bgt     done_center		! don't center if > 80
+        addcc   %i2,80,%i2              ! add to 80
+	bneg     done_center		! don't center if > 80
 	# BRANCH DELAY SLOT
 	set	0,%o1			! print to stdout
-
-	neg	%i2			! negate length
-	add	%i2,80,%i2		! add to 80
 
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
