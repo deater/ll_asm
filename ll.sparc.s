@@ -123,6 +123,7 @@
 .equ STDERR,2
 
 ! Symbol that points to absolute address 0x11000 in each segment
+.equ text_ref,     0x11000
 .equ data_ref,     0x11000
 .equ bss_ref,      0x11000
 
@@ -382,7 +383,7 @@ ram:
 
 	call	num_to_ascii
 	# BRANCH DELAY SLOT
-	set	1,%o1			! use strcat ,not stdout
+	add	%g2,(strcat-text_ref),%o1			! use strcat ,not stdout
 
 					! print 'M RAM, '
 	call	strcat                  ! call strcat
@@ -529,7 +530,7 @@ center_and_print:
         addcc   %i2,80,%i2              ! add to 80
 	bneg     done_center		! don't center if > 80
 	# BRANCH DELAY SLOT
-	set	0,%o1			! print to stdout
+	add	%g2,(write_stdout-text_ref),%o1			! print to stdout
 
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
@@ -586,7 +587,7 @@ str_loop1:
 	! num_to_ascii
 	!===========================
 	! o0 = num
-	! o1 = (0==stdout, 1==strcat)
+	! o1 = function address (stdout or strcat)
 	! o5 =output
 
 num_to_ascii:
@@ -608,16 +609,10 @@ div_by_10:
 	mov	%l7,%i0			! copy for next divide
 
 write_out:
-	cmp	%i1,1			! check where output goes
-	! Tail recursion directly into write_stdout
-	bne     write_stdout_saved
-	# BRANCH DELAY SLOT
-	mov	%l0,%i0			! move result to o0
-
-	! Tail recursion into strcat
-	ba      strcat
-	# BRANCH DELAY SLOT
-	restore
+        mov     %l0, %i0                ! move result to o0/i0 in called fn
+        ! Tail recursion into function given by %i1
+        jmpl    %i1, %g0
+        restore
 
 !===========================================================================
 .data
