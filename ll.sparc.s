@@ -444,60 +444,6 @@ exit:
 
 
 
-	!=================================
-	! FIND_STRING
-	!=================================
-	!   %o0 is the 4-char ascii string to look for
-	!   %o1 is char to stop at
-
-	! The code does a sliding window through the disk buffer
-	!  Bringing in one byte at a time and then shifting it left for compare
-
-find_string:
-	add	%g2,(disk_buffer-bss_ref)-4,%l2
-					! set up disk_buffer pointer
-	set	-1, %l4
-find_loop:
-	ldub	[%l2+4],%l3		! Load in the next byte to compare
-	sll	%l4,8,%l4		! Shift window by a byte
-	or	%l4,%l3,%l4		! Insert new byte
-
-	cmp	%l3,0			! Are we zero?
-	be	generic_retl		! If so, too far.  Stop
-
-	# BRANCH DELAY SLOT
-
-	cmp	%l4,%o0			! are we the search value?
-	bne	find_loop		! If not, loop
-	# BRANCH DELAY SLOT
-	inc	%l2
-
-find_colon:
-	ldub	[%l2],%l3		! repeat till we find colon
-	cmp	%l3,':'			! are we a colon?
-	bne	find_colon
-	# BRANCH DELAY SLOT
-	inc	%l2			! Increment pointer
-
-store_loop:
-	! increment first in loop to skip one space char
-	inc     %l2
-	ldub	[%l2],%l3		! load byte
-
-	cmp	%l3,0			! are we off the edge?
-	be	generic_retl		! if so, done
-	# BRANCH DELAY SLOT
-
-    	cmp	%l3,%o1			! is it end char?
-	be 	generic_retl		! if so, finish
-	# BRANCH DELAY SLOT
-
-	stb	%l3,[%o5]		! if not store and continue
-
-	ba	store_loop		! loop
-	inc	%o5			! incrememnt pointer
-        ! execution flow in find_string never goes below this point
-
 	!================================
 	! strcat
 	!================================
@@ -611,7 +557,62 @@ div_by_10:
 write_out:
         ! Tail recursion into function given by %o3
         jmpl    %o3, %g0
-        nop
+        # BRANCH DELAY SLOT
+        # add in find_string
+
+	!=================================
+	! FIND_STRING
+	!=================================
+	!   %o0 is the 4-char ascii string to look for
+	!   %o1 is char to stop at
+
+	! The code does a sliding window through the disk buffer
+	!  Bringing in one byte at a time and then shifting it left for compare
+
+find_string:
+	add	%g2,(disk_buffer-bss_ref)-4,%l2
+					! set up disk_buffer pointer
+	set	-1, %l4
+find_loop:
+	ldub	[%l2+4],%l3		! Load in the next byte to compare
+	sll	%l4,8,%l4		! Shift window by a byte
+	or	%l4,%l3,%l4		! Insert new byte
+
+	cmp	%l3,0			! Are we zero?
+	be	generic_retl		! If so, too far.  Stop
+
+	# BRANCH DELAY SLOT
+
+	cmp	%l4,%o0			! are we the search value?
+	bne	find_loop		! If not, loop
+	# BRANCH DELAY SLOT
+	inc	%l2
+
+find_colon:
+	ldub	[%l2],%l3		! repeat till we find colon
+	cmp	%l3,':'			! are we a colon?
+	bne	find_colon
+	# BRANCH DELAY SLOT
+	inc	%l2			! Increment pointer
+
+store_loop:
+	! increment first in loop to skip one space char
+	inc     %l2
+	ldub	[%l2],%l3		! load byte
+
+	cmp	%l3,0			! are we off the edge?
+	be	generic_retl		! if so, done
+	# BRANCH DELAY SLOT
+
+    	cmp	%l3,%o1			! is it end char?
+	be 	generic_retl		! if so, finish
+	# BRANCH DELAY SLOT
+
+	stb	%l3,[%o5]		! if not store and continue
+
+	ba	store_loop		! loop
+	inc	%o5			! incrememnt pointer
+        ! execution flow in find_string never goes below this point
 
 !===========================================================================
 .data
