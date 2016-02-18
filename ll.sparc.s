@@ -592,28 +592,27 @@ str_loop1:
 	! o5 =output
 
 num_to_ascii:
-	save	%sp,-128,%sp
 	add	%g2,(ascii_buffer-bss_ref)+10,%l0
 					! point to end of ascii buffer
 
 div_by_10:
 
 	dec	%l0
-	udivcc	%i0,10,%l7		! divide by 10, quotient in %l7
+	udivcc	%o0,10,%l7		! divide by 10, quotient in %l7
 	umul	%l7,10,%l6		! remultiply out
-	sub	%i0,%l6,%l6		! remainder in %l6
+	sub	%o0,%l6,%l6		! remainder in %l6
 
 	add	%l6,0x30,%l6		! conver to ascii
 	stb	%l6,[%l0]		! store to buffer
 	bnz	div_by_10		! if not zero, loop
 	# BRANCH DELAY SLOT
-	mov	%l7,%i0			! copy for next divide
+	mov	%l7,%o0			! copy for next divide
 
 write_out:
-        mov     %l0, %i0                ! move result to o0/i0 in called fn
+        mov     %l0, %o0                ! move result to o0/i0 in called fn
         ! Tail recursion into function given by %i1
-        jmpl    %i1, %g0
-        restore
+        jmpl    %o1, %g0
+        nop
 
 !===========================================================================
 .data
