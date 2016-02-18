@@ -532,15 +532,16 @@ center_and_print:
         addcc   %i2,80,%i2              ! add to 80
 	bneg     done_center		! don't center if > 80
 	# BRANCH DELAY SLOT
-	add	%g2,(write_stdout-text_ref),%o1			! print to stdout
+	add	%g2,(linefeed-data_ref),%i0  ! Used at end of function
 
 	call	write_stdout		! print ESCAPE char
 	# BRANCH DELAY SLOT
 	add	%g2,(escape-data_ref),%o0
 
+	srl	%i2,1,%o0		! divide by 2, print
 	call	num_to_ascii		! print number of spaces
 	# BRANCH DELAY SLOT
-	srl	%i2,1,%o0		! divide by 2, print
+	add	%g2,(write_stdout-text_ref),%o1			! print to stdout
 
 	call	write_stdout
 	# BRANCH DELAY SLOT
@@ -553,20 +554,17 @@ done_center:
 	# BRANCH DELAY SLOT
 	mov	%g4,%o0
 
-	! tail recursion into write_stdout
-	ba	write_stdout_saved
-	# BRANCH DELAY SLOT
-	add	%g2,(linefeed-data_ref),%i0
+	! fall through into write_stdout (%i0 already set above)
+        restore
 
 	#================================
 	# WRITE_STDOUT
 	#================================
 	# %o0 -> %i0 (a1) has string
+	# leaf function, trashes %o registers
 
 write_stdout:
-	save	%sp,-128,%sp		! save reg window
-write_stdout_saved:
-	mov	%i0,%o1			! copy string to print
+	mov	%o0,%o1			! copy string to print
 	set	SYSCALL_WRITE,%g1	! Write syscall in %g1
 	set	STDOUT,%o0		! 1 in %o0 (stdout)
 	set	0,%o2			! 0 (count) in %o2
@@ -580,9 +578,9 @@ str_loop1:
 
 	ta	0x10			! run the syscall
 
-	ret				! return
+        retl
 	# BRANCH DELAY SLOT
-	restore				! restore reg window
+        # add in num_to_ascii
 
 
 	!===========================
