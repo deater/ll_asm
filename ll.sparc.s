@@ -382,7 +382,7 @@ ram:
 	add	%g2,(sysinfo_buff-bss_ref),%o0
 	ld	[%o0+S_TOTALRAM],%o0
 
-	srl	%o0,20,%o0		! divide by 2**20 to get amount
+	srl	%o0,20,%o2		! divide by 2**20 to get amount
 
 	call	num_to_ascii
 	# BRANCH DELAY SLOT
@@ -539,7 +539,7 @@ center_and_print:
 	# BRANCH DELAY SLOT
 	add	%g2,(escape-data_ref),%o0
 
-	srl	%i2,1,%o0		! divide by 2, print
+	srl	%i2,1,%o2		! divide by 2, print
 	call	num_to_ascii		! print number of spaces
 	# BRANCH DELAY SLOT
 	add	%g2,(write_stdout-text_ref),%o1			! print to stdout
@@ -587,29 +587,28 @@ str_loop1:
 	!===========================
 	! num_to_ascii
 	!===========================
-	! o0 = num
+	! o2 = num
 	! o1 = function address (stdout or strcat)
 	! o5 =output
 
 num_to_ascii:
-	add	%g2,(ascii_buffer-bss_ref)+10,%l0
+	add	%g2,(ascii_buffer-bss_ref)+10,%o0
 					! point to end of ascii buffer
 
 div_by_10:
 
-	dec	%l0
-	udivcc	%o0,10,%l7		! divide by 10, quotient in %l7
+	dec	%o0
+	udivcc	%o2,10,%l7		! divide by 10, quotient in %l7
 	umul	%l7,10,%l6		! remultiply out
-	sub	%o0,%l6,%l6		! remainder in %l6
+	sub	%o2,%l6,%l6		! remainder in %l6
 
 	add	%l6,0x30,%l6		! conver to ascii
-	stb	%l6,[%l0]		! store to buffer
+	stb	%l6,[%o0]		! store to buffer
 	bnz	div_by_10		! if not zero, loop
 	# BRANCH DELAY SLOT
-	mov	%l7,%o0			! copy for next divide
+	mov	%l7,%o2			! copy for next divide
 
 write_out:
-        mov     %l0, %o0                ! move result to o0/i0 in called fn
         ! Tail recursion into function given by %i1
         jmpl    %o1, %g0
         nop
