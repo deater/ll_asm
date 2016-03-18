@@ -21,7 +21,7 @@
 !	Linux syscall is called by "ta 0x10"
 !     + See "Sparc Application Binary Interface"
 !     + %g0 - %g7 regs always visible.  g5,g6,g7 reserved for kernel
-!	%g0 is always read as 0	
+!	%g0 is always read as 0
 !	Windowed registers:	8 in registers %i0..%i7
 !				8 local registers %l0..%l7
 !				8 out registers %o0..%o7
@@ -73,6 +73,7 @@
 !   * Tail recursion for num_to_ascii (1305)
 !   * Re-optimize find_string to use sliding window, tail recursion (1261)
 !   * Remove extraneous load (1257)
+!   * Optimize center and print (1253)
 !
 ! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
 ! text and data/bss on a separate page (for no-execute protection),
@@ -509,7 +510,7 @@ strcat:
 generic_retl:
 	retl				! return from leaf
 	# BRANCH DELAY SLOT
-	# the cmp in the below center_and_print
+	# the neg in the below center_and_print
 
 
 	!==============================
