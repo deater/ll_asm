@@ -6,11 +6,11 @@ Disassembly of section .text:
 
 00010054 <_start>:
    10054:	05 00 00 44 	sethi  %hi(0x11000), %g2
-   10058:	88 00 ab 10 	add  %g2, 0xb10, %g4	! 11b10 <out_buffer>
-   1005c:	86 00 b4 f8 	add  %g2, -2824, %g3
+   10058:	88 00 aa f0 	add  %g2, 0xaf0, %g4	! 11af0 <out_buffer>
+   1005c:	86 00 b4 d0 	add  %g2, -2864, %g3
    10060:	ac 10 23 c0 	mov  0x3c0, %l6
-   10064:	ae 00 b3 d2 	add  %g2, -3118, %l7
-   10068:	aa 00 b4 ed 	add  %g2, -2835, %l5
+   10064:	ae 00 b3 aa 	add  %g2, -3158, %l7
+   10068:	aa 00 b4 c5 	add  %g2, -2875, %l5
    1006c:	a8 10 00 04 	mov  %g4, %l4
 
 00010070 <decompression_loop>:
@@ -60,364 +60,352 @@ Disassembly of section .text:
    100ec:	a0 10 20 01 	mov  1, %l0
 
 000100f0 <done_logo>:
-   100f0:	40 00 00 86 	call  10308 <write_stdout>
-   100f4:	90 10 00 04 	mov  %g4, %o0
+   100f0:	40 00 00 6d 	call  102a4 <write_stdout>
+   100f4:	92 10 00 04 	mov  %g4, %o1
 
 000100f8 <first_line>:
    100f8:	82 10 20 bd 	mov  0xbd, %g1
-   100fc:	90 00 b9 88 	add  %g2, -1656, %o0
+   100fc:	90 00 b9 60 	add  %g2, -1696, %o0
    10100:	91 d0 20 10 	ta  0x10
    10104:	9a 10 00 04 	mov  %g4, %o5
-   10108:	40 00 00 69 	call  102ac <strcat>
-   1010c:	90 00 b9 88 	add  %g2, -1656, %o0
-   10110:	40 00 00 67 	call  102ac <strcat>
-   10114:	90 00 b3 74 	add  %g2, -3212, %o0
-   10118:	40 00 00 65 	call  102ac <strcat>
-   1011c:	90 00 ba 0a 	add  %g2, -1526, %o0
-   10120:	40 00 00 63 	call  102ac <strcat>
-   10124:	90 00 b3 7e 	add  %g2, -3202, %o0
-   10128:	40 00 00 61 	call  102ac <strcat>
-   1012c:	90 00 ba 4b 	add  %g2, -1461, %o0
-   10130:	40 00 00 66 	call  102c8 <center_and_print>
+   10108:	40 00 00 51 	call  1024c <strcat>
+   1010c:	92 00 b9 60 	add  %g2, -1696, %o1
+   10110:	40 00 00 4f 	call  1024c <strcat>
+   10114:	92 00 b3 4c 	add  %g2, -3252, %o1
+   10118:	40 00 00 4d 	call  1024c <strcat>
+   1011c:	92 00 b9 e2 	add  %g2, -1566, %o1
+   10120:	40 00 00 4b 	call  1024c <strcat>
+   10124:	92 00 b3 56 	add  %g2, -3242, %o1
+   10128:	40 00 00 49 	call  1024c <strcat>
+   1012c:	92 00 ba 23 	add  %g2, -1501, %o1
+   10130:	40 00 00 4e 	call  10268 <center_and_print>
    10134:	94 23 40 04 	sub  %o5, %g4, %o2
 
 00010138 <middle_line>:
    10138:	9a 10 00 04 	mov  %g4, %o5
    1013c:	82 10 20 05 	mov  5, %g1
-   10140:	90 00 b3 b0 	add  %g2, -3152, %o0
+   10140:	90 00 b3 88 	add  %g2, -3192, %o0
    10144:	92 10 00 00 	mov  %g0, %o1
    10148:	91 d0 20 10 	ta  0x10
    1014c:	a0 10 00 08 	mov  %o0, %l0
    10150:	82 10 20 03 	mov  3, %g1
-   10154:	90 10 00 10 	mov  %l0, %o0
-   10158:	92 00 bb 10 	add  %g2, -1264, %o1
-   1015c:	94 20 30 00 	sub  %g0, -4096, %o2
-   10160:	91 d0 20 10 	ta  0x10
-   10164:	90 10 00 10 	mov  %l0, %o0
-   10168:	82 10 20 06 	mov  6, %g1
-   1016c:	91 d0 20 10 	ta  0x10
-   10170:	11 1d 1a 5d 	sethi  %hi(0x74697400), %o0
-   10174:	90 12 22 65 	or  %o0, 0x265, %o0	! 74697665 <_end+0x74681b55>
-   10178:	40 00 00 36 	call  10250 <find_string>
-   1017c:	92 10 20 0a 	mov  0xa, %o1
-   10180:	a0 23 40 04 	sub  %o5, %g4, %l0
-   10184:	80 a4 20 01 	cmp  %l0, 1
-   10188:	12 80 00 09 	bne  101ac <more_than_one>
-   1018c:	e2 09 00 00 	ldub  [ %g4 ], %l1
-   10190:	80 a4 60 31 	cmp  %l1, 0x31
-   10194:	12 80 00 06 	bne  101ac <more_than_one>
-   10198:	9a 10 00 04 	mov  %g4, %o5
-   1019c:	40 00 00 44 	call  102ac <strcat>
-   101a0:	90 00 b3 be 	add  %g2, -3138, %o0
-   101a4:	10 80 00 06 	b  101bc <print_mhz>
-   101a8:	ac 10 20 01 	mov  1, %l6
+   10154:	92 00 ba e8 	add  %g2, -1304, %o1
+   10158:	94 20 30 00 	sub  %g0, -4096, %o2
+   1015c:	91 d0 20 10 	ta  0x10
+   10160:	90 10 00 10 	mov  %l0, %o0
+   10164:	82 10 20 06 	mov  6, %g1
+   10168:	91 d0 20 10 	ta  0x10
+   1016c:	11 1d 1a 5d 	sethi  %hi(0x74697400), %o0
+   10170:	90 12 22 65 	or  %o0, 0x265, %o0	! 74697665 <_end+0x74681b75>
+   10174:	40 00 00 5f 	call  102f0 <find_string>
+   10178:	92 10 20 0a 	mov  0xa, %o1
+   1017c:	a0 23 40 04 	sub  %o5, %g4, %l0
+   10180:	80 a4 20 01 	cmp  %l0, 1
+   10184:	12 80 00 09 	bne  101a8 <more_than_one>
+   10188:	e2 09 00 00 	ldub  [ %g4 ], %l1
+   1018c:	80 a4 60 31 	cmp  %l1, 0x31
+   10190:	12 80 00 06 	bne  101a8 <more_than_one>
+   10194:	9a 10 00 04 	mov  %g4, %o5
+   10198:	40 00 00 2d 	call  1024c <strcat>
+   1019c:	92 00 b3 96 	add  %g2, -3178, %o1
+   101a0:	10 80 00 06 	b  101b8 <print_mhz>
+   101a4:	ac 10 20 01 	mov  1, %l6
 
-000101ac <more_than_one>:
-   101ac:	ac 10 20 20 	mov  0x20, %l6
-   101b0:	ec 2b 40 00 	stb  %l6, [ %o5 ]
-   101b4:	9a 03 60 01 	inc  %o5
-   101b8:	ac 10 20 00 	clr  %l6
+000101a8 <more_than_one>:
+   101a8:	ac 10 20 20 	mov  0x20, %l6
+   101ac:	ec 2b 40 00 	stb  %l6, [ %o5 ]
+   101b0:	9a 03 60 01 	inc  %o5
+   101b4:	ac 10 20 00 	clr  %l6
 
-000101bc <print_mhz>:
-   101bc:	11 18 dc 1d 	sethi  %hi(0x63707400), %o0
-   101c0:	90 12 21 09 	or  %o0, 0x109, %o0	! 63707509 <_end+0x636f19f9>
-   101c4:	40 00 00 23 	call  10250 <find_string>
-   101c8:	92 10 20 0a 	mov  0xa, %o1
-   101cc:	40 00 00 38 	call  102ac <strcat>
-   101d0:	90 00 b3 c3 	add  %g2, -3133, %o0
-   101d4:	90 00 b3 ce 	add  %g2, -3122, %o0
-   101d8:	40 00 00 35 	call  102ac <strcat>
-   101dc:	90 02 00 16 	add  %o0, %l6, %o0
+000101b8 <print_mhz>:
+   101b8:	11 18 dc 1d 	sethi  %hi(0x63707400), %o0
+   101bc:	90 12 21 09 	or  %o0, 0x109, %o0	! 63707509 <_end+0x636f1a19>
+   101c0:	40 00 00 4c 	call  102f0 <find_string>
+   101c4:	92 10 20 0a 	mov  0xa, %o1
+   101c8:	40 00 00 21 	call  1024c <strcat>
+   101cc:	92 00 b3 9b 	add  %g2, -3173, %o1
+   101d0:	92 00 b3 a6 	add  %g2, -3162, %o1
+   101d4:	40 00 00 1e 	call  1024c <strcat>
+   101d8:	92 02 40 16 	add  %o1, %l6, %o1
 
-000101e0 <ram>:
-   101e0:	82 10 20 d6 	mov  0xd6, %g1
-   101e4:	90 00 b9 48 	add  %g2, -1720, %o0
-   101e8:	91 d0 20 10 	ta  0x10
-   101ec:	90 00 b9 48 	add  %g2, -1720, %o0
-   101f0:	d0 02 20 10 	ld  [ %o0 + 0x10 ], %o0
-   101f4:	91 32 20 14 	srl  %o0, 0x14, %o0
-   101f8:	40 00 00 50 	call  10338 <num_to_ascii>
-   101fc:	92 10 20 01 	mov  1, %o1
-   10200:	40 00 00 2b 	call  102ac <strcat>
-   10204:	90 00 b3 8a 	add  %g2, -3190, %o0
-   10208:	11 10 9b d9 	sethi  %hi(0x426f6400), %o0
-   1020c:	90 12 23 6f 	or  %o0, 0x36f, %o0	! 426f676f <_end+0x426e0c5f>
-   10210:	40 00 00 10 	call  10250 <find_string>
-   10214:	92 10 20 0a 	mov  0xa, %o1
-   10218:	40 00 00 25 	call  102ac <strcat>
-   1021c:	90 00 b3 92 	add  %g2, -3182, %o0
-   10220:	40 00 00 2a 	call  102c8 <center_and_print>
-   10224:	94 23 40 04 	sub  %o5, %g4, %o2
+000101dc <ram>:
+   101dc:	82 10 20 d6 	mov  0xd6, %g1
+   101e0:	90 00 b9 20 	add  %g2, -1760, %o0
+   101e4:	91 d0 20 10 	ta  0x10
+   101e8:	90 00 b9 20 	add  %g2, -1760, %o0
+   101ec:	d0 02 20 10 	ld  [ %o0 + 0x10 ], %o0
+   101f0:	95 32 20 14 	srl  %o0, 0x14, %o2
+   101f4:	40 00 00 35 	call  102c8 <num_to_ascii>
+   101f8:	96 00 b2 4c 	add  %g2, -3508, %o3
+   101fc:	40 00 00 14 	call  1024c <strcat>
+   10200:	92 00 b3 62 	add  %g2, -3230, %o1
+   10204:	11 10 9b d9 	sethi  %hi(0x426f6400), %o0
+   10208:	90 12 23 6f 	or  %o0, 0x36f, %o0	! 426f676f <_end+0x426e0c7f>
+   1020c:	40 00 00 39 	call  102f0 <find_string>
+   10210:	92 10 20 0a 	mov  0xa, %o1
+   10214:	40 00 00 0e 	call  1024c <strcat>
+   10218:	92 00 b3 6a 	add  %g2, -3222, %o1
+   1021c:	40 00 00 13 	call  10268 <center_and_print>
+   10220:	94 23 40 04 	sub  %o5, %g4, %o2
 
-00010228 <last_line>:
-   10228:	9a 10 00 04 	mov  %g4, %o5
-   1022c:	40 00 00 20 	call  102ac <strcat>
-   10230:	90 00 b9 c9 	add  %g2, -1591, %o0
-   10234:	40 00 00 25 	call  102c8 <center_and_print>
-   10238:	94 23 40 04 	sub  %o5, %g4, %o2
-   1023c:	40 00 00 33 	call  10308 <write_stdout>
-   10240:	90 00 b3 a4 	add  %g2, -3164, %o0
+00010224 <last_line>:
+   10224:	9a 10 00 04 	mov  %g4, %o5
+   10228:	40 00 00 09 	call  1024c <strcat>
+   1022c:	92 00 b9 a1 	add  %g2, -1631, %o1
+   10230:	40 00 00 0e 	call  10268 <center_and_print>
+   10234:	94 23 40 04 	sub  %o5, %g4, %o2
+   10238:	40 00 00 1b 	call  102a4 <write_stdout>
+   1023c:	92 00 b3 7c 	add  %g2, -3204, %o1
 
-00010244 <exit>:
-   10244:	90 10 20 00 	clr  %o0
-   10248:	82 10 20 01 	mov  1, %g1
-   1024c:	91 d0 20 10 	ta  0x10
+00010240 <exit>:
+   10240:	90 10 20 00 	clr  %o0
+   10244:	82 10 20 01 	mov  1, %g1
+   10248:	91 d0 20 10 	ta  0x10
 
-00010250 <find_string>:
-   10250:	a4 00 bb 0c 	add  %g2, -1268, %l2
-   10254:	a8 10 3f ff 	mov  -1, %l4
+0001024c <strcat>:
+   1024c:	e0 0a 40 00 	ldub  [ %o1 ], %l0
+   10250:	92 02 60 01 	inc  %o1
+   10254:	e0 2b 40 00 	stb  %l0, [ %o5 ]
+   10258:	80 a4 20 00 	cmp  %l0, 0
+   1025c:	32 bf ff fc 	bne,a   1024c <strcat>
+   10260:	9a 03 60 01 	inc  %o5
 
-00010258 <find_loop>:
-   10258:	e6 0c a0 04 	ldub  [ %l2 + 4 ], %l3
-   1025c:	a9 2d 20 08 	sll  %l4, 8, %l4
-   10260:	a8 15 00 13 	or  %l4, %l3, %l4
-   10264:	80 a5 00 00 	cmp  %l4, %g0
-   10268:	02 80 00 17 	be  102c4 <generic_retl>
-   1026c:	80 a5 00 08 	cmp  %l4, %o0
-   10270:	12 bf ff fa 	bne  10258 <find_loop>
-   10274:	a4 04 a0 01 	inc  %l2
+00010264 <generic_retl>:
+   10264:	81 c3 e0 08 	retl 
 
-00010278 <find_colon>:
-   10278:	e6 0c 80 00 	ldub  [ %l2 ], %l3
-   1027c:	80 a4 e0 3a 	cmp  %l3, 0x3a
-   10280:	12 bf ff fe 	bne  10278 <find_colon>
-   10284:	a4 04 a0 01 	inc  %l2
+00010268 <center_and_print>:
+   10268:	94 20 00 0a 	neg  %o2
+   1026c:	9d e3 bf 80 	save  %sp, -128, %sp
+   10270:	b4 86 a0 50 	addcc  %i2, 0x50, %i2
+   10274:	0c 80 00 09 	bneg  10298 <done_center>
+   10278:	b2 00 b3 7a 	add  %g2, -3206, %i1
+   1027c:	40 00 00 0a 	call  102a4 <write_stdout>
+   10280:	92 00 b3 83 	add  %g2, -3197, %o1
+   10284:	95 36 a0 01 	srl  %i2, 1, %o2
+   10288:	40 00 00 10 	call  102c8 <num_to_ascii>
+   1028c:	96 00 b2 a4 	add  %g2, -3420, %o3
+   10290:	40 00 00 05 	call  102a4 <write_stdout>
+   10294:	92 00 b3 86 	add  %g2, -3194, %o1
 
-00010288 <store_loop>:
-   10288:	a4 04 a0 01 	inc  %l2
-   1028c:	e6 0c 80 00 	ldub  [ %l2 ], %l3
-   10290:	80 a4 e0 00 	cmp  %l3, 0
-   10294:	02 80 00 0c 	be  102c4 <generic_retl>
-   10298:	80 a4 c0 09 	cmp  %l3, %o1
-   1029c:	02 80 00 0a 	be  102c4 <generic_retl>
-   102a0:	e6 2b 40 00 	stb  %l3, [ %o5 ]
-   102a4:	10 bf ff f9 	b  10288 <store_loop>
-   102a8:	9a 03 60 01 	inc  %o5
+00010298 <done_center>:
+   10298:	40 00 00 03 	call  102a4 <write_stdout>
+   1029c:	92 10 00 04 	mov  %g4, %o1
+   102a0:	81 e8 00 00 	restore 
 
-000102ac <strcat>:
-   102ac:	e0 0a 00 00 	ldub  [ %o0 ], %l0
-   102b0:	90 02 20 01 	inc  %o0
-   102b4:	e0 2b 40 00 	stb  %l0, [ %o5 ]
-   102b8:	80 a4 20 00 	cmp  %l0, 0
-   102bc:	32 bf ff fc 	bne,a   102ac <strcat>
-   102c0:	9a 03 60 01 	inc  %o5
+000102a4 <write_stdout>:
+   102a4:	82 10 20 04 	mov  4, %g1
+   102a8:	90 10 20 01 	mov  1, %o0
+   102ac:	94 10 20 00 	clr  %o2
 
-000102c4 <generic_retl>:
+000102b0 <str_loop1>:
+   102b0:	e0 0a 40 0a 	ldub  [ %o1 + %o2 ], %l0
+   102b4:	80 a4 00 00 	cmp  %l0, %g0
+   102b8:	32 bf ff fe 	bne,a   102b0 <str_loop1>
+   102bc:	94 02 a0 01 	inc  %o2
+   102c0:	91 d0 20 10 	ta  0x10
    102c4:	81 c3 e0 08 	retl 
 
-000102c8 <center_and_print>:
-   102c8:	80 a2 a0 50 	cmp  %o2, 0x50
-   102cc:	9d e3 bf 80 	save  %sp, -128, %sp
-   102d0:	14 80 00 0a 	bg  102f8 <done_center>
-   102d4:	92 10 20 00 	clr  %o1
-   102d8:	b4 20 00 1a 	neg  %i2
-   102dc:	b4 06 a0 50 	add  %i2, 0x50, %i2
-   102e0:	40 00 00 0a 	call  10308 <write_stdout>
-   102e4:	90 00 b3 ab 	add  %g2, -3157, %o0
-   102e8:	40 00 00 14 	call  10338 <num_to_ascii>
-   102ec:	91 36 a0 01 	srl  %i2, 1, %o0
-   102f0:	40 00 00 06 	call  10308 <write_stdout>
-   102f4:	90 00 b3 ae 	add  %g2, -3154, %o0
+000102c8 <num_to_ascii>:
+   102c8:	92 00 b9 1a 	add  %g2, -1766, %o1
 
-000102f8 <done_center>:
-   102f8:	40 00 00 04 	call  10308 <write_stdout>
-   102fc:	90 10 00 04 	mov  %g4, %o0
-   10300:	10 80 00 03 	b  1030c <write_stdout_saved>
-   10304:	b0 00 b3 a2 	add  %g2, -3166, %i0
+000102cc <div_by_10>:
+   102cc:	92 22 60 01 	dec  %o1
+   102d0:	ae f2 a0 0a 	udivcc  %o2, 0xa, %l7
+   102d4:	ac 55 e0 0a 	umul  %l7, 0xa, %l6
+   102d8:	ac 22 80 16 	sub  %o2, %l6, %l6
+   102dc:	ac 05 a0 30 	add  %l6, 0x30, %l6
+   102e0:	ec 2a 40 00 	stb  %l6, [ %o1 ]
+   102e4:	12 bf ff fa 	bne  102cc <div_by_10>
+   102e8:	94 10 00 17 	mov  %l7, %o2
 
-00010308 <write_stdout>:
-   10308:	9d e3 bf 80 	save  %sp, -128, %sp
+000102ec <write_out>:
+   102ec:	81 c2 c0 00 	jmp  %o3
 
-0001030c <write_stdout_saved>:
-   1030c:	92 10 00 18 	mov  %i0, %o1
-   10310:	82 10 20 04 	mov  4, %g1
-   10314:	90 10 20 01 	mov  1, %o0
-   10318:	94 10 20 00 	clr  %o2
+000102f0 <find_string>:
+   102f0:	a4 00 ba e4 	add  %g2, -1308, %l2
+   102f4:	a8 10 3f ff 	mov  -1, %l4
 
-0001031c <str_loop1>:
-   1031c:	e0 0a 40 0a 	ldub  [ %o1 + %o2 ], %l0
-   10320:	80 a4 00 00 	cmp  %l0, %g0
-   10324:	32 bf ff fe 	bne,a   1031c <str_loop1>
-   10328:	94 02 a0 01 	inc  %o2
-   1032c:	91 d0 20 10 	ta  0x10
-   10330:	81 c7 e0 08 	ret 
-   10334:	81 e8 00 00 	restore 
+000102f8 <find_loop>:
+   102f8:	e6 0c a0 04 	ldub  [ %l2 + 4 ], %l3
+   102fc:	a9 2d 20 08 	sll  %l4, 8, %l4
+   10300:	a8 15 00 13 	or  %l4, %l3, %l4
+   10304:	80 a4 e0 00 	cmp  %l3, 0
+   10308:	02 bf ff d7 	be  10264 <generic_retl>
+   1030c:	80 a5 00 08 	cmp  %l4, %o0
+   10310:	12 bf ff fa 	bne  102f8 <find_loop>
+   10314:	a4 04 a0 01 	inc  %l2
 
-00010338 <num_to_ascii>:
-   10338:	9d e3 bf 80 	save  %sp, -128, %sp
-   1033c:	a0 00 b9 42 	add  %g2, -1726, %l0
+00010318 <find_colon>:
+   10318:	e6 0c 80 00 	ldub  [ %l2 ], %l3
+   1031c:	80 a4 e0 3a 	cmp  %l3, 0x3a
+   10320:	12 bf ff fe 	bne  10318 <find_colon>
+   10324:	a4 04 a0 01 	inc  %l2
 
-00010340 <div_by_10>:
-   10340:	a0 24 20 01 	dec  %l0
-   10344:	ae f6 20 0a 	udivcc  %i0, 0xa, %l7
-   10348:	ac 55 e0 0a 	umul  %l7, 0xa, %l6
-   1034c:	ac 26 00 16 	sub  %i0, %l6, %l6
-   10350:	ac 05 a0 30 	add  %l6, 0x30, %l6
-   10354:	ec 2c 00 00 	stb  %l6, [ %l0 ]
-   10358:	12 bf ff fa 	bne  10340 <div_by_10>
-   1035c:	b0 10 00 17 	mov  %l7, %i0
-
-00010360 <write_out>:
-   10360:	80 a6 60 01 	cmp  %i1, 1
-   10364:	12 bf ff ea 	bne  1030c <write_stdout_saved>
-   10368:	b0 10 00 10 	mov  %l0, %i0
-   1036c:	10 bf ff d0 	b  102ac <strcat>
-   10370:	81 e8 00 00 	restore 
+00010328 <store_loop>:
+   10328:	a4 04 a0 01 	inc  %l2
+   1032c:	e6 0c 80 00 	ldub  [ %l2 ], %l3
+   10330:	80 a4 e0 00 	cmp  %l3, 0
+   10334:	02 bf ff cc 	be  10264 <generic_retl>
+   10338:	80 a4 c0 09 	cmp  %l3, %o1
+   1033c:	02 bf ff ca 	be  10264 <generic_retl>
+   10340:	e6 2b 40 00 	stb  %l3, [ %o5 ]
+   10344:	10 bf ff f9 	b  10328 <store_loop>
+   10348:	9a 03 60 01 	inc  %o5
 
 Disassembly of section .data:
 
-00010374 <data_begin>:
-   10374:	20 56 65 72 	unknown
-   10378:	73 69 6f 6e 	call  cda6c130 <_end+0xcda56620>
-   1037c:	20 00 2c 20 	unknown
+0001034c <data_begin>:
+   1034c:	20 56 65 72 	unknown
+   10350:	73 69 6f 6e 	call  cda6c108 <_end+0xcda56618>
+   10354:	20 00 2c 20 	unknown
 
-0001037e <compiled_string>:
-   1037e:	2c 20 43 6f 	unknown
-   10382:	6d 70 69 6c 	call  b5c2a932 <_end+0xb5c14e22>
-   10386:	65 64 20 00 	call  95918386 <_end+0x95902876>
+00010356 <compiled_string>:
+   10356:	2c 20 43 6f 	unknown
+   1035a:	6d 70 69 6c 	call  b5c2a90a <_end+0xb5c14e1a>
+   1035e:	65 64 20 00 	call  9591835e <_end+0x9590286e>
 
-0001038a <ram_comma>:
-   1038a:	4d 20 52 41 	call  34824c8e <_end+0x3480f17e>
-   1038e:	4d 2c 20 00 	call  34b1838e <_end+0x34b0287e>
+00010362 <ram_comma>:
+   10362:	4d 20 52 41 	call  34824c66 <_end+0x3480f176>
+   10366:	4d 2c 20 00 	call  34b18366 <_end+0x34b02876>
 
-00010392 <bogo_total>:
-   10392:	20 42 6f 67 	unknown
-   10396:	6f 6d 69 70 	call  bdb6a956 <_end+0xbdb54e46>
-   1039a:	73 20 54 6f 	call  cc825556 <_end+0xcc80fa46>
-   1039e:	74 61 6c 00 	call  d186b39e <_end+0xd185588e>
+0001036a <bogo_total>:
+   1036a:	20 42 6f 67 	unknown
+   1036e:	6f 6d 69 70 	call  bdb6a92e <_end+0xbdb54e3e>
+   10372:	73 20 54 6f 	call  cc82552e <_end+0xcc80fa3e>
+   10376:	74 61 6c 00 	call  d186b376 <_end+0xd1855886>
 
-000103a2 <linefeed>:
-   103a2:	0a 00 1b 5b 	unknown
+0001037a <linefeed>:
+   1037a:	0a 00 1b 5b 	unknown
 
-000103a4 <default_colors>:
-   103a4:	1b 5b 30 6d 	unknown
-   103a8:	0a 0a 00 1b 	unknown
+0001037c <default_colors>:
+   1037c:	1b 5b 30 6d 	unknown
+   10380:	0a 0a 00 1b 	unknown
 
-000103ab <escape>:
-   103ab:	1b 5b 00 43 	unknown
+00010383 <escape>:
+   10383:	1b 5b 00 43 	unknown
 
-000103ae <c>:
-   103ae:	43 00 2f 70 	call  c01c16e <_end+0xc00665e>
+00010386 <c>:
+   10386:	43 00 2f 70 	call  c01c146 <_end+0xc006656>
 
-000103b0 <cpuinfo>:
-   103b0:	2f 70 72 6f 	unknown
-   103b4:	63 2f 63 70 	call  8cbe9174 <_end+0x8cbd3664>
-   103b8:	75 69 6e 66 	call  d5a6bd50 <_end+0xd5a56240>
-   103bc:	6f 00 4f 6e 	call  bc024174 <_end+0xbc00e664>
+00010388 <cpuinfo>:
+   10388:	2f 70 72 6f 	unknown
+   1038c:	63 2f 63 70 	call  8cbe914c <_end+0x8cbd365c>
+   10390:	75 69 6e 66 	call  d5a6bd28 <_end+0xd5a56238>
+   10394:	6f 00 4f 6e 	call  bc02414c <_end+0xbc00e65c>
 
-000103be <one>:
-   103be:	4f 6e 65 20 	call  3dba983e <_end+0x3db93d2e>
-   103c2:	00 20 50 72 	unimp  0xffe05072
+00010396 <one>:
+   10396:	4f 6e 65 20 	call  3dba9816 <_end+0x3db93d26>
+   1039a:	00 20 50 72 	unimp  0xffe05072
 
-000103c3 <processor>:
-   103c3:	20 50 72 6f 	unknown
-   103c7:	63 65 73 73 	call  8d96d193 <_end+0x8d957683>
-   103cb:	6f 72 00 73 	call  bdc90597 <_end+0xbdc7aa87>
+0001039b <processor>:
+   1039b:	20 50 72 6f 	unknown
+   1039f:	63 65 73 73 	call  8d96d16b <_end+0x8d95767b>
+   103a3:	6f 72 00 73 	call  bdc9056f <_end+0xbdc7aa7f>
 
-000103ce <comma>:
-   103ce:	73 2c 20 00 	call  ccb183ce <_end+0xccb028be>
+000103a6 <comma>:
+   103a6:	73 2c 20 00 	call  ccb183a6 <_end+0xccb028b6>
 
-000103d2 <logo>:
-   103d2:	ff 1b 5b 30 	unknown
-   103d6:	3b 31 3b 33 	sethi  %hi(0xc4eccc00), %i5
-   103da:	37 9f 3b 34 	fbge,a   7df0aa <_end+0x7c959a>
-   103de:	37 6d 23 cc 	unknown
-   103e2:	f7 c0 07 33 	unknown
-   103e6:	8d 30 c8 1b 	unknown
-   103ea:	1b 5b c4 07 	unknown
-   103ee:	cb 1f 1c 0c 	unknown
-   103f2:	3b 0f 34 30 	sethi  %hi(0x3cd0c000), %i5
-   103f6:	6d 0a c0 f7 	call  b42c07d2 <_end+0xb42aacc2>
-   103fa:	01 60 1a 38 	unknown
-   103fe:	2c 9c 1f 1b 	bneg,a   71806a <_end+0x70255a>
-   10402:	5b 33 31 6d 	call  6ccdc9b6 <_end+0x6ccc6ea6>
-   10406:	cc 04 41 ac 	ld  [ %l1 + %o4 ], %g6
-   1040a:	0d 24 02 1c 	sethi  %hi(0x90087000), %g6
-   1040e:	10 4f 0d 20 	unknown
-   10412:	10 41 93 98 	unknown
-   10416:	83 34 1c 34 	unknown
-   1041a:	cc 10 10 0c 	unknown
-   1041e:	24 6f 39 ec 	unknown
-   10422:	a7 1c 08 33 	unknown
-   10426:	16 14 89 55 	unknown
-   1042a:	2c 60 00 2b 	unknown
-   1042e:	61 d6 71 e2 	call  875acbb6 <_end+0x875970a6>
-   10432:	c8 cb 08 d4 	ldsba  [ %o4 + %l4 ] #ASI_DCACHE_DATA, %g4
-   10436:	09 d3 10 2b 	cb1  4d44e2 <_end+0x4be9d2>
-   1043a:	59 f5 d1 00 	call  67d8483a <_end+0x67d6ed2a>
-   1043e:	80 11 d2 18 	unknown
-   10442:	0d 28 1c 14 	sethi  %hi(0xa0705000), %g6
-   10446:	0d 2c 1c 1c 	sethi  %hi(0xb0707000), %g6
-   1044a:	f0 4a 1a 5b 	unknown
-   1044e:	00 0d 50 5f 	unimp  0xd505f
-   10452:	65 87 65 2b 	call  961e98fe <_end+0x961d3dee>
-   10456:	55 f5 cd cd 	call  57d83b8a <_end+0x57d6e07a>
-   1045a:	28 cd 14 89 	unknown
-   1045e:	41 00 1d 87 	call  4017a7a <_end+0x4001f6a>
-   10462:	42 4b 72 53 	call  92ecdae <_end+0x92d729e>
-   10466:	1c 78 0f 62 	unknown
-   1046a:	87 6d 55 58 	unknown
-   1046e:	f7 c1 00 e8 	unknown
-   10472:	2b f4 97 49 	cb23,a   ffd36196 <_end+0xffd20686>
-   10476:	78 3d b0 1b 	call  e0f7c4e2 <_end+0xe0f669d2>
-   1047a:	5f 97 b0 12 	call  7e5fc4c2 <_end+0x7e5e69b2>
-   1047e:	2b ab ca 10 	fbug,a   ffb02cbe <_end+0xffaed1ae>
-   10482:	df 16 1a f5 	unknown
-   10486:	5a f5 d9 3f 	call  6bd86982 <_end+0x6bd70e72>
-   1048a:	33 1b 56 92 	sethi  %hi(0x6d5a4800), %i1
-   1048e:	5b b0 02 00 	call  6ec10c8e <_end+0x6ebfb17e>
-   10492:	0c 1d d3 c8 	unknown
-   10496:	ac 39 17 66 	unknown
-   1049a:	32 f6 6e 6d 	unknown
-   1049e:	ec 44 60 5e 	unknown
-   104a2:	08 af 0a a6 	bleu  ffbd2f3a <_end+0xffbbd42a>
-   104a6:	69 14 01 30 	call  a4510966 <_end+0xa44fae56>
-   104aa:	33 0b de 1f 	sethi  %hi(0x2f787c00), %i1
-   104ae:	31 0f d3 bc 	sethi  %hi(0x3f4ef000), %i0
-   104b2:	00 af 4f 19 	bn  ffbe4116 <_end+0xffbce606>
-   104b6:	56 aa 45 52 	call  5aaa19fe <_end+0x5aa8beee>
-   104ba:	db 28 52 46 	unknown
-   104be:	7f 08 53 db 	call  fc22542a <_end+0xfc20f91a>
-   104c2:	23 00 a9 55 	sethi  %hi(0x2a55400), %l1
-   104c6:	aa 35 18 21 	unknown
-   104ca:	12 68 91 2a 	unknown
-   104ce:	c8 22 b2 68 	st  %g4, [ %o2 + -3480 ]
-   104d2:	70 2d 00 c6 	call  c0b507ea <_end+0xc0b3acda>
-   104d6:	50 b2 79 91 	call  42caeb1a <_end+0x42c9900a>
-   104da:	4a 70 31 f8 	call  29c1ccba <_end+0x29c071aa>
-   104de:	51 f3 28 dd 	call  47cda852 <_end+0x47cc4d42>
-   104e2:	17 ff 17 08 	cb02  fffd6102 <_end+0xfffc05f2>
-   104e6:	02 36 03 24 	unknown
-   104ea:	Address 0x00000000000104ea is out of bounds.
+000103aa <logo>:
+   103aa:	ff 1b 5b 30 	unknown
+   103ae:	3b 31 3b 33 	sethi  %hi(0xc4eccc00), %i5
+   103b2:	37 9f 3b 34 	fbge,a   7df082 <_end+0x7c9592>
+   103b6:	37 6d 23 cc 	unknown
+   103ba:	f7 c0 07 33 	unknown
+   103be:	8d 30 c8 1b 	unknown
+   103c2:	1b 5b c4 07 	unknown
+   103c6:	cb 1f 1c 0c 	unknown
+   103ca:	3b 0f 34 30 	sethi  %hi(0x3cd0c000), %i5
+   103ce:	6d 0a c0 f7 	call  b42c07aa <_end+0xb42aacba>
+   103d2:	01 60 1a 38 	unknown
+   103d6:	2c 9c 1f 1b 	bneg,a   718042 <_end+0x702552>
+   103da:	5b 33 31 6d 	call  6ccdc98e <_end+0x6ccc6e9e>
+   103de:	cc 04 41 ac 	ld  [ %l1 + %o4 ], %g6
+   103e2:	0d 24 02 1c 	sethi  %hi(0x90087000), %g6
+   103e6:	10 4f 0d 20 	unknown
+   103ea:	10 41 93 98 	unknown
+   103ee:	83 34 1c 34 	unknown
+   103f2:	cc 10 10 0c 	unknown
+   103f6:	24 6f 39 ec 	unknown
+   103fa:	a7 1c 08 33 	unknown
+   103fe:	16 14 89 55 	unknown
+   10402:	2c 60 00 2b 	unknown
+   10406:	61 d6 71 e2 	call  875acb8e <_end+0x8759709e>
+   1040a:	c8 cb 08 d4 	ldsba  [ %o4 + %l4 ] #ASI_DCACHE_DATA, %g4
+   1040e:	09 d3 10 2b 	cb1  4d44ba <_end+0x4be9ca>
+   10412:	59 f5 d1 00 	call  67d84812 <_end+0x67d6ed22>
+   10416:	80 11 d2 18 	unknown
+   1041a:	0d 28 1c 14 	sethi  %hi(0xa0705000), %g6
+   1041e:	0d 2c 1c 1c 	sethi  %hi(0xb0707000), %g6
+   10422:	f0 4a 1a 5b 	unknown
+   10426:	00 0d 50 5f 	unimp  0xd505f
+   1042a:	65 87 65 2b 	call  961e98d6 <_end+0x961d3de6>
+   1042e:	55 f5 cd cd 	call  57d83b62 <_end+0x57d6e072>
+   10432:	28 cd 14 89 	unknown
+   10436:	41 00 1d 87 	call  4017a52 <_end+0x4001f62>
+   1043a:	42 4b 72 53 	call  92ecd86 <_end+0x92d7296>
+   1043e:	1c 78 0f 62 	unknown
+   10442:	87 6d 55 58 	unknown
+   10446:	f7 c1 00 e8 	unknown
+   1044a:	2b f4 97 49 	cb23,a   ffd3616e <_end+0xffd2067e>
+   1044e:	78 3d b0 1b 	call  e0f7c4ba <_end+0xe0f669ca>
+   10452:	5f 97 b0 12 	call  7e5fc49a <_end+0x7e5e69aa>
+   10456:	2b ab ca 10 	fbug,a   ffb02c96 <_end+0xffaed1a6>
+   1045a:	df 16 1a f5 	unknown
+   1045e:	5a f5 d9 3f 	call  6bd8695a <_end+0x6bd70e6a>
+   10462:	33 1b 56 92 	sethi  %hi(0x6d5a4800), %i1
+   10466:	5b b0 02 00 	call  6ec10c66 <_end+0x6ebfb176>
+   1046a:	0c 1d d3 c8 	unknown
+   1046e:	ac 39 17 66 	unknown
+   10472:	32 f6 6e 6d 	unknown
+   10476:	ec 44 60 5e 	unknown
+   1047a:	08 af 0a a6 	bleu  ffbd2f12 <_end+0xffbbd422>
+   1047e:	69 14 01 30 	call  a451093e <_end+0xa44fae4e>
+   10482:	33 0b de 1f 	sethi  %hi(0x2f787c00), %i1
+   10486:	31 0f d3 bc 	sethi  %hi(0x3f4ef000), %i0
+   1048a:	00 af 4f 19 	bn  ffbe40ee <_end+0xffbce5fe>
+   1048e:	56 aa 45 52 	call  5aaa19d6 <_end+0x5aa8bee6>
+   10492:	db 28 52 46 	unknown
+   10496:	7f 08 53 db 	call  fc225402 <_end+0xfc20f912>
+   1049a:	23 00 a9 55 	sethi  %hi(0x2a55400), %l1
+   1049e:	aa 35 18 21 	unknown
+   104a2:	12 68 91 2a 	unknown
+   104a6:	c8 22 b2 68 	st  %g4, [ %o2 + -3480 ]
+   104aa:	70 2d 00 c6 	call  c0b507c2 <_end+0xc0b3acd2>
+   104ae:	50 b2 79 91 	call  42caeaf2 <_end+0x42c99002>
+   104b2:	4a 70 31 f8 	call  29c1cc92 <_end+0x29c071a2>
+   104b6:	51 f3 28 dd 	call  47cda82a <_end+0x47cc4d3a>
+   104ba:	17 ff 17 08 	cb02  fffd60da <_end+0xfffc05ea>
+   104be:	02 36 03 24 	unknown
+   104c2:	Address 0x00000000000104c2 is out of bounds.
 
 
 Disassembly of section .bss:
 
-000104f0 <bss_begin>:
+000104c8 <bss_begin>:
 	...
 
-000104f8 <text_buf>:
+000104d0 <text_buf>:
 	...
 
-00010938 <ascii_buffer>:
+00010910 <ascii_buffer>:
 	...
 
-00010948 <sysinfo_buff>:
+00010920 <sysinfo_buff>:
 	...
 
-00010988 <uname_info>:
+00010960 <uname_info>:
 	...
 
-00010b10 <disk_buffer>:
+00010ae8 <disk_buffer>:
 	...
 
-00011b10 <out_buffer>:
+00011af0 <out_buffer>:
 	...
 
 Disassembly of section .gnu.attributes:
 
 00000000 <.gnu.attributes>:
-   0:	41 00 00 00 	call  4000000 <_end+0x3fea4f0>
+   0:	41 00 00 00 	call  4000000 <_end+0x3fea510>
    4:	0f 67 6e 75 	unknown
    8:	00 01 00 00 	unimp  0x10000
    c:	00 07 04 03 	unimp  0x70403
