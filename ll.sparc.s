@@ -78,6 +78,7 @@
 !   * Change num_to_ascii into a leaf function (1241)
 !   * Convert write_stdout to a leaf function (1233)
 !   * Change argument to num_to_ascii to avoid one mov (1229)
+!   * Rearrange register usage for arguments (1225)
 !
 ! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
 ! text and data/bss on a separate page (for no-execute protection),
