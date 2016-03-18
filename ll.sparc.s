@@ -7,6 +7,8 @@
 !
 !  by Vince Weaver <vince _at_ deater.net>
 !
+!  further optimized by Magnus Hjorth <mhjorth _at_ gaisler.com>
+!
 !  assemble with     "as -o ll.o ll.sparc.s"
 !  link with         "ld -o ll ll.o"
 
