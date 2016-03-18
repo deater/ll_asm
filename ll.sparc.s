@@ -76,6 +76,7 @@
 !   * Optimize center and print (1253)
 !   * Pass function pointer instead of flag to ascii_to_num (1245)
 !   * Change num_to_ascii into a leaf function (1241)
+!   * Convert write_stdout to a leaf function (1233)
 !
 ! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
 ! text and data/bss on a separate page (for no-execute protection),
