@@ -72,6 +72,7 @@
 !   * Tail recursion for center_and_print/write_stdout (1329)
 !   * Tail recursion for num_to_ascii (1305)
 !   * Re-optimize find_string to use sliding window, tail recursion (1261)
+!   * Remove extraneous load (1257)
 !
 ! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
 ! text and data/bss on a separate page (for no-execute protection),
