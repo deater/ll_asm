@@ -74,6 +74,7 @@
 !   * Re-optimize find_string to use sliding window, tail recursion (1261)
 !   * Remove extraneous load (1257)
 !   * Optimize center and print (1253)
+!   * Pass function pointer instead of flag to ascii_to_num (1245)
 !
 ! Newer Linux toolchains generate an extra sections with PAX_FLAGS and put
 ! text and data/bss on a separate page (for no-execute protection),

@@ -5,6 +5,9 @@
 
 + Look into using sliding window findstring from SPARC on other
 	architectures
++ Look into function pointer rather than flag to ascii_to_num
+	as done in SPARC
+
 
 Chips TODO:
 + 65c816
