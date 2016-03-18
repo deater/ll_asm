@@ -1,4 +1,4 @@
-LZSS Decoder Size (bytes)
+Num to Ascii Size (bytes)
 320	# Autosize axis
 1	# Make machines with divide stripey
 ia64		VLIW	288	1
@@ -11,7 +11,6 @@ z80		EBIT	81	1
 sh3		EMBED	76	1
 arm.eabi	RISC	72	1
 PowerPC		RISC	68	0
-sparc		RISC	60	0
 mips		RISC	56	0
 THUMB		EMBED	54	1
 microblaze	RISC	52	0
@@ -19,6 +18,7 @@ m68k		CISC	48	0
 arm64		RISC	48	0
 1802		EBIT	47	1
 Thumb-2		EMBED	42	1
+sparc		RISC	40	0
 crisv32		EMBED	40	1
 pdp-11		EBIT	40	0
 s390		CISC	36	0
