@@ -14,10 +14,10 @@
 |  * Did you not see that there is a TST instruction for CMP #0
 |  * and ADDQ/SUBQ instead of LEA to add/sub small immediates including to
 |    address registers?
-|  * You can do MOVE EA,EA where EA is almost any addressing mode and MOVE 
+|  * You can do MOVE EA,EA where EA is almost any addressing mode and MOVE
 |    sets the condition codes for a Bcc without a CMP or TST
-|  * You use LEA where you shouldn't but not where you should which is 
-|    instead of MOVE.L #address,An. 
+|  * You use LEA where you shouldn't but not where you should which is
+|    instead of MOVE.L #address,An.
 
 | From the m68k programming manual:
 |   16 general purpose 32-bit registers, d7-d0, a7-a0
@@ -53,7 +53,7 @@
 |   Absolute:  SYMBOL or DIGITS?
 |
 |  There is an alternate morotolla syntax that gas can also handle
-| exg = exchange, lea=load effecive address, 
+| exg = exchange, lea=load effecive address,
 | link= update stack frame
 
 | move
@@ -68,7 +68,7 @@
 
 | add (works on d regs), adda (works on a regs)
 | addi = immediate, addq = immediate value of 1-8
-| addx = add two regs plus the X condition code 
+| addx = add two regs plus the X condition code
 | clr (set to zero) cmp,cmpi,cmpa (compare), cmpm (compare memory)
 | cmp2 (compare if in range?) like chk but sets CCR, doesn't trap
 
@@ -103,9 +103,6 @@
 |  bfset set N and C based on bitfield of ea, and sets the bits
 |  bftst like above but no setting
 
-
-
-
 | abcd,nbcd,pack,sbcd,unpk = bcd instructions
 
 | CC = one of CC,CS (carry clear/set) EQ NE GE GT LE LT (comparison)
@@ -123,7 +120,7 @@
 | jmp,jsr=push return address on stack
 | nop = also forces all pending bus transactions to complete
 | rtd = returns (pulls pc off stack) and adds displacement to stack
-| rtr = return and pull CCR from stack 
+| rtr = return and pull CCR from stack
 | rts = just pulls pc from stack
 
 | assembly has two operations, ie add source,destination
@@ -134,7 +131,7 @@
 
 
 | Optimization
-| + 1078 - First working version 
+| + 1078 - First working version
 | + 1062 - Make all strcat calls use %a5
 | + 1038 - Make out_buffer be stored in %a6
 | + 1038 - Use the "dbf" instruction in a loop (saves 2 words)
@@ -171,7 +168,7 @@
 .equ STDOUT,1
 .equ STDERR,2
 
-	.globl _start	
+	.globl _start
 _start:
 
 
@@ -191,7 +188,7 @@ _start:
 	move.l	#(logo),%a3		| a3 points to logo data
 	move.l	#(logo_end),%a4		| a4 points to logo end
 	move.l	#text_buf,%a5		| r5 points to text buf
-	
+
 
 decompression_loop:
         clr.l	%d5			| clear the %d5 register
@@ -208,7 +205,7 @@ test_flags:
 
 offset_length:
 	clr.l   %d4
-	move.b	%a3@+,%d0	| load 16-bits, increment pointer	
+	move.b	%a3@+,%d0	| load 16-bits, increment pointer
 	move.b	%a3@+,%d4	| do it in 2 steps because our data is little-endian :(
 	lsl.l	#8,%d4
 	move.b	%d0,%d4
@@ -263,15 +260,13 @@ done_logo:
 
 optimizations:
 	| Optimization setup
-	
+
 	move.l	#strcat,%a5		| load strcat address into %a5
-	
+
 	|==========================
 	| PRINT VERSION
 	|==========================
 first_line:
-
-
 
 	move.l	#uname_info,%d1			| uname struct
 	moveq.l	#SYSCALL_UNAME,%d0
@@ -292,7 +287,7 @@ first_line:
 						| version from uname, ie "2.6.20"
 	jsr	(%a5)				| call strcat
 	move.l	%a4,%a1
-	
+
 						| source is ", Compiled "
 	jsr	(%a5)				|  call strcat
 
@@ -317,14 +312,14 @@ middle_line:
 	|=========
 
 	move.l	%a6,%a2			| point a2 to out_buffer
-	
+
 	move.l	#(cpuinfo),%d1
 					| '/proc/cpuinfo'
 	movq.l	#0,%d2			| 0 = O_RDONLY <bits/fcntl.h>
-	movq.l	#SYSCALL_OPEN,%d0			
-	trap	#0			| syscall.  return in d0?  
+	movq.l	#SYSCALL_OPEN,%d0
+	trap	#0			| syscall.  return in d0? 
 	move.l	%d0,%d5			| save our fd
-	
+
 	move.l	%d0,%d1			| move fd to right place
 	move.l	#disk_buffer,%d2
 	move.l	#4096,%d3
@@ -350,7 +345,7 @@ number_of_cpus:
 	| MHz
 	|=========
 print_mhz:
-	
+
 	move.l	#(('i'<<24)+('n'<<16)+('g'<<8)+':'),%d0
 	bsr	find_string
 					| find 'ing:' and grab up to '\n'
@@ -360,26 +355,26 @@ print_mhz:
 	|=========
 	| Chip Name
 	|=========
-chip_name:	
+chip_name:
 	move.l	#(('C'<<24)+('P'<<16)+('U'<<8)+':'),%d0
 	bsr	find_string
 					| find 'CPU:' and grab up to '\n'
 
 					| print " Processor, "
-	jsr	(%a5)	
-	
+	jsr	(%a5)
+
 	|========
 	| RAM
 	|========
-	
+
 	move.l	#(sysinfo_buff),%d1
 	move.l	%d1,%a0		   	| copy
 	moveq.l	#SYSCALL_SYSINFO,%d0
 	trap	#0
 					| sysinfo() syscall
-	
+
 	move.l	%a0@(S_TOTALRAM),%d1	| size in bytes of RAM
-	moveq.l #20,%d3	
+	moveq.l #20,%d3
 	lsr.l	%d3,%d1			| divide by 1024*1024 to get M
 |	adc	r3,r3,#0		| round
 
@@ -390,7 +385,7 @@ chip_name:
 
 					| print 'M RAM, '
 	jsr	(%a5)			| call strcat
-	
+
 
 	|========
 	| Bogomips
@@ -398,32 +393,32 @@ chip_name:
         move.l	#(('i'<<24)+('p'<<16)+('s'<<8)+':'),%d0
 	bsr	find_string
 					| find 'ips:' and grab up to '\n'
-					
+
 	jsr	(%a5)			| print bogomips total
-	
+
 	bsr	center_and_print	| center and print
 
 	|=================================
 	| Print Host Name
 	|=================================
 last_line:
-	move.l	%a6,%a2			| point a2 to out_buffer	
-	
+	move.l	%a6,%a2			| point a2 to out_buffer
+
 	move.l	#((uname_info)+U_NODENAME),%a1
 					| host name from uname()
 	jsr	(%a5)			| call strcat
-	
+
 	bsr	center_and_print	| center and print
 
 	move.l	#(default_colors),%a3
 					| restore colors, print a few linefeeds
 	bsr	write_stdout
-	
-	
+
+
 	|================================
 	| Exit
 	|================================
-	
+
 
 exit:
      	moveq.l	#0,%d1			| return a 0
@@ -432,7 +427,7 @@ exit:
 
 
 	|=================================
-	| FIND_STRING 
+	| FIND_STRING
 	|=================================
 	| %d0 = string to find
 
@@ -451,14 +446,14 @@ skip_tabs:
 	move.b	%a3@+,%d3		| read in a byte
 	cmp.b	#'\t',%d3		| are we a tab?
 	beq	skip_tabs		| if so, loop
-	
+
 	lea	%a3@(-1),%a3		| adjust pointer
 store_loop:
 	move.b	%a3@+,%d3		| load a byte, increment pointer
 	move.b	%d3,%a2@+		| store a byte, increment pointer
 	cmp.b	#'\n',%d3
 	bne	store_loop
-	
+
 almost_done:
 	move.l	#0,%d7
 	move.b	%d7,%a2@-		| replace last value with NUL
@@ -473,12 +468,12 @@ done:
 	| output buffer in a2
 	| d3 trashed
 strcat:
-        move.b	%a1@+,%d3		| load a byte, increment pointer 
+        move.b	%a1@+,%d3		| load a byte, increment pointer
 	move.b	%d3,%a2@+		| store a byte, increment pointer
 	bne	strcat			| loop if not zero
-	sub	#1,%a2			| point to one less than null 
+	sub	#1,%a2			| point to one less than null
 	rts				| return
-	
+
 
 	|==============================
 	| center_and_print
@@ -501,7 +496,7 @@ center_and_print:
 					| we use 81 to not count ending \n
 
 	bmi	done_center		| if result negative, don't center
-	
+
 	lsr	#1,%d1			| divide by 2
 |	addx.l	%d1,#0     		| round?
 
@@ -542,7 +537,7 @@ write_stdout_we_know_size:
 	|#############################
 	| d1 = value to print
 	| d0 = 0=stdout, 1=strcat
-	
+
 num_to_ascii:
 	move.l	#(ascii_buffer+10),%a3
 				| point to end of our buffer
@@ -557,7 +552,7 @@ div_by_10:
 	move.b	%d2,%a3@-	| store a byte, decrement pointer
 	cmp	#0,%d1		|
 	bne	div_by_10	| if Q not zero, loop
-	
+
 write_out:
 
 
@@ -565,32 +560,31 @@ write_out:
 	beq	ascii_stdout
 	move.l	%a3,%a1
 	jmp	(%a5)		| if 1, strcat
-		
+
 ascii_stdout:
 	jmp 	write_stdout	| else, fallthrough to stdout
 
 
-							
 #===========================================================================
 #	section .data
 #===========================================================================
 .data
 data_begin:
-ver_string:	.ascii	" Version \0"
+ver_string:		.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
-one:	.ascii	"One \0"
-processor:	.ascii	" Processor, \0"
-ram_comma:	.ascii	"M RAM, \0"
-bogo_total:	.ascii	" Bogomips Total\n\0"
+one:			.ascii	"One \0"
+processor:		.ascii	" Processor, \0"
+ram_comma:		.ascii	"M RAM, \0"
+bogo_total:		.ascii	" Bogomips Total\n\0"
 
-default_colors:	.ascii "\033[0m\n\n\0"
-escape:		.ascii "\033[\0"
-C:		.ascii "C\0"
+default_colors:		.ascii "\033[0m\n\n\0"
+escape:			.ascii "\033[\0"
+C:			.ascii "C\0"
 
 .ifdef FAKE_PROC
-cpuinfo:	.ascii	"proc/cpu.m68k\0"
+cpuinfo:		.ascii	"proc/cpu.m68k\0"
 .else
-cpuinfo:	.ascii	"/proc/cpuinfo\0"
+cpuinfo:		.ascii	"/proc/cpuinfo\0"
 .endif
 
 .include	"logo.lzss_new"
