@@ -17,3 +17,6 @@ make CROSS=/usr/local/microblaze-unknown-linux-gnu/bin/mb-linux- ARCH=microblaze
 make CROSS=RiSC- ARCH=RiSC
 
 make CROSS=rcasm ARCH=1802
+
+make CROSS=m68k-linux-gnu- ARCH=m68k
+~/research/qemu.git/m68k-linux-user/qemu-m68k -cpu m68020 ./ll.m68k
