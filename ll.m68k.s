@@ -1,11 +1,14 @@
-#
-#  linux_logo in m68k assembler 0.48
-#
-#  Originally by
-#       Vince Weaver <vince _at_ deater.net>
-#
-#  assemble with     "as -o ll.o ll.m68k.s"
-#  link with         "ld -o ll ll.o"
+|
+|   linux_logo in m68k assembler 0.48
+|
+|   Originally by:
+|		Vince Weaver <vince _at_ deater.net>
+|
+|   Optimizations contributed by:
+|
+|
+|  assemble with     "as -o ll.o ll.m68k.s"
+|  link with         "ld -o ll ll.o"
 
 | Notes somewhat grumpily contributed by Matthew Hey:
 |  * The only thing consistent about your work is that all your branches
