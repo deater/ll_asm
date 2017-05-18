@@ -63,7 +63,14 @@
 |   N and Z updated.
 |   can move to and from the CCR register
 | move16 = moves 16-byte block
-| movem stores a list of registers to memory
+| movem stores a list of registers to memory (or stack)
+
+|	movem.l	%d0-%d7/%a0-%a6,-(%sp)
+|	move.l	%d5,%d1
+|	moveq.l	#0,%d0
+|	bsr	num_to_ascii
+|	movem.l	(%sp)+,%d0-%d7/%a0-%a6
+
 | movep = output to 8-bit peripheral
 | moveq = move quick (load an 8-bit value)
 | pea = push immediate on stack
@@ -142,6 +149,9 @@
 |          Make sure to use addq instead of addi, don't recopy the uname pointer
 | + 1014 - Change the printing code to use linear %a1 instead of re-loading
 |          each time
+| lots of time passes, start optimizing based on e-mail from Matthew Hay
+| +  982 - where we stand in May of 2017
+| +  978 - use bra.b instead of jump various places
 
 .include "logo.include"
 
@@ -192,9 +202,16 @@ _start:
 	move.l	#(logo_end),%a4		| a4 points to logo end
 	move.l	#text_buf,%a5		| r5 points to text buf
 
+|	move.l	#0xff00,%d0		| d0 holds constant value
+					| to load in during LZSS
+					| cheating?  it's nice to have
+					| regs to spare
+
+| *** LZSS code begin ***
 
 decompression_loop:
-        clr.l	%d5			| clear the %d5 register
+	clr.l	%d5			| clear the %d5 register
+|	move.l	%d0,%d5
 	move.b	%a3@+,%d5		| load a byte, increment pointer
 
 	or.w	#0xff00,%d5		| load top as a hackish 8-bit counter
@@ -243,7 +260,7 @@ store_byte:
 	bftst	%d5,16:8		| are the top bits 0?
 	bne	test_flags		| if not, re-load flags
 
-	jmp	decompression_loop
+	bra.b	decompression_loop
 
 discrete_char:
 
@@ -251,10 +268,10 @@ discrete_char:
 	clr.l	%d1			| we set d1 to zero which on m68k
 					| means do the loop once
 
-	jmp	store_byte		| and store it
+	bra.b	store_byte		| and store it
 
 
-| end of LZSS code
+| *** LZSS code end ***
 
 done_logo:
 	move.l	%a6,%a3			| out_buffer we are printing to
@@ -565,7 +582,7 @@ write_out:
 	jmp	(%a5)		| if 1, strcat
 
 ascii_stdout:
-	jmp 	write_stdout	| else, fallthrough to stdout
+	bra.b 	write_stdout	| else, fallthrough to stdout
 
 
 #===========================================================================
