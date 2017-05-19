@@ -11,9 +11,6 @@
 |  link with         "ld -o ll ll.o"
 
 | Notes somewhat grumpily contributed by Matthew Hey:
-|  * The only thing consistent about your work is that all your branches
-|    are .w (word) size when most could be .b (byte) saving 2 bytes
-|    per occurrence.
 |  * Did you not see that there is a TST instruction for CMP #0
 |  * and ADDQ/SUBQ instead of LEA to add/sub small immediates including to
 |    address registers?
@@ -154,6 +151,8 @@
 | +  978 - use bra.b instead of jump various places
 | +  970 - use .b suffix on a few other branches
 | +  938 - use .b suffix on all other branches if possible
+| +  938 - specifically use addq (recent gas seems to do this for you)
+
 
 .include "logo.include"
 
@@ -247,13 +246,13 @@ offset_length:
 output_loop:
    	andi	#((POSITION_MASK<<8)+0xff),%d6		| mask it
 	move.b 	%a5@(0,%d6),%d4		| load byte from text_buf[]
-	addq	#1,%d6			| advance pointer in text_buf
+	addq.w	#1,%d6			| advance pointer in text_buf
 
 store_byte:
 
 	move.b	%d4,%a1@+		| store a byte, increment pointer
 	move.b	%d4,%a5@(0,%d2)		| store a byte to text_buf[r]
-	add 	#1,%d2			| r++
+	addq.w 	#1,%d2			| r++
 	andi	#(N-1),%d2		| mask r
 
 	dbf	%d1,output_loop		| decrement count and loop
