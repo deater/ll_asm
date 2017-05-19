@@ -160,6 +160,7 @@
 | +  922 - mask with d3 register not consant.  Overall program size
 |          is the same but lzss size decreased
 | +  920 - move P_BITS into a register
+| +  918 - move/lea conversion
 
 .include "logo.include"
 
@@ -292,12 +293,15 @@ optimizations:
 
 	move.l	#strcat,%a5		| load strcat address into %a5
 
+|	lea	%pc@(strcat),%a4
+
 	|==========================
 	| PRINT VERSION
 	|==========================
 first_line:
 
 	move.l	#uname_info,%d1			| uname struct
+|	move.l	%a5,%d1
 	moveq.l	#SYSCALL_UNAME,%d0
 	trap	#0				| do syscall
 
@@ -344,8 +348,8 @@ middle_line:
 
 	move.l	#(cpuinfo),%d1
 					| '/proc/cpuinfo'
-	movq.l	#0,%d2			| 0 = O_RDONLY <bits/fcntl.h>
-	movq.l	#SYSCALL_OPEN,%d0
+	moveq.l	#0,%d2			| 0 = O_RDONLY <bits/fcntl.h>
+	moveq.l	#SYSCALL_OPEN,%d0
 	trap	#0			| syscall.  return in d0? 
 	move.l	%d0,%d5			| save our fd
 
@@ -439,7 +443,7 @@ last_line:
 
 	bsr.b	center_and_print	| center and print
 
-	move.l	#(default_colors),%a3
+	lea	%pc@(default_colors),%a3
 					| restore colors, print a few linefeeds
 	bsr.b	write_stdout
 
@@ -597,6 +601,10 @@ ascii_stdout:
 #===========================================================================
 #	section .data
 #===========================================================================
+# Static (read only) data is combined with code just like compilers do.
+# This allows for efficient PC relative addressing to access the data.
+#===========================================================================
+
 |.data
 data_begin:
 ver_string:		.ascii	" Version \0"
