@@ -170,6 +170,7 @@
 | +  890 - write lf/nul in one word byte
 | +  890 - switch strcat to be in %a6 to free up %a5
 | +  872 - use lea against %a5 for bss addressing
+| +  870 - keep the saved output pointer in %a6
 
 .include "logo.include"
 
@@ -294,14 +295,13 @@ discrete_char:
 
 done_logo:
 	move.l	%a6,%a3			| out_buffer we are printing to
-	move.l	%a6,%d7
 
 	bsr.w	write_stdout		| print the logo
 
 optimizations:
 	| Optimization setup
 
-	lea	%pc@(strcat),%a6	| load strcat address into %a5
+	lea	%pc@(strcat),%a4	| load strcat address into %a4
 
 
 	|==========================
@@ -316,28 +316,28 @@ first_line:
 	move.l	%d1,%a1
 						| os-name from uname "Linux"
 
-	move.l	%d7,%a2				| point %a2 to out_buffer
+	move.l	%a6,%a2				| point %a2 to out_buffer
 
-	jsr	(%a6)				| call strcat
+	jsr	(%a4)				| call strcat
 
 	lea	%pc@(ver_string),%a1		| source is " Version "
-	jsr 	(%a6)			        | call strcat
+	jsr 	(%a4)			        | call strcat
 
-	move.l	%a1,%a4
+	move.l	%a1,%d4
 	lea	%a5@((uname_info-bss_begin)+U_RELEASE:w),%a1
 						| version from uname, ie "2.6.20"
-	jsr	(%a6)				| call strcat
-	move.l	%a4,%a1
+	jsr	(%a4)				| call strcat
+	move.l	%d4,%a1
 
 						| source is ", Compiled "
-	jsr	(%a6)				|  call strcat
+	jsr	(%a4)				|  call strcat
 
-	move.l	%a1,%a4
+	move.l	%a1,%d4
 	lea	%a5@((uname_info-bss_begin)+U_VERSION:w),%a1
 						| compiled date
-	jsr	(%a6)				| call strcat
+	jsr	(%a4)				| call strcat
 
-	move.l	%a4,%a1
+	move.l	%d4,%a1
 
 	move.w	#0xa00,%a2@+		| store a linefeed, NUL terminate
 					| increment pointer
@@ -353,7 +353,7 @@ middle_line:
 	| Load /proc/cpuinfo into buffer
 	|=========
 
-	move.l	%d7,%a2			| point a2 to out_buffer
+	move.l	%a6,%a2			| point a2 to out_buffer
 
 	move.l	#(cpuinfo),%d1
 					| '/proc/cpuinfo'
@@ -381,7 +381,7 @@ middle_line:
 number_of_cpus:
 
 					| cheat.  Who has an SMP arm?
-	jsr	(%a6)
+	jsr	(%a4)
 
 	|=========
 	| MHz
@@ -403,7 +403,7 @@ chip_name:
 					| find 'CPU:' and grab up to '\n'
 
 					| print " Processor, "
-	jsr	(%a6)
+	jsr	(%a4)
 
 	|========
 	| RAM
@@ -421,12 +421,12 @@ chip_name:
 |	adc	r3,r3,#0		| round
 
 	moveq.l	#1,%d0
-	move.l	%a1,%a4
+	move.l	%a1,%d4
 	bsr.w	num_to_ascii
-	move.l	%a4,%a1
+	move.l	%d4,%a1
 
 					| print 'M RAM, '
-	jsr	(%a6)			| call strcat
+	jsr	(%a4)			| call strcat
 
 
 	|========
@@ -436,7 +436,7 @@ chip_name:
 	bsr.b	find_string
 					| find 'ips:' and grab up to '\n'
 
-	jsr	(%a6)			| print bogomips total
+	jsr	(%a4)			| print bogomips total
 
 	bsr.b	center_and_print	| center and print
 
@@ -444,11 +444,11 @@ chip_name:
 	| Print Host Name
 	|=================================
 last_line:
-	move.l	%d7,%a2			| point a2 to out_buffer
+	move.l	%a6,%a2			| point a2 to out_buffer
 
 	lea	%a5@(U_NODENAME),%a1
 					| host name from uname()
-	jsr	(%a6)			| call strcat
+	jsr	(%a4)			| call strcat
 
 	bsr.b	center_and_print	| center and print
 
@@ -515,8 +515,8 @@ center_and_print:
 	lea	%pc@(escape),%a3	| we want to output ^[[
 	bsr.b	write_stdout
 
-	suba.l	%d7,%a2			| get length by subtracting
-					| a2 = a2-d7
+	suba.l	%a6,%a2			| get length by subtracting
+					| a2 = a2-a6
 	moveq.l	#81,%d1
 	sub.l	%a2,%d1			| subtract! d1=d1-a2
 					| we use 81 to not count ending \n
@@ -534,7 +534,7 @@ center_and_print:
 	bsr.b	write_stdout
 
 done_center:
-	move.l	%d7,%a3
+	move.l	%a6,%a3
 
 	|================================
 	| WRITE_STDOUT
@@ -584,7 +584,7 @@ write_out:
 	beq.s	ascii_stdout
 
 	move.l	%a3,%a1
-	jmp	(%a6)		| if 1, strcat
+	jmp	(%a4)		| if 1, strcat
 
 ascii_stdout:
 	bra.b 	write_stdout	| else, fallthrough to stdout
