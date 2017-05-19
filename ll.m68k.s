@@ -169,6 +169,7 @@
 | +  894 - use tst instead of cmp
 | +  890 - write lf/nul in one word byte
 | +  890 - switch strcat to be in %a6 to free up %a5
+| +  872 - use lea against %a5 for bss addressing
 
 .include "logo.include"
 
@@ -300,20 +301,15 @@ done_logo:
 optimizations:
 	| Optimization setup
 
-	| Note: we can't use a4 for anything interesting
-	|       bacause Linux syscalls potentially trash it
+	lea	%pc@(strcat),%a6	| load strcat address into %a5
 
-|	move.l	#strcat,%a5		| load strcat address into %a5
-
-	lea	%pc@(strcat),%a6
 
 	|==========================
 	| PRINT VERSION
 	|==========================
 first_line:
+	move.l	%a5,%d1				| uname struct
 
-	move.l	#uname_info,%d1			| uname struct
-|	move.l	%a5,%d1
 	moveq.l	#SYSCALL_UNAME,%d0
 	trap	#0				| do syscall
 
@@ -324,11 +320,11 @@ first_line:
 
 	jsr	(%a6)				| call strcat
 
-	move.l	#ver_string,%a1			| source is " Version "
+	lea	%pc@(ver_string),%a1		| source is " Version "
 	jsr 	(%a6)			        | call strcat
 
 	move.l	%a1,%a4
-	move.l	#((uname_info)+U_RELEASE),%a1
+	lea	%a5@((uname_info-bss_begin)+U_RELEASE:w),%a1
 						| version from uname, ie "2.6.20"
 	jsr	(%a6)				| call strcat
 	move.l	%a4,%a1
@@ -337,7 +333,7 @@ first_line:
 	jsr	(%a6)				|  call strcat
 
 	move.l	%a1,%a4
-	move.l	#((uname_info)+U_VERSION),%a1
+	lea	%a5@((uname_info-bss_begin)+U_VERSION:w),%a1
 						| compiled date
 	jsr	(%a6)				| call strcat
 
@@ -413,8 +409,8 @@ chip_name:
 	| RAM
 	|========
 
-	move.l	#(sysinfo_buff),%d1
-	move.l	%d1,%a0		   	| copy
+	lea	%a5@(sysinfo_buff-bss_begin:w),%a0
+	move.l	%a0,%d1		   	| copy
 	moveq.l	#SYSCALL_SYSINFO,%d0
 	trap	#0
 					| sysinfo() syscall
@@ -450,7 +446,7 @@ chip_name:
 last_line:
 	move.l	%d7,%a2			| point a2 to out_buffer
 
-	move.l	#((uname_info)+U_NODENAME),%a1
+	lea	%a5@(U_NODENAME),%a1
 					| host name from uname()
 	jsr	(%a6)			| call strcat
 
@@ -479,7 +475,10 @@ exit:
 
 find_string:
 
-	move.l	#(disk_buffer-1),%a3	| look in cpuinfo buffer
+|	move.l	#(disk_buffer-1),%a3	| look in cpuinfo buffer
+	lea	%a5@(disk_buffer-bss_begin-1:w),%a3
+					| look in cpuinfo buffer
+
 find_loop:
 	addq.l	#1,%a3			| add one to pointer
 	move.l	%a3@,%d1		| load an unaligned word
@@ -567,7 +566,7 @@ write_stdout_we_know_size:
 	| d2 = trashed
 
 num_to_ascii:
-	move.l	#(ascii_buffer+10),%a3
+	lea	%a5@(ascii_buffer-bss_begin+10:w),%a3
 				| point to end of our buffer
 
 div_by_10:
