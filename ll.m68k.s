@@ -166,6 +166,7 @@
 |          than loading a byte and then operating
 | +  906 - use fancy addressing in strcat to do move in one instruction
 | +  898 - fix lots of silly redundant instructions in center_and_print
+| +  894 - use tst instead of cmp
 
 .include "logo.include"
 
@@ -538,7 +539,7 @@ write_stdout:
 	moveq.l	#0,%d3				| clear count
 
 str_loop1:
-	add	#1,%d3
+	addq.l	#1,%d3
 	move.b	%a3@(0,%d3),%d2
 	bne.b	str_loop1			| repeat till zero
 
@@ -555,6 +556,8 @@ write_stdout_we_know_size:
 	|#############################
 	| d1 = value to print
 	| d0 = 0=stdout, 1=strcat
+	| a3 = special(?)
+	| d2 = trashed
 
 num_to_ascii:
 	move.l	#(ascii_buffer+10),%a3
@@ -565,17 +568,15 @@ div_by_10:
 	bfextu	%d1,0:16,%d2	| copy remainder to %d2
 	bfextu	%d1,16:16,%d1	| mask out quotient into %d1
 
-|	bl	divide		@ Q=r7,$0, R=r8,$1
-	add	#0x30,%d2	| convert to ascii
+	add.w	#0x30,%d2	| convert to ascii
 	move.b	%d2,%a3@-	| store a byte, decrement pointer
-	cmp	#0,%d1		|
+	tst.w	%d1
 	bne.b	div_by_10	| if Q not zero, loop
 
 write_out:
+	tst.w	%d0
+	beq.s	ascii_stdout
 
-
-	cmp	#0,%d0
-	beq.b	ascii_stdout
 	move.l	%a3,%a1
 	jmp	(%a5)		| if 1, strcat
 
