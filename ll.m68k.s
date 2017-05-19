@@ -156,6 +156,7 @@
 | +  928 - we have a spare reg so use counter rather than shifter
 |          to keep track of the bits left if flag byte.
 |          This saves a lot because it is hard to load 0xff00 on m68k
+| +  922 - load a word and endian swap rather than make byte-by-byte
 
 .include "logo.include"
 
@@ -229,11 +230,9 @@ test_flags:
 	bcs.b	discrete_char	| if set, we jump to discrete char
 
 offset_length:
-	clr.l   %d4		| (unnecessary?)
-	move.b	%a3@+,%d0	| load 16-bits, increment pointer
-	move.b	%a3@+,%d4	| do it in 2 steps because our data is little-endian :(
-	lsl.l	#8,%d4
-	move.b	%d0,%d4
+|	clr.l   %d4		| (unnecessary?)
+	move.w	%a3@+,%d4	| load 16-bits, increment pointer
+	ror.w	#8,%d4		| unfair big-endian penalty
 
 	move.l	%d4,%d6		| copy d4 to d6
 				| no need to mask d6, as we do it
