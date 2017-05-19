@@ -176,6 +176,12 @@
 # vector instructions, and others such as specific crypto instructions.
 
 
+# Optimizations
+# + 969 bytes -- as of May 2017
+# + 968 bytes -- Martin Str|mberg sent a patch to shave a byte off of
+#                write_stdout
+
+
 .include "logo.include"
 
 # offsets into the results returned by the uname syscall
@@ -665,7 +671,9 @@ write_stdout:
 
 str_loop1:
 	inc	%edx
-	cmpb	$0,(%ecx,%edx)		# repeat till zero
+	cmpb	%ah,(%ecx,%edx)		# repeat till zero
+					# eax is 4 for syscall
+					# so ah is clear
 	jne	str_loop1
 
 	int	$0x80  			# run the syscall
