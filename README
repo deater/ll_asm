@@ -40,7 +40,6 @@ Some Statistics
      x86_x32            1005 bytes   (as 2.28)
      1802		1010 bytes   (asmx)
      sh3		 994 bytes   (as 2.17.50.0.5)
-     m68k		 982 bytes   (as 2.18.0.20080103)
      x86                 968 bytes   (as 2.28)
      vax		 950 bytes   (as 2.16.1)
      arm_thumb		 924 bytes   (as 2.24.51.20141001)
@@ -49,6 +48,7 @@ Some Statistics
      crisv32		 905 bytes   (as 2.12.1)
      z80		 891 bytes   (as 2.20.1.20100303)
      pdp-11		 890 bytes   (as 2.19)
+     m68k		 870 bytes   (as 2.28)
      8086		 780 bytes   (as 2.20.1-system.20100303)
      
      * the 6502 results were adjusted to match the code present in other
@@ -359,7 +359,7 @@ vax:
 	 instructions.
 
 sh3:
-    	auto-increment addressing for loads but not for stores?
+	auto-increment addressing for loads but not for stores?
 	-> yes, auto-incrememnt/decrement set up for stack
 	   accesses so it decrements on store (push) and incs on load (pop)
 	branch delay slots make things difficult
@@ -434,7 +434,7 @@ z80:
 		z80 is nice for pascal-type strings, not C-type
 		
 		Need 16-bit shifts.  And shifts by more than 1
-		Need better way to set regs to zero. 		
+		Need better way to set regs to zero.
 
 		Some extra bytes taken to handle CR/LF instead of just LF
 

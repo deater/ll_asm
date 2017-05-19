@@ -13,7 +13,6 @@ PowerPC		RISC	88	0
 arm.eabi	RISC	88	0
 6502		EBIT	85	0
 pdp-11		EBIT	62	0
-m68k		CISC	58	0
 sh3		EMBED	58	0
 THUMB		EMBED	58	0
 Thumb-2		EMBED	56	0
@@ -28,3 +27,4 @@ crisv32		EMBED	48	0
 avr32		EMBED	44	0
 s390		CISC	42	0
 vax		CISC	37	0
+m68k		CISC	36	0
