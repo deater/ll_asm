@@ -1,7 +1,7 @@
 #
 #  linux_logo in 8086 assembler 0.43
 #
-#  Originally by 
+#  Originally by
 #       Vince Weaver <vince _at_ deater.net>
 #
 #
@@ -38,19 +38,19 @@
 #                gained a byte because can't do shr IMM
 # + 786 bytes -- remove some unnecessary saving of %si
 # + 780 bytes -- save %si around find_print, no need to save/restore at all
-	
+
 .include "logo.include"
 
 .text
 
 # generate only 8086 code
 .arch i8086
-.code16	 	    
+.code16
 # COM file is loaded at 0x100 offset
-.org 0x100 	    
+.org 0x100
 
-	.globl start	
-start:	
+	.globl start
+start:
 	#=========================
 	# PRINT LOGO
 	#=========================
@@ -71,7 +71,7 @@ start:
 	mov	$out_buffer, %di	# point to out_buffer
 	push	%di	     		# save this value for later
 
-decompression_loop:	
+decompression_loop:
 	lodsb			# load in a byte
 
 	mov 	$0xff, %dh	# re-load top as a hackish 8-bit counter
@@ -95,29 +95,29 @@ offset_length:
 	add $(THRESHOLD+1),%al
 	mov %al,%cl             # cl = (ax >> P_BITS) + THRESHOLD + 1
 				#                       (=match_length)
-		
+
 output_loop:
 	and 	$POSITION_MASK,%bh  	# mask it
 	mov 	text_buf(%bx), %al	# load byte from text_buf[]
 	inc 	%bx	    		# advance pointer in text_buf
-store_byte:	
-	stosb				# store it	
+store_byte:
+	stosb				# store it
 	mov     %al, text_buf(%bp)	# store also to text_buf[r]
 	inc 	%bp 			# r++
 	and 	$(N-1), %bp		# mask r
 
 	loop 	output_loop		# repeat until k>j
-	
+
 	or	%dh,%dh			# if 0 we shifted through 8 and must
 	jnz	test_flags		# re-load flags
-	
+
 	jmp 	decompression_loop
 
 discrete_char:
 	lodsb				# load a byte
 	mov	$1,%cx			# we set ecx to one so byte
 					# will be output once
-					
+
 	jmp     store_byte              # and cleverly store it
 
 
@@ -125,8 +125,8 @@ discrete_char:
 
 done_logo:
 	mov	$'$',%al		# terminate string with $
-	stosb				
-	
+	stosb
+
 	pop 	%bp			# get out_buffer and keep in bp
 	mov	%bp,%dx			# move out_buffer to dx
 
@@ -139,21 +139,21 @@ done_logo:
 	#
 setup:
 	mov	$strcat,%cx		# use cx as call pointer
-	
+
 	#==========================
 	# PRINT VERSION
 	#==========================
-	
+
 	mov	%bp,%di		   	# point %di to out_buffer
 
-	# We fake the OS-name 
+	# We fake the OS-name
 	# As DOS has no way of reporting it
 
 	mov	$ver_string,%si		# source is " Version "
 	call 	*%cx			# call strcat
 
 	# Get DOS version
-	
+
 	push    %cx	 		# save %cx as the call trashes it
 	mov     $0x30,%ah
 	int	$0x21
@@ -164,13 +164,13 @@ setup:
 	xor	%ah,%ah			# clear out minor version
 
 	call   	num_to_ascii		# print major version
-	
-	mov	$'.',%al	  	# print period     
+
+	mov	$'.',%al	  	# print period
 	stosb
 
 	pop	%ax
 	mov	%ah,%al			# get minor version
-	
+
 	call	num_to_ascii		# print minor version
 
 					# si points to ", Compiled "
@@ -200,16 +200,16 @@ middle_line:
 	xor	%al,%al			# Set read-only
 	mov	$cpuinfo,%dx		# Point to File Name
 	int	$0x21			# call DOS
-	
+
 					# error if CF set
-	jc	exit				
+	jc	exit
 
 	push	%ax			# save fd
-	
+
 	mov	%ax,%bx			# copy fd into place
 	mov	$disk_buffer,%dx	# point to disk buffer
 	mov	$4096,%cx		# bytes to read
-	mov	$0x3f,%ah		# READ 
+	mov	$0x3f,%ah		# READ
 	int	$0x21			# call DOS
 
 	pop	%bx			# put fd into bx
@@ -233,9 +233,9 @@ number_of_cpus:
 	# MHz
 	#=========
 print_mhz:
-	mov	$('M'<<8+' '),%bx	
-	mov	$('z'<<8+'H'),%dx	
-	
+	mov	$('M'<<8+' '),%bx
+	mov	$('z'<<8+'H'),%dx
+
 			   		# find ' MHz' and grab up to \n
 	                                # we are little endian
 	mov	$'\n',%ah
@@ -248,7 +248,7 @@ print_mhz:
 	#=========
 	# Chip Name
 	#=========
-chip_name:	
+chip_name:
 
 	mov	$('a'<<8+'n'),%bx
 	mov	$('e'<<8+'m'),%dx
@@ -259,7 +259,7 @@ chip_name:
 
 	call	*%cx			# si points to ' Processor'
 
-	
+
 	#========
 	# RAM
 	#========
@@ -270,17 +270,17 @@ chip_name:
 		 			# in Kilobytes
 
 	call num_to_ascii
-	
+
 	pop  %cx	 		# restore strcat pointer
-	
+
 					# si points to 'M RAM, '
 	call	*%cx			# call strcat
-	
+
 
 	#========
 	# Bogomips
 	#========
-	
+
 	mov	$('i'<<8+'m'),%bx
 	mov	$('s'<<8+'p'),%dx
 					# find 'mips\t: ' and grab up to \n
@@ -300,15 +300,15 @@ chip_name:
 
 	mov     %bp,%di		  	# point to output_buffer
 
-					# si points to host name (hardcoded) 
+					# si points to host name (hardcoded)
 	call    *%cx			# call strcat
 
 	call	center_and_print	# center and print
 
 	mov	%si,%dx			# si now points to default_colors
-	
+
 	call	write_stdout
-	
+
 
 	#================================
 	# Exit
@@ -320,7 +320,7 @@ exit:
 
 
 	#=================================
-	# FIND_STRING 
+	# FIND_STRING
 	#=================================
 	#   ah is char to end at
 	#   bx/dx is 4-char ascii string to look for
@@ -330,7 +330,7 @@ exit:
 
 find_string:
 	push	%si
-					
+
 	mov	$disk_buffer-1,%si	# look in cpuinfo buffer
 find_loop:
 	inc	%si
@@ -339,13 +339,13 @@ find_loop:
 
 	cmp	(%si), %bx		# do the strings match?
 	jne	find_loop		# if not, loop
-	
+
 	cmp	2(%si,1), %dx		# do the strings match?
-	jne	find_loop		# if not, loop	
-	
+	jne	find_loop		# if not, loop
+
 					# if we get this far, we matched
 
-find_colon:	   			
+find_colon:
 	lodsb				# repeat till we find colon
 	cmp	$0,%al			# this is actually smaller code
 	je	done			#   than an or ecx/repnz scasb
@@ -358,7 +358,7 @@ skip_spaces:
 	cmp     $0x20,%al               # Loser new intel chips have lots??
         je      skip_spaces
 
-store_loop:	 
+store_loop:
 	cmp	$0,%al
 	je	done
 	cmp	%ah,%al			# is it end string?
@@ -366,12 +366,12 @@ store_loop:
 	cmp	$'\n',%al		# also end if linefeed
 	je	almost_done
 	stosb				# if not store and continue
-	lodsb				# load value	
+	lodsb				# load value
 	jmp	store_loop
-	 
-almost_done:	 
 
-	movb	 $0, (%di)	        # replace last value with NUL 
+almost_done:
+
+	movb	 $0, (%di)	        # replace last value with NUL
 done:
 	pop	%si
 	ret
@@ -397,12 +397,12 @@ strcat:
 	# cx,dx = saved
 	# di incremented
 	# ax,bx trashed
-	
+
 
 center_and_print:
 	push    %dx			# save the string pointer
 	mov	%dx,%bx			# copy string pointer to bx
-	
+
 	inc	%di			# move to a clear buffer
 	push	%di			# save for later
 
@@ -410,24 +410,24 @@ center_and_print:
 	stosw
 
 	cdq	      			# clear dx
-	
-str_loop2:				# find end of string	
+
+str_loop2:				# find end of string
 	inc	%dx
 	inc	%bx
-	cmpb	$0,(%bx)		# repeat till we find zero	
+	cmpb	$0,(%bx)		# repeat till we find zero
 	jne	str_loop2
-	
+
 	mov	$80,%ax	 		# assume 80 columns
-	
+
 	cmp	%ax,%dx			# see if we are >=80
 	jl	not_too_big		# if so, don't center
 
 	mov	$80,%dx			# don't center by setting
 					# size to 80
-	
+
 not_too_big:
 	sub	%dx,%ax			# subtract size from 80
-	
+
 	shr	%ax			# then divide by 2
 
 	call	num_to_ascii		# print number of spaces
@@ -438,16 +438,16 @@ not_too_big:
 	pop	%di			# pop the pointer to ^[[xC
 
 	mov	%di,%dx			# move to edx
-	
+
 	call write_stdout		# write to the screen
 
 	dec  	%di			# point back to end of string
 
 	mov	$('\n'<<8)+'\r',%ax	# store carriage return
 	stosw				# and linefeed
-	
+
 	mov	$'$',%al		# terminate with a $
-	stosb				
+	stosb
 
 done_center:
 	pop 	%dx			# restore string pointer
@@ -463,7 +463,7 @@ write_stdout:
 	int	$0x21	 		# Call DOS
 
 	ret	     			# return
-	
+
 
 	#==============================
 	# num_to_ascii
@@ -474,7 +474,7 @@ write_stdout:
 	# cx = saved
 	# di = incremented
 	# ax,bx,dx = trashed
-	
+
 num_to_ascii:
 	push 	%cx
 	mov     $10,%bx		# set bx to 10
@@ -486,7 +486,7 @@ div_by_10:
 	inc     %cx             # add to length counter
 	or      %ax,%ax         # was Q zero?
 	jnz     div_by_10       # if not divide again
-	
+
 write_out:
 	pop     %ax             # restore in reverse order
 	add     $0x30, %al      # convert to ASCII
