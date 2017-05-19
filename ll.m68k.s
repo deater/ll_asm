@@ -167,6 +167,7 @@
 | +  906 - use fancy addressing in strcat to do move in one instruction
 | +  898 - fix lots of silly redundant instructions in center_and_print
 | +  894 - use tst instead of cmp
+| +  890 - write lf/nul in one word byte
 
 .include "logo.include"
 
@@ -336,8 +337,9 @@ first_line:
 	jsr	(%a5)				| call strcat
 
 	move.l	%a4,%a1
-	move.b	#0xa,%a2@+	        | store a linefeed, increment pointer
-	move.b	#0,%a2@+		| NUL terminate, increment pointer
+
+	move.w	#0xa00,%a2@+		| store a linefeed, NUL terminate
+					| increment pointer
 
 	bsr.w	center_and_print	| center and print
 
