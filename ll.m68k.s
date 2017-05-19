@@ -153,6 +153,9 @@
 | +  938 - use .b suffix on all other branches if possible
 | +  938 - specifically use addq (recent gas seems to do this for you)
 | +  934 - complicated move.l to 16-bit lea conversion in prelude
+| +  928 - we have a spare reg so use counter rather than shifter
+|          to keep track of the bits left if flag byte.
+|          This saves a lot because it is hard to load 0xff00 on m68k
 
 .include "logo.include"
 
@@ -210,22 +213,13 @@ _start:
 
 | Set up d registers
 
-
 	move.l  #(N-F),%d2		| R
-
-|	move.l	#0xff00,%d0		| d0 holds constant value
-					| to load in during LZSS
-					| cheating?  it's nice to have
-					| regs to spare
 
 | *** LZSS code begin ***
 
 decompression_loop:
-	clr.l	%d5			| clear the %d5 register
-|	move.l	%d0,%d5
-	move.b	%a3@+,%d5		| load a byte, increment pointer
-
-	or.w	#0xff00,%d5		| load top as a hackish 8-bit counter
+	move.q	#7,%d7		| load a counter
+	move.b	%a3@+,%d5	| load a byte, increment pointer
 
 test_flags:
 	cmp.l	%a4,%a3		| have we reached the end?
@@ -268,10 +262,10 @@ store_byte:
 	dbf	%d1,output_loop		| decrement count and loop
 					| if %d1 is zero or above
 
-	bftst	%d5,16:8		| are the top bits 0?
-	bne.b	test_flags		| if not, re-load flags
+	dbf	%d7,test_flags		| decement flags counter
+					| if not zero, continue
 
-	bra.b	decompression_loop
+	bra.b	decompression_loop	| need to load new byte
 
 discrete_char:
 
