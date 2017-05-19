@@ -152,7 +152,7 @@
 | +  970 - use .b suffix on a few other branches
 | +  938 - use .b suffix on all other branches if possible
 | +  938 - specifically use addq (recent gas seems to do this for you)
-
+| +  934 - complicated move.l to 16-bit lea conversion in prelude
 
 .include "logo.include"
 
@@ -194,14 +194,24 @@ _start:
 | by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 | optimized some more by Vince Weaver
 
-	move.l	#out_buffer,%a6		| buffer we are printing to
+| Set up a registers
+
+
+	| lea is only a win over move.l if we don't have a separate
+	| data segment.
+	| figuring out forcing 16-bit lea in gas syntax was a pain
+
+	lea	bss_begin,%a5		| bss base ptr
+	lea	%pc@(logo),%a3		| a3 points to logo data
+	lea	%pc@(logo_end),%a4	| a4 points to logo end
+	lea	%a5@(out_buffer-bss_begin:w),%a6	| buffer we are printing to
+	lea	%a5@(text_buf-bss_begin:w),%a0		| a0 points to text buf
 	move.l	%a6,%a1
 
-	move.l  #(N-F),%d2		| R
+| Set up d registers
 
-	move.l	#(logo),%a3		| a3 points to logo data
-	move.l	#(logo_end),%a4		| a4 points to logo end
-	move.l	#text_buf,%a5		| r5 points to text buf
+
+	move.l  #(N-F),%d2		| R
 
 |	move.l	#0xff00,%d0		| d0 holds constant value
 					| to load in during LZSS
@@ -245,13 +255,13 @@ offset_length:
 
 output_loop:
    	andi	#((POSITION_MASK<<8)+0xff),%d6		| mask it
-	move.b 	%a5@(0,%d6),%d4		| load byte from text_buf[]
+	move.b 	%a0@(0,%d6),%d4		| load byte from text_buf[]
 	addq.w	#1,%d6			| advance pointer in text_buf
 
 store_byte:
 
 	move.b	%d4,%a1@+		| store a byte, increment pointer
-	move.b	%d4,%a5@(0,%d2)		| store a byte to text_buf[r]
+	move.b	%d4,%a0@(0,%d2)		| store a byte to text_buf[r]
 	addq.w 	#1,%d2			| r++
 	andi	#(N-1),%d2		| mask r
 
@@ -589,7 +599,7 @@ ascii_stdout:
 #===========================================================================
 #	section .data
 #===========================================================================
-.data
+|.data
 data_begin:
 ver_string:		.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
