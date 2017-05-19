@@ -162,6 +162,9 @@
 | +  920 - move P_BITS into a register
 | +  918 - move/lea conversion
 | +  912 - adjust pointers with addq rather than lea
+| +  908 - find_string, use auto-increment addressing directly rather
+|          than loading a byte and then operating
+| +  906 - use fancy addressing in strcat to do move in one instruction
 
 .include "logo.include"
 
@@ -477,8 +480,7 @@ find_loop:
 
 	addq.l	#4,%a3			| skip what we just searched
 skip_tabs:
-	move.b	%a3@+,%d3		| read in a byte
-	cmp.b	#'\t',%d3		| are we a tab?
+	cmp.b	#'\t',%a3@+		| read byte, inc, are we a tab?
 	beq.b	skip_tabs		| if so, loop
 
 	subq.l	#1,%a3			| adjust pointer
@@ -489,23 +491,9 @@ store_loop:
 	bne.b	store_loop
 
 almost_done:
-	move.l	#0,%d7
-	move.b	%d7,%a2@-		| replace last value with NUL
+	clr.b	%a2@-			| replace last value with NUL
 
 done:
-	rts				| return
-
-	|================================
-	| strcat
-	|================================
-	| value to cat in a1
-	| output buffer in a2
-	| d3 trashed
-strcat:
-        move.b	%a1@+,%d3		| load a byte, increment pointer
-	move.b	%d3,%a2@+		| store a byte, increment pointer
-	bne.b	strcat			| loop if not zero
-	sub	#1,%a2			| point to one less than null
 	rts				| return
 
 
@@ -597,6 +585,19 @@ write_out:
 
 ascii_stdout:
 	bra.b 	write_stdout	| else, fallthrough to stdout
+
+
+	|================================
+	| strcat (like stpcpy)
+	|================================
+	| value to cat in a1
+	| output buffer in a2
+strcat:
+        move.b	%a1@+,%a2@+		| copy byte, increment pointers
+	bne.b	strcat			| loop if not zero
+	subq.l	#1,%a2			| point to one less than null
+	rts				| return
+
 
 
 #===========================================================================
