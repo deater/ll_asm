@@ -152,6 +152,8 @@
 | lots of time passes, start optimizing based on e-mail from Matthew Hay
 | +  982 - where we stand in May of 2017
 | +  978 - use bra.b instead of jump various places
+| +  970 - use .b suffix on a few other branches
+| +  938 - use .b suffix on all other branches if possible
 
 .include "logo.include"
 
@@ -218,13 +220,13 @@ decompression_loop:
 
 test_flags:
 	cmp.l	%a4,%a3		| have we reached the end?
-	bge	done_logo  	| if so, exit
+	bge.b	done_logo  	| if so, exit
 
-	lsr 	#1,%d5		| shift bottom bit into carry flag
-	bcs	discrete_char	| if set, we jump to discrete char
+	lsr.w 	#1,%d5		| shift bottom bit into carry flag
+	bcs.b	discrete_char	| if set, we jump to discrete char
 
 offset_length:
-	clr.l   %d4
+	clr.l   %d4		| (unnecessary?)
 	move.b	%a3@+,%d0	| load 16-bits, increment pointer
 	move.b	%a3@+,%d4	| do it in 2 steps because our data is little-endian :(
 	lsl.l	#8,%d4
@@ -258,7 +260,7 @@ store_byte:
 					| if %d1 is zero or above
 
 	bftst	%d5,16:8		| are the top bits 0?
-	bne	test_flags		| if not, re-load flags
+	bne.b	test_flags		| if not, re-load flags
 
 	bra.b	decompression_loop
 
@@ -276,7 +278,7 @@ discrete_char:
 done_logo:
 	move.l	%a6,%a3			| out_buffer we are printing to
 
-	bsr	write_stdout		| print the logo
+	bsr.w	write_stdout		| print the logo
 
 optimizations:
 	| Optimization setup
@@ -320,7 +322,7 @@ first_line:
 	move.b	#0xa,%a2@+	        | store a linefeed, increment pointer
 	move.b	#0,%a2@+		| NUL terminate, increment pointer
 
-	bsr	center_and_print	| center and print
+	bsr.w	center_and_print	| center and print
 
 	|===============================
 	| Middle-Line
@@ -367,7 +369,7 @@ number_of_cpus:
 print_mhz:
 
 	move.l	#(('i'<<24)+('n'<<16)+('g'<<8)+':'),%d0
-	bsr	find_string
+	bsr.b	find_string
 					| find 'ing:' and grab up to '\n'
 
 	move.b  #' ',%a2@+		| put in a space
@@ -377,7 +379,7 @@ print_mhz:
 	|=========
 chip_name:
 	move.l	#(('C'<<24)+('P'<<16)+('U'<<8)+':'),%d0
-	bsr	find_string
+	bsr.b	find_string
 					| find 'CPU:' and grab up to '\n'
 
 					| print " Processor, "
@@ -400,7 +402,7 @@ chip_name:
 
 	moveq.l	#1,%d0
 	move.l	%a1,%a4
-	bsr 	num_to_ascii
+	bsr.w	num_to_ascii
 	move.l	%a4,%a1
 
 					| print 'M RAM, '
@@ -411,12 +413,12 @@ chip_name:
 	| Bogomips
 	|========
         move.l	#(('i'<<24)+('p'<<16)+('s'<<8)+':'),%d0
-	bsr	find_string
+	bsr.b	find_string
 					| find 'ips:' and grab up to '\n'
 
 	jsr	(%a5)			| print bogomips total
 
-	bsr	center_and_print	| center and print
+	bsr.b	center_and_print	| center and print
 
 	|=================================
 	| Print Host Name
@@ -428,11 +430,11 @@ last_line:
 					| host name from uname()
 	jsr	(%a5)			| call strcat
 
-	bsr	center_and_print	| center and print
+	bsr.b	center_and_print	| center and print
 
 	move.l	#(default_colors),%a3
 					| restore colors, print a few linefeeds
-	bsr	write_stdout
+	bsr.b	write_stdout
 
 
 	|================================
@@ -457,22 +459,22 @@ find_string:
 find_loop:
 	lea  	%a3@(1),%a3		| add one to pointer
 	move.l	%a3@,%d1		| load an unaligned word
-	beq	done			| if off the end, finish
+	beq.b	done			| if off the end, finish
 	cmp.l	%d1,%d0
-	bne	find_loop
+	bne.b	find_loop
 
 	lea	%a3@(4),%a3		| skip what we just searched
 skip_tabs:
 	move.b	%a3@+,%d3		| read in a byte
 	cmp.b	#'\t',%d3		| are we a tab?
-	beq	skip_tabs		| if so, loop
+	beq.b	skip_tabs		| if so, loop
 
 	lea	%a3@(-1),%a3		| adjust pointer
 store_loop:
 	move.b	%a3@+,%d3		| load a byte, increment pointer
 	move.b	%d3,%a2@+		| store a byte, increment pointer
 	cmp.b	#'\n',%d3
-	bne	store_loop
+	bne.b	store_loop
 
 almost_done:
 	move.l	#0,%d7
@@ -490,7 +492,7 @@ done:
 strcat:
         move.b	%a1@+,%d3		| load a byte, increment pointer
 	move.b	%d3,%a2@+		| store a byte, increment pointer
-	bne	strcat			| loop if not zero
+	bne.b	strcat			| loop if not zero
 	sub	#1,%a2			| point to one less than null
 	rts				| return
 
@@ -504,7 +506,7 @@ center_and_print:
 
 	move.l	#(escape),%a3
 					| we want to output ^[[
-	bsr	write_stdout
+	bsr.b	write_stdout
 
 	move.l	%a6,%a3			| point %a3 to out_buffer
 	suba.l	%a3,%a2			| get length by subtracting
@@ -515,7 +517,7 @@ center_and_print:
 	sub.l	%d3,%d1			| subtract! d1=d1-d3
 					| we use 81 to not count ending \n
 
-	bmi	done_center		| if result negative, don't center
+	bmi.b	done_center		| if result negative, don't center
 
 	lsr	#1,%d1			| divide by 2
 |	addx.l	%d1,#0     		| round?
@@ -525,7 +527,7 @@ center_and_print:
 
 	move.l	#(C),%a3
 					| we want to output C
-	bsr	write_stdout
+	bsr.b	write_stdout
 
 	move.l	%a6,%a3
 
@@ -542,7 +544,7 @@ write_stdout:
 str_loop1:
 	add	#1,%d3
 	move.b	%a3@(0,%d3),%d2
-	bne	str_loop1			| repeat till zero
+	bne.b	str_loop1			| repeat till zero
 
 write_stdout_we_know_size:
 	move.l	%a3,%d2
@@ -571,13 +573,13 @@ div_by_10:
 	add	#0x30,%d2	| convert to ascii
 	move.b	%d2,%a3@-	| store a byte, decrement pointer
 	cmp	#0,%d1		|
-	bne	div_by_10	| if Q not zero, loop
+	bne.b	div_by_10	| if Q not zero, loop
 
 write_out:
 
 
 	cmp	#0,%d0
-	beq	ascii_stdout
+	beq.b	ascii_stdout
 	move.l	%a3,%a1
 	jmp	(%a5)		| if 1, strcat
 
