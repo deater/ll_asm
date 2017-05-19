@@ -157,6 +157,9 @@
 |          to keep track of the bits left if flag byte.
 |          This saves a lot because it is hard to load 0xff00 on m68k
 | +  922 - load a word and endian swap rather than make byte-by-byte
+| +  922 - mask with d3 register not consant.  Overall program size
+|          is the same but lzss size decreased
+| +  920 - move P_BITS into a register
 
 .include "logo.include"
 
@@ -214,7 +217,10 @@ _start:
 
 | Set up d registers
 
+	move.l	#P_BITS,%d0
 	move.l  #(N-F),%d2		| R
+	move.w	#(N-1),%d3		| mask (N-1)= ((POSITION_MASK<<8)+0xff)
+					|           = 0x3ff
 
 | *** LZSS code begin ***
 
@@ -238,16 +244,15 @@ offset_length:
 				| no need to mask d6, as we do it
 				| by default in output_loop
 
-	moveq.l	#P_BITS,%d0
-	lsr.l	%d0,%d4
-	move.l	#(THRESHOLD+1),%d0
-	add.l	%d0,%d4
-	add	%d4,%d1
+	lsr.l	%d0,%d4		| unsigned shift right by P_BITS
+	addq.l	#(THRESHOLD+1),%d4
+
+	add.w	%d4,%d1
 				| d1 = (d4 >> P_BITS) + THRESHOLD + 1
 				|                       (=match_length)
 
 output_loop:
-   	andi	#((POSITION_MASK<<8)+0xff),%d6		| mask it
+	and.w	%d3,%d6			| mask it
 	move.b 	%a0@(0,%d6),%d4		| load byte from text_buf[]
 	addq.w	#1,%d6			| advance pointer in text_buf
 
@@ -256,7 +261,7 @@ store_byte:
 	move.b	%d4,%a1@+		| store a byte, increment pointer
 	move.b	%d4,%a0@(0,%d2)		| store a byte to text_buf[r]
 	addq.w 	#1,%d2			| r++
-	andi	#(N-1),%d2		| mask r
+	andw	%d3,%d2			| mask r
 
 	dbf	%d1,output_loop		| decrement count and loop
 					| if %d1 is zero or above
