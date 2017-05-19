@@ -161,6 +161,7 @@
 |          is the same but lzss size decreased
 | +  920 - move P_BITS into a register
 | +  918 - move/lea conversion
+| +  912 - adjust pointers with addq rather than lea
 
 .include "logo.include"
 
@@ -468,19 +469,19 @@ find_string:
 
 	move.l	#(disk_buffer-1),%a3	| look in cpuinfo buffer
 find_loop:
-	lea  	%a3@(1),%a3		| add one to pointer
+	addq.l	#1,%a3			| add one to pointer
 	move.l	%a3@,%d1		| load an unaligned word
 	beq.b	done			| if off the end, finish
 	cmp.l	%d1,%d0
 	bne.b	find_loop
 
-	lea	%a3@(4),%a3		| skip what we just searched
+	addq.l	#4,%a3			| skip what we just searched
 skip_tabs:
 	move.b	%a3@+,%d3		| read in a byte
 	cmp.b	#'\t',%d3		| are we a tab?
 	beq.b	skip_tabs		| if so, loop
 
-	lea	%a3@(-1),%a3		| adjust pointer
+	subq.l	#1,%a3			| adjust pointer
 store_loop:
 	move.b	%a3@+,%d3		| load a byte, increment pointer
 	move.b	%d3,%a2@+		| store a byte, increment pointer
