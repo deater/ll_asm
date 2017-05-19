@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 assembler 0.30
+#  linux_logo in x86_64 assembler 0.48
 #
 #  Originally by
 #       Vince Weaver <vince _at_ deater.net>
@@ -29,6 +29,11 @@
 #	  %r10=arg4  %r8=arg5,  %r9=arg6
 #   syscall passed in %rax, %r11 and %rcx destroyed
 
+
+# Optimization log
+# + 1030 - where we stood in May 2017
+# + 1029 - shaved a byte off of write_stdout thanks to Martin Str|mberg
+#          cmpb against ah is a byte smaller than compare against 0
 
 
 .include "logo.include"
@@ -498,8 +503,8 @@ done_center:
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# ecx has string
-	# eax,ebx,ecx,edx trashed
+	# rcx has string
+	# rax,rbx,rcx trashed
 write_stdout:
 	push    %rdx
 	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
@@ -514,7 +519,9 @@ write_stdout:
 
 str_loop1:
 	inc	%edx
-	cmpb	$0,(%rcx,%rdx)		# repeat till zero
+	cmpb	%ah,(%rcx,%rdx)		# repeat till zero
+					# ax is 1 (syscall_write)
+					# so ah is zero
 	jne	str_loop1
 
 	syscall  			# run the syscall

@@ -48,10 +48,11 @@
 #	  %r10=arg4  %r8=arg5,  %r9=arg6
 #   syscall passed in %rax, %r11 and %rcx destroyed
 #
-# Size:
-#	1012 - after using "proper" x32 syscall numbers
-#	1006 - re-optimizing to use mov rather than push/pop to load
-#		syscall numbers into eax
+# Optimization history:
+# + 1012 - after using "proper" x32 syscall numbers
+# + 1006 - re-optimizing to use mov rather than push/pop to load
+# 		syscall numbers into eax
+# + 1005 - Martin Str|mberg tip of using cmpb %ah rather than $0
 
 .include "logo.include"
 
@@ -517,8 +518,8 @@ done_center:
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# ecx has string
-	# eax,ebx,ecx,edx trashed
+	# rcx has string
+	# rax,rbx,rcx trashed
 write_stdout:
 	push    %rdx
 	mov	$SYSCALL_WRITE,%eax	# put 4 in eax (write syscall)
@@ -532,7 +533,9 @@ write_stdout:
 
 str_loop1:
 	inc	%edx
-	cmpb	$0,(%rcx,%rdx)		# repeat till zero
+	cmpb	%ah,(%rcx,%rdx)		# repeat till zero
+					# ah is zero as syscall in eax
+					# is less than 256
 	jne	str_loop1
 
 	syscall  			# run the syscall
