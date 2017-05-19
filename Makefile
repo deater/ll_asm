@@ -15,6 +15,8 @@ endif
 ifneq (,$(findstring 86,$(ARCH)))
    ifeq (,$(findstring x86_64,$(ARCH)))
       SOURCE_ARCH := i386
+	C_EXTRA = --32
+	L_EXTRA = -melf_i386
    endif
    THUMB := ll_8086.com
 endif
@@ -89,7 +91,7 @@ ifneq (,$(findstring z80,$(ARCH)))
    SOURCE_ARCH := z80
    L_EXTRA := 
 else
-   L_EXTRA := -N
+   L_EXTRA := $(L_EXTRA) -N
 endif
 
 #
@@ -158,11 +160,11 @@ ll.$(ARCH).output:	ll.$(ARCH).fakeproc
 	  echo '\n##### Error in logo decode #####\n'
 
 ll:	ll.o
-	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o	
+	$(CROSS)$(LD) $(L_EXTRA) -o ll ll.o
 
 ll.$(ARCH).stripped:  ll.$(ARCH) sstrip/sstrip
 	cp ll.$(ARCH) ll.$(ARCH).stripped
-	$(CROSS)$(STRIP) ll.$(ARCH).stripped	
+	$(CROSS)$(STRIP) ll.$(ARCH).stripped
 	sstrip/sstrip ll.$(ARCH).stripped
 
 ll.$(ARCH).fakeproc.stripped:		 ll.$(ARCH).fakeproc sstrip/sstrip
@@ -171,7 +173,7 @@ ll.$(ARCH).fakeproc.stripped:		 ll.$(ARCH).fakeproc sstrip/sstrip
 	sstrip/sstrip ll.$(ARCH).fakeproc.stripped
 
 ll.$(ARCH):	ll.o
-	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH) ll.o	
+	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH) ll.o
 
 ll.$(ARCH).fakeproc:	ll.fakeproc.o
 	$(CROSS)$(LD) $(L_EXTRA) -o ll.$(ARCH).fakeproc ll.fakeproc.o
@@ -229,7 +231,7 @@ ll.thumb:	ll.thumb.o
 	$(CROSS)$(LD) -N --thumb-entry=_start -o ll.thumb ll.thumb.o
 
 ll.thumb.o:	ll.thumb.s
-	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s	
+	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb.o ll.thumb.s
 
 ll.thumb.fakeproc.stripped:  ll.thumb.fakeproc sstrip/sstrip
 	cp ll.thumb.fakeproc ll.thumb.fakeproc.stripped
@@ -253,7 +255,7 @@ ll.thumb2:	ll.thumb2.o
 	$(CROSS)$(LD) -N --thumb-entry=_start -o ll.thumb2 ll.thumb2.o
 
 ll.thumb2.o:	ll.thumb2.s
-	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb2.o ll.thumb2.s	
+	$(CROSS)$(AS) -mthumb-interwork -o ll.thumb2.o ll.thumb2.s
 
 ll.thumb2.fakeproc.stripped:  ll.thumb2.fakeproc sstrip/sstrip
 	cp ll.thumb2.fakeproc ll.thumb2.fakeproc.stripped
@@ -284,7 +286,7 @@ ll.8086.o.o:	      ll.8086.o
 ll.8086.o:	      ll.8086.s
 		      as --32 -R -o ll.8086.o ll.8086.s
 
-ll.s:	
+ll.s:
 	rm -f ll.s
 	ln -s ll.$(SOURCE_ARCH).s ll.s
 
