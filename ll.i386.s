@@ -656,7 +656,7 @@ done_center:
 	# WRITE_STDOUT
 	#================================
 	# ecx has string
-	# eax,ebx,ecx,edx trashed
+	# eax,ebx,ecx trashed
 write_stdout:
 	push    %edx
 	push	$SYSCALL_WRITE		# put 4 in eax (write syscall)
