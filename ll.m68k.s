@@ -165,7 +165,7 @@
 | +  908 - find_string, use auto-increment addressing directly rather
 |          than loading a byte and then operating
 | +  906 - use fancy addressing in strcat to do move in one instruction
-| +  898 - fix lots of silly redundant instructions in find_string
+| +  898 - fix lots of silly redundant instructions in center_and_print
 
 .include "logo.include"
 
