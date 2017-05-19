@@ -165,6 +165,7 @@
 | +  908 - find_string, use auto-increment addressing directly rather
 |          than loading a byte and then operating
 | +  906 - use fancy addressing in strcat to do move in one instruction
+| +  898 - fix lots of silly redundant instructions in find_string
 
 .include "logo.include"
 
@@ -504,17 +505,13 @@ done:
 
 center_and_print:
 
-	move.l	#(escape),%a3
-					| we want to output ^[[
+	lea	%pc@(escape),%a3	| we want to output ^[[
 	bsr.b	write_stdout
 
-	move.l	%a6,%a3			| point %a3 to out_buffer
-	suba.l	%a3,%a2			| get length by subtracting
-					| a2 = a2-a3
-
-	move.l	%a2,%d3
-	move.l	#81,%d1
-	sub.l	%d3,%d1			| subtract! d1=d1-d3
+	suba.l	%a6,%a2			| get length by subtracting
+					| a2 = a2-a6
+	moveq.l	#81,%d1
+	sub.l	%a2,%d1			| subtract! d1=d1-a2
 					| we use 81 to not count ending \n
 
 	bmi.b	done_center		| if result negative, don't center
@@ -522,16 +519,15 @@ center_and_print:
 	lsr	#1,%d1			| divide by 2
 |	addx.l	%d1,#0     		| round?
 
-	move.l	#0,%d0			| print to stdout
+	moveq.l	#0,%d0			| print to stdout
 	bsr	num_to_ascii		| print number of spaces
 
-	move.l	#(C),%a3
-					| we want to output C
+	lea	%pc@(C),%a3		| we want to output C
+
 	bsr.b	write_stdout
 
-	move.l	%a6,%a3
-
 done_center:
+	move.l	%a6,%a3
 
 	|================================
 	| WRITE_STDOUT
