@@ -80,6 +80,7 @@
 #    - 1261 bytes = reserve register to hold out_buffer
 #    - 1249 bytes = use register to hold uname pointer
 #    - 1233 bytes = remove much of "la" use before lzss
+#    - 1225 bytes = use bss_start pointer math for uname
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -144,7 +145,7 @@ _start:
 	#	the expense of overall program size
 
 	#la	s6,text_buf
-	move	s6,s1
+	addi	s6,s1,550	# (text_buf-bss_start)
 	li	s10,0xff00
 	li	s11,0xff
 
@@ -218,29 +219,28 @@ done_logo:
 	#==========================
 first_line:
 
-	la	s7,uname_info			# uname struct
-	move	a0,s7
+	addi	a0,s1,32			# (uname_info-bss_start)
 
 	li	a7,SYSCALL_UNAME
 	ecall			 		# do syscall
 
 	move	s5,s9				# point s5 to out_buffer
 
-	move	s3,s7				# os-name from uname "Linux"
+	addi	s3,s1,32+U_SYSNAME		# os-name from uname "Linux"
 
 	jal	strcat				# call strcat
 
 	la	s3,ver_string			# source is " Version "
 	jal 	strcat			        # call strcat
 
-	addi	s3,s7,U_RELEASE			# version from uname,
+	addi	s3,s1,32+U_RELEASE		# version from uname,
 						#   ie "2.6.20"
 	jal	strcat				# call strcat
 
 	la	s3,compiled_string		# source is ", Compiled "
 	jal	strcat				#  call strcat
 
-	addi	s3,s7,U_VERSION			# compiled date
+	addi	s3,s1,32+U_VERSION		# compiled date
 	jal	strcat				# call strcat
 
 	jal	center_and_print	# center and print
@@ -343,7 +343,7 @@ chip_name:
 last_line:
 	move	s5,s9			# point s5 to out_buffer
 
-	addi	s3,s7,U_NODENAME	# host name from uname()
+	addi	s3,s1,32+U_NODENAME	# host name from uname()
 	jal	strcat			# call strcat
 
 	jal	center_and_print	# center and print
@@ -533,11 +533,11 @@ one:	.ascii	"One \0"
 #============================================================================
 .bss
 bss_begin:
-.lcomm	text_buf, N
-.lcomm	disk_buffer,4096	## we cheat!!!!
-.lcomm	out_buffer,16384
+.lcomm	ascii_buffer,32
 .lcomm	uname_info,(65*6)
 .lcomm	sysinfo_buff,(128)
-.lcomm	ascii_buffer,32
+.lcomm	text_buf, N		# typically 1024
+.lcomm	disk_buffer,4096	# we cheat!!!!
+.lcomm	out_buffer,16384
 
 	# see /usr/src/linux/include/linux/kernel.h
