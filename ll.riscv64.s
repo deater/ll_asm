@@ -71,7 +71,7 @@
 
 # Optimization:
 #  + LZSS
-#    - ??? bytes = original port of ARM64 code
+#    - 136 bytes = original port of MIPS code
 #  + Overall
 #    - ???? bytes = original working version
 
@@ -116,71 +116,80 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-#	adr	x1,out_buffer	# x1 = buffer we are printing to
-#	adr	x3,logo		# x3 = logo begin
-#	adr	x8,logo_end	# x8 = logo end
-#	adr	x9,text_buf	# x9 = text_buf, guaranteed bottom N+1 bits are 0
-#	add	x2,x9,#(N-F)	# x2 = &text_buf[R] (starts as N-F)
+	la	s0,data_begin	# s0 = .data segment begin
+	la	s1,bss_begin	# s1 = .bss segment begin
+	li	s2,(N-F)	# s2 = R
+
+	la	s3,logo
+	la	s4,logo_end
+	la	s5,out_buffer
 
 decompression_loop:
-#	ldrb	w5,[x3],#1	# load a byte, increment pointer
-#	orr	w5,w5,#0xff00	# load top as a hackish 8-bit counter
+	lbu	t1,0(s3)	# load a logo byte
+	addi	s3,s3,1		# increment pointer
+	li	t6,8
 
 test_flags:
-#	cmp	x3,x8		# have we reached the end?
-#	b.ge	done_logo  	# if so, exit
+	beq	s4,s3,done_logo	# have we reached the end?
+				# if so, exit
 
-#	tbz	x5,#0,offset_length	# if low bit not set
-					# jump to offset_length
+	andi	t2,t1,0x1	# check low bit
 
-discrete_char:
-#	ldrb	w4,[x3],#+1	# load a byte, increment pointer
-#	mov	x6,#1		# we set r6 to one so byte
-				# will be output once
-
-#	b.ne	store_byte	# and store it
-
+	srli	t1,t1,1		# shift
+	bnez	t2,discrete_char
+				# if low bit set
+				# we have a discrete char
 
 offset_length:
-#	ldrh	w7,[x3],#+2	# load an unagligned halfword, increment
+	lhu	t4,0(s3)	# load an unagligned halfword
+	addi	s3,s3,2		# increment
 
-				# no need to mask x7, as we do it
-				# by default in output_loop
+	srli	t3,t4,P_BITS
+	addi	t3,t3,THRESHOLD+1
 
-#	mov	x0,#(THRESHOLD+1)
-#	add	x6,x0,x7,LSR #(P_BITS)
-				# r6 = (r7 >> P_BITS) + THRESHOLD + 1
+				# t3 = (t4 >> P_BITS) + THRESHOLD + 1
 				#                       (=match_length)
 
 output_loop:
-#	and	x7,x7,#((POSITION_MASK<<8)+0xff)
+	andi	t4,t4,((POSITION_MASK<<8)+0xff)
 	                                # mask it
-#	ldrb 	w4,[x9,x7]		# load byte from text_buf[]
-#	add	x7,x7,#1		# advance pointer in text_buf
+	la	t0,text_buf
+	add	t0,t0,t4
+	lbu 	t0,0(t0)		# load byte from text_buf[]
+	addi	t4,t4,1			# increment pointer in text_buf
 
 store_byte:
-#	strb	w4,[x1],#+1		# store a byte, increment pointer
-#	strb	w4,[x2],#+1		# store a byte to text_buf+r, increment pointer
-#	bic 	x2,x2,#N		# clear any overflow
+	sb	t0,0(s5)		# store a byte to output
+	addi	s5,s5,1			# increment pointer
+	la	t5,text_buf
+	add	t5,t5,s2
+	sb	t0,0(t5)		# store a byte to text_buf[r]
+	addi	s2,s2,1			# increment pointer (r)
 
-#	subs	x6,x6,#1		# decement count
-#	b.ne 	output_loop		# repeat until k>j
+	addi	t3,t3,-1		# decement count
+	andi	s2,s2,(N-1)		# wrap R if too big
+	bnez 	t3,output_loop		# repeat until k>j
 
-#	lsr 	x5,x5,#1		# shift for next time
-
-#	tbnz	w5,#8,test_flags	# have we shifted by 8 bits?
+	addi	t6,t6,-1
+	bnez	t6,test_flags		# have we shifted by 8 bits?
 					# if so bit 8 is clear and
 					# we need new flags
-#	b	decompression_loop
+	j	decompression_loop
+discrete_char:
+	lbu	t0,0(s3)	# load a byte
+	addi	s3,s3,1		# increment pointer
+	li	t3,1		# we set t3 to one so byte
+				# will be output once
+
+	j	store_byte	# and store it
 
 
 
 # end of LZSS code
 
 done_logo:
-#	adr	x1,out_buffer		# buffer we are printing to
-
-#	bl	write_stdout		# print the logo
+	la	a1,out_buffer		# buffer we are printing to
+	jal	write_stdout		# print the logo
 
 	#==========================
 	# PRINT VERSION
@@ -328,11 +337,37 @@ last_line:
 	#================================
 	# Exit
 	#================================
+
+	la	a1,hello
+	jal	write_stdout
+
 exit:
-	li	a0,5				# result
+	li	a0,2				# result
 	li	a7,SYSCALL_EXIT			# Why can't we use v0?
 	ecall					# and exit
 
+
+print_hex:
+	li	a3,8
+	la	a1,hello
+hexloop:
+	addi	a3,a3,-1
+	andi	a4,a0,0xf
+	add	a4,a4,48
+	srli	a0,a0,4
+
+	sb	a4,0(a1)
+
+	addi	a1,a1,1
+	bnez	a3,hexloop
+
+
+	la	a1,hello
+	move	a6,ra
+	jal	write_stdout
+	move	ra,a6
+
+	ret
 
 	#=================================
 	# FIND_STRING
@@ -412,21 +447,23 @@ done_center:
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# x1 has string
-	# x0,x2,x3 trashed
+	# a1 has string
+	# a2 size
+	# t1,t2 trashed
 write_stdout:
-#	mov	x2,#0				# clear count
-
+	li	a2,0
+	move	t1,a1				# move a1 into t1
 str_loop1:
-#	add	x2,x2,#1
-#	ldrb	w3,[x1,x2]
-#	cbnz	w3,str_loop1			# repeat till zero
+	addiw	a2,a2,1
+	lbu	t2,0(t1)
+	addi	t1,t1,1
+	bnez	t2,str_loop1			# loop until hit NUL
 
 write_stdout_we_know_size:
-#	mov	x0,#STDOUT			# print to stdout
-#	mov	x8,#SYSCALL_WRITE
-#	svc	0		 		# run the syscall
-#	ret					# return
+	li	a0,STDOUT			# print to stdout
+	li	a7,SYSCALL_WRITE
+	ecall			 		# run the syscall
+	jr	ra				# return
 
 
 	##############################
@@ -485,6 +522,7 @@ literals:
 #	section .data
 #===========================================================================
 .data
+data_begin:
 ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 processor:	.ascii	" Processor, \0"
@@ -503,6 +541,7 @@ cpuinfo:	.ascii	"/proc/cpuinfo\0"
 
 one:	.ascii	"One \0"
 
+hello:	.ascii	"Hello World\n\0\0\0\0\0\0\0\0\0"
 
 .include	"logo.lzss_new"
 
@@ -511,6 +550,7 @@ one:	.ascii	"One \0"
 #	section .bss
 #============================================================================
 .bss
+bss_begin:
 .align	(P_BITS+1)
 .lcomm	text_buf, N
 .lcomm	disk_buffer,4096	## we cheat!!!!
