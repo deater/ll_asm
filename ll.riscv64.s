@@ -419,11 +419,12 @@ center_and_print:
 	bge	t1,t0,done_center	# don't center if >80
 
 	sub	t0,t0,t1		# t0=80-length
-	srli	t0,t0,1			# divide by two
+	srli	t4,t0,1			# divide by two
 
 	la	a1,escape
 	jal	write_stdout		# print an escape character
 
+	li	a0,0			# print to stdout
 	jal	num_to_ascii		# print num spaces
 
 	la	a1,C			# print "C"
@@ -461,37 +462,31 @@ write_stdout_we_know_size:
 	##############################
 	# num_to_ascii
 	#############################
-	# x3 = value to print
-	# x0 = 0=stdout, 1=strcat
+	# t4 = value to print
+	# a0 = 0=stdout, 1=strcat
 
 num_to_ascii:
-#	stp	x10,x30,[sp,#-16]!	# store return address on stack
-#	adr	x10,ascii_buffer+10	# point to end of our buffer
+	la	a1,ascii_buffer+10	# point to end of ascii buffer
 
 div_by_10:
-	# Divide by 10
-	# x3=numerator
-	# x7=quotient    x8=remainder
-	# x5=trashed
+	addi	a1,a1,-1		# point back one
+	li	t0,10			# divide by 10
 
-#	mov	x5,#10
-#	udiv	x7,x3,x5	# Q=x7=x3/10
-#	umsubl	x8,w7,w5,x3	# R=x8=x3-(w7*10)
+	remu	t3,t4,t0
+	divu	t4,t4,t0
 
-#	add	x8,x8,#0x30	# convert to ascii
-#	strb	w8,[x10],#-1	# store a byte, decrement pointer
-#	adds	x3,x7,#0	# move Q in for next divide, update flags
-#	b.ne	div_by_10	# if Q not zero, loop
+	addi	t3,t3,0x30	# convert to ascii
+	sb	t3,0(a1)	# store the byte
+	bnez	t4,div_by_10	# if Q not zero, loop
 
 write_out:
 #	add	x1,x10,#1		# adjust pointer
-#	ldp	x10,x30,[SP],#16	# restore return address from stack
 
-#	cbz	x0,write_stdout		# if 0, write_stdout
+
+	beqz	a0,write_stdout		# if 0, write_stdout
 
 					# else, strcat
 
-	ret
 
 	#================================
 	# strcat
