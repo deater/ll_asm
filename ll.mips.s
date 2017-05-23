@@ -13,6 +13,8 @@
 # + 1340 bytes - when assembled with gas 2.28
 # + 1336 bytes - get rid of extraneous move
 # + 1332 bytes - fill a branch delay slot
+# + 1326 bytes - some optimizations of center_and_print
+# + 1322 bytes - a few more optimizations
 
 .include "logo.include"
 
@@ -458,7 +460,7 @@ store_loop:
 	addiu	$s5,$s5,1		# increment output pointer
 
 done:
-	jr	$31			# return
+	jr	$ra			# return
 	# BRANCH DELAY SLOT
 #	nop
 #	allow harmless next instruction
@@ -466,26 +468,29 @@ done:
 	#==============================
 	# center_and_print
 	#==============================
-	# string is in $s5 (s1) output_buffer
-	# s3 $s3= stdout or strcat
-        # $s4, $t6, $t6 trashed
+	# string is in output_buffer
+	# $s5 = end of string
+	# $s3 = stdout or strcat
+        # $s4, $t6, trashed
 
 center_and_print:
 
-	move	$t6,$31				# save return address
-	move	$s4,$s5				# $s4 is the end of our string
-	addiu	$s5,$s1,(out_buffer-bss_begin)	# point $s5 to beginning
+	move	$t6,$ra			# save return address
 
+	li	$at,0xa00
+	sh	$at,0($s5)		# put linefeed/nul on end
 
-	subu	$a0, $s4,$s5		# subtract end pointer from start
-       		    			# (cheaty way to get size of string)
+	addiu	$s4,$s1,(out_buffer-bss_begin)	# point $s4 to beginning
 
-	slti	$at,$a0,81
+	subu	$a0,$s5,$s4		# subtract end pointer from start
+       		    			# (get size of string)
+
+	slti    $at,$a0,80
 	beq	$at,$0, done_center	# don't center if > 80
 	# BRANCH DELAY SLOT
-	li    	$s3,0 			# print to stdout
+	li    	$s3,0			# print to stdout
 
-	neg	$a0,$a0  			# negate length
+	neg	$a0,$a0			# negate length
 	addiu	$a0,$a0,80		# add to 80
 
 	srl	$s6,$a0,1		# divide by 2
@@ -505,16 +510,12 @@ center_and_print:
 
 
 done_center:
-					# point to the string to print
-	jal 	write_stdout
-	# BRANCH DELAY SLOT
+
 	addiu	$a1,$s1,(out_buffer-bss_begin)
+					# point to the string to print
 
 
-	addiu	$a1,$s0,(linefeed-data_begin)
-					# print linefeed at end of line
-
-	move 	$31,$t6 		# restore saved pointer
+	move 	$ra,$t6 		# restore saved pointer
 	     				# so we'll return to
 					# where we were called from
 					# at the end of the write_stdout
@@ -539,10 +540,10 @@ str_loop1:
 	addi	$t9,$t9,1		# LOAD DELAY SLOT
 	bnez	$t8,str_loop1		# if not nul, repeat
 	# BRANCH DELAY SLOT
-	addi	$a2,$a2,1			# increment a2
+	addi	$a2,$a2,1		# increment a2
 	syscall  			# run the syscall
 
-	jr	$31 			# return
+	jr	$ra 			# return
 	# BRANCH DELAY SLOT
 	nop
 
@@ -564,13 +565,13 @@ num_to_ascii:
 div_by_10:
 	addiu	$a1,$a1,-1	# point back one
 	li	$at,10
-	divu	$t1,$a0,$at	# divide.  hi= remainder, lo=quotient
+	divu	$a0,$a0,$at	# divide.  hi= remainder, lo=quotient
 	mfhi	$t3		# remainder into t3 ($t3)
 	addiu	$t3,$t3,0x30	# convert to ascii
-	sb	$t3,0($a1)	# store to buffer
-	bne	$t1,$0, div_by_10
+	bne	$a0,$0, div_by_10
 	# BRANCH DELAY SLOT
-	move	$a0,$t1		# move old result into next divide
+	sb	$t3,0($a1)	# store to buffer
+
 
 write_out:
 	beq	$s3,$0,write_stdout
@@ -582,14 +583,14 @@ write_out:
 	#================================
 	# strcat
 	#================================
-	# output_buffer_offset = $s5 (s1)
-	# string to cat = $a1         (a1)
+	# output_buffer_offset = $s5
+	# string to cat = $a1
 	# destroys t0 ($s2)
 
 strcat:
 	lbu 	$s2,0($a1)		# load byte from string
 	# LOAD DELAY SLOT
-	addiu	$a1,$a1,1			# increment string
+	addiu	$a1,$a1,1		# increment string
 	sb  	$s2,0($s5)		# store byte to output_buffer
 
 	bne 	$s2,$0,strcat		# if zero, we are done
@@ -597,7 +598,7 @@ strcat:
 	addiu	$s5,$s5,1		# increment output_buffer
 
 done_strcat:
-	jr	$31			# return
+	jr	$ra			# return
 	# BRANCH DELAY SLOT
 	addiu	$s5,$s5,-1		# correct pointer
 
@@ -614,7 +615,6 @@ ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 ram_comma:	.ascii	"M RAM, \0"
 bogo_total:	.ascii	" Bogomips Total\0"
-linefeed:	.ascii  "\n\0"
 default_colors:	.ascii "\033[0m\n\n\0"
 escape:		.ascii "\033[\0"
 c:		.ascii "C\0"
