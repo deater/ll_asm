@@ -23,3 +23,6 @@ make CROSS=m68k-linux-gnu- ARCH=m68k
 
 for 32-bit x86 compiling on 64-bit
 make ARCH=i686
+
+make CROSS=riscv-linux-gnu- ARCH=riscv
+~/research/qemu.git/m68k-linux-user/qemu-m68k -cpu m68020 ./ll.m68k
