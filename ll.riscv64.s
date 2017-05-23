@@ -1,5 +1,5 @@
 #
-#  linux_logo in RISCV 64-bit assembler 0.49
+#  linux_logo in RISCV+RVM 64-bit assembler 0.49
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
@@ -84,6 +84,7 @@
 #    - 1217 bytes = avoid "la" in first line
 #    - 1185 bytes = avoid "la" in middle/last line
 #    - 1165 bytes = optimize center_and_print
+#    - 1161 bytes = remove rest of "la"
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -477,7 +478,7 @@ write_stdout_we_know_size:
 	li	a0,STDOUT			# print to stdout
 	li	a7,SYSCALL_WRITE
 	ecall			 		# run the syscall
-	jr	ra				# return
+	ret					# return
 
 
 	##############################
@@ -487,18 +488,19 @@ write_stdout_we_know_size:
 	# a0 = 0=stdout, 1=strcat
 
 num_to_ascii:
-	la	a1,ascii_buffer+10	# point to end of ascii buffer
+	#la	a1,ascii_buffer+10	# point to end of ascii buffer
+	addi	a1,s1,0+10		# (bss_begin-ascii_buffer)+10
 
 div_by_10:
 	addi	a1,a1,-1		# point back one
 	li	t0,10			# divide by 10
 
-	remu	t3,t4,t0
-	divu	t4,t4,t0
+	remu	t3,t4,t0		# remainder in t3
+	divu	t4,t4,t0		# quotient in t4
 
-	addi	t3,t3,0x30	# convert to ascii
-	sb	t3,0(a1)	# store the byte
-	bnez	t4,div_by_10	# if Q not zero, loop
+	addi	t3,t3,0x30		# convert to ascii
+	sb	t3,0(a1)		# store the byte
+	bnez	t4,div_by_10		# if Q not zero, loop
 
 write_out:
 
