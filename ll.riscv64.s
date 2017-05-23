@@ -82,7 +82,8 @@
 #    - 1233 bytes = remove much of "la" use before lzss
 #    - 1225 bytes = use bss_start pointer math for uname
 #    - 1217 bytes = avoid "la" in first line
-#    - 1185 bytes = avaoid "la" in middle/last line
+#    - 1185 bytes = avoid "la" in middle/last line
+#    - 1165 bytes = optimize center_and_print
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -385,7 +386,8 @@ exit:
 	# t3 = char to end at
 	# t5 trashed,t6,t1
 find_string:
-	la	t6,disk_buffer	# look in cpuinfo buffer
+	#la	t6,disk_buffer	# look in cpuinfo buffer
+	addi	t6,s1,0x628	# (disk_buffer-bss_start)
 find_loop:
 	lwu	t1,0(t6)	# load a byte
 	addi	t6,t6,1		# increment pointer
@@ -420,17 +422,16 @@ done:
 	#==============================
 	# center_and_print
 	#==============================
-	# string to center in output buffer
+	# string to center in output buffer (s9)
+	# s5 coming in is end of string to print
 
 center_and_print:
 	move	a6,ra			# save return address
-	move	t0,s5			# t0 is now end of string
-	move	s5,s9			# point s5 to out_buffer
 
 	li	t2,0x0a
-	sh	t2,0(t0)		# put linefeed at end
+	sh	t2,0(s5)		# put linefeed at end
 
-	sub	t1,t0,s5		# subtract end pointer to get length
+	sub	t1,s5,s9		# subtract end pointer to get length
 	li	t0,80
 
 	bge	t1,t0,done_center	# don't center if >80
@@ -438,17 +439,20 @@ center_and_print:
 	sub	t0,t0,t1		# t0=80-length
 	srli	t4,t0,1			# divide by two
 
-	la	a1,escape
+	#la	a1,escape
+	addi	a1,s0,0x42		# (escape-data_start)
+
 	jal	write_stdout		# print an escape character
 
 	li	a0,0			# print to stdout
 	jal	num_to_ascii		# print num spaces
 
-	la	a1,C			# print "C"
+	#la	a1,C			# print "C"
+	addi	a1,s0,0x45		# (C-data_start)
 	jal	write_stdout
 
 done_center:
-	move	a1,s5			# point to string to print
+	move	a1,s9			# point to string to print
 
 	move	ra,a6			# restore return address
 
