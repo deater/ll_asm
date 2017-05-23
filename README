@@ -173,6 +173,15 @@ sparc:
 	Would have been much better if somehow there were separate opcodes
 	for 8 vs 16-bit instructions.
 
+riscv:
+	This is obviously an academic setup.  Things changing all the time,
+	some parts of the arch extremely over-analyzed while others
+	just handwaving.
+
+	It's more or less the same as MIPS though.
+
+	Lack of addressing modes hurts.  Also lack of short increment.
+
 6502:
         So obviously this isn't running on Linux.  I was curious
 	how an 8-bit processor would compare.

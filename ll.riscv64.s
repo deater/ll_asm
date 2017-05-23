@@ -229,27 +229,27 @@ middle_line:
 	# Load /proc/cpuinfo into buffer
 	#===============================
 
-#	adr	x10,out_buffer		# point x10 to out_buffer
+	la	s5,out_buffer		# point s5 to out_buffer
 
-	# regular SYSCALL_OPEN not supported on arm64?
+	# regular SYSCALL_OPEN not supported on new machines?
 
-#	mov	x0,#AT_FDCWD		# dirfd.  AT_FDWCD is old open behavior
+	li	a0,AT_FDCWD		# dirfd.  AT_FDWCD is old open behavior
 
-#	adr	x1,cpuinfo		# '/proc/cpuinfo'
-#	mov	x2,#0			# 0 = O_RDONLY <bits/fcntl.h>
-#	mov	x8,#SYSCALL_OPENAT
-#	svc	0
+	la	a1,cpuinfo		# '/proc/cpuinfo'
+	li	a2,0			# 0 = O_RDONLY <bits/fcntl.h>
+	li	a7,SYSCALL_OPENAT
+	ecall
 
-					# syscall.  return in x0?
-#	mov	x5,x0			# save our fd
-#	adr	x1,disk_buffer
-#	mov	x2,#4096	 	# cheat and assume maximum of 4kB
-#	mov	x8,#SYSCALL_READ
-#	svc	0
+					# syscall.  return in a0?
+	move	a5,a0			# save our fd
+	la	a1,disk_buffer
+	li	a2,4096	 	# cheat and assume maximum of 4kB
+	li	a7,SYSCALL_READ
+	ecall
 
-#	mov	x0,x5
-#	mov	x8,#SYSCALL_CLOSE
-#	svc	0			# close (to be correct)
+	move	a0,a5
+	li	a7,SYSCALL_CLOSE
+	ecall				# close (to be correct)
 
 
 	#=============
@@ -257,9 +257,9 @@ middle_line:
 	#=============
 number_of_cpus:
 
-#	adr	x1,one			# cheat and assume one cpu
-					# not really a good assumption
-#	bl	strcat
+	la	s3,one			# cheat and assume one cpu
+					# not necessarily a good assumption
+	jal	strcat
 
 	#=========
 	# MHz
@@ -272,47 +272,46 @@ print_mhz:
 	# Chip Name
 	#===========
 chip_name:
-#	ldr	w0,=( ('c'<<24) | ('o'<<16) | ('r'<<8) | 'P')
-#	mov	x3,#' '
-#	bl	find_string		# find line starting with Proc
+	li	t0,(('l'<<24) | ('e'<<16) | ('d'<<8) | 'o')
+	li	t3,'\n'
+	jal	find_string		# find line including "model"
 					# and grab up to ' '
 
-#	adr	x1,processor		# print " Processor, "
-#	bl	strcat
+	la	s3,processor		# print " Processor, "
+	jal	strcat
 
 	#========
 	# RAM
 	#========
 
-#	adr	x0,sysinfo_buff
-#	mov	x3,x0
-#	mov	x8,#SYSCALL_SYSINFO
-#	svc	0
-					# sysinfo() syscall
+	la	a0,sysinfo_buff
+	move	t0,a0
+	li	a7,SYSCALL_SYSINFO
+	ecall				# sysinfo() syscall
 
-#	ldr	x3,[x3,#S_TOTALRAM]	# size in bytes of RAM
-#	lsr	x3,x3,#20		# divide by 1024*1024 to get M
-#	adc	x3,x3,#0		# round
+	ld	t0,S_TOTALRAM(t0)	# size in bytes of RAM
 
-#	mov	x0,#1
-#	bl num_to_ascii			# print to string
+	srli	t4,t0,20		# divide by 1024*1024 to get M
 
-#	adr	x1,ram_comma		# print 'M RAM, '
-#	bl	strcat			# call strcat
+	li	a0,1
+	jal 	num_to_ascii		# print to string
+
+	la	s3,ram_comma		# print 'M RAM, '
+	jal	strcat			# call strcat
 
 
 	#==========
 	# Bogomips
 	#==========
 
-#	ldr	w0,=( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
-#	mov	x3,#'\n'
-#	bl	find_string		# Find MIPS then get to \n
+	li	t0,( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
+	li	t3,'\n'
+	jal	find_string		# Find MIPS then get to \n
 
-#	adr	x1,bogo_total
-#	bl	strcat			# print bogomips total
+	la	s3,bogo_total
+	jal	strcat			# print bogomips total
 
-#	bl	center_and_print	# center and print
+	jal	center_and_print	# center and print
 
 	#=================================
 	# Print Host Name
@@ -364,40 +363,43 @@ exit:
 	#=================================
 	# FIND_STRING
 	#=================================
-	# x0 = string to find
-	# x3 = char to end at
-	# x5 trashed
+	# t0 = string to find
+	# t3 = char to end at
+	# t5 trashed,t6,t1
 find_string:
-#	adr	x7,disk_buffer	# look in cpuinfo buffer
+	la	t6,disk_buffer	# look in cpuinfo buffer
 find_loop:
-#	ldr	w5,[x7],#+1	# load a byte, increment pointer
-#
-#	cbz	w5,done		# are we at EOF?
+	lwu	t1,0(t6)	# load a byte
+	addi	t6,t6,1		# increment pointer
+
+	beqz	t1,done		# are we at EOF?
 				# if so, done
 
-#	cmp	w5,w0		# compare against first byte
-
-#	b.ne	find_loop	# if no match, then loop
+	bne	t0,t1,find_loop	# if no match, then loop
 
 find_colon:
-#	ldrb	w5,[x7],#+1	# load a byte, increment pointer
-#	cmp	x5,#':'
-#	b.ne	find_colon	# repeat till we find colon
+	lbu	t5,0(t6)	# load a byte
+	addi	t6,t6,1		# increment pointer
+	li	t1,':'
+	bne	t5,t1,find_colon	# repeat till we find colon
 
 store_loop:
-#	ldrb	w5,[x7,#+1]!	# load a byte, increment pointer
-				# by using pre-indexed increment
-				# we skip the leading space
+	lbu	t5,1(t6)	# load a byte (+1 to skip space)
+	addi	t6,t6,1		# increment pointer
 
-#	strb	w5,[x10],#+1	# store a byte, increment pointer
-#	cmp	x5,x3
-#	b.ne	store_loop
+	beqz	t5,done		# stop if off send
+	beq	t5,t3,done	# stop if end char
+
+	sb	t5,0(s5)	# store a byte
+	addi	s5,s5,1		# increment pointer
+
+	j	store_loop
 
 almost_done:
-#	strb	wzr,[x10],#-1	# replace last value with NUL
+#	sb	zero,0(s5)
 
 done:
-#	ret			# return
+	ret			# return
 
 
 	#==============================
@@ -480,13 +482,12 @@ div_by_10:
 	bnez	t4,div_by_10	# if Q not zero, loop
 
 write_out:
-#	add	x1,x10,#1		# adjust pointer
-
 
 	beqz	a0,write_stdout		# if 0, write_stdout
 
 					# else, strcat
 
+	move	s3,a1
 
 	#================================
 	# strcat
@@ -518,7 +519,7 @@ ver_string:	.ascii	" Version \0"
 compiled_string:	.ascii	", Compiled \0"
 processor:	.ascii	" Processor, \0"
 ram_comma:	.ascii	"M RAM, \0"
-bogo_total:	.ascii	" Bogomips Total\n\0"
+bogo_total:	.ascii	" Bogomips Total\0"
 
 default_colors:	.ascii "\033[0m\n\n\0"
 escape:		.ascii "\033[\0"
@@ -547,7 +548,7 @@ bss_begin:
 .lcomm	disk_buffer,4096	## we cheat!!!!
 .lcomm	out_buffer,16384
 .lcomm	uname_info,(65*6)
-.lcomm	sysinfo_buff,(64)
+.lcomm	sysinfo_buff,(128)
 .lcomm	ascii_buffer,32
 
 	# see /usr/src/linux/include/linux/kernel.h
