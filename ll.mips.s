@@ -12,6 +12,7 @@
 # + 1277 bytes - historical
 # + 1340 bytes - when assembled with gas 2.28
 # + 1336 bytes - get rid of extraneous move
+# + 1332 bytes - fill a branch delay slot
 
 .include "logo.include"
 
@@ -459,8 +460,8 @@ store_loop:
 done:
 	jr	$31			# return
 	# BRANCH DELAY SLOT
-	nop
-
+#	nop
+#	allow harmless next instruction
 
 	#==============================
 	# center_and_print
