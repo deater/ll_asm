@@ -82,6 +82,7 @@
 #    - 1233 bytes = remove much of "la" use before lzss
 #    - 1225 bytes = use bss_start pointer math for uname
 #    - 1217 bytes = avoid "la" in first line
+#    - 1185 bytes = avaoid "la" in middle/last line
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -264,14 +265,17 @@ middle_line:
 
 	li	a0,AT_FDCWD		# dirfd.  AT_FDWCD is old open behavior
 
-	la	a1,cpuinfo		# '/proc/cpuinfo'
+	#la	a1,cpuinfo		# '/proc/cpuinfo'
+	addi	a1,s0,0x47		# (cpuinfo-data_begin)
+
 	li	a2,0			# 0 = O_RDONLY <bits/fcntl.h>
 	li	a7,SYSCALL_OPENAT
 	ecall
 
 					# syscall.  return in a0?
 	move	a5,a0			# save our fd
-	la	a1,disk_buffer
+	#la	a1,disk_buffer
+	addi	a1,s1,0x628		# (disk_buffer-bss_begin)
 	li	a2,4096	 	# cheat and assume maximum of 4kB
 	li	a7,SYSCALL_READ
 	ecall
@@ -286,8 +290,10 @@ middle_line:
 	#=============
 number_of_cpus:
 
-	la	s3,one			# cheat and assume one cpu
+	#la	s3,one			# cheat and assume one cpu
 					# not necessarily a good assumption
+	addi	s3,s0,0x55		# (one-data_begin)
+
 	jal	strcat
 
 	#=========
@@ -306,14 +312,17 @@ chip_name:
 	jal	find_string		# find line including "model"
 					# and grab up to ' '
 
-	la	s3,processor		# print " Processor, "
+	#la	s3,processor		# print " Processor, "
+	addi	s3,s0,0x16		# (processor-data_begin)
 	jal	strcat
 
 	#========
 	# RAM
 	#========
+ram:
+	#la	a0,sysinfo_buff
+	addi	a0,s1,0x1a8		# (sysinfo_buff-bss_start)
 
-	la	a0,sysinfo_buff
 	move	t0,a0
 	li	a7,SYSCALL_SYSINFO
 	ecall				# sysinfo() syscall
@@ -325,19 +334,21 @@ chip_name:
 	li	a0,1
 	jal 	num_to_ascii		# print to string
 
-	la	s3,ram_comma		# print 'M RAM, '
+	#la	s3,ram_comma		# print 'M RAM, '
+	add	s3,s0,0x23		# (ram_comma-data_begin)
 	jal	strcat			# call strcat
 
 
 	#==========
 	# Bogomips
 	#==========
-
+bogomips:
 	li	t0,( ('S'<<24) | ('P'<<16) | ('I'<<8) | 'M')
 	li	t3,'\n'
 	jal	find_string		# Find MIPS then get to \n
 
-	la	s3,bogo_total
+	#la	s3,bogo_total
+	addi	s3,s0,0x2b		# (bogo_total-data_start)
 	jal	strcat			# print bogomips total
 
 	jal	center_and_print	# center and print
@@ -353,7 +364,9 @@ last_line:
 
 	jal	center_and_print	# center and print
 
-	la	a1,default_colors	# restore colors, print a few linefeeds
+	#la	a1,default_colors	# restore colors, print a few linefeeds
+	addi	a1,s0,0x3b		# (default_colors-data_start)
+
 	jal	write_stdout
 
 
