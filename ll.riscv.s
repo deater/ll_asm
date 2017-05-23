@@ -9,7 +9,65 @@
 
 .include "logo.include"
 
+# Registers:
+# UGH! They seem to have changed this mapping at least once
+#	and some documents online have the old version
+
+#	32 general purpose registers:
+#		x0/zero:	always zero
+#		x1/ra:		return address
+#		x2/sp		stack pointer
+#		x3/gp:		global pointer
+#		x4/tp:		thread pointer
+#		x5-x7/t0-t2	temp
+#		x8/s0/fp	frame pointer
+#		x9/s1		saved
+#		x10-x11/a0-a1	function args/returns
+#		x12-17/a2-a7	arguments
+#		x18-27/s2-s11	saved
+#		x28-x31/t3-t6	temporary
+#	32 floating point registers
+#	32 priviledged registers
+
 # Syscalls:    
+#	arguments in a0-a7, number in a7.  Result in a0?
+#	was "scall" but now is "ecall"?
+
+# Multiply/Div : optional
+# Little Endian, optionally Big endian
+# Misaligned memory OK
+
+# Instruction set (not-surprisingly) is very MIPS like, just w/o delay slot
+# fused compare/branch, no condition flags
+
+# 64-bit Instructions have a *W variant that operates on low 32-bits
+# The top 32 bits are sign extension of bottom 32-bits
+
+# Instructions:
+#	ADDI -- add immediate (12-bit)
+#	ANDI/ORI/XORI	-- immediate logical (12 bit, sign extended)
+#	SLTI/SLTIU -- set less than -- set to 1 if register less than immediate
+#	SLLI/SRLI/SRAI - immediate shifts
+#	LUI - load upper immediate, load top 20 bits in reg, zero out bottom
+#	AUIPC - add upper immediate to PC
+#	ADD -- add
+#	AND/OR/XOR -- logical
+#	SLT/SLTU - set if less than
+#	SLL/SRL/SRA -- shifts
+#	ADD	-- add
+#	SUB -- subtract
+#	LD/LW/LH/LB	-- load sign extend 64/32/16/8
+#	LWU/LHU/LBU	-- load zero extend 32/16/8
+#	NOP -- just an addi 0,0,0
+#	JAL -- jump and link, can be to any reg but typically x1 and x5 target
+#	JALR -- jump and link register
+#	BEQ/BNE -- branch if equal/not equal
+#	BLT/BLTU -- branch less than
+#	BGE/BGEU -- branch greater than
+#	Should use JALR rd=0 for unconditional branch rather than BEQ
+#	Multiply/Divide are optional
+#	MUL,MULH,MULU,MULHU,MULHSU
+#	DIV/DIVU/REM/REMU
 
 # Optimization:
 #  + LZSS
@@ -30,6 +88,7 @@
 .equ S_TOTALRAM,32
 
 # Sycscalls
+# used generic Linux syscall numbers
 .equ SYSCALL_EXIT,	93
 .equ SYSCALL_READ,	63
 .equ SYSCALL_WRITE,	64
@@ -270,9 +329,9 @@ last_line:
 	# Exit
 	#================================
 exit:
-#	mov	x0,#0				# result
-#	mov	x8,#SYSCALL_EXIT
-#	svc	0				# and exit
+	li	a0,5				# result
+	li	a7,SYSCALL_EXIT			# Why can't we use v0?
+	ecall					# and exit
 
 
 	#=================================
