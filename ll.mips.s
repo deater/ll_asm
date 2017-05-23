@@ -9,8 +9,10 @@
 
 
 # Optimization
-# + 1277 bytes - historical
+# + 1276 bytes - historical
 # + 1340 bytes - when assembled with gas 2.28
+#		a lot of the size is the new "ABIFLAGS" segment
+#		required on newer MIPS systems
 # + 1336 bytes - get rid of extraneous move
 # + 1332 bytes - fill a branch delay slot
 # + 1326 bytes - some optimizations of center_and_print
