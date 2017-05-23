@@ -327,7 +327,7 @@ chip_name:
 
 	lw	$a0, S_TOTALRAM($a0)	# size in bytes of RAM
 	# LOAD DELAY SLOT
-	li	$19,1			# print to strcat, not stderr
+	li	$s3,1			# print to strcat, not stderr
 
 	jal     num_to_ascii
 	# BRANCH DELAY SLOT
@@ -404,21 +404,21 @@ exit:
 	#   $s0 (s1) is the output buffer
 
 	#   $a1 is destroyed
-	#   $11 (t3) is destroyed
+	#   $t3 (t3) is destroyed
 
 find_string:
 	addiu	$a1, $s1,(disk_buffer-bss_begin)-1
 					# look in cpuinfo buffer
 find_loop:
 
-	ulw	$11,1($a1)		# load un-aligned 32 bits
-	beq	$11,$0,done		# are we at EOF?
+	ulw	$t3,1($a1)		# load un-aligned 32 bits
+	beq	$t3,$0,done		# are we at EOF?
 					# if so, done
 	# BRANCH DELAY SLOT
 	addiu   $a1,$a1,1		        # increment pointer
 
 
-	bne	$a0,$11, find_loop	# do the strings match?
+	bne	$a0,$t3, find_loop	# do the strings match?
 					# if not, loop
 
 					# if we get this far, we matched
@@ -426,32 +426,32 @@ find_loop:
 	nop
 
 find_colon:
-	lbu	$11,1($a1)		# repeat till we find colon
+	lbu	$t3,1($a1)		# repeat till we find colon
 	# LOAD DELAY SLOT
 	addiu	$a1,$a1,1
-	beq	$11,$0,done		# not found? then done
+	beq	$t3,$0,done		# not found? then done
 	# BRANCH DELAY SLOT
 	nop
 
-	bne	$11,$1,find_colon
+	bne	$t3,$at,find_colon
 	# BRANCH DELAY SLOT
-	li	$1,':'
+	li	$at,':'
 
 	addiu   $a1,$a1,2			# skip a char [should be space]
 
 store_loop:
-	lbu	$11,0($a1)		# load value
+	lbu	$t3,0($a1)		# load value
 	# LOAD DELAY SLOT
 	addiu	$a1,$a1,1			# increment
-	beq	$11,$0,done		# off end, then stop
+	beq	$t3,$0,done		# off end, then stop
 	# BRANCH DELAY SLOT
 	nop
 
-	beq	$11,$a2,done      	# is it end char?
+	beq	$t3,$a2,done      	# is it end char?
 	# BRANCH DELAY SLOT
 	nop				# if so, finish
 
-	sb	$11,0($s5)		# if not store and continue
+	sb	$t3,0($s5)		# if not store and continue
 	j	store_loop		# loop
 	# BRANCH DELAY SLOT
 	addiu	$s5,$s5,1		# increment output pointer
@@ -466,12 +466,12 @@ done:
 	# center_and_print
 	#==============================
 	# string is in $s5 (s1) output_buffer
-	# s3 $19= stdout or strcat
-        # $s4, $14, $t6 trashed
+	# s3 $s3= stdout or strcat
+        # $s4, $t6, $t6 trashed
 
 center_and_print:
 
-	move	$14,$31				# save return address
+	move	$t6,$31				# save return address
 	move	$s4,$s5				# $s4 is the end of our string
 	addiu	$s5,$s1,(out_buffer-bss_begin)	# point $s5 to beginning
 
@@ -479,8 +479,8 @@ center_and_print:
 	subu	$a0, $s4,$s5		# subtract end pointer from start
        		    			# (cheaty way to get size of string)
 
-	slti	$1,$a0,81
-	beq	$1,$0, done_center	# don't center if > 80
+	slti	$at,$a0,81
+	beq	$at,$0, done_center	# don't center if > 80
 	# BRANCH DELAY SLOT
 	li    	$s3,0 			# print to stdout
 
@@ -513,7 +513,7 @@ done_center:
 	addiu	$a1,$s0,(linefeed-data_begin)
 					# print linefeed at end of line
 
-	move 	$31,$14 		# restore saved pointer
+	move 	$31,$t6 		# restore saved pointer
 	     				# so we'll return to
 					# where we were called from
 					# at the end of the write_stdout
@@ -552,7 +552,7 @@ str_loop1:
 	# a1 = output buffer
 	# s3 = 0=stdout, 1=strcat
 	# destroys t2 ($t1)
-	# destroys t3 ($11)
+	# destroys t3 ($t3)
 	# destroys a0 ($a0)
 
 num_to_ascii:
@@ -562,17 +562,17 @@ num_to_ascii:
 
 div_by_10:
 	addiu	$a1,$a1,-1	# point back one
-	li	$1,10
-	divu	$t1,$a0,$1	# divide.  hi= remainder, lo=quotient
-	mfhi	$11		# remainder into t3 ($11)
-	addiu	$11,$11,0x30	# convert to ascii
-	sb	$11,0($a1)	# store to buffer
+	li	$at,10
+	divu	$t1,$a0,$at	# divide.  hi= remainder, lo=quotient
+	mfhi	$t3		# remainder into t3 ($t3)
+	addiu	$t3,$t3,0x30	# convert to ascii
+	sb	$t3,0($a1)	# store to buffer
 	bne	$t1,$0, div_by_10
 	# BRANCH DELAY SLOT
 	move	$a0,$t1		# move old result into next divide
 
 write_out:
-	beq	$19,$0,write_stdout
+	beq	$s3,$0,write_stdout
 	# BRANCH DELAY SLOT
 	nop			# if write stdout, go there
 
