@@ -81,6 +81,7 @@
 #    - 1249 bytes = use register to hold uname pointer
 #    - 1233 bytes = remove much of "la" use before lzss
 #    - 1225 bytes = use bss_start pointer math for uname
+#    - 1217 bytes = avoid "la" in first line
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -230,20 +231,24 @@ first_line:
 
 	jal	strcat				# call strcat
 
-	la	s3,ver_string			# source is " Version "
+#	la	s3,ver_string			# source is " Version "
+	move	s3,s0				# (ver_string-data_begin)
+
 	jal 	strcat			        # call strcat
 
 	addi	s3,s1,32+U_RELEASE		# version from uname,
 						#   ie "2.6.20"
 	jal	strcat				# call strcat
 
-	la	s3,compiled_string		# source is ", Compiled "
+#	la	s3,compiled_string		# source is ", Compiled "
+	addi	s3,s0,10			# (compiled_string-data_begin)
+
 	jal	strcat				#  call strcat
 
 	addi	s3,s1,32+U_VERSION		# compiled date
 	jal	strcat				# call strcat
 
-	jal	center_and_print	# center and print
+	jal	center_and_print		# center and print
 
 	#===============================
 	# Middle-Line
