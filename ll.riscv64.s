@@ -353,29 +353,6 @@ exit:
 	li	a7,SYSCALL_EXIT			# Why can't we use v0?
 	ecall					# and exit
 
-
-#print_hex:
-#	li	a3,8
-#	la	a1,hello
-#hexloop:
-#	addi	a3,a3,-1
-#	andi	a4,a0,0xf
-#	add	a4,a4,48
-#	srli	a0,a0,4
-#
-#	sb	a4,0(a1)
-#
-#	addi	a1,a1,1
-#	bnez	a3,hexloop
-
-
-#	la	a1,hello
-#	move	a6,ra
-#	jal	write_stdout
-#	move	ra,a6
-#
-#	ret
-
 	#=================================
 	# FIND_STRING
 	#=================================
@@ -410,9 +387,6 @@ store_loop:
 	addi	s5,s5,1		# increment pointer
 
 	j	store_loop
-
-almost_done:
-#	sb	zero,0(s5)
 
 done:
 	ret			# return
@@ -543,8 +517,6 @@ cpuinfo:	.ascii	"/proc/cpuinfo\0"
 
 one:	.ascii	"One \0"
 
-#hello:	.ascii	"Hello World\n\0\0\0\0\0\0\0\0\0"
-
 .include	"logo.lzss_new"
 
 
@@ -553,7 +525,6 @@ one:	.ascii	"One \0"
 #============================================================================
 .bss
 bss_begin:
-.align	(P_BITS+1)
 .lcomm	text_buf, N
 .lcomm	disk_buffer,4096	## we cheat!!!!
 .lcomm	out_buffer,16384
