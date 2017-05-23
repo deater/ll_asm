@@ -9,6 +9,7 @@ mips		RISC	28	0
 pa-risc		RISC	28	0
 m88k		RISC	28	0
 microblaze	RISC	28	0
+riscv64-RVM	RISC	28	0
 6502		EBIT	27	0
 arm.eabi	RISC	24	0
 PowerPC		RISC	24	0

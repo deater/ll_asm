@@ -25,4 +25,5 @@ for 32-bit x86 compiling on 64-bit
 make ARCH=i686
 
 make CROSS=riscv-linux-gnu- ARCH=riscv64
-~/research/riscv-qemu/riscv64-linux-user/qemu-riscv64 ./ll.riscv
+~/research/riscv-qemu/riscv64-linux-user/qemu-riscv64 ./ll.riscv64.fakeproc.stripped 
+

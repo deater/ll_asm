@@ -12,6 +12,7 @@ sparc		RISC	92	0
 PowerPC		RISC	88	0
 arm.eabi	RISC	88	0
 6502		EBIT	85	0
+riscv64-RVM	RISC	68	0
 pdp-11		EBIT	62	0
 sh3		EMBED	58	0
 THUMB		EMBED	58	0
