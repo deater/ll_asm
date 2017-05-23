@@ -1,459 +1,466 @@
 
-ll.mips64:     file format elf32-tradbigmips
+ll.mips:     file format elf32-tradbigmips
 
+
+Disassembly of section .MIPS.abiflags:
+
+00400098 <.MIPS.abiflags>:
+  400098:	00000100 	sll	zero,zero,0x4
+  40009c:	01010001 	0x1010001
+	...
 
 Disassembly of section .reginfo:
 
-00400074 <.reginfo>:
-  400074:	937fbf76 	lbu	ra,-16522(k1)
+004000b0 <.reginfo>:
+  4000b0:	937f7f76 	lbu	ra,32630(k1)
 	...
-  400088:	004084f0 	0x4084f0
+  4000c4:	00408520 	0x408520
 
 Disassembly of section .text:
 
-00400090 <__start>:
-  400090:	3c110040 	lui	s1,0x40
-  400094:	26310380 	addiu	s1,s1,896
-  400098:	3c120040 	lui	s2,0x40
-  40009c:	26520500 	addiu	s2,s2,1280
-  4000a0:	240803c0 	li	t0,960
-  4000a4:	26290061 	addiu	t1,s1,97
-  4000a8:	262c017c 	addiu	t4,s1,380
-  4000ac:	26500440 	addiu	s0,s2,1088
+004000d0 <__start>:
+  4000d0:	3c100040 	lui	s0,0x40
+  4000d4:	261003b0 	addiu	s0,s0,944
+  4000d8:	3c110040 	lui	s1,0x40
+  4000dc:	26310530 	addiu	s1,s1,1328
+  4000e0:	241203c0 	li	s2,960
+  4000e4:	2613005f 	addiu	s3,s0,95
+  4000e8:	2614017a 	addiu	s4,s0,378
+  4000ec:	26350440 	addiu	s5,s1,1088
 
-004000b0 <decompression_loop>:
-  4000b0:	912a0000 	lbu	t2,0(t1)
-  4000b4:	25290001 	addiu	t1,t1,1
-  4000b8:	01405821 	move	t3,t2
-  4000bc:	356bff00 	ori	t3,t3,0xff00
+004000f0 <decompression_loop>:
+  4000f0:	92690000 	lbu	t1,0(s3)
+  4000f4:	3529ff00 	ori	t1,t1,0xff00
+  4000f8:	26730001 	addiu	s3,s3,1
 
-004000c0 <test_flags>:
-  4000c0:	11890021 	beq	t4,t1,400148 <done_logo>
-  4000c4:	316d0001 	andi	t5,t3,0x1
-  4000c8:	15a0001b 	bnez	t5,400138 <discrete_char>
-  4000cc:	000b5842 	srl	t3,t3,0x1
+004000fc <test_flags>:
+  4000fc:	12930021 	beq	s4,s3,400184 <done_logo>
+  400100:	312a0001 	andi	t2,t1,0x1
+  400104:	1540001b 	bnez	t2,400174 <discrete_char>
+  400108:	00094842 	srl	t1,t1,0x1
 
-004000d0 <offset_length>:
-  4000d0:	912a0000 	lbu	t2,0(t1)
-  4000d4:	91380001 	lbu	t8,1(t1)
-  4000d8:	25290002 	addiu	t1,t1,2
-  4000dc:	0018c200 	sll	t8,t8,0x8
-  4000e0:	030ac025 	or	t8,t8,t2
-  4000e4:	00187a82 	srl	t7,t8,0xa
-  4000e8:	25ef0003 	addiu	t7,t7,3
+0040010c <offset_length>:
+  40010c:	92610000 	lbu	at,0(s3)
+  400110:	926c0001 	lbu	t4,1(s3)
+  400114:	000c6200 	sll	t4,t4,0x8
+  400118:	01816025 	or	t4,t4,at
+  40011c:	26730002 	addiu	s3,s3,2
+  400120:	000c5a82 	srl	t3,t4,0xa
+  400124:	256b0003 	addiu	t3,t3,3
 
-004000ec <output_loop>:
-  4000ec:	331803ff 	andi	t8,t8,0x3ff
-  4000f0:	264a0000 	addiu	t2,s2,0
-  4000f4:	01585021 	addu	t2,t2,t8
-  4000f8:	914a0000 	lbu	t2,0(t2)
-  4000fc:	27180001 	addiu	t8,t8,1
+00400128 <output_loop>:
+  400128:	318c03ff 	andi	t4,t4,0x3ff
+  40012c:	26280000 	addiu	t0,s1,0
+  400130:	010c4021 	addu	t0,t0,t4
+  400134:	91080000 	lbu	t0,0(t0)
+  400138:	258c0001 	addiu	t4,t4,1
 
-00400100 <store_byte>:
-  400100:	a20a0000 	sb	t2,0(s0)
-  400104:	26100001 	addiu	s0,s0,1
-  400108:	26410000 	addiu	at,s2,0
-  40010c:	00280821 	addu	at,at,t0
-  400110:	a02a0000 	sb	t2,0(at)
-  400114:	21080001 	addi	t0,t0,1
-  400118:	25efffff 	addiu	t7,t7,-1
-  40011c:	15e0fff3 	bnez	t7,4000ec <output_loop>
-  400120:	310803ff 	andi	t0,t0,0x3ff
-  400124:	316dff00 	andi	t5,t3,0xff00
-  400128:	15a0ffe5 	bnez	t5,4000c0 <test_flags>
-  40012c:	00000000 	nop
-  400130:	0810002c 	j	4000b0 <decompression_loop>
-  400134:	00000000 	nop
+0040013c <store_byte>:
+  40013c:	a2a80000 	sb	t0,0(s5)
+  400140:	26b50001 	addiu	s5,s5,1
+  400144:	262d0000 	addiu	t5,s1,0
+  400148:	01b26821 	addu	t5,t5,s2
+  40014c:	a1a80000 	sb	t0,0(t5)
+  400150:	22520001 	addi	s2,s2,1
+  400154:	256bffff 	addiu	t3,t3,-1
+  400158:	1560fff3 	bnez	t3,400128 <output_loop>
+  40015c:	325203ff 	andi	s2,s2,0x3ff
+  400160:	3121ff00 	andi	at,t1,0xff00
+  400164:	1420ffe5 	bnez	at,4000fc <test_flags>
+  400168:	00000000 	nop
+  40016c:	0810003c 	j	4000f0 <decompression_loop>
+  400170:	00000000 	nop
 
-00400138 <discrete_char>:
-  400138:	912a0000 	lbu	t2,0(t1)
-  40013c:	25290001 	addiu	t1,t1,1
-  400140:	08100040 	j	400100 <store_byte>
-  400144:	240f0001 	li	t7,1
+00400174 <discrete_char>:
+  400174:	92680000 	lbu	t0,0(s3)
+  400178:	26730001 	addiu	s3,s3,1
+  40017c:	0810004f 	j	40013c <store_byte>
+  400180:	240b0001 	li	t3,1
 
-00400148 <done_logo>:
-  400148:	0c1000c0 	jal	400300 <write_stdout>
-  40014c:	26450440 	addiu	a1,s2,1088
+00400184 <done_logo>:
+  400184:	0c1000cd 	jal	400334 <write_stdout>
+  400188:	26250440 	addiu	a1,s1,1088
 
-00400150 <first_line>:
-  400150:	2402101a 	li	v0,4122
-  400154:	26445490 	addiu	a0,s2,21648
-  400158:	0000000c 	syscall
-  40015c:	26500440 	addiu	s0,s2,1088
-  400160:	0c1000d9 	jal	400364 <strcat>
-  400164:	26455490 	addiu	a1,s2,21648
-  400168:	0c1000d9 	jal	400364 <strcat>
-  40016c:	26250000 	addiu	a1,s1,0
-  400170:	0c1000d9 	jal	400364 <strcat>
-  400174:	26455512 	addiu	a1,s2,21778
-  400178:	0c1000d9 	jal	400364 <strcat>
-  40017c:	2625000a 	addiu	a1,s1,10
-  400180:	0c1000d9 	jal	400364 <strcat>
-  400184:	26455553 	addiu	a1,s2,21843
-  400188:	0c1000ac 	jal	4002b0 <center_and_print>
-  40018c:	00000000 	nop
+0040018c <first_line>:
+  40018c:	2402101a 	li	v0,4122
+  400190:	26245490 	addiu	a0,s1,21648
+  400194:	0000000c 	syscall
+  400198:	26350440 	addiu	s5,s1,1088
+  40019c:	0c1000e5 	jal	400394 <strcat>
+  4001a0:	26255490 	addiu	a1,s1,21648
+  4001a4:	0c1000e5 	jal	400394 <strcat>
+  4001a8:	26050000 	addiu	a1,s0,0
+  4001ac:	0c1000e5 	jal	400394 <strcat>
+  4001b0:	26255512 	addiu	a1,s1,21778
+  4001b4:	0c1000e5 	jal	400394 <strcat>
+  4001b8:	2605000a 	addiu	a1,s0,10
+  4001bc:	0c1000e5 	jal	400394 <strcat>
+  4001c0:	26255553 	addiu	a1,s1,21843
+  4001c4:	0c1000ba 	jal	4002e8 <center_and_print>
+  4001c8:	00000000 	nop
 
-00400190 <middle_line>:
-  400190:	26500440 	addiu	s0,s2,1088
-  400194:	24020fa5 	li	v0,4005
-  400198:	2624003c 	addiu	a0,s1,60
-  40019c:	24050000 	li	a1,0
-  4001a0:	0000000c 	syscall
-  4001a4:	00402021 	move	a0,v0
-  4001a8:	24020fa3 	li	v0,4003
-  4001ac:	26454440 	addiu	a1,s2,17472
-  4001b0:	24061000 	li	a2,4096
-  4001b4:	0000000c 	syscall
-  4001b8:	24020fa6 	li	v0,4006
-  4001bc:	0000000c 	syscall
+004001cc <middle_line>:
+  4001cc:	26350440 	addiu	s5,s1,1088
+  4001d0:	24020fa5 	li	v0,4005
+  4001d4:	2604003a 	addiu	a0,s0,58
+  4001d8:	24050000 	li	a1,0
+  4001dc:	0000000c 	syscall
+  4001e0:	00402025 	move	a0,v0
+  4001e4:	24020fa3 	li	v0,4003
+  4001e8:	26254440 	addiu	a1,s1,17472
+  4001ec:	24061000 	li	a2,4096
+  4001f0:	0000000c 	syscall
+  4001f4:	24020fa6 	li	v0,4006
+  4001f8:	0000000c 	syscall
 
-004001c0 <number_of_cpus>:
-  4001c0:	0c1000d9 	jal	400364 <strcat>
-  4001c4:	2625004a 	addiu	a1,s1,74
+004001fc <number_of_cpus>:
+  4001fc:	0c1000e5 	jal	400394 <strcat>
+  400200:	26050048 	addiu	a1,s0,72
 
-004001c8 <chip_name>:
-  4001c8:	3c046f64 	lui	a0,0x6f64
-  4001cc:	3484656c 	ori	a0,a0,0x656c
-  4001d0:	0c100093 	jal	40024c <find_string>
-  4001d4:	24060020 	li	a2,32
-  4001d8:	0c1000d9 	jal	400364 <strcat>
-  4001dc:	26250054 	addiu	a1,s1,84
-  4001e0:	24021014 	li	v0,4116
-  4001e4:	26445450 	addiu	a0,s2,21584
-  4001e8:	0000000c 	syscall
-  4001ec:	8c840010 	lw	a0,16(a0)
-  4001f0:	24130001 	li	s3,1
-  4001f4:	0c1000cb 	jal	40032c <num_to_ascii>
-  4001f8:	00042502 	srl	a0,a0,0x14
-  4001fc:	0c1000d9 	jal	400364 <strcat>
-  400200:	26250016 	addiu	a1,s1,22
-  400204:	3c044d49 	lui	a0,0x4d49
-  400208:	34845053 	ori	a0,a0,0x5053
-  40020c:	0c100093 	jal	40024c <find_string>
-  400210:	2406000a 	li	a2,10
-  400214:	0c1000d9 	jal	400364 <strcat>
-  400218:	2625001e 	addiu	a1,s1,30
-  40021c:	0c1000ac 	jal	4002b0 <center_and_print>
-  400220:	00000000 	nop
-  400224:	26500440 	addiu	s0,s2,1088
-  400228:	0c1000d9 	jal	400364 <strcat>
-  40022c:	264554d1 	addiu	a1,s2,21713
-  400230:	0c1000ac 	jal	4002b0 <center_and_print>
-  400234:	00000000 	nop
-  400238:	0c1000c0 	jal	400300 <write_stdout>
-  40023c:	26250030 	addiu	a1,s1,48
+00400204 <chip_name>:
+  400204:	3c046f64 	lui	a0,0x6f64
+  400208:	3484656c 	ori	a0,a0,0x656c
+  40020c:	0c1000a2 	jal	400288 <find_string>
+  400210:	24060020 	li	a2,32
+  400214:	0c1000e5 	jal	400394 <strcat>
+  400218:	26050052 	addiu	a1,s0,82
+  40021c:	24021014 	li	v0,4116
+  400220:	26245450 	addiu	a0,s1,21584
+  400224:	0000000c 	syscall
+  400228:	8c840010 	lw	a0,16(a0)
+  40022c:	24130001 	li	s3,1
+  400230:	0c1000d8 	jal	400360 <num_to_ascii>
+  400234:	00042502 	srl	a0,a0,0x14
+  400238:	0c1000e5 	jal	400394 <strcat>
+  40023c:	26050016 	addiu	a1,s0,22
+  400240:	3c044d49 	lui	a0,0x4d49
+  400244:	34845053 	ori	a0,a0,0x5053
+  400248:	0c1000a2 	jal	400288 <find_string>
+  40024c:	2406000a 	li	a2,10
+  400250:	0c1000e5 	jal	400394 <strcat>
+  400254:	2605001e 	addiu	a1,s0,30
+  400258:	0c1000ba 	jal	4002e8 <center_and_print>
+  40025c:	00000000 	nop
+  400260:	26350440 	addiu	s5,s1,1088
+  400264:	0c1000e5 	jal	400394 <strcat>
+  400268:	262554d1 	addiu	a1,s1,21713
+  40026c:	0c1000ba 	jal	4002e8 <center_and_print>
+  400270:	00000000 	nop
+  400274:	0c1000cd 	jal	400334 <write_stdout>
+  400278:	2605002e 	addiu	a1,s0,46
 
-00400240 <exit>:
-  400240:	24020fa1 	li	v0,4001
-  400244:	24040000 	li	a0,0
-  400248:	0000000c 	syscall
+0040027c <exit>:
+  40027c:	24020fa1 	li	v0,4001
+  400280:	24040000 	li	a0,0
+  400284:	0000000c 	syscall
 
-0040024c <find_string>:
-  40024c:	2645443f 	addiu	a1,s2,17471
+00400288 <find_string>:
+  400288:	2625443f 	addiu	a1,s1,17471
 
-00400250 <find_loop>:
-  400250:	88ab0001 	lwl	t3,1(a1)
-  400254:	98ab0004 	lwr	t3,4(a1)
-  400258:	11600013 	beqz	t3,4002a8 <done>
-  40025c:	24a50001 	addiu	a1,a1,1
-  400260:	148bfffb 	bne	a0,t3,400250 <find_loop>
-  400264:	00000000 	nop
+0040028c <find_loop>:
+  40028c:	88ab0001 	lwl	t3,1(a1)
+  400290:	98ab0004 	lwr	t3,4(a1)
+  400294:	11600013 	beqz	t3,4002e4 <done>
+  400298:	24a50001 	addiu	a1,a1,1
+  40029c:	148bfffb 	bne	a0,t3,40028c <find_loop>
+  4002a0:	00000000 	nop
 
-00400268 <find_colon>:
-  400268:	90ab0001 	lbu	t3,1(a1)
-  40026c:	24a50001 	addiu	a1,a1,1
-  400270:	1160000d 	beqz	t3,4002a8 <done>
-  400274:	00000000 	nop
-  400278:	1561fffb 	bne	t3,at,400268 <find_colon>
-  40027c:	2401003a 	li	at,58
-  400280:	24a50002 	addiu	a1,a1,2
+004002a4 <find_colon>:
+  4002a4:	90ab0001 	lbu	t3,1(a1)
+  4002a8:	24a50001 	addiu	a1,a1,1
+  4002ac:	1160000d 	beqz	t3,4002e4 <done>
+  4002b0:	00000000 	nop
+  4002b4:	1561fffb 	bne	t3,at,4002a4 <find_colon>
+  4002b8:	2401003a 	li	at,58
+  4002bc:	24a50002 	addiu	a1,a1,2
 
-00400284 <store_loop>:
-  400284:	90ab0000 	lbu	t3,0(a1)
-  400288:	24a50001 	addiu	a1,a1,1
-  40028c:	11600006 	beqz	t3,4002a8 <done>
-  400290:	00000000 	nop
-  400294:	11660004 	beq	t3,a2,4002a8 <done>
-  400298:	00000000 	nop
-  40029c:	a20b0000 	sb	t3,0(s0)
-  4002a0:	081000a1 	j	400284 <store_loop>
-  4002a4:	26100001 	addiu	s0,s0,1
+004002c0 <store_loop>:
+  4002c0:	90ab0000 	lbu	t3,0(a1)
+  4002c4:	24a50001 	addiu	a1,a1,1
+  4002c8:	11600006 	beqz	t3,4002e4 <done>
+  4002cc:	00000000 	nop
+  4002d0:	11660004 	beq	t3,a2,4002e4 <done>
+  4002d4:	00000000 	nop
+  4002d8:	a2ab0000 	sb	t3,0(s5)
+  4002dc:	081000b0 	j	4002c0 <store_loop>
+  4002e0:	26b50001 	addiu	s5,s5,1
 
-004002a8 <done>:
-  4002a8:	03e00008 	jr	ra
-  4002ac:	00000000 	nop
+004002e4 <done>:
+  4002e4:	03e00008 	jr	ra
 
-004002b0 <center_and_print>:
-  4002b0:	03e0a821 	move	s5,ra
-  4002b4:	0200a021 	move	s4,s0
-  4002b8:	26500440 	addiu	s0,s2,1088
-  4002bc:	02902023 	subu	a0,s4,s0
-  4002c0:	28810051 	slti	at,a0,81
-  4002c4:	1020000a 	beqz	at,4002f0 <done_center>
-  4002c8:	24130000 	li	s3,0
-  4002cc:	00042022 	neg	a0,a0
-  4002d0:	24840050 	addiu	a0,a0,80
-  4002d4:	0004b042 	srl	s6,a0,0x1
-  4002d8:	0c1000c0 	jal	400300 <write_stdout>
-  4002dc:	26250037 	addiu	a1,s1,55
-  4002e0:	0c1000cb 	jal	40032c <num_to_ascii>
-  4002e4:	02c02021 	move	a0,s6
-  4002e8:	0c1000c0 	jal	400300 <write_stdout>
-  4002ec:	2625003a 	addiu	a1,s1,58
+004002e8 <center_and_print>:
+  4002e8:	03e07025 	move	t6,ra
+  4002ec:	24010a00 	li	at,2560
+  4002f0:	a6a10000 	sh	at,0(s5)
+  4002f4:	26340440 	addiu	s4,s1,1088
+  4002f8:	02b42023 	subu	a0,s5,s4
+  4002fc:	28810050 	slti	at,a0,80
+  400300:	1020000a 	beqz	at,40032c <done_center>
+  400304:	24130000 	li	s3,0
+  400308:	00042022 	neg	a0,a0
+  40030c:	24840050 	addiu	a0,a0,80
+  400310:	0004b042 	srl	s6,a0,0x1
+  400314:	0c1000cd 	jal	400334 <write_stdout>
+  400318:	26050035 	addiu	a1,s0,53
+  40031c:	0c1000d8 	jal	400360 <num_to_ascii>
+  400320:	02c02025 	move	a0,s6
+  400324:	0c1000cd 	jal	400334 <write_stdout>
+  400328:	26050038 	addiu	a1,s0,56
 
-004002f0 <done_center>:
-  4002f0:	0c1000c0 	jal	400300 <write_stdout>
-  4002f4:	26450440 	addiu	a1,s2,1088
-  4002f8:	2625002e 	addiu	a1,s1,46
-  4002fc:	02a0f821 	move	ra,s5
+0040032c <done_center>:
+  40032c:	26250440 	addiu	a1,s1,1088
+  400330:	01c0f825 	move	ra,t6
 
-00400300 <write_stdout>:
-  400300:	24020fa4 	li	v0,4004
-  400304:	24040001 	li	a0,1
-  400308:	24060000 	li	a2,0
-  40030c:	00a0c821 	move	t9,a1
+00400334 <write_stdout>:
+  400334:	24020fa4 	li	v0,4004
+  400338:	24040001 	li	a0,1
+  40033c:	24060000 	li	a2,0
+  400340:	00a0c825 	move	t9,a1
 
-00400310 <str_loop1>:
-  400310:	93380001 	lbu	t8,1(t9)
-  400314:	23390001 	addi	t9,t9,1
-  400318:	1700fffd 	bnez	t8,400310 <str_loop1>
-  40031c:	20c60001 	addi	a2,a2,1
-  400320:	0000000c 	syscall
-  400324:	03e00008 	jr	ra
-  400328:	00000000 	nop
+00400344 <str_loop1>:
+  400344:	93380001 	lbu	t8,1(t9)
+  400348:	23390001 	addi	t9,t9,1
+  40034c:	1700fffd 	bnez	t8,400344 <str_loop1>
+  400350:	20c60001 	addi	a2,a2,1
+  400354:	0000000c 	syscall
+  400358:	03e00008 	jr	ra
+  40035c:	00000000 	nop
 
-0040032c <num_to_ascii>:
-  40032c:	24a5544a 	addiu	a1,a1,21578
+00400360 <num_to_ascii>:
+  400360:	24a5544a 	addiu	a1,a1,21578
 
-00400330 <div_by_10>:
-  400330:	24a5ffff 	addiu	a1,a1,-1
-  400334:	2401000a 	li	at,10
-  400338:	14200002 	bnez	at,400344 <div_by_10+0x14>
-  40033c:	0081001b 	divu	zero,a0,at
-  400340:	0007000d 	break	0x7
-  400344:	00005012 	mflo	t2
-  400348:	00005810 	mfhi	t3
-  40034c:	256b0030 	addiu	t3,t3,48
-  400350:	a0ab0000 	sb	t3,0(a1)
-  400354:	1540fff6 	bnez	t2,400330 <div_by_10>
-  400358:	01402021 	move	a0,t2
+00400364 <div_by_10>:
+  400364:	24a5ffff 	addiu	a1,a1,-1
+  400368:	2401000a 	li	at,10
+  40036c:	14200002 	bnez	at,400378 <div_by_10+0x14>
+  400370:	0081001b 	divu	zero,a0,at
+  400374:	0007000d 	break	0x7
+  400378:	00002012 	mflo	a0
+  40037c:	00005810 	mfhi	t3
+  400380:	256b0030 	addiu	t3,t3,48
+  400384:	1480fff7 	bnez	a0,400364 <div_by_10>
+  400388:	a0ab0000 	sb	t3,0(a1)
 
-0040035c <write_out>:
-  40035c:	1260ffe8 	beqz	s3,400300 <write_stdout>
-  400360:	00000000 	nop
+0040038c <write_out>:
+  40038c:	1260ffe9 	beqz	s3,400334 <write_stdout>
+  400390:	00000000 	nop
 
-00400364 <strcat>:
-  400364:	90a80000 	lbu	t0,0(a1)
-  400368:	24a50001 	addiu	a1,a1,1
-  40036c:	a2080000 	sb	t0,0(s0)
-  400370:	1500fffc 	bnez	t0,400364 <strcat>
-  400374:	26100001 	addiu	s0,s0,1
+00400394 <strcat>:
+  400394:	90b20000 	lbu	s2,0(a1)
+  400398:	24a50001 	addiu	a1,a1,1
+  40039c:	a2b20000 	sb	s2,0(s5)
+  4003a0:	1640fffc 	bnez	s2,400394 <strcat>
+  4003a4:	26b50001 	addiu	s5,s5,1
 
-00400378 <done_strcat>:
-  400378:	03e00008 	jr	ra
-  40037c:	2610ffff 	addiu	s0,s0,-1
+004003a8 <done_strcat>:
+  4003a8:	03e00008 	jr	ra
+  4003ac:	26b5ffff 	addiu	s5,s5,-1
 
-Disassembly of section .data:
+004003b0 <data_begin>:
+  4003b0:	20566572 	addi	s6,v0,25970
+  4003b4:	73696f6e 	0x73696f6e
+  4003b8:	20002c20 	addi	zero,zero,11296
 
-00400380 <_fdata>:
-  400380:	20566572 	addi	s6,v0,25970
-  400384:	73696f6e 	0x73696f6e
-  400388:	20002c20 	addi	zero,zero,11296
+004003ba <compiled_string>:
+  4003ba:	2c20436f 	sltiu	zero,at,17263
+  4003be:	6d70696c 	0x6d70696c
+  4003c2:	65642000 	0x65642000
 
-0040038a <compiled_string>:
-  40038a:	2c20436f 	sltiu	zero,at,17263
-  40038e:	6d70696c 	0x6d70696c
-  400392:	65642000 	0x65642000
+004003c6 <ram_comma>:
+  4003c6:	4d205241 	0x4d205241
+  4003ca:	4d2c2000 	0x4d2c2000
 
-00400396 <ram_comma>:
-  400396:	4d205241 	0x4d205241
-  40039a:	4d2c2000 	0x4d2c2000
+004003ce <bogo_total>:
+  4003ce:	20426f67 	addi	v0,v0,28519
+  4003d2:	6f6d6970 	0x6f6d6970
+  4003d6:	7320546f 	0x7320546f
+  4003da:	74616c00 	jalx	185b000 <_gp+0x1452ae0>
 
-0040039e <bogo_total>:
-  40039e:	20426f67 	addi	v0,v0,28519
-  4003a2:	6f6d6970 	0x6f6d6970
-  4003a6:	7320546f 	0x7320546f
-  4003aa:	74616c00 	jalx	185b000 <_gp+0x1452b10>
+004003de <default_colors>:
+  4003de:	1b5b306d 	0x1b5b306d
+  4003e2:	0a0a001b 	j	828006c <_gp+0x7e77b4c>
 
-004003ae <linefeed>:
-  4003ae:	0a001b5b 	j	8006d6c <_gp+0x7bfe87c>
+004003e5 <escape>:
+  4003e5:	1b5b 0043 	jal	de8010c <_gp+0xda77bec>
 
-004003b0 <default_colors>:
-  4003b0:	1b5b306d 	0x1b5b306d
-  4003b4:	0a0a001b 	j	828006c <_gp+0x7e77b7c>
+004003e8 <c>:
+  4003e8:	43002f70 	c0	0x1002f70
 
-004003b7 <escape>:
-  4003b7:	1b5b 0043 	jal	de8010c <_gp+0xda77c1c>
+004003ea <cpuinfo>:
+  4003ea:	2f70726f 	sltiu	s0,k1,29295
+  4003ee:	632f6370 	0x632f6370
+  4003f2:	75696e66 	jalx	5a5b998 <_gp+0x5653478>
+  4003f6:	6f004f6e 	0x6f004f6e
 
-004003ba <c>:
-  4003ba:	43002f70 	c0	0x1002f70
+004003f8 <one>:
+  4003f8:	4f6e6520 	c3	0x16e6520
+  4003fc:	4d495053 	0x4d495053
+  400400:	20002050 	addi	zero,zero,8272
 
-004003bc <cpuinfo>:
-  4003bc:	2f70726f 	sltiu	s0,k1,29295
-  4003c0:	632f6370 	0x632f6370
-  4003c4:	75696e66 	jalx	5a5b998 <_gp+0x56534a8>
-  4003c8:	6f004f6e 	0x6f004f6e
-
-004003ca <one>:
-  4003ca:	4f6e6520 	c3	0x16e6520
-  4003ce:	4d495053 	0x4d495053
-  4003d2:	20002050 	addi	zero,zero,8272
-
-004003d4 <processor>:
-  4003d4:	2050726f 	addi	s0,v0,29295
-  4003d8:	63657373 	0x63657373
-  4003dc:	6f722c20 	0x6f722c20
+00400402 <processor>:
+  400402:	2050726f 	addi	s0,v0,29295
+  400406:	63657373 	0x63657373
+  40040a:	6f722c20 	0x6f722c20
 	...
 
-004003e1 <logo>:
-  4003e1:	ff1b      	daddiu	s0,sp,108
-  4003e3:	5b30      	sltiu	v1,48
-  4003e5:	3b31      	ld	s1,136(v1)
-  4003e7:	3b33      	ld	s1,152(v1)
-  4003e9:	379f      	sra	a3,a0,7
-  4003eb:	3b34      	ld	s1,160(v1)
-  4003ed:	376d      	dsll	a3,v1,3
-  4003ef:	23cc      	beqz	v1,400389 <_fdata+0x9>
-  4003f1:	f7c0 0733 	addiu	a3,sp,2035
-  4003f5:	8d30      	lh	s1,32(a1)
-  4003f7:	c81b      	sh	s0,54(s0)
-  4003f9:	1b5b c407 	jal	deb101c <_gp+0xdaa8b2c>
-  4003fd:	cb1f      	sh	s0,62(v1)
-  4003ff:	1c0c 3b0f 	jalx	600ec3c <_gp+0x5c0674c>
-  400403:	3430      	sll	a0,s1,4
-  400405:	6d0a      	li	a1,10
-  400407:	c0f7      	sb	a3,23(s0)
-  400409:	0160      	addiu	s1,sp,384
-  40040b:	1a38 2c9c 	jal	c44b270 <_gp+0xc042d80>
-  40040f:	1f1b 5b33 	jalx	de16ccc <_gp+0xda0e7dc>
-  400413:	316d      	dsll	s1,v1,3
-  400415:	cc04      	sh	s0,8(a0)
-  400417:	41ac      	addiu	a1,s1,-4
-  400419:	0d24      	la	a1,4004a8 <logo+0xc7>
-  40041b:	021c      	addiu	v0,sp,112
-  40041d:	104f      	b	4004bd <logo+0xdc>
-  40041f:	0d20      	la	a1,40049c <logo+0xbb>
-  400421:	1041      	b	4004a5 <logo+0xc4>
-  400423:	9398      	lw	v1,608(sp)
-  400425:	8334      	lb	s1,20(v1)
-  400427:	1c34 cc10 	jalx	a073040 <_gp+0x9c6ab50>
-  40042b:	100c      	b	400445 <logo+0x64>
-  40042d:	246f      	beqz	a0,40050d <bss_begin+0xd>
-  40042f:	39ec      	ld	a3,96(s1)
-  400431:	a71c      	lbu	s0,28(a3)
-  400433:	0833      	la	s0,4004fc <logo_end>
-  400435:	1614      	b	40005f <SYSCALL_UNAME+0x3ff045>
-  400437:	8955      	lh	v0,42(s1)
-  400439:	2c60      	bnez	a0,4004fb <logo+0x11a>
-  40043b:	002b      	addiu	s0,sp,172
-  40043d:	61d6      	btnez	4003eb <logo+0xa>
-  40043f:	71e2      	cmpi	s1,226
-  400441:	c8cb      	sh	a2,22(s0)
-  400443:	08d4      	la	s0,400790 <bss_begin+0x290>
-  400445:	09d3      	la	s1,400790 <bss_begin+0x290>
-  400447:	102b      	b	40049f <logo+0xbe>
-  400449:	59f5      	sltiu	s1,245
-  40044b:	d100      	sw	s1,0(sp)
-  40044d:	8011      	lb	s0,17(s0)
-  40044f:	d218      	sw	v0,96(sp)
-  400451:	0d28      	la	a1,4004f0 <logo+0x10f>
-  400453:	1c14 0d2c 	jalx	a0034b0 <_gp+0x9bfafc0>
-  400457:	1c1c f04a 	jalx	e03c128 <_gp+0xdc33c38>
-  40045b:	1a5b 000d 	jal	dc80034 <_gp+0xd877b44>
-  40045f:	505f      	slti	s0,95
-  400461:	6587      	move	a0,a3
-  400463:	652b      	move	t1,v1
-  400465:	55f5      	slti	a1,245
-  400467:	cdcd      	sh	a2,26(a1)
-  400469:	28cd      	bnez	s0,400405 <logo+0x24>
-  40046b:	1489      	b	3ffd7f <SYSCALL_UNAME+0x3fed65>
-  40046d:	4100      	addiu	s0,s1,0
-  40046f:	1d87 424b 	jalx	3b1092c <_gp+0x370843c>
-  400473:	7253      	cmpi	v0,83
-  400475:	1c78 0f62 	jalx	c0c3d88 <_gp+0xbcbb898>
-  400479:	876d      	lb	v1,13(a3)
-  40047b:	5558      	slti	a1,88
-  40047d:	f7c1 00e8 	addiu	s0,sp,4072
-  400481:	2bf4      	bnez	v1,40046b <logo+0x8a>
-  400483:	9749      	lw	a3,292(sp)
-  400485:	783d      	sd	s1,232(s0)
-  400487:	b01b      	lw	s0,4004f0 <logo+0x10f>
-  400489:	5f97      	sltiu	a3,151
-  40048b:	b012      	lw	s0,4004d0 <logo+0xef>
-  40048d:	2bab      	bnez	v1,4003e5 <logo+0x4>
-  40048f:	ca10      	sh	s0,32(v0)
-  400491:	df16      	sw	s0,88(a3)
-  400493:	1af5 5af5 	jal	add6bd4 <_gp+0xa9ce6e4>
-  400497:	d93f      	sw	s1,124(s1)
-  400499:	331b      	sra	v1,s0,6
-  40049b:	5692      	slti	a2,146
-  40049d:	5bb0      	sltiu	v1,176
-  40049f:	0200      	addiu	v0,sp,0
-  4004a1:	0c1d      	la	a0,400514 <bss_begin+0x14>
-  4004a3:	d3c8      	sw	v1,800(sp)
-  4004a5:	ac39      	lhu	s1,50(a0)
-  4004a7:	1766      	b	400375 <strcat+0x11>
-  4004a9:	32f6      	srl	v0,a3,5
-  4004ab:	6e6d      	li	a2,109
-  4004ad:	ec44      	sllv	v0,a0
-  4004af:	605e      	bteqz	40056d <bss_begin+0x6d>
-  4004b1:	08af      	la	s0,40076c <bss_begin+0x26c>
-  4004b3:	0aa6      	la	v0,400748 <bss_begin+0x248>
-  4004b5:	6914      	li	s1,20
-  4004b7:	0130      	addiu	s1,sp,192
-  4004b9:	330b      	sra	v1,s0,2
-  4004bb:	de1f      	sw	s0,124(a2)
-  4004bd:	310f      	sra	s1,s0,3
-  4004bf:	d3bc      	sw	v1,752(sp)
-  4004c1:	00af      	addiu	s0,sp,700
-  4004c3:	4f19      	addiu	a3,25
-  4004c5:	56aa      	slti	a2,170
-  4004c7:	4552      	daddiu	v0,a1,2
-  4004c9:	db28      	sw	s1,32(v1)
-  4004cb:	5246      	slti	v0,70
-  4004cd:	7f08      	sd	s0,64(a3)
-  4004cf:	53db      	slti	v1,219
-  4004d1:	2300      	beqz	v1,4004d3 <logo+0xf2>
-  4004d3:	a955      	lhu	v0,42(s1)
-  4004d5:	aa35      	lhu	s1,42(v0)
-  4004d7:	1821 1268 	jal	8449a0 <_gp+0x43c4b0>
-  4004db:	912a      	lw	s1,168(sp)
-  4004dd:	c822      	sh	s1,4(s0)
-  4004df:	b268      	lw	v0,40067c <bss_begin+0x17c>
-  4004e1:	702d      	cmpi	s0,45
-  4004e3:	00c6      	addiu	s0,sp,792
-  4004e5:	50b2      	slti	s0,178
-  4004e7:	7991      	sd	a0,136(s1)
-  4004e9:	4a70      	addiu	v0,112
-  4004eb:	31f8      	sll	s1,a3,6
-  4004ed:	51f3      	slti	s1,243
-  4004ef:	28dd      	bnez	s0,4004ab <logo+0xca>
-  4004f1:	17ff      	b	4004f1 <logo+0x110>
-  4004f3:	1708      	b	400305 <write_stdout+0x5>
-  4004f5:	0236      	addiu	v0,sp,216
-  4004f7:	0324      	addiu	v1,sp,144
-  4004f9:	e542      	dsubu	s0,a1,v0
-  4004fb:	0a00      	la	v0,4004f8 <logo+0x117>
+0040040f <logo>:
+  40040f:	ff1b      	0xff1b
+  400411:	5b30      	sltiu	v1,48
+  400413:	3b31      	0x3b31
+  400415:	3b33      	0x3b33
+  400417:	379f      	sra	a3,a0,7
+  400419:	3b34      	0x3b34
+  40041b:	376d      	0x376d
+  40041d:	23cc      	beqz	v1,4003b8 <data_begin+0x8>
+  40041f:	f7c0 0733 	addiu	a3,sp,2003
+  400423:	8d30      	lh	s1,32(a1)
+  400425:	c81b      	sh	s0,54(s0)
+  400427:	1b5b c407 	jal	deb101c <_gp+0xdaa8afc>
+  40042b:	cb1f      	sh	s0,62(v1)
+  40042d:	1c0c 3b0f 	jalx	600ec3c <_gp+0x5c0671c>
+  400431:	3430      	sll	a0,s1,4
+  400433:	6d0a      	li	a1,10
+  400435:	c0f7      	sb	a3,23(s0)
+  400437:	0160      	addiu	s1,sp,384
+  400439:	1a38 2c9c 	jal	c44b270 <_gp+0xc042d50>
+  40043d:	1f1b 5b33 	jalx	de16ccc <_gp+0xda0e7ac>
+  400441:	316d      	0x316d
+  400443:	cc04      	sh	s0,8(a0)
+  400445:	41ac      	addiu	a1,s1,-4
+  400447:	0d24      	la	a1,4004d8 <logo+0xc9>
+  400449:	021c      	addiu	v0,sp,112
+  40044b:	104f      	b	4004ec <logo+0xdd>
+  40044d:	0d20      	la	a1,4004cc <logo+0xbd>
+  40044f:	1041      	b	4004d4 <logo+0xc5>
+  400451:	9398      	lw	v1,608(sp)
+  400453:	8334      	lb	s1,20(v1)
+  400455:	1c34 cc10 	jalx	a073040 <_gp+0x9c6ab20>
+  400459:	100c      	b	400474 <logo+0x65>
+  40045b:	246f      	beqz	a0,40053c <_fdata+0xc>
+  40045d:	39ec      	0x39ec
+  40045f:	a71c      	lbu	s0,28(a3)
+  400461:	0833      	la	s0,40052c <logo_end+0x2>
+  400463:	1614      	b	40008e <SYSCALL_UNAME+0x3ff074>
+  400465:	8955      	lh	v0,42(s1)
+  400467:	2c60      	bnez	a0,40052a <logo_end>
+  400469:	002b      	addiu	s0,sp,172
+  40046b:	61d6      	btnez	40041a <logo+0xb>
+  40046d:	71e2      	cmpi	s1,226
+  40046f:	c8cb      	sh	a2,22(s0)
+  400471:	08d4      	la	s0,4007c0 <_fdata+0x290>
+  400473:	09d3      	la	s1,4007c0 <_fdata+0x290>
+  400475:	102b      	b	4004ce <logo+0xbf>
+  400477:	59f5      	sltiu	s1,245
+  400479:	d100      	sw	s1,0(sp)
+  40047b:	8011      	lb	s0,17(s0)
+  40047d:	d218      	sw	v0,96(sp)
+  40047f:	0d28      	la	a1,400520 <logo+0x111>
+  400481:	1c14 0d2c 	jalx	a0034b0 <_gp+0x9bfaf90>
+  400485:	1c1c f04a 	jalx	e03c128 <_gp+0xdc33c08>
+  400489:	1a5b 000d 	jal	dc80034 <_gp+0xd877b14>
+  40048d:	505f      	slti	s0,95
+  40048f:	6587      	move	a0,a3
+  400491:	652b      	move	t1,v1
+  400493:	55f5      	slti	a1,245
+  400495:	cdcd      	sh	a2,26(a1)
+  400497:	28cd      	bnez	s0,400434 <logo+0x25>
+  400499:	1489      	b	3ffdae <SYSCALL_UNAME+0x3fed94>
+  40049b:	4100      	addiu	s0,s1,0
+  40049d:	1d87 424b 	jalx	3b1092c <_gp+0x370840c>
+  4004a1:	7253      	cmpi	v0,83
+  4004a3:	1c78 0f62 	jalx	c0c3d88 <_gp+0xbcbb868>
+  4004a7:	876d      	lb	v1,13(a3)
+  4004a9:	5558      	slti	a1,88
+  4004ab:	f7c1 00e8 	addiu	s0,sp,4040
+  4004af:	2bf4      	bnez	v1,40049a <logo+0x8b>
+  4004b1:	9749      	lw	a3,292(sp)
+  4004b3:	783d      	0x783d
+  4004b5:	b01b      	lw	s0,400520 <logo+0x111>
+  4004b7:	5f97      	sltiu	a3,151
+  4004b9:	b012      	lw	s0,400500 <logo+0xf1>
+  4004bb:	2bab      	bnez	v1,400414 <logo+0x5>
+  4004bd:	ca10      	sh	s0,32(v0)
+  4004bf:	df16      	sw	s0,88(a3)
+  4004c1:	1af5 5af5 	jal	add6bd4 <_gp+0xa9ce6b4>
+  4004c5:	d93f      	sw	s1,124(s1)
+  4004c7:	331b      	sra	v1,s0,6
+  4004c9:	5692      	slti	a2,146
+  4004cb:	5bb0      	sltiu	v1,176
+  4004cd:	0200      	addiu	v0,sp,0
+  4004cf:	0c1d      	la	a0,400544 <_fdata+0x14>
+  4004d1:	d3c8      	sw	v1,800(sp)
+  4004d3:	ac39      	lhu	s1,50(a0)
+  4004d5:	1766      	b	4003a4 <strcat+0x10>
+  4004d7:	32f6      	srl	v0,a3,5
+  4004d9:	6e6d      	li	a2,109
+  4004db:	ec44      	sllv	v0,a0
+  4004dd:	605e      	bteqz	40059c <_fdata+0x6c>
+  4004df:	08af      	la	s0,40079c <_fdata+0x26c>
+  4004e1:	0aa6      	la	v0,400778 <_fdata+0x248>
+  4004e3:	6914      	li	s1,20
+  4004e5:	0130      	addiu	s1,sp,192
+  4004e7:	330b      	sra	v1,s0,2
+  4004e9:	de1f      	sw	s0,124(a2)
+  4004eb:	310f      	sra	s1,s0,3
+  4004ed:	d3bc      	sw	v1,752(sp)
+  4004ef:	00af      	addiu	s0,sp,700
+  4004f1:	4f19      	addiu	a3,25
+  4004f3:	56aa      	slti	a2,170
+  4004f5:	4552      	0x4552
+  4004f7:	db28      	sw	s1,32(v1)
+  4004f9:	5246      	slti	v0,70
+  4004fb:	7f08      	0x7f08
+  4004fd:	53db      	slti	v1,219
+  4004ff:	2300      	beqz	v1,400502 <logo+0xf3>
+  400501:	a955      	lhu	v0,42(s1)
+  400503:	aa35      	lhu	s1,42(v0)
+  400505:	1821 1268 	jal	8449a0 <_gp+0x43c480>
+  400509:	912a      	lw	s1,168(sp)
+  40050b:	c822      	sh	s1,4(s0)
+  40050d:	b268      	lw	v0,4006ac <_fdata+0x17c>
+  40050f:	702d      	cmpi	s0,45
+  400511:	00c6      	addiu	s0,sp,792
+  400513:	50b2      	slti	s0,178
+  400515:	7991      	0x7991
+  400517:	4a70      	addiu	v0,112
+  400519:	31f8      	sll	s1,a3,6
+  40051b:	51f3      	slti	s1,243
+  40051d:	28dd      	bnez	s0,4004da <logo+0xcb>
+  40051f:	17ff      	b	400520 <logo+0x111>
+  400521:	1708      	b	400334 <write_stdout>
+  400523:	0236      	addiu	v0,sp,216
+  400525:	0324      	addiu	v1,sp,144
+  400527:	e542      	0xe542
+  400529:	0a00      	la	v0,400528 <logo+0x119>
 
-004004fc <logo_end>:
-  4004fc:	00000000 	nop
+0040052a <logo_end>:
+  40052a:	00000000 	nop
+	...
 
 Disassembly of section .bss:
 
-00400500 <bss_begin>:
+00400530 <__bss_start>:
 	...
 
-00400940 <out_buffer>:
+00400970 <out_buffer>:
 	...
 
-00404940 <disk_buffer>:
+00404970 <disk_buffer>:
 	...
 
-00405940 <ascii_buffer>:
+00405970 <ascii_buffer>:
 	...
 
-00405950 <sysinfo_buff>:
+00405980 <sysinfo_buff>:
 	...
 
-00405990 <uname_info>:
+004059c0 <uname_info>:
 	...
+
+Disassembly of section .gnu.attributes:
+
+00000000 <.gnu.attributes>:
+   0:	41000000 	bc0f	4 <POSITION_MASK+0x1>
+   4:	0f676e75 	jal	d9db9d4 <_gp+0xd5d34b4>
+   8:	00010000 	sll	zero,at,0x0
+   c:	00070401 	0x70401

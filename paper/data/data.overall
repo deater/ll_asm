@@ -5,8 +5,8 @@ ia64		VLIW	2826	0
 alpha		RISC	1821	0
 RiSC		RISC	1418	0
 pa-risc		RISC	1400	0
+mips		RISC	1322	0
 microblaze	RISC	1298	0
-mips		RISC	1276	0
 m88k		RISC	1240	0
 sparc		RISC	1221	0
 PowerPC		RISC	1165	0
