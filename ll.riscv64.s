@@ -73,8 +73,11 @@
 #  + LZSS
 #    - 136 bytes = original port of MIPS code
 #    - 120 bytes = move text_buf to dedicated register
+#    - 116 bytes = move back to 0xff in high bits for telling when shift done
+#
 #  + Overall
 #    - 1277 bytes = original working version
+#    - 1261 bytes = reserve register to hold out_buffer
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -119,8 +122,6 @@ _start:
 
 	la	s0,data_begin	# s0 = .data segment begin
 	la	s1,bss_begin	# s1 = .bss segment begin
-#	addi	s1,s0,0x478 #(bss_begin-data_begin)
-#	li	s1,bss_begin
 	li	s2,(N-F)	# s2 = R
 
 	# hack as the riscv assembler won't let you do pointer math
@@ -130,16 +131,21 @@ _start:
 	#addi	s3,s0,0x5a		# (logo-data_begin)
 	la	s4,logo_end
 	#addi	s4,s0,(logo-data_end)
-	la	s5,out_buffer
+	la	s9,out_buffer
+	move	s5,s9
 
 	# lots of extraneous registers to waste
+	# feels a bit cheating to optimize the size of lzss at
+	#	the expense of overall program size
 
 	la	s6,text_buf
+	li	s10,0xff00
+	li	s11,0xff
 
 decompression_loop:
 	lbu	t1,0(s3)	# load a logo byte
+	or	t1,s10,t1	# load upper 8 bits as hacky counter
 	addi	s3,s3,1		# increment pointer
-	li	t6,8
 
 test_flags:
 	beq	s4,s3,done_logo	# have we reached the end?
@@ -182,11 +188,11 @@ store_byte:
 	andi	s2,s2,(N-1)		# wrap R if too big
 	bnez 	t3,output_loop		# repeat until k>j
 
-	addi	t6,t6,-1
-	bnez	t6,test_flags		# have we shifted by 8 bits?
-					# if so bit 8 is clear and
-					# we need new flags
+	bne	t1,s11,test_flags	# have we shifted by 8 bits?
+					# if so t1 is now 0xff
+					# and we need new flags
 	j	decompression_loop
+
 discrete_char:
 	lbu	t0,0(s3)	# load a byte
 	addi	s3,s3,1		# increment pointer
@@ -195,12 +201,10 @@ discrete_char:
 
 	j	store_byte	# and store it
 
-
-
 # end of LZSS code
 
 done_logo:
-	la	a1,out_buffer		# buffer we are printing to
+	move	a1,s9
 	jal	write_stdout		# print the logo
 
 	#==========================
@@ -212,7 +216,7 @@ first_line:
 	li	a7,SYSCALL_UNAME
 	ecall			 		# do syscall
 
-	la	s5,out_buffer			# point s5 to out_buffer
+	move	s5,s9				# point s5 to out_buffer
 
 	la	s3,uname_info			# os-name from uname "Linux"
 
@@ -241,7 +245,7 @@ middle_line:
 	# Load /proc/cpuinfo into buffer
 	#===============================
 
-	la	s5,out_buffer		# point s5 to out_buffer
+	move	s5,s9			# point s5 to out_buffer
 
 	# regular SYSCALL_OPEN not supported on new machines?
 
@@ -329,7 +333,7 @@ chip_name:
 	# Print Host Name
 	#=================================
 last_line:
-	la	s5,out_buffer		# point s5 to out_buffer
+	move	s5,s9			# point s5 to out_buffer
 
 	la	s3,(uname_info+U_NODENAME)
 					# host name from uname()
@@ -422,7 +426,7 @@ done:
 center_and_print:
 	move	a6,ra			# save return address
 	move	t0,s5			# t0 is now end of string
-	la	s5,out_buffer		# point s5 to beginning
+	move	s5,s9			# point s5 to out_buffer
 
 	li	t2,0x0a
 	sh	t2,0(t0)		# put linefeed at end
