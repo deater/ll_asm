@@ -78,6 +78,8 @@
 #  + Overall
 #    - 1277 bytes = original working version
 #    - 1261 bytes = reserve register to hold out_buffer
+#    - 1249 bytes = use register to hold uname pointer
+#    - 1233 bytes = remove much of "la" use before lzss
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -121,24 +123,28 @@ _start:
 # optimized some more by Vince Weaver
 
 	la	s0,data_begin	# s0 = .data segment begin
-	la	s1,bss_begin	# s1 = .bss segment begin
+	#la	s1,bss_begin	# s1 = .bss segment begin
+	addi	s1,s0,0x17c	# (bss_begin-data_begin)
+
 	li	s2,(N-F)	# s2 = R
 
 	# hack as the riscv assembler won't let you do pointer math
 
-	la	s3,logo
-	#addi	s3,s0,(logo-data_begin)
-	#addi	s3,s0,0x5a		# (logo-data_begin)
-	la	s4,logo_end
-	#addi	s4,s0,(logo-data_end)
-	la	s9,out_buffer
+	#la	s3,logo
+	addi	s3,s0,0x5a		# (logo-data_begin)
+
+	#la	s4,logo_end
+	addi	s4,s3,0x11b		# (logo-data_end)
+
+	la	s9,out_buffer		# too big for 12-bit offset
 	move	s5,s9
 
 	# lots of extraneous registers to waste
 	# feels a bit cheating to optimize the size of lzss at
 	#	the expense of overall program size
 
-	la	s6,text_buf
+	#la	s6,text_buf
+	move	s6,s1
 	li	s10,0xff00
 	li	s11,0xff
 
@@ -212,27 +218,29 @@ done_logo:
 	#==========================
 first_line:
 
-	la	a0,uname_info			# uname struct
+	la	s7,uname_info			# uname struct
+	move	a0,s7
+
 	li	a7,SYSCALL_UNAME
 	ecall			 		# do syscall
 
 	move	s5,s9				# point s5 to out_buffer
 
-	la	s3,uname_info			# os-name from uname "Linux"
+	move	s3,s7				# os-name from uname "Linux"
 
 	jal	strcat				# call strcat
 
 	la	s3,ver_string			# source is " Version "
 	jal 	strcat			        # call strcat
 
-	la	s3,(uname_info+U_RELEASE)	# version from uname,
+	addi	s3,s7,U_RELEASE			# version from uname,
 						#   ie "2.6.20"
 	jal	strcat				# call strcat
 
 	la	s3,compiled_string		# source is ", Compiled "
 	jal	strcat				#  call strcat
 
-	la	s3,(uname_info+U_VERSION)	# compiled date
+	addi	s3,s7,U_VERSION			# compiled date
 	jal	strcat				# call strcat
 
 	jal	center_and_print	# center and print
@@ -335,8 +343,7 @@ chip_name:
 last_line:
 	move	s5,s9			# point s5 to out_buffer
 
-	la	s3,(uname_info+U_NODENAME)
-					# host name from uname()
+	addi	s3,s7,U_NODENAME	# host name from uname()
 	jal	strcat			# call strcat
 
 	jal	center_and_print	# center and print
@@ -480,7 +487,7 @@ write_out:
 	move	s3,a1
 
 	#================================
-	# strcat
+	# strcat (stpcpy)
 	#================================
 	# value to cat in s3
 	# output buffer in s5
@@ -491,6 +498,7 @@ strcat:
 	sb	t0,0(s5)		# store a byte
 	addi	s5,s5,1			# increment pointer
 	bnez	t0,strcat		# loop if not zero
+
 	add	s5,s5,-1		# point to one less than null
 	ret				# return
 
