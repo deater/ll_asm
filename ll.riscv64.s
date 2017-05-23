@@ -72,8 +72,9 @@
 # Optimization:
 #  + LZSS
 #    - 136 bytes = original port of MIPS code
+#    - 120 bytes = move text_buf to dedicated register
 #  + Overall
-#    - ???? bytes = original working version
+#    - 1277 bytes = original working version
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -118,11 +119,22 @@ _start:
 
 	la	s0,data_begin	# s0 = .data segment begin
 	la	s1,bss_begin	# s1 = .bss segment begin
+#	addi	s1,s0,0x478 #(bss_begin-data_begin)
+#	li	s1,bss_begin
 	li	s2,(N-F)	# s2 = R
 
+	# hack as the riscv assembler won't let you do pointer math
+
 	la	s3,logo
+	#addi	s3,s0,(logo-data_begin)
+	#addi	s3,s0,0x5a		# (logo-data_begin)
 	la	s4,logo_end
+	#addi	s4,s0,(logo-data_end)
 	la	s5,out_buffer
+
+	# lots of extraneous registers to waste
+
+	la	s6,text_buf
 
 decompression_loop:
 	lbu	t1,0(s3)	# load a logo byte
@@ -135,14 +147,14 @@ test_flags:
 
 	andi	t2,t1,0x1	# check low bit
 
-	srli	t1,t1,1		# shift
+	srli	t1,t1,1		# done with bit, shift to right
 	bnez	t2,discrete_char
 				# if low bit set
 				# we have a discrete char
 
 offset_length:
 	lhu	t4,0(s3)	# load an unagligned halfword
-	addi	s3,s3,2		# increment
+	addi	s3,s3,2		# increment pointer
 
 	srli	t3,t4,P_BITS
 	addi	t3,t3,THRESHOLD+1
@@ -153,16 +165,16 @@ offset_length:
 output_loop:
 	andi	t4,t4,((POSITION_MASK<<8)+0xff)
 	                                # mask it
-	la	t0,text_buf
-	add	t0,t0,t4
+
+	add	t0,s6,t4
 	lbu 	t0,0(t0)		# load byte from text_buf[]
 	addi	t4,t4,1			# increment pointer in text_buf
 
 store_byte:
 	sb	t0,0(s5)		# store a byte to output
 	addi	s5,s5,1			# increment pointer
-	la	t5,text_buf
-	add	t5,t5,s2
+
+	add	t5,s6,s2
 	sb	t0,0(t5)		# store a byte to text_buf[r]
 	addi	s2,s2,1			# increment pointer (r)
 
@@ -503,12 +515,6 @@ strcat:
 	bnez	t0,strcat		# loop if not zero
 	add	s5,s5,-1		# point to one less than null
 	ret				# return
-
-
-literals:
-# Put literal values here
-#.ltorg
-
 
 #===========================================================================
 #	section .data
