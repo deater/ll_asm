@@ -29,7 +29,7 @@
 #	32 floating point registers
 #	32 priviledged registers
 
-# Syscalls:    
+# Syscalls:
 #	arguments in a0-a7, number in a7.  Result in a0?
 #	was "scall" but now is "ecall"?
 
@@ -196,34 +196,30 @@ done_logo:
 	#==========================
 first_line:
 
-#	adr	x0,uname_info			# uname struct
-#	mov	x8,#SYSCALL_UNAME
-#	svc	0		 		# do syscall
+	la	a0,uname_info			# uname struct
+	li	a7,SYSCALL_UNAME
+	ecall			 		# do syscall
 
-#	adr	x1,uname_info			# os-name from uname "Linux"
+	la	s5,out_buffer			# point s5 to out_buffer
 
-#	adr	x10,out_buffer			# point x10 to out_buffer
+	la	s3,uname_info			# os-name from uname "Linux"
 
-#	bl	strcat				# call strcat
+	jal	strcat				# call strcat
 
-#	adr	x1,ver_string			# source is " Version "
-#	bl 	strcat			        # call strcat
+	la	s3,ver_string			# source is " Version "
+	jal 	strcat			        # call strcat
 
-#	adr	x1,(uname_info+U_RELEASE)	# version from uname, 
+	la	s3,(uname_info+U_RELEASE)	# version from uname,
 						#   ie "2.6.20"
-#	bl	strcat				# call strcat
+	jal	strcat				# call strcat
 
-#	adr	x1,compiled_string		# source is ", Compiled "
-#	bl	strcat				#  call strcat
+	la	s3,compiled_string		# source is ", Compiled "
+	jal	strcat				#  call strcat
 
-#	adr	x1,(uname_info+U_VERSION)	# compiled date
-#	bl	strcat				# call strcat
+	la	s3,(uname_info+U_VERSION)	# compiled date
+	jal	strcat				# call strcat
 
-#	mov	x3,#0xa
-#	strh	w3,[x10],#+2		# store a linefeed, and NULL,
-					# increment pointer
-
-#	bl	center_and_print	# center and print
+	jal	center_and_print	# center and print
 
 	#===============================
 	# Middle-Line
@@ -322,52 +318,48 @@ chip_name:
 	# Print Host Name
 	#=================================
 last_line:
-#	adr	x10,out_buffer		# point x10 to out_buffer
+	la	s5,out_buffer		# point s5 to out_buffer
 
-#	adr	x1,(uname_info+U_NODENAME)
+	la	s3,(uname_info+U_NODENAME)
 					# host name from uname()
-#	bl	strcat			# call strcat
+	jal	strcat			# call strcat
 
-#	bl	center_and_print	# center and print
+	jal	center_and_print	# center and print
 
-#	adr	x1,default_colors	# restore colors, print a few linefeeds
-#	bl	write_stdout
+	la	a1,default_colors	# restore colors, print a few linefeeds
+	jal	write_stdout
 
 
 	#================================
 	# Exit
 	#================================
-
-	la	a1,hello
-	jal	write_stdout
-
 exit:
 	li	a0,2				# result
 	li	a7,SYSCALL_EXIT			# Why can't we use v0?
 	ecall					# and exit
 
 
-print_hex:
-	li	a3,8
-	la	a1,hello
-hexloop:
-	addi	a3,a3,-1
-	andi	a4,a0,0xf
-	add	a4,a4,48
-	srli	a0,a0,4
+#print_hex:
+#	li	a3,8
+#	la	a1,hello
+#hexloop:
+#	addi	a3,a3,-1
+#	andi	a4,a0,0xf
+#	add	a4,a4,48
+#	srli	a0,a0,4
+#
+#	sb	a4,0(a1)
+#
+#	addi	a1,a1,1
+#	bnez	a3,hexloop
 
-	sb	a4,0(a1)
 
-	addi	a1,a1,1
-	bnez	a3,hexloop
-
-
-	la	a1,hello
-	move	a6,ra
-	jal	write_stdout
-	move	ra,a6
-
-	ret
+#	la	a1,hello
+#	move	a6,ra
+#	jal	write_stdout
+#	move	ra,a6
+#
+#	ret
 
 	#=================================
 	# FIND_STRING
@@ -411,38 +403,38 @@ done:
 	#==============================
 	# center_and_print
 	#==============================
-	# string to center in at output_buffer
+	# string to center in output buffer
 
 center_and_print:
+	move	a6,ra			# save return address
+	move	t0,s5			# t0 is now end of string
+	la	s5,out_buffer		# point s5 to beginning
 
-#	str	x30,[sp,#-16]!		# store return address on stack
+	li	t2,0x0a
+	sh	t2,0(t0)		# put linefeed at end
 
-#	adr	x1,escape		# we want to output ^[[
-#	bl	write_stdout
+	sub	t1,t0,s5		# subtract end pointer to get length
+	li	t0,80
 
-str_loop2:
-#	adr	x2,out_buffer		# point r2 to out_buffer
-#	sub	x2,x10,x2		# get length by subtracting
+	bge	t1,t0,done_center	# don't center if >80
 
-#	mov	x0,#81
-#	subs	x2,x0,x2		# no reverse substract arm64!
+	sub	t0,t0,t1		# t0=80-length
+	srli	t0,t0,1			# divide by two
 
-#	b.mi	done_center		# if result negative, don't center
+	la	a1,escape
+	jal	write_stdout		# print an escape character
 
-#	lsr	x3,x2,#1		# divide by 2
-#	adc	x3,x3,#0		# round?
+	jal	num_to_ascii		# print num spaces
 
-#	mov	x0,#0			# print to stdout
-#	bl	num_to_ascii		# print number of spaces
-
-#	adr	x1,C			# we want to output C
-
-#	bl	write_stdout
+	la	a1,C			# print "C"
+	jal	write_stdout
 
 done_center:
-#	adr	x1,out_buffer		# point x1 to out_buffer
+	move	a1,s5			# point to string to print
 
-#	ldr	x30,[sp],#16		# restore return address from stack
+	move	ra,a6			# restore return address
+
+	# fallthrough
 
 	#================================
 	# WRITE_STDOUT
@@ -499,18 +491,22 @@ write_out:
 
 					# else, strcat
 
+	ret
+
 	#================================
 	# strcat
 	#================================
-	# value to cat in x1
-	# output buffer in x10
-	# x3 trashed
+	# value to cat in s3
+	# output buffer in s5
+	# t0 trashed
 strcat:
-#	ldrb	w3,[x1],#+1		# load a byte, increment pointer
-#	strb	w3,[x10],#+1		# store a byte, increment pointer
-#	cbnz	w3,strcat		# is not NUL, loop
-#	sub	x10,x10,#1		# point to one less than null
-#	ret				# return
+	lbu	t0,0(s3)		# load a byte
+	addi	s3,s3,1			# increment pointer
+	sb	t0,0(s5)		# store a byte
+	addi	s5,s5,1			# increment pointer
+	bnez	t0,strcat		# loop if not zero
+	add	s5,s5,-1		# point to one less than null
+	ret				# return
 
 
 literals:
@@ -534,14 +530,14 @@ escape:		.ascii "\033[\0"
 C:		.ascii "C\0"
 
 .ifdef FAKE_PROC
-cpuinfo:	.ascii  "proc/cp.arm64\0"
+cpuinfo:	.ascii  "proc/cp.riscv\0"
 .else
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 .endif
 
 one:	.ascii	"One \0"
 
-hello:	.ascii	"Hello World\n\0\0\0\0\0\0\0\0\0"
+#hello:	.ascii	"Hello World\n\0\0\0\0\0\0\0\0\0"
 
 .include	"logo.lzss_new"
 
@@ -559,6 +555,4 @@ bss_begin:
 .lcomm	sysinfo_buff,(64)
 .lcomm	ascii_buffer,32
 
-
 	# see /usr/src/linux/include/linux/kernel.h
-
