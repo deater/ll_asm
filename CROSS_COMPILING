@@ -27,3 +27,5 @@ make ARCH=i686
 make CROSS=riscv-linux-gnu- ARCH=riscv64
 ~/research/riscv-qemu/riscv64-linux-user/qemu-riscv64 ./ll.riscv64.fakeproc.stripped 
 
+make CROSS=mips-linux-gnu- ARCH=mips
+~/research/qemu.git/mips-linux-user/qemu-mips ./ll.mips.fakeproc

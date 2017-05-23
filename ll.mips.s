@@ -1,11 +1,16 @@
 #
-#  linux_logo in mips assembler 0.38
+#  linux_logo in mips assembler 0.49
 #
 #  By
 #       Vince Weaver <vince _at_ deater.net>
 #
 #  assemble with     "as -o ll.o ll.mips.s"
 #  link with         "ld -o ll ll.o"
+
+
+# Optimization
+# + 1277 bytes - historical
+# + 1340 bytes - when assembled with gas 2.28
 
 .include "logo.include"
 
@@ -59,7 +64,6 @@
 #.equ s8   ,30  # s8 on mips compiler
 #.equ ra   ,31  # return address (of subroutine call)
 
-
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
 .equ U_NODENAME,65
@@ -100,25 +104,26 @@ __start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	la	$17,data_begin		# point $17 at .data segment begin
-	la	$18,bss_begin		# point $18 at .bss segment begin
+	la	$s0,data_begin		# point $s0 at .data segment begin
+	la	$s1,bss_begin		# point s2 at .bss segment begin
+	#addiu	$s1,$s0,(bss_begin-data_begin) won't work due to different segs
 
-	li      $8,(N-F)   	     	# R
+	li      $s2,(N-F)   	     	# R
 
-	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo
-	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
-	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
+	addiu  	$s3,$s0,(logo-data_begin)	# $s3 points to logo
+	addiu	$s4,$s0,(logo_end-data_begin)	# $s4 points to end of logo
+	addiu	$s5,$s1,(out_buffer-bss_begin)	# point $s5 to out_buffer
 
 decompression_loop:
 
-	lbu	$10,0($9)       # load in a byte
-	addiu	$9,$9,1		# increment source pointer
+	lbu	$t1,0($s3)	# load in a byte
+	addiu	$s3,$s3,1	# increment source pointer
 
-	move 	$11, $10	# move in the flags
+	move 	$11, $t1	# move in the flags
 	ori 	$11,$11,0xff00  # put 0xff in top as a hackish 8-bit counter
 
 test_flags:
-	beq	$12, $9, done_logo	# have we reached the end?
+	beq	$s4, $s3, done_logo	# have we reached the end?
 					# if so, exit
 	# BRANCH DELAY SLOT
         andi	$13,$11,0x1	# test to see if discrete char
@@ -131,11 +136,11 @@ test_flags:
 
 
 offset_length:
-	lbu     $10,0($9)	# load 16-bit length and match_position combo
-	lbu	$24,1($9)	# can't use lhu because might be unaligned
-	addiu	$9,$9,2	 	# increment source pointer
+	lbu     $t1,0($s3)	# load 16-bit length and match_position combo
+	lbu	$24,1($s3)	# can't use lhu because might be unaligned
+	addiu	$s3,$s3,2	 	# increment source pointer
 	sll	$24,$24,8
-	or	$24,$24,$10
+	or	$24,$24,$t1
 
 	srl $15,$24,P_BITS	# get the top bits, which is length
 
@@ -145,26 +150,26 @@ offset_length:
 output_loop:
         andi 	$24,$24,(POSITION_MASK<<8+0xff)
 					# get the position bits
-	addiu	$10,$18,(text_buf-bss_begin)
-	addu	$10,$10,$24
-	lbu	$10,0($10)		# load byte from text_buf[]
+	addiu	$t1,$s1,(text_buf-bss_begin)
+	addu	$t1,$t1,$24
+	lbu	$t1,0($t1)		# load byte from text_buf[]
 					# should have been able to do
 					# in 2 not 3 instr
 	addiu	$24,$24,1	    	# advance pointer in text_buf
 store_byte:
-        sb      $10,0($16)
-	addiu	$16,$16,1      		# store byte to output buffer
+        sb      $t1,0($s5)
+	addiu	$s5,$s5,1      		# store byte to output buffer
 
-	addiu	$1,$18,(text_buf-bss_begin)
-	addu	$1,$1,$8
-	sb      $10, 0($1)		# store also to text_buf[r]
-	addi 	$8,$8,1        		# r++
+	addiu	$1,$s1,(text_buf-bss_begin)
+	addu	$1,$1,$s2
+	sb      $t1, 0($1)		# store also to text_buf[r]
+	addi 	$s2,$s2,1        		# r++
 
 
 	addiu	$15,$15,-1		# decrement count
 	bne	$15,$0,output_loop	# repeat until k>j
 	#BRANCH DELAY SLOT
-	andi 	$8,$8,(N-1)		# wrap r if we are too big
+	andi 	$s2,$s2,(N-1)		# wrap r if we are too big
 
 	andi	$13,$11,0xff00		# if 0 we shifted through 8 and must
 	bne	$13,$0,test_flags	# re-load flags
@@ -176,8 +181,8 @@ store_byte:
 	nop
 
 discrete_char:
-	lbu     $10,0($9)
-	addiu	$9,$9,1		       	# load a byte
+	lbu     $t1,0($s3)
+	addiu	$s3,$s3,1		       	# load a byte
         j     store_byte		# and store it
 	# BRANCH DELAY SLOT
 	li   	$15,1			# force a one-byte output
@@ -188,7 +193,7 @@ done_logo:
 
         jal	write_stdout			# print the logo
 	# BRANCH DELAY SLOT
-	addiu	$5,$18,(out_buffer-bss_begin)	# point $5 to out_buffer
+	addiu	$5,$s1,(out_buffer-bss_begin)	# point $5 to out_buffer
 
 
 first_line:
@@ -197,38 +202,38 @@ first_line:
 	#==========================
 
 	li	$2, SYSCALL_UNAME		# uname syscall in $2
-	addiu	$4, $18,(uname_info-bss_begin)	# destination of uname in $4
+	addiu	$4, $s1,(uname_info-bss_begin)	# destination of uname in $4
 	syscall					# do syscall
 
-	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
+	addiu	$s5,$s1,(out_buffer-bss_begin)	# point $s5 to out_buffer
 
 
 					# os-name from uname "Linux"
 	jal	strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$18,((uname_info-bss_begin)+U_SYSNAME)
+	addiu	$5,$s1,((uname_info-bss_begin)+U_SYSNAME)
 
 
 					# source is " Version "
        	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(ver_string-data_begin)
+	addiu	$5,$s0,(ver_string-data_begin)
 
 
 					# version from uname, ie "2.6.20"
 	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$18,((uname_info-bss_begin)+U_RELEASE)
+	addiu	$5,$s1,((uname_info-bss_begin)+U_RELEASE)
 
 					# source is ", Compiled "
 	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(compiled_string-data_begin)
+	addiu	$5,$s0,(compiled_string-data_begin)
 
 					# compiled date
 	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$18,((uname_info-bss_begin)+U_VERSION)
+	addiu	$5,$s1,((uname_info-bss_begin)+U_VERSION)
 
 	jal	center_and_print	# center and print
 	# BRANCH DELAY SLOT
@@ -239,7 +244,7 @@ first_line:
 	#===============================
 middle_line:
 
-	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
+	addiu	$s5,$s1,(out_buffer-bss_begin)	# point $s5 to out_buffer
 
 	#=========
 	# Load /proc/cpuinfo into buffer
@@ -247,7 +252,7 @@ middle_line:
 
 	li	$2, SYSCALL_OPEN	# OPEN Syscall
 
-	addiu	$4,$17,(cpuinfo-data_begin)
+	addiu	$4,$s0,(cpuinfo-data_begin)
 					# '/proc/cpuinfo'
 	li	$5, 0			# 0 = O_RDONLY <bits/fcntl.h>
 
@@ -259,7 +264,7 @@ middle_line:
 
 	li	$2, SYSCALL_READ	# read()
 
-	addiu	$5, $18,(disk_buffer-bss_begin)
+	addiu	$5, $s1,(disk_buffer-bss_begin)
 					# point $5 to the buffer
 
 	li	$6, 4096		# 4096 is maximum size of proc file ;)
@@ -280,7 +285,7 @@ number_of_cpus:
 
 	jal	strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(one-data_begin)		# print "One"
+	addiu	$5,$s0,(one-data_begin)		# print "One"
 
 
 	#=========
@@ -310,14 +315,14 @@ chip_name:
 					# print "Processor, "
 	jal	strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(processor-data_begin)
+	addiu	$5,$s0,(processor-data_begin)
 
 	#========
 	# RAM
 	#========
 
 	li	$2, SYSCALL_SYSINFO	# sysinfo() syscall
-	addiu	$4, $18,(sysinfo_buff-bss_begin)
+	addiu	$4, $s1,(sysinfo_buff-bss_begin)
 	syscall
 
 	lw	$4, S_TOTALRAM($4)	# size in bytes of RAM
@@ -332,7 +337,7 @@ chip_name:
 					# print 'M RAM, '
 	jal	strcat			# call strcat
 	# BRANCH_DELAY_SLOT
-	addiu	$5,$17,(ram_comma-data_begin)
+	addiu	$5,$s0,(ram_comma-data_begin)
 
 
 	#========
@@ -353,7 +358,7 @@ chip_name:
 					# bogo total follows RAM
 	jal 	strcat			# call strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(bogo_total-data_begin)
+	addiu	$5,$s0,(bogo_total-data_begin)
 
 
 	jal	center_and_print	# center and print
@@ -364,14 +369,14 @@ chip_name:
 	# Print Host Name
 	#=================================
 
-	addiu	$16,$18,(out_buffer-bss_begin)
-					# point $16 to out_buffer
+	addiu	$s5,$s1,(out_buffer-bss_begin)
+					# point $s5 to out_buffer
 
 
 					# host name from uname()
 	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-	addiu	$5,$18,(uname_info-bss_begin)+U_NODENAME
+	addiu	$5,$s1,(uname_info-bss_begin)+U_NODENAME
 
 	jal	center_and_print	# center and print
 	# BRANCH DELAY SLOT
@@ -379,7 +384,7 @@ chip_name:
 					# (.txt) pointer to default_colors
 	jal	write_stdout
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(default_colors-data_begin)
+	addiu	$5,$s0,(default_colors-data_begin)
 
 
 	#================================
@@ -396,13 +401,13 @@ exit:
 	#=================================
 	#   $6 (a2) is char to end at
 	#   $4 (a0) is 4-char ascii string to look for
-	#   $17 (s1) is the output buffer
+	#   $s0 (s1) is the output buffer
 
 	#   $5 is destroyed
 	#   $11 (t3) is destroyed
 
 find_string:
-	addiu	$5, $18,(disk_buffer-bss_begin)-1
+	addiu	$5, $s1,(disk_buffer-bss_begin)-1
 					# look in cpuinfo buffer
 find_loop:
 
@@ -446,10 +451,10 @@ store_loop:
 	# BRANCH DELAY SLOT
 	nop				# if so, finish
 
-	sb	$11,0($16)		# if not store and continue
+	sb	$11,0($s5)		# if not store and continue
 	j	store_loop		# loop
 	# BRANCH DELAY SLOT
-	addiu	$16,$16,1		# increment output pointer
+	addiu	$s5,$s5,1		# increment output pointer
 
 done:
 	jr	$31			# return
@@ -460,18 +465,18 @@ done:
 	#==============================
 	# center_and_print
 	#==============================
-	# string is in $16 (s0) output_buffer
+	# string is in $s5 (s1) output_buffer
 	# s3 $19= stdout or strcat
-        # $20, $21, $22 trashed
+        # $s4, $14, $22 trashed
 
 center_and_print:
 
-	move	$21,$31				# save return address
-	move	$20,$16				# $20 is the end of our string
-	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to beginning
+	move	$14,$31				# save return address
+	move	$s4,$s5				# $s4 is the end of our string
+	addiu	$s5,$s1,(out_buffer-bss_begin)	# point $s5 to beginning
 
 
-	subu	$4, $20,$16		# subtract end pointer from start
+	subu	$4, $s4,$s5		# subtract end pointer from start
        		    			# (cheaty way to get size of string)
 
 	slti	$1,$4,81
@@ -486,7 +491,7 @@ center_and_print:
 
 	jal	write_stdout		# print ESCAPE char
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(escape-data_begin)
+	addiu	$5,$s0,(escape-data_begin)
 
 
 	jal	num_to_ascii		# print number of spaces
@@ -495,20 +500,20 @@ center_and_print:
 
 	jal	write_stdout
 	# BRANCH DELAY SLOT
-	addiu	$5,$17,(c-data_begin)	# print "C"
+	addiu	$5,$s0,(c-data_begin)	# print "C"
 
 
 done_center:
 					# point to the string to print
 	jal 	write_stdout
 	# BRANCH DELAY SLOT
-	addiu	$5,$18,(out_buffer-bss_begin)
+	addiu	$5,$s1,(out_buffer-bss_begin)
 
 
-	addiu	$5,$17,(linefeed-data_begin)
+	addiu	$5,$s0,(linefeed-data_begin)
 					# print linefeed at end of line
 
-	move 	$31,$21 		# restore saved pointer
+	move 	$31,$14 		# restore saved pointer
 	     				# so we'll return to
 					# where we were called from
 					# at the end of the write_stdout
@@ -546,7 +551,7 @@ str_loop1:
 	# a0 ($4)  = value to print
 	# a1 ($5)  = output buffer
 	# s3 ($19) = 0=stdout, 1=strcat
-	# destroys t2 ($10)
+	# destroys t2 ($t1)
 	# destroys t3 ($11)
 	# destroys a0 ($4)
 
@@ -558,13 +563,13 @@ num_to_ascii:
 div_by_10:
 	addiu	$5,$5,-1	# point back one
 	li	$1,10
-	divu	$10,$4,$1	# divide.  hi= remainder, lo=quotient
+	divu	$t1,$4,$1	# divide.  hi= remainder, lo=quotient
 	mfhi	$11		# remainder into t3 ($11)
 	addiu	$11,$11,0x30	# convert to ascii
 	sb	$11,0($5)	# store to buffer
-	bne	$10,$0, div_by_10
+	bne	$t1,$0, div_by_10
 	# BRANCH DELAY SLOT
-	move	$4,$10		# move old result into next divide
+	move	$4,$t1		# move old result into next divide
 
 write_out:
 	beq	$19,$0,write_stdout
@@ -576,24 +581,24 @@ write_out:
 	#================================
 	# strcat
 	#================================
-	# output_buffer_offset = $16 (s0)
+	# output_buffer_offset = $s5 (s1)
 	# string to cat = $5         (a1)
-	# destroys t0 ($8)
+	# destroys t0 ($s2)
 
 strcat:
-	lbu 	$8,0($5)		# load byte from string
+	lbu 	$s2,0($5)		# load byte from string
 	# LOAD DELAY SLOT
 	addiu	$5,$5,1			# increment string
-	sb  	$8,0($16)		# store byte to output_buffer
+	sb  	$s2,0($s5)		# store byte to output_buffer
 
-	bne 	$8,$0,strcat		# if zero, we are done
+	bne 	$s2,$0,strcat		# if zero, we are done
 	# BRANCH DELAY SLOT
-	addiu	$16,$16,1		# increment output_buffer
+	addiu	$s5,$s5,1		# increment output_buffer
 
 done_strcat:
 	jr	$31			# return
 	# BRANCH DELAY SLOT
-	addiu	$16,$16,-1		# correct pointer
+	addiu	$s5,$s5,-1		# correct pointer
 
 
 
@@ -601,7 +606,7 @@ done_strcat:
 #===========================================================================
 #	section .data
 #===========================================================================
-.data
+#.data
 
 data_begin:
 ver_string:	.ascii	" Version \0"
