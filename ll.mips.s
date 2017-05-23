@@ -11,6 +11,7 @@
 # Optimization
 # + 1277 bytes - historical
 # + 1340 bytes - when assembled with gas 2.28
+# + 1336 bytes - get rid of extraneous move
 
 .include "logo.include"
 
@@ -118,9 +119,7 @@ decompression_loop:
 
 	lbu	$t1,0($s3)	# load in a byte
 	addiu	$s3,$s3,1	# increment source pointer
-
-	move 	$11, $t1	# move in the flags
-	ori 	$11,$11,0xff00  # put 0xff in top as a hackish 8-bit counter
+	ori 	$11,$t1,0xff00  # put 0xff in top as a hackish 8-bit counter
 
 test_flags:
 	beq	$s4, $s3, done_logo	# have we reached the end?
