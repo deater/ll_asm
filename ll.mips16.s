@@ -265,15 +265,6 @@ first_line:
 
 					# os-name from uname "Linux"
 	lw	$a1,uname_info_addr
-#	move	$a0,$a1
-#	li	$a0,100
-
-#	la	$a1,cpuinfo
-#	jal	write_stdout
-
-#	jal	num_to_ascii
-#	b	exit
-
 	#addiu	$a1,U_SYSNAME		U_SYSNAME is zero
 	jal	strcat
 
@@ -296,7 +287,6 @@ first_line:
 	addiu	$a1,U_VERSION
 	jal	strcat			# call strcat
 
-#	lw	$a1,out_buffer_addr
 	jal	center_and_print	# center and print
 
 	#===============================
@@ -359,12 +349,10 @@ print_mhz:
 	# Chip Name
 	#=========
 chip_name:
-#   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')
+   	lw	$a0,odel_string
 					# find 'odel\t: ' and grab up to ' '
-
-#	li	$6,' '
-#	jal	find_string
-
+	li	$a3,' '
+	jal	find_string
 
 					# print "Processor, "
 	lw	$a1,ver_string_addr
@@ -395,11 +383,11 @@ ram:
 	# Bogomips
 	#========
 bogomips:
-#	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')
-					# find 'mips\t: ' and grab up to \n
+   	lw	$a0,mips_string
+					# find 'MIPS\t: ' and grab up to \n
 
-#	li	$6, 0xa
-#	jal	find_string
+	li	$a3, 0xa
+	jal	find_string
 
 					# bogo total follows RAM
 	lw	$a1,ver_string_addr
@@ -441,85 +429,57 @@ exit:
 	jalx	do_syscall
 
 
-.set nomips16
-.align 2
-        #===================
-	# syscall
-	#===================
-do_syscall:
-        syscall	    			#
-
-	jr    $31
-
-.set mips16
-.align 1
-
 
 	#=================================
-	# FIND_STRING 
+	# FIND_STRING
 	#=================================
-	#   $6 (a2) is char to end at
-	#   $4 (a0) is 4-char ascii string to look for
-	#   $17 (s1) is the output buffer
-	
-	#   $5 is destroyed
-	#   $11 (t3) is destroyed
-
-find_string:					
-#	addiu	$5, $18,(disk_buffer-bss_begin)-1	
+	#   $a3 is char to end at
+	#   $a0 is 4-char ascii string to look for
+	#   $s0 is the output buffer
+	#
+	#   $v0 is trashed
+nop
+.insn
+find_string:
+	lw	$a2,disk_buffer_addr
 					# look in cpuinfo buffer
 find_loop:
-
-#	ulw	$11,1($5)		# load un-aligned 32 bits
-#	beq	$11,$0,done		# are we at EOF?
+	lw	$v0,1($a2)		# load un-aligned 32 bits
+	addiu   $a2,$a2,1		# increment pointer
+	beqz	$v0,done		# are we at EOF?
 					# if so, done
-	# BRANCH DELAY SLOT
-#	addiu   $5,$5,1		        # increment pointer
 
-	
-#	bne	$4,$11, find_loop	# do the strings match?
+	bne	$v0,$a0, find_loop	# do the strings match?
 					# if not, loop
-	
-					# if we get this far, we matched
-	# BRANCH DELAY SLOT
-#	nop
-	
-find_colon:
-#	lbu	$11,1($5)		# repeat till we find colon
-	# LOAD DELAY SLOT
-#	addiu	$5,$5,1
-#	beq	$11,$0,done		# not found? then done
-	# BRANCH DELAY SLOT
-#	nop
-	
-#	li	$1,':'
-#	bne	$11,$1,find_colon
-	# BRANCH DELAY SLOT
-#	nop
 
-#	addiu   $5,$5,2			# skip a char [should be space]
-	
-store_loop:	 
-#	lbu	$11,0($5)		# load value
-	# LOAD DELAY SLOT
-#	addiu	$5,$5,1			# increment
-#	beq	$11,$0,done		# off end, then stop
-	# BRANCH DELAY SLOT
-#	nop
-	
-#	beq	$11,$6,done      	# is it end char?
-	# BRANCH DELAY SLOT
-#	nop				# if so, finish
-	
-#	sb	$11,0($16)		# if not store and continue
-#	j	store_loop		# loop
-	# BRANCH DELAY SLOT
-#	addiu	$16,$16,1		# increment output pointer
+					# if we get this far, we matched
+
+	li	$v1,':'
+find_colon:
+	lbu	$v0,1($a2)		# repeat till we find colon
+	addiu	$a2,$a2,1
+
+	beqz	$v0,done		# not found? then done
+
+	bne	$v0,$v1,find_colon
+
+
+	addiu   $a2,$a2,2		# skip a char [should be space]
+
+store_loop:
+	lbu	$v0,0($a2)		# load value
+	addiu	$a2,$a2,1		# increment
+
+	beqz	$v0,done		# off end, then stop
+
+	beq	$v0,$a3,done		# is it end char?
+
+	sb	$v0,0($s0)		# if not store and continue
+	addiu	$s0,$s0,1		# increment output pointer
+	b	store_loop		# loop
 
 done:
-#	jr	$31			# return
-	# BRANCH DELAY SLOT
-#	nop
+	jr	$31			# return
 
 	#================================
 	# strcat
@@ -527,7 +487,8 @@ done:
 	# string to cat a1
 	# output_buffer s0
 	# trashed v0
-
+nop
+.insn
 strcat:
 	lbu	$v0,0($a1)		# load byte from string
 	addiu	$a1,$a1,1		# increment string
@@ -547,8 +508,8 @@ done_strcat:
 	#==============================
 	# string is in output_buffer
         #
-
 nop
+.insn
 center_and_print:
 
 	save	$ra,8				# save return address
@@ -574,7 +535,7 @@ center_and_print:
 	lw	$a1,ver_string_addr
 	addiu	$a1,(escape-ver_string)
 	jal	write_stdout		# print ESCAPE char
-nop
+#nop
 	addiu	$s1,80			# add to 80
 	srl	$a0,$s1,1		# divide by 2
 
@@ -605,7 +566,8 @@ done_center:
 	# WRITE_STDOUT
 	#================================
 	# a1 has the string
-#	nop
+nop
+.insn
 write_stdout:
         save	$ra,$s1,8
 
@@ -636,7 +598,7 @@ str_loop1:
 	# a1 = output buffer
 	# a3 = stdout(0) or strcat(1)
 	# destroys v1
-
+.insn
 num_to_ascii:
 
 	lw	$a1,ascii_buff_addr	# point to end of ascii_buffer
@@ -659,6 +621,22 @@ write_out:
 	b	strcat		# else, strcat will return for us
 
 
+
+
+.set nomips16
+.align 2
+        #===================
+	# syscall
+	#===================
+do_syscall:
+        syscall	    			#
+
+	jr    $31
+
+.set mips16
+.align 1
+
+
 #===========================================================================
 #	section .data
 #===========================================================================
@@ -676,6 +654,8 @@ cpuinfo:		.ascii "proc/cpu.mips\0"
 
 one:			.ascii "One MIPS \0"
 processor:		.ascii " Processor, \0"
+odel_string:		.ascii "odel"
+mips_string:		.ascii "MIPS"
 
 .include	"logo.lzss_new"
 
