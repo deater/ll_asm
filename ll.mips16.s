@@ -89,6 +89,7 @@
 #  + 1136 bytes -- split up syscall number insns so can fit in delay slot
 #  + 1135 bytes -- split li of 4096 to 128<<5 to fit in delay slot
 #  + 1135 bytes -- more messing with delay slots
+#  + 1119 bytes -- more delay slot and extra instruction removal
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -457,8 +458,6 @@ exit:
 
 	jalx	do_syscall
 
-
-
 	#=================================
 	# FIND_STRING
 	#=================================
@@ -467,8 +466,7 @@ exit:
 	#   $s0 is the output buffer
 	#
 	#   $v0 is trashed
-#nop
-.insn
+
 find_string:
 	lw	$a2,disk_buffer_addr
 					# look in cpuinfo buffer
@@ -510,14 +508,18 @@ store_loop:
 done:
 	jr	$31			# return
 
+
+nop	#needed for alignment issues?
+
+
 	#================================
 	# strcat
 	#================================
 	# string to cat a1
 	# output_buffer s0
 	# trashed v0
-nop
-.insn
+
+
 strcat:
 	lbu	$v0,0($a1)		# load byte from string
 	addiu	$a1,$a1,1		# increment string
@@ -530,22 +532,20 @@ done_strcat:
 	jr	$31			# return
 
 
-
+nop	# needed for alignment?
 
 	#==============================
 	# center_and_print
 	#==============================
 	# string is in output_buffer
         #
-nop
-.insn
+
 center_and_print:
 
 	save	$ra,$s1,8		# save return address
 
 	li	$v0,0xa00		# append linefeed
 	sh	$v0,0($s0)
-	nop
 
 	lw	$a1,out_buffer_addr	# a1 is beginning of string
 					# s0 is end of string
@@ -562,8 +562,12 @@ center_and_print:
 
 
 	lw	$a1,ver_string_addr
-	addiu	$a1,(escape-ver_string)
+
+	# Have to force the delay slot here, the assembler couldn't see it
+.set noreorder
 	jal	write_stdout		# print ESCAPE char
+	addiu	$a1,(escape-ver_string)
+.set reorder
 
 	addiu	$s1,80			# add to 80
 	srl	$a0,$s1,1		# divide by 2
@@ -575,8 +579,12 @@ center_and_print:
 
 
 	lw	$a1,ver_string_addr
-	addiu	$a1,(c-ver_string)	# print "C"
+
+	# Have to force the delay slot here, the assembler couldn't see it
+.set noreorder
 	jal	write_stdout
+	addiu	$a1,(c-ver_string)	# print "C"
+.set reorder
 
 
 
@@ -595,7 +603,7 @@ done_center:
 	# WRITE_STDOUT
 	#================================
 	# a1 has the string
-nop
+
 
 write_stdout:
         save	$ra,$s1,8
@@ -616,7 +624,6 @@ str_loop1:
 
 	restore $ra,$s1,8		# restore return address
 
-#JRC?
 	jr	$ra			# retrun
 
 
@@ -636,19 +643,16 @@ div_by_10:
 	li	$v1,10		# divide by 10
 	divu	$a0,$v1		# divide.  hi= remainder, lo=quotient
 	mfhi	$v1		# remainder into v1
-	addiu	$v1,$v1,0x30	# convert to ascii
+	addiu	$v1,0x30	# convert to ascii
 	sb	$v1,0($a1)	# store to buffer
-	mflo	$v1
-	move	$a0,$v1		# move old result into next divide
-	bnez	$v1, div_by_10
+	mflo	$a0		# move old result into next divide
+	bnez	$a0, div_by_10
 
 write_out:
 
 	beqz	$a3,write_stdout
 				# if write stdout, go there
 	b	strcat		# else, strcat will return for us
-
-
 
 
 .set nomips16
