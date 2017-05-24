@@ -257,18 +257,17 @@ first_line:
 	# PRINT VERSION
 	#==========================
 
-#	li	$2, SYSCALL_UNAME		# uname syscall in $2
-#	addiu	$4, $18,(uname_info-bss_begin)	# destination of uname in $4
-#	syscall					# do syscall
+	li	$v0, SYSCALL_UNAME		# uname syscall in $v0
+	lw	$a0,uname_info_addr		# destination of uname in $a0
+	jalx	do_syscall			# do syscall
 
-#	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
+	lw	$s0,out_buffer_addr		# point $16 to out_buffer
 
 
 					# os-name from uname "Linux"
-#	jal	strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$18,((uname_info-bss_begin)+U_SYSNAME)
-
+	lw	$a1,uname_info_addr
+	addiu	$a1,U_SYSNAME
+	jal	strcat
 
 					# source is " Version "	
  #      	jal	strcat			# call strcat
@@ -277,9 +276,10 @@ first_line:
 
 
 					# version from uname, ie "2.6.20"
-#	jal	strcat			# call strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$18,((uname_info-bss_begin)+U_RELEASE)
+	lw	$a1,uname_info_addr
+	addiu	$a1,U_RELEASE
+	jal	strcat			# call strcat
+
 
 
 
@@ -289,14 +289,16 @@ first_line:
 #	addiu	$5,$17,(compiled_string-data_begin)
 
 
-					# compiled date
-#	jal	strcat			# call strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$18,((uname_info-bss_begin)+U_VERSION)
 
-#	jal	center_and_print	# center and print
-#	nop				# branch delay
- 
+					# compiled date
+	lw	$a1,uname_info_addr
+	addiu	$a1,U_VERSION
+	jal	strcat			# call strcat
+	# BRANCH DELAY SLOT
+
+
+	jal	center_and_print	# center and print
+
 	#===============================
 	# Middle-Line
 	#===============================
@@ -418,18 +420,15 @@ chip_name:
 	# Print Host Name
 	#=================================
 
-#	addiu	$16,$18,(out_buffer-bss_begin)
-					# point $16 to out_buffer
-
+	lw	$s0,out_buffer_addr	# point $s0 to out_buffer
 
 					# host name from uname()
-#	jal	strcat			# call strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$18,(uname_info-bss_begin)+U_NODENAME
+	lw	$a1,uname_info_addr
+	addiu	$a1,U_NODENAME
+	jal	strcat			# call strcat
 
-#	jal	center_and_print	# center and print
-	# BRANCH DELAY SLOT
-#	nop
+	jal	center_and_print	# center and print
+
 
 					# (.txt) pointer to default_colors
 #	jal	write_stdout
@@ -440,21 +439,15 @@ chip_name:
 	#================================
 	# Exit
 	#================================
-#        lw      $5, hello_addr
-
-#        jal     write_stdout
-
 exit:
-     	li	$2, SYSCALL_EXIT	# put exit syscall in v0
-	li	$4, 5			# put exit code in a0
+	li	$v0,SYSCALL_EXIT	# put exit syscall in v0
+	li	$a0,5			# put exit code in a0
 
-	jalx    do_syscall
-
+	jalx	do_syscall
 
 
 .set nomips16
 .align 2
-
         #===================
 	# syscall
 	#===================
@@ -462,76 +455,11 @@ do_syscall:
         syscall	    			#
 
 	jr    $31
+
 .set mips16
 
-	#===================
-	# dump registers
-	#===================
-#dump_registers:
-
-#	move	$18,$2
-#	move	$19,$3
-#	move	$20,$4
-#	move	$21,$5
-#	move	$22,$6
-#
-#	la	$8,register_buffer
-#	
-#	sw	$0,0($8)
-#.set noat
-#	sw	$1,4($8)
-#.set at
-#	sw	$2,8($8)
-#	sw	$3,12($8)
-#	sw	$4,16($8)
-#	sw	$5,20($8)
-#	sw	$6,24($8)
-#	sw	$7,28($8)
-#	sw	$8,32($8)
-#	sw	$9,36($8)
-#	sw	$10,40($8)
-#	sw	$11,44($8)
-#	sw	$12,48($8)
-#	sw	$13,52($8)
-#	sw	$14,56($8)
-#	sw	$15,60($8)
-#	sw	$16,64($8)
-#	sw	$17,68($8)
-#	sw	$18,72($8)
-#	sw	$19,76($8)
-#	sw	$20,80($8)
-#	sw	$21,84($8)
-#	sw	$22,88($8)
-#	sw	$23,92($8)
-#	sw	$24,96($8)
-#	sw	$25,100($8)
-#	sw	$26,104($8)
-#	sw	$27,108($8)
-#	sw	$28,112($8)
-#	sw	$29,116($8)
-#	sw	$30,120($8)
-#	sw	$21,124($8)
-#
-#	li	$2,	SYSCALL_WRITE
-#	li	$4,2			# stderr
-#	la	$5,register_buffer
-#	li	$6,128
-#	syscall
-
-#	li	$2, SYSCALL_SYNC
-#	syscall
-
-#	move	$2,$18
-#	move	$3,$19
-#	move	$4,$20
-#	move	$5,$21
-#	move	$6,$22
 
 
-#	jr      $31
-	
-#.set mips16
-#.align 1
 	#=================================
 	# FIND_STRING 
 	#=================================
@@ -601,39 +529,45 @@ done:
 	#================================
 	# strcat
 	#================================
-	# output_buffer_offset = $16 (s0)
-	# string to cat = $5         (a1)
-	# destroys t0 ($8)
+	# output_buffer s0
+	# string to cat a1
+	# trashed v0
 
 strcat:
-#	lbu 	$8,0($5)		# load byte from string
-	# LOAD DELAY SLOT	
-#	addiu	$5,$5,1			# increment string	
-#	sb  	$8,0($16)		# store byte to output_buffer
-
-#	bne 	$8,$0,strcat		# if zero, we are done
-	# BRANCH DELAY SLOT
-#	addiu	$16,$16,1		# increment output_buffer
+	lbu	$v0,0($a1)		# load byte from string
+	addiu	$a1,$a1,1		# increment string
+	sb  	$v0,0($s0)		# store byte to output_buffer
+	addiu	$s0,$s0,1		# increment output_buffer
+	bnez	$v0,strcat		# if zero, we are done
 
 done_strcat:
-#	jr	$31			# return
-	# BRANCH DELAY SLOT
-#	addiu	$16,$16,-1		# correct pointer	
+	addiu	$s0,$s0,-1		# correct pointer
+	jr	$31			# return
+
+
 
 
 	#==============================
 	# center_and_print
 	#==============================
-	# string is in $16 (s0) output_buffer
-	# s3 $19= stdout or strcat
-        # $20, $21, $22 trashed
-       
+	# string is in output_buffer
+        # 
+
+nop
 center_and_print:
 
-#	move	$21,$31				# save return address
+	save	$ra,8				# save return address
+
+	li	$v0,0xa00			# write linefeed
+	sh	$v0,0($s0)
+	nop
+
+	lw	$a1,out_buffer_addr
+	jal	write_stdout
+
 #	move	$20,$16				# $20 is the end of our string
-#	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to beginning 
-	
+#	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to beginning
+
 
 #	subu	$4, $20,$16		# subtract end pointer from start
        		    			# (cheaty way to get size of string)
@@ -641,12 +575,12 @@ center_and_print:
 #	slti	$1,$4,81
 #	beq	$1,$0, done_center	# don't center if > 80
 	# BRANCH DELAY SLOT
-#	li    	$19,0 			# print to stdout	
+#	li    	$19,0 			# print to stdout
 
 #	neg	$4,$4  			# negate length
-#	addiu	$4,$4,80		# add to 80 
+#	addiu	$4,$4,80		# add to 80
 
-#	srl	$22,$4,1		# divide by 2 
+#	srl	$22,$4,1		# divide by 2
 
 #	jal	write_stdout		# print ESCAPE char
 	# BRANCH DELAY SLOT
@@ -672,16 +606,18 @@ done_center:
 #	addiu	$5,$17,(linefeed-data_begin)
 					# print linefeed at end of line
 	
-#	move 	$31,$21 		# restore saved pointer
+	restore	$ra,8 		# restore saved pointer
 	     				# so we'll return to
-					# where we were called from 
+					# where we were called from
 					# at the end of the write_stdout
+
+	jr	$ra
 
 	#================================
 	# WRITE_STDOUT
 	#================================
 	# a1 has the string
-
+	nop
 write_stdout:
         save	$ra,8
 
@@ -742,27 +678,26 @@ write_out:
 #===========================================================================
 
 data_begin:
-hello_addr:      .int hello
-hello:          .ascii "Hello\n\0"
-ver_string:	.ascii	" Version \0"
-compiled_string:	.ascii	", Compiled \0"
-ram_comma:	.ascii	"M RAM, \0"
-bogo_total:	.ascii	" Bogomips Total\0"
-linefeed:	.ascii  "\n\0"
-default_colors:	.ascii "\033[0m\n\n\0"
-escape:		.ascii "\033[\0"
-c:		.ascii "C\0"
+ver_string:		.ascii " Version \0"
+compiled_string:	.ascii ", Compiled \0"
+ram_comma:		.ascii "M RAM, \0"
+bogo_total:		.ascii " Bogomips Total\0"
+default_colors:		.ascii "\033[0m\n\n\0"
+escape:			.ascii "\033[\0"
+c:			.ascii "C\0"
 
-cpuinfo:	.ascii	"/proc/cpuinfo\0"
+cpuinfo:		.ascii "proc/cpu.mips\0"
 
-one:		.ascii	"One Mips \0"
-processor:	.ascii " Processor, \0"
+one:			.ascii "One Mips \0"
+processor:		.ascii " Processor, \0"
 
 .include	"logo.lzss_new"
 
 bss_begin_addr:		.word bss_begin
 out_buffer_addr:	.word out_buffer
 text_buf_addr:		.word text_buf
+uname_info_addr:	.word uname_info
+
 #============================================================================
 #	section .bss
 #============================================================================
