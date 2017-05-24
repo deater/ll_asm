@@ -6,6 +6,8 @@
 #  assemble with     "as -mmicromips -o ll.micromips.o ll.micromips.s"
 #  link with         "ld -o ll_micromips ll.micromips.o"
 
+#.nan    legacy
+
 .include "logo.include"
 
 # Difference from mips16
@@ -48,12 +50,12 @@
 #
 # Optimization:
 #  LZSS:
-#	+ ?? bytes
+#	+ 118 bytes -- original port of mips16 code
 #
 
 #
 # Overall:
-#	+ ???? bytes
+#	+ 1396 bytes -- original port of mips16 code
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -122,8 +124,6 @@
 
 __start:
 
-#.set mips16
-
 	#=========================
 	# PRINT LOGO
 	#=========================
@@ -132,11 +132,12 @@ __start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-
 	lw	$s0,out_buffer_addr
 	la	$s1,logo
 
 	li      $a2,(N-F)   	     	# R
+
+
 
 decompression_loop:
 
@@ -222,6 +223,8 @@ done_logo:
 	jal	write_stdout		# print the logo
 
 	la	$s1,strcat
+
+#	j exit
 
 first_line:
 	#==========================
@@ -569,8 +572,8 @@ done_center:
 
 
 write_stdout:
-	move	$s2,$ra
-	move	$s3,$s1			# save return address
+	move	$s4,$ra
+	move	$s5,$s1			# save return address
 
 	move    $a0,$a1			# copy string pointer to $a0
 	li      $a2,0			# 0 (count) in $a2
@@ -586,8 +589,8 @@ str_loop1:
 
 	syscall				# call syscall
 
-	move	$ra,$s2
-	move	$s1,$s3			# restore return address
+	move	$ra,$s4
+	move	$s1,$s5			# restore return address
 
 	jr	$ra			# retrun
 
