@@ -1,5 +1,4 @@
-#
-#  linux_logo in mips16 assembler 0.46
+#  linux_logo in mips16 assembler 0.49
 #
 #  By
 #       Vince Weaver <vince _at_ deater.net>
@@ -29,7 +28,7 @@
 #   * lw can also be SP or PC relative
 # + store instructions: sb/sd/sh/sw
 # + stack frame
-#   * restore ra,s0,s1,framesize - optinally copy ra,s0,s1 off stack
+#   * restore ra,s0,s1,framesize - optionally copy ra,s0,s1 off stack
 #                                  then update stack with 4-bit imm
 #     extended version can also restore other registers
 #   * save is like restore, but in reverse
@@ -92,8 +91,9 @@
 #.set noat
 
 #
-# Register definitions.  Why does't gas know these?
-#
+# Register definitions.  Older gas could only hand numerical
+#                        16 17  2  3  4  5  6  7
+# On MIPS16 you only get s0,s1,v0,v1,a0,a1,a2,a3
 
 # zero  = 0
 # at    = 1     # Assembler Temporary
@@ -147,13 +147,13 @@
 
 __start:
 
-	jal	start16		# I don't think this should
+#	jal	start16		# I don't think this should
 				# be necessary, how do I create
 				# a native mips16 binary?
 
-.set mips16
+#.set mips16
 
-start16:
+#start16:
 
 	#=========================
 	# PRINT LOGO
@@ -164,7 +164,7 @@ start16:
 # optimized some more by Vince Weaver
 
 #	la	$17,data_begin		# point $17 at .data segment begin
-#	la	$18,bss_begin		# point $18 at .bss segment begin
+#	lw	$16,bss_begin_addr	# point $18 at .bss segment begin
 
 	li      $6,(N-F)   	     	# R
 
@@ -172,10 +172,10 @@ start16:
 #	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
 #	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
 
-#	la	$16,blah_buffer
 
-        la      $16,out_buffer
-	la      $17,logo
+
+	lw	$s0,out_buffer_addr
+	la	$s1,logo
 
 
 decompression_loop:
@@ -188,94 +188,89 @@ decompression_loop:
 	or 	$3,$7           # put 0xff in top as a hackish 8-bit counter
 
 test_flags:
-        la      $7, logo_end
+#        la      $7, logo_end
 
-	slt	$17, $7
-	bteqz	done_logo
+#	slt	$17, $7
+#	bteqz	done_logo
 
-#	beq	$7, $17, done_logo	# have we reached the end?
+#//	beq	$7, $17, done_logo	# have we reached the end?
 					# if so, exit
 
-        li      $7,1
-        and     $7,$3	                # test to see if discrete char
+#	li      $7,1
+#	and     $7,$3	                # test to see if discrete char
 
-	srl	$3,$3,1  	        # shift	
+#	srl	$3,$3,1  	        # shift
 
-	bnez	$7,discrete_char	# if set, we jump to discrete char
-	
+#	bnez	$7,discrete_char	# if set, we jump to discrete char
+
 offset_length:
-	lbu     $2,0($17)	# load 16-bit length and match_position combo
-	lbu	$4,1($17)	# can't use lhu because might be unaligned
+#	lbu     $2,0($17)	# load 16-bit length and match_position combo
+#	lbu	$4,1($17)	# can't use lhu because might be unaligned
+#
+#	addiu	$17,2           # increment source pointer
 
-	addiu	$17,2           # increment source pointer	
+#	sll	$4,8
+#	or	$4,$2           # $4 now has 16-bit value
 
-	sll	$4,8
-	or	$4,$2           # $4 now has 16-bit value
-	
-	srl $5,$4,P_BITS	# get the top bits, which is length
-	
-	addiu $5,$5,THRESHOLD+1 
+#	srl $5,$4,P_BITS	# get the top bits, which is length
+
+#	addiu $5,$5,THRESHOLD+1
 	      			# add in the threshold?
 
-		
 output_loop:
-        li      $7,(POSITION_MASK<<8+0xff)
-        and 	$4,$7
+#	li      $7,(POSITION_MASK<<8+0xff)
+#	and 	$4,$7
 					# get the position bits
 
 
-        la      $7,text_buf
-	addu	$7,$4
-	lbu	$2,0($7)		# load byte from text_buf[]
+#	lw      $7,text_buf_addr
+#	addu	$7,$4
+#	lbu	$2,0($7)		# load byte from text_buf[]
 					# should have been able to do
 					# in 2 not 3 instr
 
 
 
-	addiu	$4,$4,1	    	# advance pointer in text_buf
+#	addiu	$4,$4,1	    	# advance pointer in text_buf
 
 store_byte:
-        sb      $2,0($16)
-	addiu	$16,1      		# store byte to output buffer
+#	sb      $2,0($16)
+#	addiu	$16,1      		# store byte to output buffer
 
-        la      $7,text_buf
+#	lw      $7,text_buf_addr
 
-	addu	$7,$6
-
-#	jalx	dump_registers
-#	nop
-
-	sb      $2, 0($7)		# store also to text_buf[r]
-	addiu 	$6,$6,1        		# r++
-
-	li      $7,(N-1)
-	and 	$6,$7		        # wrap r if we are too big	
-
-	addiu	$5,$5,-1		# decrement count
-
-	bnez	$5,output_loop	        # repeat until k>j
+#	addu	$7,$6
 
 
+#	sb      $2, 0($7)		# store also to text_buf[r]
+#	addiu 	$6,$6,1        		# r++
 
-	sltiu	$3,0x100		# if 0 we shifted through 8 and must
-	bteqz	test_flags	        # re-load flags
-	
-	b 	decompression_loop
+#	li      $7,(N-1)
+#	and 	$6,$7		        # wrap r if we are too big
+
+#	addiu	$5,$5,-1		# decrement count
+
+#	bnez	$5,output_loop	        # repeat until k>j
+
+#	sltiu	$3,0x100		# if 0 we shifted through 8 and must
+#	bteqz	test_flags	        # re-load flags
+
+#	b 	decompression_loop
 
 
 discrete_char:
-	lbu     $2,0($17)
-	addiu	$17,1		        # load a byte
-	li   	$5,1			# force a one-byte output	
-	b	store_byte		# and store it
+#	lbu     $2,0($17)
+#	addiu	$17,1		        # load a byte
+#	li   	$5,1			# force a one-byte output
+#	b	store_byte		# and store it
 
 # end of LZSS code
 
 done_logo:
-	la	$5,out_buffer	                # point $5 to out_buffer
-        jal	write_stdout			# print the logo
+#	la	$5,out_buffer	                # point $5 to out_buffer
+#        jal	write_stdout			# print the logo
 
-first_line:	
+first_line:
 	#==========================
 	# PRINT VERSION
 	#==========================
@@ -285,12 +280,12 @@ first_line:
 #	syscall					# do syscall
 
 #	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
-		
+
 
 					# os-name from uname "Linux"
 #	jal	strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,$18,((uname_info-bss_begin)+U_SYSNAME)	
+#	addiu	$5,$18,((uname_info-bss_begin)+U_SYSNAME)
 
 
 					# source is " Version "	
@@ -310,45 +305,45 @@ first_line:
 #	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
 #	addiu	$5,$17,(compiled_string-data_begin)
-	     
+
 
 					# compiled date
 #	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,$18,((uname_info-bss_begin)+U_VERSION)	
+#	addiu	$5,$18,((uname_info-bss_begin)+U_VERSION)
 
 #	jal	center_and_print	# center and print
 #	nop				# branch delay
- 	
+ 
 	#===============================
 	# Middle-Line
 	#===============================
 middle_line:
-	
+
 #	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
-	
+
 	#=========
 	# Load /proc/cpuinfo into buffer
 	#=========
 
 #	li	$2, SYSCALL_OPEN	# OPEN Syscall
-	
+
 #	addiu	$4,$17,(cpuinfo-data_begin)
 					# '/proc/cpuinfo'
 #	li	$5, 0			# 0 = O_RDONLY <bits/fcntl.h>
 
-#	syscall				# syscall.  fd in v0  
-					# we should check that 
+#	syscall				# syscall.  fd in v0
+					# we should check that
 					# return v0>=0
-						
+
 #	move	$4,$2			# copy $2 (the result) to $4
-	
+
 #	li	$2, SYSCALL_READ	# read()
-	
+
 #	addiu	$5, $18,(disk_buffer-bss_begin)
 					# point $5 to the buffer
 
-#	li	$6, 4096		# 4096 is maximum size of proc file ;) 
+#	li	$6, 4096		# 4096 is maximum size of proc file ;)
 					# we load sneakily by knowing
 #	syscall
 
@@ -361,12 +356,12 @@ middle_line:
 	#=============
 number_of_cpus:
 
-	# we cheat here and just assume 1.  
+	# we cheat here and just assume 1.
 	# besides, I don't have a SMP Mips machine to test on
 
 #	jal	strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(one-data_begin)		# print "One"	
+#	addiu	$5,$17,(one-data_begin)		# print "One"
 
 
 	#=========
@@ -380,55 +375,55 @@ print_mhz:
    	#=========
 	# Chip Name
 	#=========
-chip_name:	
-#   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')     	
+chip_name:
+#   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')
 					# find 'odel\t: ' and grab up to ' '
 
 #	jal	find_string
 	# BRANCH DELAY SLOT
-#	li	$6,' '	
-	
+#	li	$6,' '
+
 					# printf "Processor, "
 #	jal	strcat
 	# BRANCH DELAY SLOT
 #	addiu	$5,$17,(processor-data_begin)
-	
+
 	#========
 	# RAM
 	#========
-	
+
 #	li	$2, SYSCALL_SYSINFO	# sysinfo() syscall
 #	addiu	$4, $18,(sysinfo_buff-bss_begin)
 #	syscall
-	
+
 #	lw	$4, S_TOTALRAM($4)	# size in bytes of RAM
 	# LOAD DELAY SLOT
 #	li	$19,1			# print to strcat, not stderr
-			
+
 #	jal     num_to_ascii
 	# BRANCH DELAY SLOT
 #	srl	$4,$4,20		# divide by 1024*1024 to get M
 
-	
+
 					# print 'M RAM, '
 #	jal	strcat			# call strcat
 #	addiu	$5,$17,(ram_comma-data_begin)
 
-	
+
 
 	#========
 	# Bogomips
 	#========
-	
-#	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')      	
+
+#	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')
 					# find 'mips\t: ' and grab up to \n
 
 #	jal	find_string
 	# BRANCH DELAY SLOT
-#	li	$6, 0xa	
+#	li	$6, 0xa
 
-	
-					# bogo total follows RAM 
+
+					# bogo total follows RAM
 #	jal 	strcat			# call strcat
 	# BRANCH DELAY SLOT
 #	addiu	$5,$17,(bogo_total-data_begin)
@@ -436,29 +431,29 @@ chip_name:
 
 #	jal	center_and_print	# center and print
 #	nop
-	
+
 	#=================================
 	# Print Host Name
 	#=================================
 
-#	addiu	$16,$18,(out_buffer-bss_begin)  
+#	addiu	$16,$18,(out_buffer-bss_begin)
 					# point $16 to out_buffer
 
 
 					# host name from uname()
 #	jal	strcat			# call strcat
 	# BRANCH DELAY SLOT
-#	addiu	$5,$18,(uname_info-bss_begin)+U_NODENAME    	
-	
+#	addiu	$5,$18,(uname_info-bss_begin)+U_NODENAME
+
 #	jal	center_and_print	# center and print
 	# BRANCH DELAY SLOT
 #	nop
-	
+
 					# (.txt) pointer to default_colors
 #	jal	write_stdout
 	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(default_colors-data_begin)	
-	
+#	addiu	$5,$17,(default_colors-data_begin)
+
 
 	#================================
 	# Exit
@@ -481,80 +476,80 @@ exit:
         #===================
 	# syscall
 	#===================
-do_syscall:	
-        syscall	    			# 
+do_syscall:
+        syscall	    			#
 
 	jr    $31
-
+.set mips16
 
 	#===================
 	# dump registers
 	#===================
-dump_registers:
+#dump_registers:
 
-	move	$18,$2
-	move	$19,$3
-	move	$20,$4
-	move	$21,$5
-	move	$22,$6
+#	move	$18,$2
+#	move	$19,$3
+#	move	$20,$4
+#	move	$21,$5
+#	move	$22,$6
+#
+#	la	$8,register_buffer
+#	
+#	sw	$0,0($8)
+#.set noat
+#	sw	$1,4($8)
+#.set at
+#	sw	$2,8($8)
+#	sw	$3,12($8)
+#	sw	$4,16($8)
+#	sw	$5,20($8)
+#	sw	$6,24($8)
+#	sw	$7,28($8)
+#	sw	$8,32($8)
+#	sw	$9,36($8)
+#	sw	$10,40($8)
+#	sw	$11,44($8)
+#	sw	$12,48($8)
+#	sw	$13,52($8)
+#	sw	$14,56($8)
+#	sw	$15,60($8)
+#	sw	$16,64($8)
+#	sw	$17,68($8)
+#	sw	$18,72($8)
+#	sw	$19,76($8)
+#	sw	$20,80($8)
+#	sw	$21,84($8)
+#	sw	$22,88($8)
+#	sw	$23,92($8)
+#	sw	$24,96($8)
+#	sw	$25,100($8)
+#	sw	$26,104($8)
+#	sw	$27,108($8)
+#	sw	$28,112($8)
+#	sw	$29,116($8)
+#	sw	$30,120($8)
+#	sw	$21,124($8)
+#
+#	li	$2,	SYSCALL_WRITE
+#	li	$4,2			# stderr
+#	la	$5,register_buffer
+#	li	$6,128
+#	syscall
 
-	la	$8,register_buffer
+#	li	$2, SYSCALL_SYNC
+#	syscall
+
+#	move	$2,$18
+#	move	$3,$19
+#	move	$4,$20
+#	move	$5,$21
+#	move	$6,$22
+
+
+#	jr      $31
 	
-	sw	$0,0($8)
-.set noat
-	sw	$1,4($8)
-.set at
-	sw	$2,8($8)
-	sw	$3,12($8)
-	sw	$4,16($8)
-	sw	$5,20($8)
-	sw	$6,24($8)
-	sw	$7,28($8)
-	sw	$8,32($8)
-	sw	$9,36($8)
-	sw	$10,40($8)
-	sw	$11,44($8)
-	sw	$12,48($8)
-	sw	$13,52($8)
-	sw	$14,56($8)
-	sw	$15,60($8)
-	sw	$16,64($8)
-	sw	$17,68($8)
-	sw	$18,72($8)
-	sw	$19,76($8)
-	sw	$20,80($8)
-	sw	$21,84($8)
-	sw	$22,88($8)
-	sw	$23,92($8)
-	sw	$24,96($8)
-	sw	$25,100($8)
-	sw	$26,104($8)
-	sw	$27,108($8)
-	sw	$28,112($8)
-	sw	$29,116($8)
-	sw	$30,120($8)
-	sw	$21,124($8)
-
-	li	$2,	SYSCALL_WRITE
-	li	$4,2			# stderr
-	la	$5,register_buffer
-	li	$6,128
-	syscall
-
-	li	$2, SYSCALL_SYNC
-	syscall
-
-	move	$2,$18
-	move	$3,$19
-	move	$4,$20
-	move	$5,$21
-	move	$6,$22
-
-
-	jr      $31
-	
-.set mips16
-.align 1
+#.set mips16
+#.align 1
 	#=================================
 	# FIND_STRING 
 	#=================================
@@ -765,7 +760,7 @@ write_out:
 #	section .data
 #===========================================================================
 
-data_begin:	
+data_begin:
 hello_addr:      .int hello
 hello:          .ascii "Hello\n\0"
 ver_string:	.ascii	" Version \0"
@@ -779,35 +774,28 @@ c:		.ascii "C\0"
 
 cpuinfo:	.ascii	"/proc/cpuinfo\0"
 
-one:	.ascii	"One Mips \0"
+one:		.ascii	"One Mips \0"
 processor:	.ascii " Processor, \0"
 
 .include	"logo.lzss_new"
 
+bss_begin_addr:		.word bss_begin
+out_buffer_addr:	.word out_buffer
+text_buf_addr:		.word text_buf
 #============================================================================
 #	section .bss
 #============================================================================
 .bss
+bss_begin:
 
-bss_start:
-
-.lcomm blah_buffer,1024		# UGH!  There is some sort
-				# of bug in the assembler
-				# that points the first bss entry
-				# to __start for some reason.
-				# That took a while to debug.
-				# Thank goodness for objdump
-
-.lcomm  text_buf, (N+F-1)
-
+.lcomm	ascii_buffer,10		# 32 bit can't be > 9 chars
+.lcomm	sysinfo_buff,(64)
+.lcomm	uname_info,(65*6)
+.lcomm	text_buf, (N+F-1)
+.lcomm	disk_buffer,4096	# we cheat!!!!
 .lcomm	out_buffer,16384
 
-.lcomm	disk_buffer,4096	# we cheat!!!!
-
-.lcomm  ascii_buffer,10		# 32 bit can't be > 9 chars
-
    # see /usr/src/linux/include/linux/kernel.h
-.lcomm sysinfo_buff,(64)
-.lcomm uname_info,(65*6)
+
 
 .lcomm register_buffer,128
