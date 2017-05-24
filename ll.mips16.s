@@ -85,6 +85,7 @@
 #
 # Overall:
 #  + 1183 bytes -- initial working code
+#  + 1151 bytes -- move strcat address into s1 and jalr to it
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -109,6 +110,7 @@
 #                        16 17  2  3  4  5  6  7
 # On MIPS16 you only get s0,s1,v0,v1,a0,a1,a2,a3
 
+# Traditional MIPS register values
 # zero  = 0
 # at    = 1     # Assembler Temporary
 # v0-v1 = 2-3   # Returned value registers
@@ -240,6 +242,8 @@ store_byte:
 
 	bnez	$a1,output_loop		# repeat until k>j
 
+					# OPTIMIZE: sltiu with > 8 bits
+					#     takes 32bits?
 	sltiu	$v0,0x100		# if 0 we shifted through 8 and must
 	bteqz	test_flags		# re-load flags
 
@@ -256,10 +260,9 @@ discrete_char:
 
 done_logo:
 	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
-	nop
-	nop
-	nop
 	jal	write_stdout		# print the logo
+
+	la	$s1,strcat
 
 first_line:
 	#==========================
@@ -275,26 +278,26 @@ first_line:
 					# os-name from uname "Linux"
 	lw	$a1,uname_info_addr
 	#addiu	$a1,U_SYSNAME		U_SYSNAME is zero
-	jal	strcat
+	jalr	$s1			# strcat
 
 					# source is " Version "
 	lw	$a1,ver_string_addr
-	jal	strcat			# call strcat
+	jalr	$s1			# strcat
 
 					# version from uname, ie "2.6.20"
 	lw	$a1,uname_info_addr
 	addiu	$a1,U_RELEASE
-	jal	strcat			# call strcat
+	jalr	$s1			# strcat
 
 	lw	$a1,ver_string_addr
 	addiu	$a1,(compiled_string-ver_string)
 					# source is ", Compiled "
-	jal	strcat			# call strcat
+	jalr	$s1			# strcat
 
 					# compiled date
 	lw	$a1,uname_info_addr
 	addiu	$a1,U_VERSION
-	jal	strcat			# call strcat
+	jalr	$s1			# strcat
 
 	jal	center_and_print	# center and print
 
@@ -344,7 +347,7 @@ number_of_cpus:
 
 	lw	$a1,ver_string_addr
 	addiu	$a1,(one-ver_string)	# print "One MIPS "
-	jal	strcat
+	jalr	$s1			# strcat
 
 	#=========
 	# MHz
@@ -366,7 +369,7 @@ chip_name:
 					# print "Processor, "
 	lw	$a1,ver_string_addr
 	addiu	$a1,(processor-ver_string)
-	jal	strcat
+	jalr	$s1			# strcat
 
 	#========
 	# RAM
@@ -386,7 +389,7 @@ ram:
 					# print 'M RAM, '
 	lw	$a1,ver_string_addr
 	addiu	$a1,(ram_comma-ver_string)
-	jal	strcat			# call strcat
+	jalr	$s1			# strcat
 
 	#========
 	# Bogomips
@@ -401,7 +404,7 @@ bogomips:
 					# bogo total follows RAM
 	lw	$a1,ver_string_addr
 	addiu	$a1,(bogo_total-ver_string)
-	jal 	strcat			# call strcat
+	jalr	$s1			# strcat
 
 	jal	center_and_print	# center and print
 
@@ -415,7 +418,7 @@ bogomips:
 					# host name from uname()
 	lw	$a1,uname_info_addr
 	addiu	$a1,U_NODENAME
-	jal	strcat			# call strcat
+	jalr	$s1			# strcat
 
 	jal	center_and_print	# center and print
 
@@ -447,7 +450,7 @@ exit:
 	#   $s0 is the output buffer
 	#
 	#   $v0 is trashed
-#nop
+nop
 .insn
 find_string:
 	lw	$a2,disk_buffer_addr
@@ -521,7 +524,7 @@ nop
 .insn
 center_and_print:
 
-	save	$ra,8				# save return address
+	save	$ra,$s1,8		# save return address
 
 	li	$v0,0xa00		# append linefeed
 	sh	$v0,0($s0)
@@ -565,7 +568,7 @@ done_center:
 					# point to the string to print
 	lw	$a1,out_buffer_addr
 
-	restore	$ra,8 		# restore saved pointer
+	restore	$ra,$s1,8 	# restore saved pointer
 				# so we'll return to
 				# where we were called from
 				# at the end of the write_stdout
