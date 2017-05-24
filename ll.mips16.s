@@ -86,6 +86,7 @@
 # Overall:
 #  + 1183 bytes -- initial working code
 #  + 1151 bytes -- move strcat address into s1 and jalr to it
+#  + 1136 bytes -- split up syscall number insns so can fit in delay slot
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -312,7 +313,12 @@ middle_line:
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-	li	$v0, SYSCALL_OPEN	# OPEN Syscall
+	# syscalls are high enough to make loading the value take
+	# extended instructions, which keeps them from going in
+	# the branch delay slot.  So we use offsets instead.
+	li	$v1,SYSCALL_LINUX
+	addiu	$v0,$v1,(SYSCALL_OPEN-SYSCALL_LINUX)
+					# open()
 
 	lw	$a0,ver_string_addr
 	addiu	$a0,(cpuinfo-ver_string)
@@ -325,7 +331,8 @@ middle_line:
 
 	move	$a0,$v0			# copy $v0 (the result) to $a0
 
-	li	$v0,SYSCALL_READ	# read()
+	addiu	$v0,$v1,(SYSCALL_READ-SYSCALL_LINUX)
+					# read()
 
 	lw	$a1,disk_buffer_addr	# point $a1 to the buffer
 	li	$a2, 4096		# 4096 should be more than enough
@@ -333,7 +340,8 @@ middle_line:
 
 	jalx	do_syscall
 
-	li	$v0,SYSCALL_CLOSE	# close (to be correct)
+	addiu	$v0,$v1,(SYSCALL_CLOSE-SYSCALL_LINUX)
+					# close (to be correct)
 		    			# fd should still be in a0
 	jalx	do_syscall
 
