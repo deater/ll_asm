@@ -157,19 +157,11 @@ __start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-#	la	$17,data_begin		# point $17 at .data segment begin
-#	lw	$16,bss_begin_addr	# point $18 at .bss segment begin
-
-	li      $a2,(N-F)   	     	# R
-
-#	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo
-#	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
-#	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
-
-
 
 	lw	$s0,out_buffer_addr
 	la	$s1,logo
+
+	li      $a2,(N-F)   	     	# R
 
 decompression_loop:
 
@@ -249,8 +241,11 @@ discrete_char:
 # end of LZSS code
 
 done_logo:
-#	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
-#	jal	write_stdout		# print the logo
+	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
+	nop
+	nop
+	nop
+	jal	write_stdout		# print the logo
 
 first_line:
 	#==========================
@@ -438,7 +433,7 @@ exit:
 	#   $s0 is the output buffer
 	#
 	#   $v0 is trashed
-nop
+#nop
 .insn
 find_string:
 	lw	$a2,disk_buffer_addr
@@ -567,7 +562,7 @@ done_center:
 	#================================
 	# a1 has the string
 nop
-.insn
+
 write_stdout:
         save	$ra,$s1,8
 
@@ -598,7 +593,6 @@ str_loop1:
 	# a1 = output buffer
 	# a3 = stdout(0) or strcat(1)
 	# destroys v1
-.insn
 num_to_ascii:
 
 	lw	$a1,ascii_buff_addr	# point to end of ascii_buffer
@@ -640,7 +634,6 @@ do_syscall:
 #===========================================================================
 #	section .data
 #===========================================================================
-
 data_begin:
 ver_string:		.ascii " Version \0"
 compiled_string:	.ascii ", Compiled \0"
@@ -658,6 +651,11 @@ odel_string:		.ascii "odel"
 mips_string:		.ascii "MIPS"
 
 .include	"logo.lzss_new"
+			.byte 0,0	# note, without this
+					# the assembler puts
+					# logo_end in a weird
+					# place which messes up
+					# the end of the logo decode
 
 out_buffer_addr:	.word out_buffer
 text_buf_addr:		.word text_buf
