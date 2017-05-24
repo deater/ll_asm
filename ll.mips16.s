@@ -249,8 +249,8 @@ discrete_char:
 # end of LZSS code
 
 done_logo:
-	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
-	jal	write_stdout		# print the logo
+#	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
+#	jal	write_stdout		# print the logo
 
 first_line:
 	#==========================
@@ -263,40 +263,40 @@ first_line:
 
 	lw	$s0,out_buffer_addr		# point $16 to out_buffer
 
-
 					# os-name from uname "Linux"
 	lw	$a1,uname_info_addr
-	addiu	$a1,U_SYSNAME
+#	move	$a0,$a1
+#	li	$a0,100
+
+#	la	$a1,cpuinfo
+#	jal	write_stdout
+
+#	jal	num_to_ascii
+#	b	exit
+
+	#addiu	$a1,U_SYSNAME		U_SYSNAME is zero
 	jal	strcat
 
-					# source is " Version "	
- #      	jal	strcat			# call strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(ver_string-data_begin)
-
+					# source is " Version "
+	lw	$a1,ver_string_addr
+	jal	strcat			# call strcat
 
 					# version from uname, ie "2.6.20"
 	lw	$a1,uname_info_addr
 	addiu	$a1,U_RELEASE
 	jal	strcat			# call strcat
 
-
-
-
+	lw	$a1,ver_string_addr
+	addiu	$a1,(compiled_string-ver_string)
 					# source is ", Compiled "
-#	jal	strcat			# call strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(compiled_string-data_begin)
-
-
+	jal	strcat			# call strcat
 
 					# compiled date
 	lw	$a1,uname_info_addr
 	addiu	$a1,U_VERSION
 	jal	strcat			# call strcat
-	# BRANCH DELAY SLOT
 
-
+#	lw	$a1,out_buffer_addr
 	jal	center_and_print	# center and print
 
 	#===============================
@@ -304,36 +304,36 @@ first_line:
 	#===============================
 middle_line:
 
-#	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to out_buffer
+	lw	$s0,out_buffer_addr	# point $16 to out_buffer
 
 	#=========
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-#	li	$2, SYSCALL_OPEN	# OPEN Syscall
+	li	$v0, SYSCALL_OPEN	# OPEN Syscall
 
-#	addiu	$4,$17,(cpuinfo-data_begin)
+	lw	$a0,ver_string_addr
+	addiu	$a0,(cpuinfo-ver_string)
 					# '/proc/cpuinfo'
-#	li	$5, 0			# 0 = O_RDONLY <bits/fcntl.h>
+	li	$a1, 0			# 0 = O_RDONLY <bits/fcntl.h>
 
-#	syscall				# syscall.  fd in v0
+	jalx	do_syscall		# syscall.  fd in v0
 					# we should check that
 					# return v0>=0
 
-#	move	$4,$2			# copy $2 (the result) to $4
+	move	$a0,$v0			# copy $v0 (the result) to $a0
 
-#	li	$2, SYSCALL_READ	# read()
+	li	$v0,SYSCALL_READ	# read()
 
-#	addiu	$5, $18,(disk_buffer-bss_begin)
-					# point $5 to the buffer
+	lw	$a1,disk_buffer_addr	# point $a1 to the buffer
+	li	$a2, 4096		# 4096 should be more than enough
+					# for this proc file
 
-#	li	$6, 4096		# 4096 is maximum size of proc file ;)
-					# we load sneakily by knowing
-#	syscall
+	jalx	do_syscall
 
-#	li	$2, SYSCALL_CLOSE	# close (to be correct)
+	li	$v0,SYSCALL_CLOSE	# close (to be correct)
 		    			# fd should still be in a0
-#	syscall
+	jalx	do_syscall
 
 	#=============
 	# Number of CPUs
@@ -343,10 +343,9 @@ number_of_cpus:
 	# we cheat here and just assume 1.
 	# besides, I don't have a SMP Mips machine to test on
 
-#	jal	strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(one-data_begin)		# print "One"
-
+	lw	$a1,ver_string_addr
+	addiu	$a1,(one-ver_string)	# print "One MIPS "
+	jal	strcat
 
 	#=========
 	# MHz
@@ -363,58 +362,52 @@ chip_name:
 #   	li	$4,('o'<<24+'d'<<16+'e'<<8+'l')
 					# find 'odel\t: ' and grab up to ' '
 
-#	jal	find_string
-	# BRANCH DELAY SLOT
 #	li	$6,' '
+#	jal	find_string
 
-					# printf "Processor, "
-#	jal	strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(processor-data_begin)
+
+					# print "Processor, "
+	lw	$a1,ver_string_addr
+	addiu	$a1,(processor-ver_string)
+	jal	strcat
 
 	#========
 	# RAM
 	#========
+ram:
+	li	$v0, SYSCALL_SYSINFO	# sysinfo() syscall
+	lw	$a0, sysinfo_buff_addr
+	jalx	do_syscall
 
-#	li	$2, SYSCALL_SYSINFO	# sysinfo() syscall
-#	addiu	$4, $18,(sysinfo_buff-bss_begin)
-#	syscall
+	li	$a3,1			# print to strcat, not stderr
+	lw	$a0, sysinfo_buff_addr
+	lw	$a0, S_TOTALRAM($a0)	# size in bytes of RAM
 
-#	lw	$4, S_TOTALRAM($4)	# size in bytes of RAM
-	# LOAD DELAY SLOT
-#	li	$19,1			# print to strcat, not stderr
-
-#	jal     num_to_ascii
-	# BRANCH DELAY SLOT
-#	srl	$4,$4,20		# divide by 1024*1024 to get M
-
+	srl	$a0,$a0,20		# divide by 1024*1024 to get M
+	jal     num_to_ascii
 
 					# print 'M RAM, '
-#	jal	strcat			# call strcat
-#	addiu	$5,$17,(ram_comma-data_begin)
-
-
+	lw	$a1,ver_string_addr
+	addiu	$a1,(ram_comma-ver_string)
+	jal	strcat			# call strcat
 
 	#========
 	# Bogomips
 	#========
-
+bogomips:
 #	li	$4, ('M'<<24+'I'<<16+'P'<<8+'S')
 					# find 'mips\t: ' and grab up to \n
 
-#	jal	find_string
-	# BRANCH DELAY SLOT
 #	li	$6, 0xa
-
+#	jal	find_string
 
 					# bogo total follows RAM
-#	jal 	strcat			# call strcat
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(bogo_total-data_begin)
+	lw	$a1,ver_string_addr
+	addiu	$a1,(bogo_total-ver_string)
+	jal 	strcat			# call strcat
 
+	jal	center_and_print	# center and print
 
-#	jal	center_and_print	# center and print
-#	nop
 
 	#=================================
 	# Print Host Name
@@ -431,9 +424,11 @@ chip_name:
 
 
 					# (.txt) pointer to default_colors
-#	jal	write_stdout
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(default_colors-data_begin)
+	lw	$a1,ver_string_addr
+	addiu	$a1,(default_colors-ver_string)
+	jal	write_stdout
+
+
 
 
 	#================================
@@ -457,7 +452,7 @@ do_syscall:
 	jr    $31
 
 .set mips16
-
+.align 1
 
 
 	#=================================
@@ -529,8 +524,8 @@ done:
 	#================================
 	# strcat
 	#================================
-	# output_buffer s0
 	# string to cat a1
+	# output_buffer s0
 	# trashed v0
 
 strcat:
@@ -551,77 +546,70 @@ done_strcat:
 	# center_and_print
 	#==============================
 	# string is in output_buffer
-        # 
+        #
 
 nop
 center_and_print:
 
 	save	$ra,8				# save return address
 
-	li	$v0,0xa00			# write linefeed
+	li	$v0,0xa00		# append linefeed
 	sh	$v0,0($s0)
 	nop
 
-	lw	$a1,out_buffer_addr
-	jal	write_stdout
+	lw	$a1,out_buffer_addr	# a1 is beginning of string
+					# s0 is end of string
 
-#	move	$20,$16				# $20 is the end of our string
-#	addiu	$16,$18,(out_buffer-bss_begin)	# point $16 to beginning
-
-
-#	subu	$4, $20,$16		# subtract end pointer from start
-       		    			# (cheaty way to get size of string)
+	subu	$s1,$s0,$a1		# subtract end pointer from start
+       		    			# to get length
 
 #	slti	$1,$4,81
+
 #	beq	$1,$0, done_center	# don't center if > 80
-	# BRANCH DELAY SLOT
-#	li    	$19,0 			# print to stdout
 
-#	neg	$4,$4  			# negate length
-#	addiu	$4,$4,80		# add to 80
-
-#	srl	$22,$4,1		# divide by 2
-
-#	jal	write_stdout		# print ESCAPE char
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(escape-data_begin)
+	neg	$s1  			# negate length
 
 
-#	jal	num_to_ascii		# print number of spaces
-	# BRANCH DELAY SLOT
-#	move	$4,$22			# how much to shift to right
 
-#	jal	write_stdout
-	# BRANCH DELAY SLOT
-#	addiu	$5,$17,(c-data_begin)	# print "C"
+	lw	$a1,ver_string_addr
+	addiu	$a1,(escape-ver_string)
+	jal	write_stdout		# print ESCAPE char
+nop
+	addiu	$s1,80			# add to 80
+	srl	$a0,$s1,1		# divide by 2
+
+
+	li    	$a3,0 			# print to stdout
+	jal	num_to_ascii		# print number of spaces
+
+
+
+	lw	$a1,ver_string_addr
+	addiu	$a1,(c-ver_string)	# print "C"
+	jal	write_stdout
+
+
 
 
 done_center:
 					# point to the string to print
-#	jal 	write_stdout
-	# BRANCH DELAY SLOT
-#	addiu	$5,$18,(out_buffer-bss_begin)
+	lw	$a1,out_buffer_addr
 
-
-#	addiu	$5,$17,(linefeed-data_begin)
-					# print linefeed at end of line
-	
 	restore	$ra,8 		# restore saved pointer
-	     				# so we'll return to
-					# where we were called from
-					# at the end of the write_stdout
+				# so we'll return to
+				# where we were called from
+				# at the end of the write_stdout
 
-	jr	$ra
 
 	#================================
 	# WRITE_STDOUT
 	#================================
 	# a1 has the string
-	nop
+#	nop
 write_stdout:
-        save	$ra,8
+        save	$ra,$s1,8
 
-        move    $a0,$a1			# copy string pointer to $a0
+	move    $a0,$a1			# copy string pointer to $a0
 	li      $a2,0			# 0 (count) in $a2
 
 str_loop1:
@@ -635,7 +623,7 @@ str_loop1:
 
 	jalx 	do_syscall		# call syscall
 
-	restore $ra,8			# restore return address
+	restore $ra,$s1,8		# restore return address
 
 #JRC?
 	jr	$ra			# retrun
@@ -643,35 +631,33 @@ str_loop1:
 
 	##############################
 	# num_to_ascii
-	##############################	
-	# a0 ($4)  = value to print
-	# a1 ($5)  = output buffer	
-	# s3 ($19) = 0=stdout, 1=strcat
-	# destroys t2 ($10)
-	# destroys t3 ($11)
-	# destroys a0 ($4)
-	
+	##############################
+	# a0 = value to print
+	# a1 = output buffer
+	# a3 = stdout(0) or strcat(1)
+	# destroys v1
+
 num_to_ascii:
 
-#	addiu	 $5,(ascii_buffer-bss_begin)+10	
-				# point to end of ascii_buffer
+	lw	$a1,ascii_buff_addr	# point to end of ascii_buffer
 
 div_by_10:
-#	addiu	$5,$5,-1	# point back one
-#	li	$1,10
-#	divu	$10,$4,$1	# divide.  hi= remainder, lo=quotient
-#	mfhi	$11		# remainder into t3 ($11)
-#	addiu	$11,$11,0x30	# convert to ascii
-#	sb	$11,0($5)	# store to buffer
-#	bne	$10,$0, div_by_10
-#	# BRANCH DELAY SLOT
-#	move	$4,$10		# move old result into next divide	
-	
+	addiu	$a1,$a1,-1	# point back one
+	li	$v1,10		# divide by 10
+	divu	$a0,$v1		# divide.  hi= remainder, lo=quotient
+	mfhi	$v1		# remainder into v1
+	addiu	$v1,$v1,0x30	# convert to ascii
+	sb	$v1,0($a1)	# store to buffer
+	mflo	$v1
+	move	$a0,$v1		# move old result into next divide
+	bnez	$v1, div_by_10
+
 write_out:
-#	beq	$19,$0,write_stdout
-#	nop			# if write stdout, go there 
- #   	j	strcat		# else, strcat will return for us
-#	nop
+
+	beqz	$a3,write_stdout
+				# if write stdout, go there
+	b	strcat		# else, strcat will return for us
+
 
 #===========================================================================
 #	section .data
@@ -682,30 +668,32 @@ ver_string:		.ascii " Version \0"
 compiled_string:	.ascii ", Compiled \0"
 ram_comma:		.ascii "M RAM, \0"
 bogo_total:		.ascii " Bogomips Total\0"
-default_colors:		.ascii "\033[0m\n\n\0"
+default_colors:		.ascii "\033[0m\n\0"
 escape:			.ascii "\033[\0"
 c:			.ascii "C\0"
 
 cpuinfo:		.ascii "proc/cpu.mips\0"
 
-one:			.ascii "One Mips \0"
+one:			.ascii "One MIPS \0"
 processor:		.ascii " Processor, \0"
 
 .include	"logo.lzss_new"
 
-bss_begin_addr:		.word bss_begin
 out_buffer_addr:	.word out_buffer
 text_buf_addr:		.word text_buf
 uname_info_addr:	.word uname_info
+ver_string_addr:	.word ver_string
+disk_buffer_addr:	.word disk_buffer
+sysinfo_buff_addr:	.word sysinfo_buff
+ascii_buff_addr:	.word (ascii_buffer+10)
 
 #============================================================================
 #	section .bss
 #============================================================================
 .bss
-bss_begin:
-
+.align 4
 .lcomm	ascii_buffer,10		# 32 bit can't be > 9 chars
-.lcomm	sysinfo_buff,(64)
+.lcomm	sysinfo_buff,128
 .lcomm	uname_info,(65*6)
 .lcomm	text_buf, (N+F-1)
 .lcomm	disk_buffer,4096	# we cheat!!!!
@@ -713,4 +701,3 @@ bss_begin:
 
    # see /usr/src/linux/include/linux/kernel.h
 
-.lcomm register_buffer,128
