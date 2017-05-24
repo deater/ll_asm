@@ -88,24 +88,20 @@
 #  + 1151 bytes -- move strcat address into s1 and jalr to it
 #  + 1136 bytes -- split up syscall number insns so can fit in delay slot
 #  + 1135 bytes -- split li of 4096 to 128<<5 to fit in delay slot
+#  + 1135 bytes -- more messing with delay slots
 
 #
 # ASSEMBLER ANNOYANCES:
 # + Can't "la" labels that are in BSS
 # + Weird "can't jump to target" if jal targets don't line up
 # + logo_end: label gets weird padding
+# + assembler misses some delay slot opportunities
 
 #
 # Keep gas from handling branch-delay and load-delay slots automatically
 #
 
 #.set noreorder
-
-#
-# Keep gas from using the assembly temp register (no pseudo-ops basically)
-#
-
-#.set noat
 
 #
 # Register definitions.  Older gas could only hand numerical
@@ -339,8 +335,8 @@ middle_line:
 #	li	$a2, 4096		# 4096 should be more than enough
 					# for this proc file
 
-	li	$a2,128
-	sll	$a2,5
+	li	$a2,128			# split it up so one can
+	sll	$a2,5			# go in delay slot
 
 	jalx	do_syscall
 
@@ -348,6 +344,15 @@ middle_line:
 					# close (to be correct)
 		    			# fd should still be in a0
 	jalx	do_syscall
+
+	# no reason not to do this here, while v1 still valid
+
+	# didn't help this time, SYSCALL_SYSINFO too big to fit in 5 bits
+	addiu	$v0,$v1,(SYSCALL_SYSINFO-SYSCALL_LINUX)
+					# sysinfo() syscall
+	lw	$a0, sysinfo_buff_addr
+	jalx	do_syscall
+
 
 	#=============
 	# Number of CPUs
@@ -387,15 +392,14 @@ chip_name:
 	# RAM
 	#========
 ram:
-	li	$v0, SYSCALL_SYSINFO	# sysinfo() syscall
-	lw	$a0, sysinfo_buff_addr
-	jalx	do_syscall
-
-	li	$a3,1			# print to strcat, not stderr
 	lw	$a0, sysinfo_buff_addr
 	lw	$a0, S_TOTALRAM($a0)	# size in bytes of RAM
 
 	srl	$a0,$a0,20		# divide by 1024*1024 to get M
+					# note, splitting into two does
+					# not help with delay slot
+					# (still too big)
+	li	$a3,1			# print to strcat, not stderr
 	jal     num_to_ascii
 
 					# print 'M RAM, '
@@ -424,7 +428,7 @@ bogomips:
 	#=================================
 	# Print Host Name
 	#=================================
-
+hostname:
 	lw	$s0,out_buffer_addr	# point $s0 to out_buffer
 
 					# host name from uname()
@@ -437,11 +441,12 @@ bogomips:
 
 					# (.txt) pointer to default_colors
 	lw	$a1,ver_string_addr
-	addiu	$a1,(default_colors-ver_string)
+
+	# Have to force the delay slot here, the assembler couldn't see it
+.set noreorder
 	jal	write_stdout
-
-
-
+	addiu	$a1,(default_colors-ver_string)
+.set reorder
 
 	#================================
 	# Exit
