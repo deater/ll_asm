@@ -1,0 +1,476 @@
+
+./ll.mips16:     file format elf32-tradbigmips
+
+
+Disassembly of section .MIPS.abiflags:
+
+00400098 <.MIPS.abiflags>:
+  400098:	00002002 	srl	a0,zero,0x0
+  40009c:	01010001 	movt	zero,t0,$fcc0
+  4000a0:	00000000 	nop
+  4000a4:	00000400 	sll	zero,zero,0x10
+  4000a8:	00000001 	movf	zero,zero,$fcc0
+  4000ac:	00000000 	nop
+
+Disassembly of section .reginfo:
+
+004000b0 <.reginfo>:
+  4000b0:	a10300fc 	sb	v1,252(t0)
+	...
+  4000c4:	00408450 	0x408450
+
+Disassembly of section .text:
+
+004000d0 <__start>:
+  4000d0:	b0dc      	lw	s0,400440 <out_buffer_addr>
+  4000d2:	f240 0912 	la	s1,400322 <logo>
+  4000d6:	f3c0 6e00 	li	a2,960
+
+004000da <decompression_loop>:
+  4000da:	a140      	lbu	v0,0(s1)
+  4000dc:	4121      	addiu	s1,s1,1
+  4000de:	f71f 6f00 	li	a3,65280
+  4000e2:	eaed      	or	v0,a3
+
+004000e4 <test_flags>:
+  4000e4:	f340 0f19 	la	a3,40043c <logo+0x11a>
+  4000e8:	e9e2      	slt	s1,a3
+  4000ea:	6026      	bteqz	400138 <done_logo>
+  4000ec:	6f01      	li	a3,1
+  4000ee:	ef4c      	and	a3,v0
+  4000f0:	3246      	srl	v0,1
+  4000f2:	2f1e      	bnez	a3,400130 <discrete_char>
+
+004000f4 <offset_length>:
+  4000f4:	a160      	lbu	v1,0(s1)
+  4000f6:	a181      	lbu	a0,1(s1)
+  4000f8:	4902      	addiu	s1,2
+  4000fa:	3480      	sll	a0,8
+  4000fc:	ec6d      	or	a0,v1
+  4000fe:	f280 3582 	srl	a1,a0,10
+  400102:	45a3      	addiu	a1,a1,3
+
+00400104 <output_loop>:
+  400104:	f3e0 6f1f 	li	a3,1023
+  400108:	ecec      	and	a0,a3
+  40010a:	b7cf      	lw	a3,400444 <text_buf_addr>
+  40010c:	e79d      	addu	a3,a0
+  40010e:	a760      	lbu	v1,0(a3)
+  400110:	4481      	addiu	a0,a0,1
+
+00400112 <store_byte>:
+  400112:	c060      	sb	v1,0(s0)
+  400114:	4801      	addiu	s0,1
+  400116:	b7cc      	lw	a3,400444 <text_buf_addr>
+  400118:	e7dd      	addu	a3,a2
+  40011a:	c760      	sb	v1,0(a3)
+  40011c:	46c1      	addiu	a2,a2,1
+  40011e:	f3e0 6f1f 	li	a3,1023
+  400122:	eeec      	and	a2,a3
+  400124:	45af      	addiu	a1,a1,-1
+  400126:	2dee      	bnez	a1,400104 <output_loop>
+  400128:	f100 5a00 	sltiu	v0,256
+  40012c:	60db      	bteqz	4000e4 <test_flags>
+  40012e:	17d5      	b	4000da <decompression_loop>
+
+00400130 <discrete_char>:
+  400130:	a160      	lbu	v1,0(s1)
+  400132:	4901      	addiu	s1,1
+  400134:	6d01      	li	a1,1
+  400136:	17ed      	b	400112 <store_byte>
+
+00400138 <done_logo>:
+  400138:	b5c2      	lw	a1,400440 <out_buffer_addr>
+  40013a:	1a00 009e 	jal	400278 <write_stdout>
+  40013e:	6500      	nop
+  400140:	f0e0 0919 	la	s1,400238 <strcat>
+
+00400144 <first_line>:
+  400144:	f002 6a1a 	li	v0,4122
+  400148:	b4c0      	lw	a0,400448 <uname_info_addr>
+  40014a:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  40014e:	6500      	nop
+  400150:	b0bc      	lw	s0,400440 <out_buffer_addr>
+  400152:	b5be      	lw	a1,400448 <uname_info_addr>
+  400154:	e9c0      	jalrc	s1
+  400156:	b5be      	lw	a1,40044c <ver_string_addr>
+  400158:	e9c0      	jalrc	s1
+  40015a:	b5bc      	lw	a1,400448 <uname_info_addr>
+  40015c:	f080 4d02 	addiu	a1,130
+  400160:	e9c0      	jalrc	s1
+  400162:	b5bb      	lw	a1,40044c <ver_string_addr>
+  400164:	4d0a      	addiu	a1,10
+  400166:	e9c0      	jalrc	s1
+  400168:	b5b8      	lw	a1,400448 <uname_info_addr>
+  40016a:	f0c0 4d03 	addiu	a1,195
+  40016e:	e9c0      	jalrc	s1
+  400170:	1a00 0092 	jal	400248 <center_and_print>
+  400174:	6500      	nop
+
+00400176 <middle_line>:
+  400176:	b0b3      	lw	s0,400440 <out_buffer_addr>
+  400178:	f7a1 6b00 	li	v1,4000
+  40017c:	4345      	addiu	v0,v1,5
+  40017e:	b4b4      	lw	a0,40044c <ver_string_addr>
+  400180:	4c39      	addiu	a0,57
+  400182:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  400186:	6d00      	li	a1,0
+  400188:	6782      	move	a0,v0
+  40018a:	4343      	addiu	v0,v1,3
+  40018c:	b5b1      	lw	a1,400450 <disk_buffer_addr>
+  40018e:	6e80      	li	a2,128
+  400190:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  400194:	36d4      	sll	a2,5
+  400196:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  40019a:	4346      	addiu	v0,v1,6
+  40019c:	f070 4344 	addiu	v0,v1,116
+  4001a0:	b4ad      	lw	a0,400454 <sysinfo_buff_addr>
+  4001a2:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  4001a6:	6500      	nop
+
+004001a8 <number_of_cpus>:
+  4001a8:	b5a9      	lw	a1,40044c <ver_string_addr>
+  4001aa:	4d47      	addiu	a1,71
+  4001ac:	e9c0      	jalrc	s1
+
+004001ae <chip_name>:
+  4001ae:	f160 b40e 	lw	a0,40031a <odel_string>
+  4001b2:	1a00 0082 	jal	400208 <find_string>
+  4001b6:	6f20      	li	a3,32
+  4001b8:	b5a5      	lw	a1,40044c <ver_string_addr>
+  4001ba:	4d51      	addiu	a1,81
+  4001bc:	e9c0      	jalrc	s1
+
+004001be <ram>:
+  4001be:	b4a6      	lw	a0,400454 <sysinfo_buff_addr>
+  4001c0:	9c84      	lw	a0,16(a0)
+  4001c2:	f500 3482 	srl	a0,20
+  4001c6:	1a00 00a5 	jal	400294 <num_to_ascii>
+  4001ca:	6f01      	li	a3,1
+  4001cc:	b5a0      	lw	a1,40044c <ver_string_addr>
+  4001ce:	4d16      	addiu	a1,22
+  4001d0:	e9c0      	jalrc	s1
+
+004001d2 <bogomips>:
+  4001d2:	f140 b40e 	lw	a0,40031e <mips_string>
+  4001d6:	1a00 0082 	jal	400208 <find_string>
+  4001da:	6f0a      	li	a3,10
+  4001dc:	b59c      	lw	a1,40044c <ver_string_addr>
+  4001de:	4d1e      	addiu	a1,30
+  4001e0:	e9c0      	jalrc	s1
+  4001e2:	1a00 0092 	jal	400248 <center_and_print>
+  4001e6:	6500      	nop
+
+004001e8 <hostname>:
+  4001e8:	b096      	lw	s0,400440 <out_buffer_addr>
+  4001ea:	b598      	lw	a1,400448 <uname_info_addr>
+  4001ec:	e940      	jalr	s1
+  4001ee:	4d41      	addiu	a1,65
+  4001f0:	1a00 0092 	jal	400248 <center_and_print>
+  4001f4:	6500      	nop
+  4001f6:	b596      	lw	a1,40044c <ver_string_addr>
+  4001f8:	1a00 009e 	jal	400278 <write_stdout>
+  4001fc:	4d2e      	addiu	a1,46
+
+004001fe <exit>:
+  4001fe:	f7a1 6a01 	li	v0,4001
+  400202:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  400206:	6c05      	li	a0,5
+
+00400208 <find_string>:
+  400208:	b692      	lw	a2,400450 <disk_buffer_addr>
+
+0040020a <find_loop>:
+  40020a:	f000 9e41 	lw	v0,1(a2)
+  40020e:	46c1      	addiu	a2,a2,1
+  400210:	2211      	beqz	v0,400234 <done>
+  400212:	ea8a      	cmp	v0,a0
+  400214:	61fa      	btnez	40020a <find_loop>
+  400216:	6b3a      	li	v1,58
+
+00400218 <find_colon>:
+  400218:	a641      	lbu	v0,1(a2)
+  40021a:	46c1      	addiu	a2,a2,1
+  40021c:	220b      	beqz	v0,400234 <done>
+  40021e:	ea6a      	cmp	v0,v1
+  400220:	61fb      	btnez	400218 <find_colon>
+  400222:	46c2      	addiu	a2,a2,2
+
+00400224 <store_loop>:
+  400224:	a640      	lbu	v0,0(a2)
+  400226:	46c1      	addiu	a2,a2,1
+  400228:	2205      	beqz	v0,400234 <done>
+  40022a:	eaea      	cmp	v0,a3
+  40022c:	6003      	bteqz	400234 <done>
+  40022e:	c040      	sb	v0,0(s0)
+  400230:	4001      	addiu	s0,s0,1
+  400232:	17f8      	b	400224 <store_loop>
+
+00400234 <done>:
+  400234:	e8a0      	jrc	ra
+  400236:	6500      	nop
+
+00400238 <strcat>:
+  400238:	a540      	lbu	v0,0(a1)
+  40023a:	45a1      	addiu	a1,a1,1
+  40023c:	c040      	sb	v0,0(s0)
+  40023e:	4001      	addiu	s0,s0,1
+  400240:	2afb      	bnez	v0,400238 <strcat>
+
+00400242 <done_strcat>:
+  400242:	e820      	jr	ra
+  400244:	400f      	addiu	s0,s0,-1
+  400246:	6500      	nop
+
+00400248 <center_and_print>:
+  400248:	64d1      	save	8,ra,s1
+  40024a:	f201 6a00 	li	v0,2560
+  40024e:	c840      	sh	v0,0(s0)
+  400250:	b57c      	lw	a1,400440 <out_buffer_addr>
+  400252:	e0a7      	subu	s1,s0,a1
+  400254:	7150      	cmpi	s1,80
+  400256:	600e      	bteqz	400274 <done_center>
+  400258:	e92b      	neg	s1
+  40025a:	b57d      	lw	a1,40044c <ver_string_addr>
+  40025c:	1a00 009e 	jal	400278 <write_stdout>
+  400260:	4d34      	addiu	a1,52
+  400262:	4950      	addiu	s1,80
+  400264:	3426      	srl	a0,s1,1
+  400266:	1a00 00a5 	jal	400294 <num_to_ascii>
+  40026a:	6f00      	li	a3,0
+  40026c:	b578      	lw	a1,40044c <ver_string_addr>
+  40026e:	1a00 009e 	jal	400278 <write_stdout>
+  400272:	4d37      	addiu	a1,55
+
+00400274 <done_center>:
+  400274:	b573      	lw	a1,400440 <out_buffer_addr>
+  400276:	6451      	restore	8,ra,s1
+
+00400278 <write_stdout>:
+  400278:	64d1      	save	8,ra,s1
+  40027a:	6785      	move	a0,a1
+  40027c:	6e00      	li	a2,0
+
+0040027e <str_loop1>:
+  40027e:	a441      	lbu	v0,1(a0)
+  400280:	4c01      	addiu	a0,1
+  400282:	4e01      	addiu	a2,1
+  400284:	2afc      	bnez	v0,40027e <str_loop1>
+  400286:	f7a1 6a04 	li	v0,4004
+  40028a:	1e00 00ac 	jalx	4002b0 <do_syscall>
+  40028e:	6c01      	li	a0,1
+  400290:	6451      	restore	8,ra,s1
+  400292:	e8a0      	jrc	ra
+
+00400294 <num_to_ascii>:
+  400294:	b571      	lw	a1,400458 <ascii_buff_addr>
+
+00400296 <div_by_10>:
+  400296:	45af      	addiu	a1,a1,-1
+  400298:	6b0a      	li	v1,10
+  40029a:	ec7b      	divu	zero,a0,v1
+  40029c:	2b01      	bnez	v1,4002a0 <div_by_10+0xa>
+  40029e:	e8e5      	break	7
+  4002a0:	ec12      	mflo	a0
+  4002a2:	eb10      	mfhi	v1
+  4002a4:	4b30      	addiu	v1,48
+  4002a6:	c560      	sb	v1,0(a1)
+  4002a8:	ec12      	mflo	a0
+  4002aa:	2cf5      	bnez	a0,400296 <div_by_10>
+
+004002ac <write_out>:
+  4002ac:	27e5      	beqz	a3,400278 <write_stdout>
+  4002ae:	17c4      	b	400238 <strcat>
+
+004002b0 <do_syscall>:
+  4002b0:	0000000c 	syscall
+  4002b4:	03e00008 	jr	ra
+  4002b8:	00000000 	nop
+
+004002bc <data_begin>:
+  4002bc:	20566572 	addi	s6,v0,25970
+  4002c0:	73696f6e 	0x73696f6e
+  4002c4:	20002c20 	addi	zero,zero,11296
+
+004002c6 <compiled_string>:
+  4002c6:	2c20436f 	sltiu	zero,at,17263
+  4002ca:	6d70696c 	0x6d70696c
+  4002ce:	65642000 	0x65642000
+
+004002d2 <ram_comma>:
+  4002d2:	4d205241 	0x4d205241
+  4002d6:	4d2c2000 	0x4d2c2000
+
+004002da <bogo_total>:
+  4002da:	20426f67 	addi	v0,v0,28519
+  4002de:	6f6d6970 	0x6f6d6970
+  4002e2:	7320546f 	0x7320546f
+  4002e6:	74616c00 	jalx	185b000 <_gp+0x1452bb0>
+
+004002ea <default_colors>:
+  4002ea:	1b5b306d 	0x1b5b306d
+  4002ee:	0a001b5b 	j	8006d6c <_gp+0x7bfe91c>
+
+004002f0 <escape>:
+  4002f0:	1b5b0043 	0x1b5b0043
+
+004002f3 <c>:
+  4002f3:	4300      	addiu	s0,v1,0
+
+004002f5 <cpuinfo>:
+  4002f5:	7072      	cmpi	s0,114
+  4002f7:	6f63      	li	a3,99
+  4002f9:	2f63      	bnez	a3,4003c2 <logo+0xa0>
+  4002fb:	7075      	cmpi	s0,117
+  4002fd:	2e6d      	bnez	a2,4003da <logo+0xb8>
+  4002ff:	6970      	li	s1,112
+  400301:	7300      	cmpi	v1,0
+
+00400303 <one>:
+  400303:	4f6e      	addiu	a3,110
+  400305:	6520      	move	at,s0
+  400307:	4d49      	addiu	a1,73
+  400309:	5053      	slti	s0,83
+  40030b:	2000      	beqz	s0,40030e <processor+0x1>
+
+0040030d <processor>:
+  40030d:	2050      	beqz	s0,4003b0 <logo+0x8e>
+  40030f:	726f      	cmpi	v0,111
+  400311:	6365      	addiu	sp,808
+  400313:	7373      	cmpi	v1,115
+  400315:	6f72      	li	a3,114
+  400317:	2c20      	bnez	a0,40035a <logo+0x38>
+	...
+
+0040031a <odel_string>:
+  40031a:	6f64656c 	0x6f64656c
+
+0040031e <mips_string>:
+  40031e:	4d495053 	0x4d495053
+
+00400322 <logo>:
+  400322:	ff1b5b30 	sdc3	$27,23344(t8)
+  400326:	3b313b33 	xori	s1,t9,0x3b33
+  40032a:	379f3b34 	ori	ra,gp,0x3b34
+  40032e:	376d23cc 	ori	t5,k1,0x23cc
+  400332:	f7c00733 	sdc1	$f0,1843(s8)
+  400336:	8d30c81b 	lw	s0,-14309(t1)
+  40033a:	1b5bc407 	0x1b5bc407
+  40033e:	cb1f1c0c 	lwc2	$31,7180(t8)
+  400342:	3b0f3430 	xori	t7,t8,0x3430
+  400346:	6d0ac0f7 	0x6d0ac0f7
+  40034a:	01601a38 	0x1601a38
+  40034e:	2c9c1f1b 	sltiu	gp,a0,7963
+  400352:	5b33316d 	0x5b33316d
+  400356:	cc0441ac 	pref	0x4,16812(zero)
+  40035a:	0d24021c 	jal	4900870 <_gp+0x44f8420>
+  40035e:	104f0d20 	beq	v0,t7,4037e2 <out_buffer+0x1d2a>
+  400362:	10419398 	beq	v0,at,3e51c6 <SYSCALL_UNAME+0x3e41ac>
+  400366:	83341c34 	lb	s4,7220(t9)
+  40036a:	cc10100c 	pref	0x10,4108(zero)
+  40036e:	246f39ec 	addiu	t7,v1,14828
+  400372:	a71c0833 	sh	gp,2099(t8)
+  400376:	16148955 	bne	s0,s4,3e28ce <SYSCALL_UNAME+0x3e18b4>
+  40037a:	2c60002b 	sltiu	zero,v1,43
+  40037e:	61d671e2 	0x61d671e2
+  400382:	c8cb08d4 	lwc2	$11,2260(a2)
+  400386:	09d3102b 	j	74c40ac <_gp+0x70bbc5c>
+  40038a:	59f5d100 	0x59f5d100
+  40038e:	8011d218 	lb	s1,-11752(zero)
+  400392:	0d281c14 	jal	4a07050 <_gp+0x45fec00>
+  400396:	0d2c1c1c 	jal	4b07070 <_gp+0x46fec20>
+  40039a:	f04a1a5b 	0xf04a1a5b
+  40039e:	000d505f 	0xd505f
+  4003a2:	6587652b 	0x6587652b
+  4003a6:	55f5cdcd 	bnel	t7,s5,3f3ade <SYSCALL_UNAME+0x3f2ac4>
+  4003aa:	28cd1489 	slti	t5,a2,5257
+  4003ae:	41001d87 	bc0f	4079ce <_end+0x1f0e>
+  4003b2:	424b7253 	c0	0x4b7253
+  4003b6:	1c780f62 	0x1c780f62
+  4003ba:	876d5558 	lh	t5,21848(k1)
+  4003be:	f7c100e8 	sdc1	$f1,232(s8)
+  4003c2:	2bf49749 	slti	s4,ra,-26807
+  4003c6:	783db01b 	fadd.d	$w0,$w22,$w29
+  4003ca:	5f97b012 	0x5f97b012
+  4003ce:	2babca10 	slti	t3,sp,-13808
+  4003d2:	df161af5 	ldc3	$22,6901(t8)
+  4003d6:	5af5d93f 	0x5af5d93f
+  4003da:	331b5692 	andi	k1,t8,0x5692
+  4003de:	5bb00200 	0x5bb00200
+  4003e2:	0c1dd3c8 	jal	774f20 <_gp+0x36cad0>
+  4003e6:	ac391766 	sw	t9,5990(at)
+  4003ea:	32f66e6d 	andi	s6,s7,0x6e6d
+  4003ee:	ec44605e 	swc3	$4,24670(v0)
+  4003f2:	08af0aa6 	j	2bc2a98 <_gp+0x27ba648>
+  4003f6:	69140130 	0x69140130
+  4003fa:	330bde1f 	andi	t3,t8,0xde1f
+  4003fe:	310fd3bc 	andi	t7,t0,0xd3bc
+  400402:	00af4f19 	0xaf4f19
+  400406:	56aa4552 	bnel	s5,t2,411952 <_gp+0x9502>
+  40040a:	db285246 	ldc2	$8,21062(t9)
+  40040e:	7f0853db 	0x7f0853db
+  400412:	2300a955 	addi	zero,t8,-22187
+  400416:	aa351821 	swl	s5,6177(s1)
+  40041a:	1268912a 	beq	s3,t0,3e48c6 <SYSCALL_UNAME+0x3e38ac>
+  40041e:	c822b268 	lwc2	$2,-19864(at)
+  400422:	702d00c6 	0x702d00c6
+  400426:	50b27991 	beql	a1,s2,41ea6e <_gp+0x1661e>
+  40042a:	4a7031f8 	c2	0x7031f8
+  40042e:	51f328dd 	beql	t7,s3,40a7a6 <_gp+0x2356>
+  400432:	17ff1708 	bne	ra,ra,406056 <_end+0x596>
+  400436:	02360324 	0x2360324
+  40043a:	e5420a00 	swc1	$f2,2560(t2)
+
+0040043d <logo_end>:
+  40043d:	0000      	addiu	s0,sp,0
+	...
+
+00400440 <out_buffer_addr>:
+  400440:	00401ab8 	0x401ab8
+
+00400444 <text_buf_addr>:
+  400444:	00400678 	0x400678
+
+00400448 <uname_info_addr>:
+  400448:	004004f0 	tge	v0,zero,0x13
+
+0040044c <ver_string_addr>:
+  40044c:	004002bc 	0x4002bc
+
+00400450 <disk_buffer_addr>:
+  400450:	00400ab8 	0x400ab8
+
+00400454 <sysinfo_buff_addr>:
+  400454:	00400470 	tge	v0,zero,0x11
+
+00400458 <ascii_buff_addr>:
+  400458:	0040046a 	0x40046a
+  40045c:	65006500 	0x65006500
+
+Disassembly of section .bss:
+
+00400460 <__bss_start>:
+	...
+
+00400470 <sysinfo_buff>:
+	...
+
+004004f0 <uname_info>:
+	...
+
+00400678 <text_buf>:
+	...
+
+00400ab8 <disk_buffer>:
+	...
+
+00401ab8 <out_buffer>:
+	...
+
+Disassembly of section .gnu.attributes:
+
+00000000 <.gnu.attributes>:
+   0:	41000000 	mftc0	zero,c0_index
+   4:	0f676e75 	jal	d9db9d4 <_gp+0xd5d3584>
+   8:	00010000 	sll	zero,at,0x0
+   c:	00070401 	0x70401

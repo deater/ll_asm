@@ -35,6 +35,7 @@ Some Statistics
      riscv		1161 bytes   (as 2.28.0.20170505)
      arm.eabi		1161 bytes   (as 2.24.51.20141001)
      6502		1130*bytes   (ca64 2.12.0)
+     mips16		1119 bytes   (as 2.28)
      arm64		1094 bytes   (as 2.23.1)
      s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1029 bytes   (as 2.28)
@@ -235,6 +236,15 @@ mips:   Recent binutils has made mips come in line with the
 	
 	On the plus side, it has hardware support for unaligned loads,
 	plus hardware integer divide, which help a lot.
+
+mips16:	Reduced size instructions should help, but as always the
+	limitations make it hard.
+
+	Mostly the constant size, too eay to kick into extended
+	instructions and those won't fit in delay slots.
+
+	Also was fighting the assembler the whole way.
+
 
 m88k:	This chip came after m68k and was motorola's first RISC chip.
 	Didn't go well, they moved on to PPC.
