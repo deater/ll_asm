@@ -72,6 +72,9 @@ endif
 ifneq (,$(findstring mips,$(ARCH)))
    SOURCE_ARCH := mips
    THUMB := ll.mips16
+   THUMB := ll.mips16 ll.mips16.stripped ll.mips16.fakeproc ll.mips16.fakeproc.stripped \
+            ll.micromips ll.micromips.stripped ll.micromips.fakeproc ll.micromips.fakeproc.stripped
+
 endif
 
 #
@@ -271,11 +274,54 @@ ll.thumb2.fakeproc.o:	ll.thumb2.s
 # Mips16
 #
 
-ll.mips16.o:	ll.mips16.s
-	$(CROSS)$(AS) -mips32r2 -mips16 -o ll.mips16.o ll.mips16.s
+ll.mips16.stripped:  ll.mips16 sstrip/sstrip
+	cp ll.mips16 ll.mips16.stripped
+	sstrip/sstrip ll.mips16.stripped
 
 ll.mips16:	ll.mips16.o
 	$(CROSS)$(LD) -N -o ll.mips16 ll.mips16.o
+
+ll.mips16.o:	ll.mips16.s
+	$(CROSS)$(AS) -mips32r2 -mips16 -o ll.mips16.o ll.mips16.s
+
+ll.mips16.fakeproc.stripped:  ll.mips16.fakeproc sstrip/sstrip
+	cp ll.mips16.fakeproc ll.mips16.fakeproc.stripped
+	sstrip/sstrip ll.mips16.fakeproc.stripped
+
+ll.mips16.fakeproc:	ll.mips16.fakeproc.o
+	$(CROSS)$(LD) -N -o ll.mips16.fakeproc ll.mips16.fakeproc.o
+
+ll.mips16.fakeproc.o:	ll.mips16.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mips32r2 -mips16 -o ll.mips16.fakeproc.o ll.mips16.s
+
+#
+# microMips
+#
+
+ll.micromips.stripped:  ll.micromips sstrip/sstrip
+	cp ll.micromips ll.micromips.stripped
+	sstrip/sstrip ll.micromips.stripped
+
+ll.micromips:	ll.micromips.o
+	$(CROSS)$(LD) -N -o ll.micromips ll.micromips.o
+
+ll.micromips.o:	ll.micromips.s
+	$(CROSS)$(AS) -mmicromips -o ll.micromips.o ll.micromips.s
+
+ll.micromips.fakeproc.stripped:  ll.micromips.fakeproc sstrip/sstrip
+	cp ll.micromips.fakeproc ll.micromips.fakeproc.stripped
+	sstrip/sstrip ll.micromips.fakeproc.stripped
+
+ll.micromips.fakeproc:	ll.micromips.fakeproc.o
+	$(CROSS)$(LD) -N -o ll.micromips.fakeproc ll.micromips.fakeproc.o
+
+ll.micromips.fakeproc.o:	ll.micromips.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mmicromips -o ll.micromips.fakeproc.o ll.micromips.s
+
+
+#
+# 8086
+#
 
 ll_8086.com:	      ll.8086.o.o
 		      dd if=ll.8086.o.o of=ll_8086.com bs=256 skip=1

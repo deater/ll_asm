@@ -681,7 +681,11 @@ default_colors:		.ascii "\033[0m\n\0"
 escape:			.ascii "\033[\0"
 c:			.ascii "C\0"
 
+.ifdef FAKE_PROC
 cpuinfo:		.ascii "proc/cpu.mips\0"
+.else
+cpuinfo:        .ascii  "/proc/cpuinfo\0"
+.endif
 
 one:			.ascii "One MIPS \0"
 processor:		.ascii " Processor, \0"

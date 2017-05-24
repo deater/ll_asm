@@ -8,8 +8,21 @@
 
 .include "logo.include"
 
+# Difference from mips16
+#	+ andi/ori/xori
+#	+ cache
+#	+ ext -- extract bitfield
+#	+ ins -- insert bitfield
+#	+ loads can be GP relative
+#	+ lui -- load upper immediate
+#	+ ll/sc/pause
+#	+ move conditional
+#	+ prefetch
+# + Removal of all non-MIPS32 instructions (bt/cmp/save/restore)?
+
+
 #
-# MIPS16 differences from MIPS
+# MIPS16e2
 #
 # Can do 64-bit ops on 64-bit procs
 #  Has 8 registers:
@@ -27,53 +40,7 @@
 #   * lb ry, offset(rx)  -- offset=5bits (extnd to 16-bits)
 #   * lw can also be SP or PC relative
 # + store instructions: sb/sd/sh/sw
-# + stack frame
-#   * restore ra,s0,s1,framesize - optionally copy ra,s0,s1 off stack
-#                                  then update stack with 4-bit imm
-#     extended version can also restore other registers
-#   * save is like restore, but in reverse
-# + ALU
-#   * addiu rx, imm : rx=rx+8-bit immediate  (extensible to 16-bit)
-#   * addiu ry, rx, imm : ry=rx+4-bit immediate (extensible to 15 bit)
-#   * addiu rx,pc, imm : generate pc relative address (8bit extend to 16bit)
-#   * addiu sp, imm    : adjust stack pointer (8bit extnd to 16bit)
-#   * addiu rx,sp, imm    : generate sp relative address (8bit extnd to 16bit)
-#   * addu rz,rx,ry    : rz = rx + ry
-#   * and  rx,ry       : rx = rx & ry
-#   * cmp  rx,ry       : T = rx ^ ry
-#   * cmpi rx,imm      : T = rx ^ zero-extend 8-bit imm (extnd to 16bit)
-#   * li rx,imm        : 8-bit, extnd to 16-bit
-#   * move r32,rz      : can be any of the 32 MIPS regs
-#   * neg rx,ry        : rx = 0-ry
-#   * not rx,ry        : rx = ~ry
-#   * or  rx,ry        : rx = rx | ry
-#   * seb/seh/sew      : sign extend
-#   * slt rx,ry        : T = (rx < ry)
-#   * slti rx,imm      : T = (rx < imm) 8-bit, extend to 16-bit
-#   * sltu/slti/sltiu  : like above
-#   * subu rz,rx,ry    : rx = rx - ry
-#   * xor rx,ry        : rx = rx ^ ry
-#   * zeb/zeh/zew      : zero extend
-#   * daddiu, etc for 64-bit
-# + special           : break/extend
-# + mul/div           : ddiv/ddivu/div/divu/dmult/dmultu/mfhi/mflo/mult/multu
-#   * results in hi/lo like regular MIPS
-# + branch            : b/beqz/bnez/bteqz/btnez/jal/jalr/jalrc/jalx/jr/jrc
-#   * the "T" version checks the special T register (set by cmp)
-#   * jal jumps with 16-bit offset, result in r31
-#   * jalrc has no delay slot
-#   * jalx changes from 16-bit to 32-bit mode
-# + shift (64)        : dsll/dsllv/dsra/dsrav/dsrl/dsrlv
-# + shift (32)
-#   * sll rx,ry,sa    : rx = ry << sa (8-bits, extend to 31)
-#   * sllv ry,rx      : ry = ry << rx
-#   * sra rx,ry,sa    : rx = ry >> sa (8-bits extend to 31)
-#   * srav
-#   * srl
-#   * srlv
-
-# PC relative instructions: lwd,ld,addiu,daddiu
-
+#
 # "Extended" instructions allow making immediate field larger,
 #    for a 32-bit instruction
 #    cannot be in branch delay slots
@@ -81,22 +48,15 @@
 #
 # Optimization:
 #  LZSS:
-#  + 96 bytes -- initial working code
+#	+ ?? bytes
+#
+
 #
 # Overall:
-#  + 1183 bytes -- initial working code
-#  + 1151 bytes -- move strcat address into s1 and jalr to it
-#  + 1136 bytes -- split up syscall number insns so can fit in delay slot
-#  + 1135 bytes -- split li of 4096 to 128<<5 to fit in delay slot
-#  + 1135 bytes -- more messing with delay slots
-#  + 1119 bytes -- more delay slot and extra instruction removal
+#	+ ???? bytes
 
 #
 # ASSEMBLER ANNOYANCES:
-# + Can't "la" labels that are in BSS
-# + Weird "can't jump to target" if jal targets don't line up
-# + logo_end: label gets weird padding
-# + assembler misses some delay slot opportunities
 
 #
 # Keep gas from handling branch-delay and load-delay slots automatically
@@ -188,8 +148,8 @@ decompression_loop:
 
 test_flags:
 	la	$a3, logo_end
-	slt	$s1,$a3		# have we reached the end?
-	bteqz	done_logo	# if so, exit
+					# have we reached the end?
+	beq	$s1,$a3,done_logo	# if so, exit
 
 	li	$a3,1
 	and     $a3,$v0		# test to see if discrete char
@@ -243,8 +203,8 @@ store_byte:
 
 					# OPTIMIZE: sltiu with > 8 bits
 					#     takes 32bits?
-	sltiu	$v0,0x100		# if 0 we shifted through 8 and must
-	bteqz	test_flags		# re-load flags
+	sltiu	$v1,$v0,0x100		# if 0 we shifted through 8 and must
+	beqz	$v1,test_flags		# re-load flags
 
 	b	decompression_loop
 
@@ -542,7 +502,8 @@ nop	# needed for alignment?
 
 center_and_print:
 
-	save	$ra,$s1,8		# save return address
+	move	$s2,$ra
+	move	$s3,$s1			# save return address
 
 	li	$v0,0xa00		# append linefeed
 	sh	$v0,0($s0)
@@ -553,9 +514,9 @@ center_and_print:
 	subu	$s1,$s0,$a1		# subtract end pointer from start
        		    			# to get length
 
-	cmpi	$s1,80
+	slti	$v0,$s1,80
 
-	bteqz	done_center		# don't center if > 80
+	beqz	$v0,done_center		# don't center if > 80
 
 	neg	$s1  			# negate length
 
@@ -593,7 +554,9 @@ done_center:
 					# point to the string to print
 	lw	$a1,out_buffer_addr
 
-	restore	$ra,$s1,8 	# restore saved pointer
+	move	$ra,$s2
+	move	$s1,$s3
+				# restore saved pointer
 				# so we'll return to
 				# where we were called from
 				# at the end of the write_stdout
@@ -606,7 +569,8 @@ done_center:
 
 
 write_stdout:
-        save	$ra,$s1,8
+	move	$s2,$ra
+	move	$s3,$s1			# save return address
 
 	move    $a0,$a1			# copy string pointer to $a0
 	li      $a2,0			# 0 (count) in $a2
@@ -622,7 +586,8 @@ str_loop1:
 
 	syscall				# call syscall
 
-	restore $ra,$s1,8		# restore return address
+	move	$ra,$s2
+	move	$s1,$s3			# restore return address
 
 	jr	$ra			# retrun
 
