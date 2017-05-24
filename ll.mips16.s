@@ -87,6 +87,7 @@
 #  + 1183 bytes -- initial working code
 #  + 1151 bytes -- move strcat address into s1 and jalr to it
 #  + 1136 bytes -- split up syscall number insns so can fit in delay slot
+#  + 1135 bytes -- split li of 4096 to 128<<5 to fit in delay slot
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -335,8 +336,11 @@ middle_line:
 					# read()
 
 	lw	$a1,disk_buffer_addr	# point $a1 to the buffer
-	li	$a2, 4096		# 4096 should be more than enough
+#	li	$a2, 4096		# 4096 should be more than enough
 					# for this proc file
+
+	li	$a2,128
+	sll	$a2,5
 
 	jalx	do_syscall
 
@@ -458,7 +462,7 @@ exit:
 	#   $s0 is the output buffer
 	#
 	#   $v0 is trashed
-nop
+#nop
 .insn
 find_string:
 	lw	$a2,disk_buffer_addr
