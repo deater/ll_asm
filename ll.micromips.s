@@ -1,10 +1,10 @@
-#  linux_logo in mips16 (mips16e) assembler 0.49
+#  linux_logo in micromips (mips16e2) assembler 0.49
 #
 #  By
 #       Vince Weaver <vince _at_ deater.net>
 #
-#  assemble with     "as -mips32r2 -mips16 -o ll.mips16.o ll.mips16.s"
-#  link with         "ld -o ll_mips16 ll.mips16.o"
+#  assemble with     "as -mmicromips -o ll.micromips.o ll.micromips.s"
+#  link with         "ld -o ll_micromips ll.micromips.o"
 
 .include "logo.include"
 
@@ -270,7 +270,7 @@ first_line:
 
 	li	$v0, SYSCALL_UNAME		# uname syscall in $v0
 	lw	$a0,uname_info_addr		# destination of uname in $a0
-	jalx	do_syscall			# do syscall
+	syscall
 
 	lw	$s0,out_buffer_addr		# point $16 to out_buffer
 
@@ -323,7 +323,7 @@ middle_line:
 					# '/proc/cpuinfo'
 	li	$a1, 0			# 0 = O_RDONLY <bits/fcntl.h>
 
-	jalx	do_syscall		# syscall.  fd in v0
+	syscall				# syscall.  fd in v0
 					# we should check that
 					# return v0>=0
 
@@ -339,12 +339,12 @@ middle_line:
 	li	$a2,128			# split it up so one can
 	sll	$a2,5			# go in delay slot
 
-	jalx	do_syscall
+	syscall
 
 	addiu	$v0,$v1,(SYSCALL_CLOSE-SYSCALL_LINUX)
 					# close (to be correct)
 		    			# fd should still be in a0
-	jalx	do_syscall
+	syscall
 
 	# no reason not to do this here, while v1 still valid
 
@@ -352,7 +352,7 @@ middle_line:
 	addiu	$v0,$v1,(SYSCALL_SYSINFO-SYSCALL_LINUX)
 					# sysinfo() syscall
 	lw	$a0, sysinfo_buff_addr
-	jalx	do_syscall
+	syscall
 
 
 	#=============
@@ -456,7 +456,7 @@ exit:
 	li	$v0,SYSCALL_EXIT	# put exit syscall in v0
 	li	$a0,5			# put exit code in a0
 
-	jalx	do_syscall
+	syscall
 
 	#=================================
 	# FIND_STRING
@@ -620,7 +620,7 @@ str_loop1:
 	li	$v0,SYSCALL_WRITE	# Write syscall in $v0
 	li	$a0,STDOUT		# 1 in $a0 (stdout)
 
-	jalx 	do_syscall		# call syscall
+	syscall				# call syscall
 
 	restore $ra,$s1,8		# restore return address
 
@@ -654,19 +654,6 @@ write_out:
 				# if write stdout, go there
 	b	strcat		# else, strcat will return for us
 
-
-.set nomips16
-.align 2
-        #===================
-	# syscall
-	#===================
-do_syscall:
-        syscall	    			#
-
-	jr    $31
-
-.set mips16
-.align 1
 
 
 #===========================================================================
