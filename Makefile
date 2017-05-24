@@ -272,7 +272,7 @@ ll.thumb2.fakeproc.o:	ll.thumb2.s
 #
 
 ll.mips16.o:	ll.mips16.s
-	$(CROSS)$(AS) -mips32r2 -o ll.mips16.o ll.mips16.s
+	$(CROSS)$(AS) -mips32r2 -mips16 -o ll.mips16.o ll.mips16.s
 
 ll.mips16:	ll.mips16.o
 	$(CROSS)$(LD) -N -o ll.mips16 ll.mips16.o

@@ -147,13 +147,7 @@
 
 __start:
 
-#	jal	start16		# I don't think this should
-				# be necessary, how do I create
-				# a native mips16 binary?
-
 #.set mips16
-
-#start16:
 
 	#=========================
 	# PRINT LOGO
@@ -166,7 +160,7 @@ __start:
 #	la	$17,data_begin		# point $17 at .data segment begin
 #	lw	$16,bss_begin_addr	# point $18 at .bss segment begin
 
-	li      $6,(N-F)   	     	# R
+	li      $a2,(N-F)   	     	# R
 
 #	addiu  	$9,$17,(logo-data_begin)	# $9 points to logo
 #	addiu	$12,$17,(logo_end-data_begin)	# $12 points to end of logo
@@ -177,98 +171,86 @@ __start:
 	lw	$s0,out_buffer_addr
 	la	$s1,logo
 
-
 decompression_loop:
 
-	lbu	$2,0($17)       # load in a byte
-	addiu	$17,$17,1	# increment source pointer
+	lbu	$v0,0($s1)	# load in a byte
+	addiu	$s1,$s1,1	# increment source pointer
 
-        move 	$3, $2	        # move in the flags
-	li      $7,0xff00	# 32-bit, zero extended
-	or 	$3,$7           # put 0xff in top as a hackish 8-bit counter
+	li	$a3,0xff00	# 32-bit, zero extended
+	or	$v0,$a3		# put 0xff in top as a hackish 8-bit counter
 
 test_flags:
-#        la      $7, logo_end
+	la	$a3, logo_end
+	slt	$s1,$a3		# have we reached the end?
+	bteqz	done_logo	# if so, exit
 
-#	slt	$17, $7
-#	bteqz	done_logo
+	li	$a3,1
+	and     $a3,$v0		# test to see if discrete char
 
-#//	beq	$7, $17, done_logo	# have we reached the end?
-					# if so, exit
+	srl	$v0,$v0,1	# shift
 
-#	li      $7,1
-#	and     $7,$3	                # test to see if discrete char
-
-#	srl	$3,$3,1  	        # shift
-
-#	bnez	$7,discrete_char	# if set, we jump to discrete char
+	bnez	$a3,discrete_char
+				# if set, we jump to discrete char
 
 offset_length:
-#	lbu     $2,0($17)	# load 16-bit length and match_position combo
-#	lbu	$4,1($17)	# can't use lhu because might be unaligned
-#
-#	addiu	$17,2           # increment source pointer
+	lbu	$v1,0($s1)	# load 16-bit length and match_position combo
+	lbu	$a0,1($s1)	# can't use lhu because might be unaligned
 
-#	sll	$4,8
-#	or	$4,$2           # $4 now has 16-bit value
+	addiu	$s1,2		# increment source pointer
 
-#	srl $5,$4,P_BITS	# get the top bits, which is length
+	sll	$a0,8
+	or	$a0,$v1		# $a0 now has 16-bit value
 
-#	addiu $5,$5,THRESHOLD+1
-	      			# add in the threshold?
+	srl	$a1,$a0,P_BITS	# get the top bits, which is length
+
+	addiu	$a1,$a1,THRESHOLD+1
+	      			# add in the threshold
 
 output_loop:
-#	li      $7,(POSITION_MASK<<8+0xff)
-#	and 	$4,$7
+	li	$a3,(POSITION_MASK<<8+0xff)
+	and	$a0,$a3
 					# get the position bits
 
+	lw	$a3,text_buf_addr
+	addu	$a3,$a0
+	lbu	$v1,0($a3)		# load byte from text_buf[]
 
-#	lw      $7,text_buf_addr
-#	addu	$7,$4
-#	lbu	$2,0($7)		# load byte from text_buf[]
-					# should have been able to do
-					# in 2 not 3 instr
-
-
-
-#	addiu	$4,$4,1	    	# advance pointer in text_buf
+	addiu	$a0,$a0,1	    	# advance pointer in text_buf
 
 store_byte:
-#	sb      $2,0($16)
-#	addiu	$16,1      		# store byte to output buffer
+	sb	$v1,0($s0)		# store byte to output buffer
+	addiu	$s0,1      		# increment pointer
 
-#	lw      $7,text_buf_addr
+	lw      $a3,text_buf_addr
+	addu	$a3,$a2
 
-#	addu	$7,$6
+	sb	$v1,0($a3)		# store also to text_buf[r]
+	addiu 	$a2,$a2,1		# r++
 
+	li	$a3,(N-1)
+	and 	$a2,$a3		        # wrap r if we are too big
 
-#	sb      $2, 0($7)		# store also to text_buf[r]
-#	addiu 	$6,$6,1        		# r++
+	addiu	$a1,$a1,-1		# decrement count
 
-#	li      $7,(N-1)
-#	and 	$6,$7		        # wrap r if we are too big
+	bnez	$a1,output_loop		# repeat until k>j
 
-#	addiu	$5,$5,-1		# decrement count
+	sltiu	$v0,0x100		# if 0 we shifted through 8 and must
+	bteqz	test_flags		# re-load flags
 
-#	bnez	$5,output_loop	        # repeat until k>j
-
-#	sltiu	$3,0x100		# if 0 we shifted through 8 and must
-#	bteqz	test_flags	        # re-load flags
-
-#	b 	decompression_loop
+	b	decompression_loop
 
 
 discrete_char:
-#	lbu     $2,0($17)
-#	addiu	$17,1		        # load a byte
-#	li   	$5,1			# force a one-byte output
-#	b	store_byte		# and store it
+	lbu	$v1,0($s1)		# load a byte
+	addiu	$s1,1			# increment pointer
+	li	$a1,1			# force a one-byte output
+	b	store_byte		# and store it
 
 # end of LZSS code
 
 done_logo:
-#	la	$5,out_buffer	                # point $5 to out_buffer
-#        jal	write_stdout			# print the logo
+	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
+	jal	write_stdout		# print the logo
 
 first_line:
 	#==========================
@@ -694,34 +676,33 @@ done_center:
 	     				# so we'll return to
 					# where we were called from 
 					# at the end of the write_stdout
-	
+
 	#================================
 	# WRITE_STDOUT
 	#================================
-	# $5 (a1) has string
-	
+	# a1 has the string
 
 write_stdout:
-	
-        save    $31,8
+        save	$ra,8
 
-        move    $4, $5                   # copy string pointer to $4
-	li      $6, 0                   # 0 (count) in $6
+        move    $a0,$a1			# copy string pointer to $a0
+	li      $a2,0			# 0 (count) in $a2
 
 str_loop1:
-	lbu	$2,1($4)		# load byte at (4)
-	addiu	$4,1		
-	addiu	$6,1			# increment a2	
-	bnez	$2,str_loop1		# if not nul, repeat
+	lbu	$v0,1($a0)		# load byte
+	addiu	$a0,1
+	addiu	$a2,1			# increment a2
+	bnez	$v0,str_loop1		# if not nul, repeat
 
-	li      $2, SYSCALL_WRITE       # Write syscall in $2
-	li	$4, STDOUT		# 1 in $4 (stdout)	
+	li	$v0,SYSCALL_WRITE	# Write syscall in $v0
+	li	$a0,STDOUT		# 1 in $a0 (stdout)
 
-	jalx 	do_syscall
+	jalx 	do_syscall		# call syscall
 
-	restore $31,8
+	restore $ra,8			# restore return address
 
-	jr      $31
+#JRC?
+	jr	$ra			# retrun
 
 
 	##############################
@@ -796,6 +777,5 @@ bss_begin:
 .lcomm	out_buffer,16384
 
    # see /usr/src/linux/include/linux/kernel.h
-
 
 .lcomm register_buffer,128
