@@ -1,7 +1,6 @@
 \documentclass{article}[10pt]
 
 \usepackage{graphicx} % for pdf, bitmapped graphics files
-\usepackage{epsfig} % for postscript graphics files
 \usepackage{multirow}
 \usepackage{fancyhdr}
 %\usepackage{fullpage}
@@ -68,7 +67,7 @@ bytes than the discrete instructions.
 
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=ll.eps,width=\columnwidth}
+	\includegraphics[width=\columnwidth]{ll}
   \caption{Sample output from the {\tt linux\_logo} benchmark}
   \label{figure:ll}
 \end{figure}
@@ -86,7 +85,7 @@ bytes than the discrete instructions.
 % Figure on total code size
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=ll_total_size.eps,width=\textwidth}
+	\includegraphics[width=\textwidth]{ll_total_size}
   \caption{Total size of benchmarks 
            (includes some platform-specific code, so does not
            strictly reflect code density)}
@@ -96,7 +95,7 @@ bytes than the discrete instructions.
 % Decompression Code
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=ll_lzss_size,width=\textwidth}
+	\includegraphics[width=\textwidth]{ll_lzss_size}
   \caption{Size of LZSS decompression code}
   \label{figure:decomp}
 \end{figure}
@@ -104,7 +103,7 @@ bytes than the discrete instructions.
 % String concatenation code
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=ll_strcat_size,width=\textwidth}
+	\includegraphics[width=\textwidth]{ll_strcat_size}
   \caption{Size of string concatenation code (machines with 
            auto-increment addressing modes and dedicated
            string instructions perform better). 6502 behaves poorly as it
@@ -115,7 +114,7 @@ bytes than the discrete instructions.
 % Findstring code
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=ll_findstring_size,width=\textwidth}
+	\includegraphics[width=\textwidth]{ll_findstring_size}
   \caption{Size of string searching code (unaligned load
            instructions help, since four bytes at arbitrary offsets 
            can be compared at once.  
@@ -126,7 +125,7 @@ bytes than the discrete instructions.
 % Integer printing code
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=ll_num_ascii.eps,width=\textwidth}
+	\includegraphics[width=\textwidth]{ll_num_ascii}
   \caption{Size of integer printing code (hardware
            divide helps code density)}
   \label{figure:numascii}
@@ -135,7 +134,7 @@ bytes than the discrete instructions.
 % LibC Sizes
 \begin{figure}[tbp]
   \centering
-  \epsfig{file=libc_sizes.eps,width=\textwidth}
+	\includegraphics[width=\textwidth]{libc_sizes}
   \caption{Size comparison}
   \label{figure:libc}
 \end{figure}

@@ -4,8 +4,10 @@ CFLAGS = -Wall -O3
 
 all:	ll_document.pdf \
 	fancy_total_size.png \
-	fancy_lzss.png
+	fancy_lzss.png \
+	fancy_strcat.png
 
+###
 
 fancy_lzss.png:		fancy_lzss.eps
 			convert -density 600 -antialias -sample 400 fancy_lzss.eps fancy_lzss.png
@@ -16,6 +18,18 @@ fancy_lzss.eps:		fancy_lzss.jgr
 fancy_lzss.jgr:		fancy_graph ../data/data.lzss
 			./fancy_graph < ../data/data.lzss > fancy_lzss.jgr
 
+###
+
+fancy_strcat.png:		fancy_strcat.eps
+			convert -density 600 -antialias -sample 400 fancy_strcat.eps fancy_strcat.png
+
+fancy_strcat.eps:		fancy_strcat.jgr
+			jgraph < fancy_strcat.jgr > fancy_strcat.eps
+
+fancy_strcat.jgr:		fancy_graph ../data/data.strcat
+			./fancy_graph < ../data/data.strcat > fancy_strcat.jgr
+
+###
 
 fancy_total_size.png:		fancy_total_size.eps
 			convert -density 600 -antialias -sample 400 fancy_total_size.eps fancy_total_size.png
