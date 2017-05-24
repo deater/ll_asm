@@ -79,6 +79,20 @@
 #    cannot be in branch delay slots
 
 #
+# Optimization:
+#  LZSS:
+#  + 96 bytes -- initial working code
+#
+# Overall:
+#  + 1183 bytes -- initial working code
+
+#
+# ASSEMBLER ANNOYANCES:
+# + Can't "la" labels that are in BSS
+# + Weird "can't jump to target" if jal targets don't line up
+# + logo_end: label gets weird padding
+
+#
 # Keep gas from handling branch-delay and load-delay slots automatically
 #
 
@@ -519,9 +533,9 @@ center_and_print:
 	subu	$s1,$s0,$a1		# subtract end pointer from start
        		    			# to get length
 
-#	slti	$1,$4,81
+	cmpi	$s1,80
 
-#	beq	$1,$0, done_center	# don't center if > 80
+	bteqz	done_center		# don't center if > 80
 
 	neg	$s1  			# negate length
 
@@ -530,7 +544,7 @@ center_and_print:
 	lw	$a1,ver_string_addr
 	addiu	$a1,(escape-ver_string)
 	jal	write_stdout		# print ESCAPE char
-#nop
+
 	addiu	$s1,80			# add to 80
 	srl	$a0,$s1,1		# divide by 2
 
