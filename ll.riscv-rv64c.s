@@ -26,6 +26,9 @@
 # C.ADD
 # C.AND/C.OR/C.XOR/C.SUB/C.ADDW/C.SUBW
 
+# ASSEMBLER HASSLES:
+#  + Same addressing problems in regular riscv
+#  + Couldn't get C.JAL to work?
 
 
 
@@ -62,6 +65,7 @@
 #    - 1059 bytes = original port of riscv64 code
 #    - 1091 bytes = after the lzss optimization
 #    - 1061 bytes = sort out the fallout from the lzss fix
+#    - 1059 bytes = move "strcat" to a reg and jalr to it
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -202,33 +206,34 @@ done_logo:
 	#==========================
 first_line:
 
-	addi	a0,s1,32			# (uname_info-bss_start)
+	la	s6,strcat
 
+	addi	a0,s4,32			# (uname_info-bss_start)
 	li	a7,SYSCALL_UNAME
 	ecall			 		# do syscall
 
 	move	s5,s9				# point s5 to out_buffer
 
-	addi	s3,s1,32+U_SYSNAME		# os-name from uname "Linux"
+	addi	s3,s4,32+U_SYSNAME		# os-name from uname "Linux"
 
-	jal	strcat				# call strcat
+	jalr	s6				# call strcat
 
 #	la	s3,ver_string			# source is " Version "
 	move	s3,s0				# (ver_string-data_begin)
 
-	jal 	strcat			        # call strcat
+	jalr 	s6			        # call strcat
 
-	addi	s3,s1,32+U_RELEASE		# version from uname,
+	addi	s3,s4,32+U_RELEASE		# version from uname,
 						#   ie "2.6.20"
-	jal	strcat				# call strcat
+	jalr	s6				# call strcat
 
 #	la	s3,compiled_string		# source is ", Compiled "
 	addi	s3,s0,10			# (compiled_string-data_begin)
 
-	jal	strcat				#  call strcat
+	jalr	s6				#  call strcat
 
-	addi	s3,s1,32+U_VERSION		# compiled date
-	jal	strcat				# call strcat
+	addi	s3,s4,32+U_VERSION		# compiled date
+	jalr	s6				# call strcat
 
 	jal	center_and_print		# center and print
 
@@ -256,7 +261,7 @@ middle_line:
 					# syscall.  return in a0?
 	move	a5,a0			# save our fd
 	#la	a1,disk_buffer
-	addi	a1,s1,0x628		# (disk_buffer-bss_begin)
+	addi	a1,s4,0x628		# (disk_buffer-bss_begin)
 	li	a2,4096	 	# cheat and assume maximum of 4kB
 	li	a7,SYSCALL_READ
 	ecall
@@ -302,7 +307,7 @@ chip_name:
 	#========
 ram:
 	#la	a0,sysinfo_buff
-	addi	a0,s1,0x1a8		# (sysinfo_buff-bss_start)
+	addi	a0,s4,0x1a8		# (sysinfo_buff-bss_start)
 
 	move	t0,a0
 	li	a7,SYSCALL_SYSINFO
@@ -340,7 +345,7 @@ bogomips:
 last_line:
 	move	s5,s9			# point s5 to out_buffer
 
-	addi	s3,s1,32+U_NODENAME	# host name from uname()
+	addi	s3,s4,32+U_NODENAME	# host name from uname()
 	jal	strcat			# call strcat
 
 	jal	center_and_print	# center and print
@@ -367,7 +372,7 @@ exit:
 	# t5 trashed,t6,t1
 find_string:
 	#la	t6,disk_buffer	# look in cpuinfo buffer
-	addi	t6,s1,0x628	# (disk_buffer-bss_start)
+	addi	t6,s4,0x628	# (disk_buffer-bss_start)
 find_loop:
 	lwu	t1,0(t6)	# load a byte
 	addi	t6,t6,1		# increment pointer
@@ -468,7 +473,7 @@ write_stdout_we_know_size:
 
 num_to_ascii:
 	#la	a1,ascii_buffer+10	# point to end of ascii buffer
-	addi	a1,s1,0+10		# (bss_begin-ascii_buffer)+10
+	addi	a1,s4,0+10		# (bss_begin-ascii_buffer)+10
 
 div_by_10:
 	addi	a1,a1,-1		# point back one
