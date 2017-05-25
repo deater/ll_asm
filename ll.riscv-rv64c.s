@@ -61,6 +61,7 @@
 #  + Overall
 #    - 1059 bytes = original port of riscv64 code
 #    - 1091 bytes = after the lzss optimization
+#    - 1061 bytes = sort out the fallout from the lzss fix
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -103,39 +104,33 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-	la	s0,data_begin	# s0 = .data segment begin
-	#la	s1,bss_begin	# s1 = .bss segment begin
-	addi	s1,s0,0x17c	# (bss_begin-data_begin)
 
-	li	s2,(N-F)	# s2 = R
+	# hacks as the riscv assembler won't let you do pointer math
 
-	# hack as the riscv assembler won't let you do pointer math
+	la	s5,data_begin	# s0 = .data segment begin
+	#la	s4,bss_begin	# s1 = .bss segment begin
+	addi	s4,s5,0x17c	# (bss_begin-data_begin)
 
-	#la	s3,logo
-	addi	s3,s0,0x5a		# (logo-data_begin)
+	la	s9,out_buffer	# too big for 12-bit offset
 
-	#la	s4,logo_end
-	addi	s4,s3,0x11b		# (logo-data_end)
+	move	s0,s9		# out buffer
 
-	la	s9,out_buffer		# too big for 12-bit offset
-	move	s5,s9
+	#la	s1,logo
+	addi	s1,s5,0x5a	# (logo-data_begin)
+	li	a2,(N-F)	# a2 = R
+	#la	t0,logo_end
+	addi	t0,s1,0x11b	# (logo-data_end)
+
+	la	s6,text_buf
+	addi	s6,s4,550	# (text_buf-bss_start)
 
 	# lots of extraneous registers to waste
 	# feels a bit cheating to optimize the size of lzss at
 	#	the expense of overall program size
 
-	#la	s6,text_buf
-	addi	s6,s1,550	# (text_buf-bss_start)
-
-################
-
-	la	s1,logo
-	la	s0,out_buffer
-	li	a2,(N-F)
-	la	t0,logo_end
 	li	s10,0xff00
 	li	s11,0xff
-	la	s6,text_buf
+
 
 decompression_loop:
 	lbu	a4,0(s1)	# load a logo byte
@@ -201,10 +196,6 @@ discrete_char:
 done_logo:
 	move	a1,s9
 	jal	write_stdout		# print the logo
-
-
-	j	exit
-
 
 	#==========================
 	# PRINT VERSION
