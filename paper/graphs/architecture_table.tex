@@ -372,7 +372,7 @@ no                 % predication
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Embedded
 
 % avr32
-\multirow{5}{*}{\bf Embedded} &
+\multirow{8}{*}{\bf Embedded} &
 AVR32            & % ARCH
 %embed           & % type
 %2006		 & % Year
@@ -408,6 +408,65 @@ yes              & % branch delay slot
 no                 % predication
 \\
 \cline{2-13}
+
+% riscv-RVC
+		 & % Type
+riscv-RVC        & % ARCH
+%EMBED           & % Type
+%2010		 & % Year
+little           & % endian
+64               & % bits
+2-4              & % instr-length
+2-3              & % arguments
+8/31             & % GP int regs
+yes              & % unaligned accesses
+no               & % auto-inc
+yes              & % hw-divide
+no               & % status flags
+no               & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+
+% mips16
+		 & % Type
+mips16           & % ARCH
+%EMBED           & % Type
+%2001		 & % Year
+big              & % endian
+32/64            & % bits
+2-4              & % instr-length
+2/3              & % arguments
+8/31             & % GP int regs
+yes              & % unaligned accesses
+no               & % auto-inc
+yes              & % hw-divide
+reg              & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
+% micromips
+		 & % Type
+micromips           & % ARCH
+%EMBED           & % Type
+%2009		 & % Year
+big              & % endian
+32/64            & % bits
+2-4              & % instr-length
+2/3              & % arguments
+8/31             & % GP int regs
+yes              & % unaligned accesses
+no               & % auto-inc
+yes              & % hw-divide
+no               & % status flags
+yes              & % branch delay slot
+no                 % predication
+\\
+\cline{2-13}
+
 
 % SH3
                  & % Type
