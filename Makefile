@@ -77,6 +77,16 @@ ifneq (,$(findstring mips,$(ARCH)))
 
 endif
 
+
+#
+# Handle RISCV
+#
+ifneq (,$(findstring riscv,$(ARCH)))
+   SOURCE_ARCH := riscv64
+   THUMB := ll.riscv-rv64c ll.riscv-rv64c.stripped ll.riscv-rv64c.fakeproc ll.riscv-rv64c.fakeproc.stripped
+endif
+
+
 #
 # Handle MIPSEL
 #
@@ -320,6 +330,30 @@ ll.micromips.fakeproc:	ll.micromips.fakeproc.o
 ll.micromips.fakeproc.o:	ll.micromips.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mmicromips -o ll.micromips.fakeproc.o ll.micromips.s
 
+
+#
+# riscv64-rv64c
+#
+
+ll.riscv-rv64c.stripped:  ll.riscv-rv64c sstrip/sstrip
+	cp ll.riscv-rv64c ll.riscv-rv64c.stripped
+	sstrip/sstrip ll.riscv-rv64c.stripped
+
+ll.riscv-rv64c:	ll.riscv-rv64c.o
+	$(CROSS)$(LD) -N -o ll.riscv-rv64c ll.riscv-rv64c.o
+
+ll.riscv-rv64c.o:	ll.riscv-rv64c.s
+	$(CROSS)$(AS) -march=rv64imc -o ll.riscv-rv64c.o ll.riscv-rv64c.s
+
+ll.riscv-rv64c.fakeproc.stripped:  ll.riscv-rv64c.fakeproc sstrip/sstrip
+	cp ll.riscv-rv64c.fakeproc ll.riscv-rv64c.fakeproc.stripped
+	sstrip/sstrip ll.riscv-rv64c.fakeproc.stripped
+
+ll.riscv-rv64c.fakeproc:	ll.riscv-rv64c.fakeproc.o
+	$(CROSS)$(LD) -N -o ll.riscv-rv64c.fakeproc ll.riscv-rv64c.fakeproc.o
+
+ll.riscv-rv64c.fakeproc.o:	ll.riscv-rv64c.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -march=rv64imc -o ll.riscv-rv64c.fakeproc.o ll.riscv-rv64c.s
 
 #
 # 8086
