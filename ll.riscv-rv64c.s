@@ -69,6 +69,7 @@
 #    - 1061 bytes = sort out the fallout from the lzss fix
 #    - 1059 bytes = move "strcat" to a reg and jalr to it
 #    - 1051 bytes = more strcat, also some c.ld fits
+#    - 1041 bytes = find_string, change regs (especially for beqz)
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -338,7 +339,7 @@ bogomips:
 
 	#la	s3,bogo_total
 	addi	s3,s0,0x2b		# (bogo_total-data_start)
-	jal	strcat			# print bogomips total
+	jalr	s6			# print bogomips total
 
 	jal	center_and_print	# center and print
 
@@ -349,7 +350,7 @@ last_line:
 	move	s5,s9			# point s5 to out_buffer
 
 	addi	s3,s4,32+U_NODENAME	# host name from uname()
-	jal	strcat			# call strcat
+	jalr	s6			# call strcat
 
 	jal	center_and_print	# center and print
 
@@ -372,33 +373,33 @@ exit:
 	#=================================
 	# t0 = string to find
 	# t3 = char to end at
-	# t5 trashed,t6,t1
+	# trashed t1,a3,a4
 find_string:
-	#la	t6,disk_buffer	# look in cpuinfo buffer
-	addi	t6,s4,0x628	# (disk_buffer-bss_start)
+	#la	a4,disk_buffer	# look in cpuinfo buffer
+	addi	a4,s4,0x628	# (disk_buffer-bss_start)
 find_loop:
-	lwu	t1,0(t6)	# load a byte
-	addi	t6,t6,1		# increment pointer
+	lw	a3,0(a4)	# load a byte
+	addi	a4,a4,1		# increment pointer
 
-	beqz	t1,done		# are we at EOF?
+	beqz	a3,done		# are we at EOF?
 				# if so, done
 
-	bne	t0,t1,find_loop	# if no match, then loop
+	bne	t0,a3,find_loop	# if no match, then loop
 
 find_colon:
-	lbu	t5,0(t6)	# load a byte
-	addi	t6,t6,1		# increment pointer
+	lbu	a3,0(a4)	# load a byte
+	addi	a4,a4,1		# increment pointer
 	li	t1,':'
-	bne	t5,t1,find_colon	# repeat till we find colon
+	bne	a3,t1,find_colon	# repeat till we find colon
 
 store_loop:
-	lbu	t5,1(t6)	# load a byte (+1 to skip space)
-	addi	t6,t6,1		# increment pointer
+	lbu	a3,1(a4)	# load a byte (+1 to skip space)
+	addi	a4,a4,1		# increment pointer
 
-	beqz	t5,done		# stop if off send
-	beq	t5,t3,done	# stop if end char
+	beqz	a3,done		# stop if off send
+	beq	a3,t3,done	# stop if end char
 
-	sb	t5,0(s5)	# store a byte
+	sb	a3,0(s5)	# store a byte
 	addi	s5,s5,1		# increment pointer
 
 	j	store_loop
