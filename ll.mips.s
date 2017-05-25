@@ -17,6 +17,7 @@
 # + 1332 bytes - fill a branch delay slot
 # + 1326 bytes - some optimizations of center_and_print
 # + 1322 bytes - a few more optimizations
+# + 1314 bytes - optimize divide, we know we aren't dividing by zero
 
 .include "logo.include"
 
@@ -567,7 +568,8 @@ num_to_ascii:
 div_by_10:
 	addiu	$a1,$a1,-1	# point back one
 	li	$at,10
-	divu	$a0,$a0,$at	# divide.  hi= remainder, lo=quotient
+	divu	$zero,$a0,$at	# divide.  hi= remainder, lo=quotient
+	mflo	$a0
 	mfhi	$t3		# remainder into t3 ($t3)
 	addiu	$t3,$t3,0x30	# convert to ascii
 	bne	$a0,$0, div_by_10
