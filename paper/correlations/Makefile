@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O2 -Wall
 LFLAGS = -lm
 
-all:	convert_grid correlate_graph
+all:	convert_grid correlate_graph correlate
 
 ###
 
@@ -22,9 +22,17 @@ correlate_graph.o:	correlate_graph.c
 
 ###
 
+correlate:	correlate.o
+	$(CC) $(LFLAGS) -o correlate correlate.o
+
+correlate.o:	correlate.c
+	$(CC) $(CFLAGS) -c correlate.c
+
+###
+
 
 clean:	
-	rm -f *~ *.o convert_grid correlate_graph
+	rm -f *~ *.o convert_grid correlate_graph correlate
 
 
 

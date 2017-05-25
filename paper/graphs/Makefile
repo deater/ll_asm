@@ -56,7 +56,8 @@ ll_document.pdf:	ll_document.tex \
 			ll_num_ascii.pdf \
 			cache_graph.pdf \
 			time_graph.pdf \
-			libc_sizes.pdf
+			libc_sizes.pdf \
+			ll.pdf
 			pdflatex ll_document.tex
 			bibtex ll_document
 			pdflatex ll_document.tex
@@ -183,6 +184,9 @@ ll_num_ascii.pdf:	ll_num_ascii.eps
 	epstopdf ll_num_ascii.eps
 
 ####
+
+ll.pdf:	ll.eps
+	epstopdf ll.eps
 
 
 clean:
