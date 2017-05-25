@@ -105,6 +105,8 @@
 #			Used "jals" when possible
 #			Also made sure addiu16 could be used (mult of 4)
 #			Also use of gp-based  loads
+#	+ 1323 bytes -- undo the syscall# optimization as it doesn't help here
+#			due to limitations on 16-bit addiu constant size
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -325,7 +327,7 @@ compiled:
 	#===============================
 middle_line:
 
-	lw	$s0,out_buffer_addr	# point $16 to out_buffer
+	lw	$s0,0($gp)		# point $s0 to out_buffer
 
 	#=========
 	# Load /proc/cpuinfo into buffer
@@ -334,9 +336,7 @@ middle_line:
 	# syscalls are high enough to make loading the value take
 	# extended instructions, which keeps them from going in
 	# the branch delay slot.  So we use offsets instead.
-	li	$v1,SYSCALL_LINUX
-	addiu	$v0,$v1,(SYSCALL_OPEN-SYSCALL_LINUX)
-					# open()
+	li	$v0,SYSCALL_OPEN	# open()
 
 	lw	$a0,ver_string_addr
 	addiu	$a0,(cpuinfo-ver_string)
@@ -349,8 +349,7 @@ middle_line:
 
 	move	$a0,$v0			# copy $v0 (the result) to $a0
 
-	addiu	$v0,$v1,(SYSCALL_READ-SYSCALL_LINUX)
-					# read()
+	li	$v0,SYSCALL_READ	# read()
 
 	lw	$a1,disk_buffer_addr	# point $a1 to the buffer
 #	li	$a2, 4096		# 4096 should be more than enough
@@ -361,16 +360,14 @@ middle_line:
 
 	syscall
 
-	addiu	$v0,$v1,(SYSCALL_CLOSE-SYSCALL_LINUX)
-					# close (to be correct)
+	li	$v0,SYSCALL_CLOSE	# close (to be correct)
 		    			# fd should still be in a0
 	syscall
 
 	# no reason not to do this here, while v1 still valid
 
 	# didn't help this time, SYSCALL_SYSINFO too big to fit in 5 bits
-	addiu	$v0,$v1,(SYSCALL_SYSINFO-SYSCALL_LINUX)
-					# sysinfo() syscall
+	li	$v0,SYSCALL_SYSINFO	# sysinfo() syscall
 	lw	$a0, sysinfo_buff_addr
 	syscall
 
