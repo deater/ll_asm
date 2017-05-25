@@ -70,6 +70,7 @@
 #    - 1059 bytes = move "strcat" to a reg and jalr to it
 #    - 1051 bytes = more strcat, also some c.ld fits
 #    - 1041 bytes = find_string, change regs (especially for beqz)
+#    - 1033 bytes = more register changing
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -319,7 +320,7 @@ ram:
 
 	c.ld	a4,S_TOTALRAM(a4)	# size in bytes of RAM
 
-	srli	t4,a4,20		# divide by 1024*1024 to get M
+	srli	a4,a4,20		# divide by 1024*1024 to get M
 
 	li	a0,1
 	jal 	num_to_ascii		# print to string
@@ -413,6 +414,7 @@ done:
 	#==============================
 	# string to center in output buffer (s9)
 	# s5 coming in is end of string to print
+	# trashed: t2,a4,a5
 
 center_and_print:
 	move	a6,ra			# save return address
@@ -420,18 +422,19 @@ center_and_print:
 	li	t2,0x0a
 	sh	t2,0(s5)		# put linefeed at end
 
-	sub	t1,s5,s9		# subtract end pointer to get length
-	li	t0,80
+	sub	a5,s5,s9		# subtract end pointer to get length
+	li	a4,80
 
-	bge	t1,t0,done_center	# don't center if >80
-
-	sub	t0,t0,t1		# t0=80-length
-	srli	t4,t0,1			# divide by two
+	bge	a5,a4,done_center	# don't center if >80
+	sub	a4,a4,a5		# t0=80-length
 
 	#la	a1,escape
 	addi	a1,s0,0x42		# (escape-data_start)
 
 	jal	write_stdout		# print an escape character
+
+
+	srli	a4,a4,1			# divide by two
 
 	li	a0,0			# print to stdout
 	jal	num_to_ascii		# print num spaces
@@ -452,15 +455,15 @@ done_center:
 	#================================
 	# a1 has string
 	# a2 size
-	# t1,t2,a0,a4 trashed
+	# t1,t2,a0,a3 trashed
 write_stdout:
 	li	a2,0
 	move	t1,a1				# move a1 into t1
 str_loop1:
 	addiw	a2,a2,1
-	lbu	a4,0(t1)
+	lbu	a3,0(t1)
 	addi	t1,t1,1
-	bnez	a4,str_loop1			# loop until hit NUL
+	bnez	a3,str_loop1			# loop until hit NUL
 
 write_stdout_we_know_size:
 	li	a0,STDOUT			# print to stdout
@@ -472,8 +475,9 @@ write_stdout_we_know_size:
 	##############################
 	# num_to_ascii
 	#############################
-	# t4 = value to print
+	# a4 = value to print
 	# a0 = 0=stdout, 1=strcat
+	# trashed: t4
 
 num_to_ascii:
 	#la	a1,ascii_buffer+10	# point to end of ascii buffer
@@ -483,12 +487,12 @@ div_by_10:
 	addi	a1,a1,-1		# point back one
 	li	t0,10			# divide by 10
 
-	remu	t3,t4,t0		# remainder in t3
-	divu	t4,t4,t0		# quotient in t4
+	remu	t4,a4,t0		# remainder in t3
+	divu	a4,a4,t0		# quotient in t4
 
-	addi	t3,t3,0x30		# convert to ascii
-	sb	t3,0(a1)		# store the byte
-	bnez	t4,div_by_10		# if Q not zero, loop
+	addi	t4,t4,0x30		# convert to ascii
+	sb	t4,0(a1)		# store the byte
+	bnez	a4,div_by_10		# if Q not zero, loop
 
 write_out:
 
