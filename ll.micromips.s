@@ -24,7 +24,8 @@
 
 #	Apparently R6 added a lot of new micromips instructions but
 #		documentation not clear which is which.
-#	Can't get QEMU to execute an R6 sysetem (complains about NaN ABIFAG)
+#	To get QEMU to execute an R6 sysetem (complains about NaN ABIFAG)
+#		need -mnan=2008 to as
 
 
 # New 32-bit instructions
@@ -87,7 +88,10 @@
 # Optimization:
 #  LZSS:
 #	+ 118 bytes -- original port of mips16 code
-#
+#	+ 108 bytes -- use andi and lhu where appropriate
+#	+  86 bytes -- lots of fighting to get 16-bit versions,
+#			using non-mips16-regs, and playing
+#			with branch delay slots
 
 #
 # Overall:
@@ -95,9 +99,16 @@
 #	+ 1362 bytes -- use --relax flag to ld
 #	+ 1396 bytes -- when using relax it segfaults :(
 #	+ 1388 bytes -- use andi and lhu where appropriate
+#	+ 1387 bytes -- finish with lzss optimization
+#			as you can see, there were tradeoffs :(
 
 #
-# ASSEMBLER ANNOYANCES:
+# ASSEMBLER ANNOYANCES: (gas 2.28)
+#	+ doesn't know about about the bc16 instruction
+#		(though that might be a r6 only instruction, grr)
+#	+ can't handle complex math on gp indexed loads
+#	+ can't do addiupc on a symbol, and only uses it on
+#		la with --relax but that breaks other things
 
 #
 # Keep gas from handling branch-delay and load-delay slots automatically
@@ -171,17 +182,17 @@ __start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
-#	la	$gp,data_begin
-#	lw      $s0,((out_buffer_addr-ver_string))($gp)
-#	lw      $s0,1024($gp)
-#	lw.gp	$s0,4
-#		#(ver_string_addr-out_buffer_addr)
 
-	lw	$s0,out_buffer_addr
+	# I hate gas!  These should be easy to convert to PC relative
+	# and take only 32-bits, but gas takes 64-bits to load them
 	la	$s1,logo
+	la	$gp,data_begin		# point gp reg to data_begin
+
+#	lw	$s0,out_buffer_addr
+	lw	$s0,0x0($gp)		# 0x00 = out_buffer_addr
 
 	li      $a2,(N-F)   	     	# R
-
+	la	$t0,logo_end
 
 
 decompression_loop:
@@ -193,11 +204,14 @@ decompression_loop:
 
 
 test_flags:
-	la	$a3, logo_end
+
+	# Have to force the delay slot here, the assembler couldn't see it
+.set noreorder
 					# have we reached the end?
-	beq	$s1,$a3,done_logo	# if so, exit
+	beq	$s1,$t0,done_logo	# if so, exit
 
 	andi	$a3,$v0,1	# test to see if discrete char
+.set reorder
 
 	srl	$v0,$v0,1	# shift
 
@@ -219,7 +233,7 @@ output_loop:
 	andi	$a0,(POSITION_MASK<<8+0xff)
 					# get the position bits
 
-	lw	$a3,text_buf_addr
+	lw	$a3,4($gp)		# text_buf_addr
 	addu	$a3,$a0
 	lbu	$v1,0($a3)		# load byte from text_buf[]
 
@@ -229,7 +243,7 @@ store_byte:
 	sb	$v1,0($s0)		# store byte to output buffer
 	addiu	$s0,1      		# increment pointer
 
-	lw      $a3,text_buf_addr
+	lw      $a3,4($gp)		# text_buf_addr
 	addu	$a3,$a2
 
 	sb	$v1,0($a3)		# store also to text_buf[r]
@@ -239,17 +253,18 @@ store_byte:
 
 	addiu	$a1,$a1,-1		# decrement count
 
-	bnez	$a1,output_loop		# repeat until k>j
 
+	bnezc	$a1,output_loop		# repeat until k>j
 	andi	$v1,$v0,0xff00		# if 0 we shifted through 8 and must
+
 	bnez	$v1,test_flags		# re-load flags
-	b	decompression_loop
-# FIXME: this should be bc16 but gas is too stupid
-#	b16	decompression_loop
-
-
+.set noreorder
+	beqz	$v1,decompression_loop
+					# force the next insn in delay
+					# slot, which is harmless
 discrete_char:
 	lbu	$v1,0($s1)		# load a byte
+.set reorder
 	addiu	$s1,1			# increment pointer
 	li	$a1,1			# force a one-byte output
 	b	store_byte		# and store it
@@ -261,8 +276,6 @@ done_logo:
 	jal	write_stdout		# print the logo
 
 	la	$s1,strcat
-
-#	j exit
 
 first_line:
 	#==========================
@@ -665,7 +678,18 @@ write_out:
 #===========================================================================
 #	section .data
 #===========================================================================
+.data
+.align 4
 data_begin:
+out_buffer_addr:	.word out_buffer
+text_buf_addr:		.word text_buf
+uname_info_addr:	.word uname_info
+ver_string_addr:	.word ver_string
+disk_buffer_addr:	.word disk_buffer
+sysinfo_buff_addr:	.word sysinfo_buff
+ascii_buff_addr:	.word (ascii_buffer+10)
+
+
 ver_string:		.ascii " Version \0"
 compiled_string:	.ascii ", Compiled \0"
 ram_comma:		.ascii "M RAM, \0"
@@ -681,6 +705,7 @@ processor:		.ascii " Processor, \0"
 odel_string:		.ascii "odel"
 mips_string:		.ascii "MIPS"
 
+.align 4
 .include	"logo.lzss_new"
 			.byte 0,0	# note, without this
 					# the assembler puts
@@ -688,13 +713,6 @@ mips_string:		.ascii "MIPS"
 					# place which messes up
 					# the end of the logo decode
 
-out_buffer_addr:	.word out_buffer
-text_buf_addr:		.word text_buf
-uname_info_addr:	.word uname_info
-ver_string_addr:	.word ver_string
-disk_buffer_addr:	.word disk_buffer
-sysinfo_buff_addr:	.word sysinfo_buff
-ascii_buff_addr:	.word (ascii_buffer+10)
 
 #============================================================================
 #	section .bss
