@@ -512,27 +512,9 @@ done:
 nop	#needed for alignment issues?
 
 
-	#================================
-	# strcat
-	#================================
-	# string to cat a1
-	# output_buffer s0
-	# trashed v0
 
 
-strcat:
-	lbu	$v0,0($a1)		# load byte from string
-	addiu	$a1,$a1,1		# increment string
-	sb  	$v0,0($s0)		# store byte to output_buffer
-	addiu	$s0,$s0,1		# increment output_buffer
-	bnez	$v0,strcat		# if zero, we are done
-
-done_strcat:
-	addiu	$s0,$s0,-1		# correct pointer
-	jr	$31			# return
-
-
-nop	# needed for alignment?
+#nop	# needed for alignment?
 
 	#==============================
 	# center_and_print
@@ -641,7 +623,7 @@ num_to_ascii:
 div_by_10:
 	addiu	$a1,$a1,-1	# point back one
 	li	$v1,10		# divide by 10
-	divu	$a0,$v1		# divide.  hi= remainder, lo=quotient
+	divu	$zero,$a0,$v1	# divide.  hi= remainder, lo=quotient
 	mfhi	$v1		# remainder into v1
 	addiu	$v1,0x30	# convert to ascii
 	sb	$v1,0($a1)	# store to buffer
@@ -652,7 +634,27 @@ write_out:
 
 	beqz	$a3,write_stdout
 				# if write stdout, go there
-	b	strcat		# else, strcat will return for us
+				# else, strcat will return for us
+
+
+	#================================
+	# strcat
+	#================================
+	# string to cat a1
+	# output_buffer s0
+	# trashed v0
+
+
+strcat:
+	lbu	$v0,0($a1)		# load byte from string
+	addiu	$a1,$a1,1		# increment string
+	sb  	$v0,0($s0)		# store byte to output_buffer
+	addiu	$s0,$s0,1		# increment output_buffer
+	bnez	$v0,strcat		# if zero, we are done
+
+done_strcat:
+	addiu	$s0,$s0,-1		# correct pointer
+	jr	$31			# return
 
 
 .set nomips16
