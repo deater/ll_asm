@@ -111,6 +111,7 @@
 #	+ 1243 bytes -- optimize the syscall area, lots of gp relative
 #	+ 1227 bytes -- optimize RAM, jals and gp use
 #	+ 1211 bytes -- more jals/gp relative
+#	+ 1195 bytes -- more gp/jals/delay slot
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -445,24 +446,26 @@ bogomips:
 	# Print Host Name
 	#=================================
 hostname:
-	lw	$s0,out_buffer_addr	# point $s0 to out_buffer
+	lw	$s0,0($gp)		# point $s0 to out_buffer
 
 					# host name from uname()
-	lw	$a1,uname_info_addr
+	lw	$a1,8($gp)		# uname_info_addr
 	addiu	$a1,U_NODENAME
 	jalr	$s1			# strcat
 
-	jal	center_and_print	# center and print
+	jals	center_and_print	# center and print
 
 
 					# (.txt) pointer to default_colors
 	lw	$a1,12($gp)
 
 	# Have to force the delay slot here, the assembler couldn't see it
-.set noreorder
+#.set noreorder
+	addiu	$a1,48			# (default_colors-ver_string)
 	jal	write_stdout
-	addiu	$a1,(default_colors-ver_string)
-.set reorder
+
+
+#.set reorder
 
 	#================================
 	# Exit
@@ -688,7 +691,7 @@ uname_info_addr:	.word uname_info	# 8
 ver_string_addr:	.word ver_string	# 12
 disk_buffer_addr:	.word disk_buffer	# 16
 sysinfo_buff_addr:	.word sysinfo_buff	# 20
-ascii_buff_addr:	.word (ascii_buffer+10)
+ascii_buff_addr:	.word (ascii_buffer+10)	# 24
 
 
 ver_string:		.ascii " Version \0\0\0"	# extra padding to x4
