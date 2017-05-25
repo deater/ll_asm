@@ -34,6 +34,8 @@
 
 # Registers:
 #  Works for s0,s1,a0,a1,a2,a3,a4,a5
+#
+# addi can be on any register/6-bit constant, not just the magic ones
 
 #
 #	32 general purpose registers:
@@ -66,6 +68,7 @@
 #    - 1091 bytes = after the lzss optimization
 #    - 1061 bytes = sort out the fallout from the lzss fix
 #    - 1059 bytes = move "strcat" to a reg and jalr to it
+#    - 1051 bytes = more strcat, also some c.ld fits
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -111,14 +114,13 @@ _start:
 
 	# hacks as the riscv assembler won't let you do pointer math
 
-	la	s5,data_begin	# s0 = .data segment begin
-	#la	s4,bss_begin	# s1 = .bss segment begin
+	la	s5,data_begin	# s5 = .data segment begin
+	#la	s4,bss_begin	# s4 = .bss segment begin
 	addi	s4,s5,0x17c	# (bss_begin-data_begin)
 
 	la	s9,out_buffer	# too big for 12-bit offset
 
 	move	s0,s9		# out buffer
-
 	#la	s1,logo
 	addi	s1,s5,0x5a	# (logo-data_begin)
 	li	a2,(N-F)	# a2 = R
@@ -199,6 +201,7 @@ discrete_char:
 
 done_logo:
 	move	a1,s9
+	move	s0,s5
 	jal	write_stdout		# print the logo
 
 	#==========================
@@ -280,7 +283,7 @@ number_of_cpus:
 					# not necessarily a good assumption
 	addi	s3,s0,0x55		# (one-data_begin)
 
-	jal	strcat
+	jalr	s6			# strcat
 
 	#=========
 	# MHz
@@ -300,7 +303,7 @@ chip_name:
 
 	#la	s3,processor		# print " Processor, "
 	addi	s3,s0,0x16		# (processor-data_begin)
-	jal	strcat
+	jalr	s6			# strcat
 
 	#========
 	# RAM
@@ -309,20 +312,20 @@ ram:
 	#la	a0,sysinfo_buff
 	addi	a0,s4,0x1a8		# (sysinfo_buff-bss_start)
 
-	move	t0,a0
+	move	a4,a0
 	li	a7,SYSCALL_SYSINFO
 	ecall				# sysinfo() syscall
 
-	ld	t0,S_TOTALRAM(t0)	# size in bytes of RAM
+	c.ld	a4,S_TOTALRAM(a4)	# size in bytes of RAM
 
-	srli	t4,t0,20		# divide by 1024*1024 to get M
+	srli	t4,a4,20		# divide by 1024*1024 to get M
 
 	li	a0,1
 	jal 	num_to_ascii		# print to string
 
 	#la	s3,ram_comma		# print 'M RAM, '
 	add	s3,s0,0x23		# (ram_comma-data_begin)
-	jal	strcat			# call strcat
+	jalr	s6			# call strcat
 
 
 	#==========
@@ -448,15 +451,15 @@ done_center:
 	#================================
 	# a1 has string
 	# a2 size
-	# t1,t2 trashed
+	# t1,t2,a0,a4 trashed
 write_stdout:
 	li	a2,0
 	move	t1,a1				# move a1 into t1
 str_loop1:
 	addiw	a2,a2,1
-	lbu	t2,0(t1)
+	lbu	a4,0(t1)
 	addi	t1,t1,1
-	bnez	t2,str_loop1			# loop until hit NUL
+	bnez	a4,str_loop1			# loop until hit NUL
 
 write_stdout_we_know_size:
 	li	a0,STDOUT			# print to stdout
