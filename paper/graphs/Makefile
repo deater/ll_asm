@@ -199,6 +199,7 @@ clean:
 	ll_num_ascii.eps ll_num_ascii.jgr \
 	fancy_total_size.jgr fancy_total_size.eps *.png \
 	fancy_lzss.jgr fancy_lzss.eps \
+	fancy_strcat.jgr fancy_strcat.eps \
 	*.o fancy_graph \
 	*.pdf *.aux *.dvi *.log *.bbl *.blg *~
 
