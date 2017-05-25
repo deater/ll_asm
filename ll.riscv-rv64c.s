@@ -71,6 +71,8 @@
 #    - 1051 bytes = more strcat, also some c.ld fits
 #    - 1041 bytes = find_string, change regs (especially for beqz)
 #    - 1033 bytes = more register changing
+#    - 1023 bytes = one last pass looking for too-long instructions.
+#			wish I knew why c.jal won't work
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -129,7 +131,7 @@ _start:
 	#la	t0,logo_end
 	addi	t0,s1,0x11b	# (logo-data_end)
 
-	la	s6,text_buf
+	#la	s6,text_buf
 	addi	s6,s4,550	# (text_buf-bss_start)
 
 	# lots of extraneous registers to waste
@@ -507,13 +509,13 @@ write_out:
 	#================================
 	# value to cat in s3
 	# output buffer in s5
-	# t0 trashed
+	# a3 trashed
 strcat:
-	lbu	t0,0(s3)		# load a byte
+	lbu	a3,0(s3)		# load a byte
 	addi	s3,s3,1			# increment pointer
-	sb	t0,0(s5)		# store a byte
+	sb	a3,0(s5)		# store a byte
 	addi	s5,s5,1			# increment pointer
-	bnez	t0,strcat		# loop if not zero
+	bnez	a3,strcat		# loop if not zero
 
 	add	s5,s5,-1		# point to one less than null
 	ret				# return
