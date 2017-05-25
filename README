@@ -33,7 +33,6 @@ Some Statistics
      arm.oabi		1186 bytes   (as 2.18.0.20080103)
      PPC		1165 bytes   (as 2.19.51.20090805)
      riscv		1161 bytes   (as 2.28.0.20170505)
-     riscv-r64c
      arm.eabi		1161 bytes   (as 2.24.51.20141001)
      micromips		1147 bytes   (as 2.28)
      6502		1130*bytes   (ca64 2.12.0)
@@ -41,6 +40,7 @@ Some Statistics
      arm64		1094 bytes   (as 2.23.1)
      s390	        1064 bytes   (as 2.19.51.20090805)
      x86_64		1029 bytes   (as 2.28)
+     riscv-r64c		1023 bytes   (as 2.28.0.20170505)
      x86_x32            1005 bytes   (as 2.28)
      sh3		 994 bytes   (as 2.17.50.0.5)
      x86                 968 bytes   (as 2.28)
@@ -194,6 +194,12 @@ riscv-r64c:
 	No short byte/half load/store instructions which hurts this benchmark.
 	Also no logical immediate ones either.
 
+	Also no 3-operation small adds.
+
+	Couldn't figure out C.JAL
+
+	The assembler does a good job of auto-using the small instructions,
+	so it was mostly a matter of register choice.
 
 6502:
         So obviously this isn't running on Linux.  I was curious

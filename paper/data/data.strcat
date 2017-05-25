@@ -14,6 +14,7 @@ riscv64-RVM	RISC	28	0
 arm.eabi	RISC	24	0
 PowerPC		RISC	24	0
 arm64		RISC	20	0
+riscv-compressed	EMBED	18	0
 THUMB		EMBED	18	0
 Thumb-2		EMBED	18	0
 sh3		EMBED	14	0

@@ -1,0 +1,23 @@
+riscv-compressed
+0	# VLIW
+0	# RISC
+1	# Embedded
+0	# CISC
+0	# 16-bit
+0	# 8-bit
+2010	# Year introduced
+0	# Endian 0=little 1=big
+64	# Wordsize (bits)
+2	# size of smallest instruction (bytes)
+4	# size of largest instruction (bytes)
+3	# numer of arguments to typical opcode
+31	# number of general purpose registers
+1	# has a 0 register
+1	# has unaligned memory access
+0	# has auto-incrementing addressing mode
+1.000000	# hardware divide 1.0=full 0.7=no remainder 0.3=pipelined
+0	# has status flag register
+0	# has branch delay slot
+0	# has predication
+16.000000	# log2 of virt address of first instruction
+0x10078	# virt address of first instruction
