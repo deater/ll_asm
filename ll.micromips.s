@@ -108,6 +108,7 @@
 #	+ 1323 bytes -- undo the syscall# optimization as it doesn't help here
 #			due to limitations on 16-bit addiu constant size
 #	+ 1275 bytes -- make all ver_string_addr calls gp relative
+#	+ 1243 bytes -- optimize the syscall area, lots of gp relative
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -339,7 +340,7 @@ middle_line:
 	# the branch delay slot.  So we use offsets instead.
 	li	$v0,SYSCALL_OPEN	# open()
 
-	lw	$a0,12($gp)
+	lw	$a0,12($gp)		# ver_string_addr
 	addiu	$a0,(cpuinfo-ver_string)
 					# '/proc/cpuinfo'
 	li	$a1, 0			# 0 = O_RDONLY <bits/fcntl.h>
@@ -352,24 +353,18 @@ middle_line:
 
 	li	$v0,SYSCALL_READ	# read()
 
-	lw	$a1,disk_buffer_addr	# point $a1 to the buffer
-#	li	$a2, 4096		# 4096 should be more than enough
+	lw	$a1,16($gp)		# point $a1 to the buffer
+	li	$a2, 4096		# 4096 should be more than enough
 					# for this proc file
-
-	li	$a2,128			# split it up so one can
-	sll	$a2,5			# go in delay slot
-
 	syscall
 
 	li	$v0,SYSCALL_CLOSE	# close (to be correct)
 		    			# fd should still be in a0
 	syscall
 
-	# no reason not to do this here, while v1 still valid
 
-	# didn't help this time, SYSCALL_SYSINFO too big to fit in 5 bits
 	li	$v0,SYSCALL_SYSINFO	# sysinfo() syscall
-	lw	$a0, sysinfo_buff_addr
+	lw	$a0,20($gp) 		# sysinfo_buff_addr
 	syscall
 
 
@@ -411,7 +406,7 @@ chip_name:
 	# RAM
 	#========
 ram:
-	lw	$a0, sysinfo_buff_addr
+	lw	$a0, 20($gp)		# sysinfo_buff_addr
 	lw	$a0, S_TOTALRAM($a0)	# size in bytes of RAM
 
 	srl	$a0,$a0,20		# divide by 1024*1024 to get M
@@ -486,7 +481,7 @@ exit:
 	#   $v0 is trashed
 
 find_string:
-	lw	$a2,disk_buffer_addr
+	lw	$a2,16($gp)		# disk_buffer_addr
 					# look in cpuinfo buffer
 find_loop:
 	lw	$v0,1($a2)		# load un-aligned 32 bits
@@ -685,12 +680,12 @@ write_out:
 .data
 .align 4
 data_begin:
-out_buffer_addr:	.word out_buffer
-text_buf_addr:		.word text_buf
-uname_info_addr:	.word uname_info
-ver_string_addr:	.word ver_string
-disk_buffer_addr:	.word disk_buffer
-sysinfo_buff_addr:	.word sysinfo_buff
+out_buffer_addr:	.word out_buffer	# 0
+text_buf_addr:		.word text_buf		# 4
+uname_info_addr:	.word uname_info	# 8
+ver_string_addr:	.word ver_string	# 12
+disk_buffer_addr:	.word disk_buffer	# 16
+sysinfo_buff_addr:	.word sysinfo_buff	# 20
 ascii_buff_addr:	.word (ascii_buffer+10)
 
 
