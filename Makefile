@@ -306,7 +306,8 @@ ll.micromips:	ll.micromips.o
 	$(CROSS)$(LD) -N -o ll.micromips ll.micromips.o
 
 ll.micromips.o:	ll.micromips.s
-	$(CROSS)$(AS) -mmicromips -o ll.micromips.o ll.micromips.s
+	$(CROSS)$(AS) -mmicromips -mnan=2008 -o ll.micromips.o ll.micromips.s
+#	$(CROSS)$(AS) -mips32r6 -mnan=2008 -o ll.micromips.o ll.micromips.s
 
 ll.micromips.fakeproc.stripped:  ll.micromips.fakeproc sstrip/sstrip
 	cp ll.micromips.fakeproc ll.micromips.fakeproc.stripped
@@ -314,6 +315,7 @@ ll.micromips.fakeproc.stripped:  ll.micromips.fakeproc sstrip/sstrip
 
 ll.micromips.fakeproc:	ll.micromips.fakeproc.o
 	$(CROSS)$(LD) -N -o ll.micromips.fakeproc ll.micromips.fakeproc.o
+#	$(CROSS)$(LD) --relax -N -o ll.micromips.fakeproc ll.micromips.fakeproc.o
 
 ll.micromips.fakeproc.o:	ll.micromips.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mmicromips -o ll.micromips.fakeproc.o ll.micromips.s

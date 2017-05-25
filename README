@@ -245,6 +245,21 @@ mips16:	Reduced size instructions should help, but as always the
 
 	Also was fighting the assembler the whole way.
 
+micromips:
+	I thought this would be a straightforward port of mips16, but no.
+	Way larger, mostly because loading addresses with "la" regressed.
+
+	They dropped a lot of useful 16-bit instructions.
+
+	The constants are all weird too, and odd sized things like 5 or 10
+	can no longer be added in 16-bits
+
+	Fighting the assembler all the way.  In theory ADDIUPC could do
+	smaller loads but couldn't convince it to do so.
+
+	It is helpful having easy access to the higher regs.
+
+	Jals with short delay slot helped.
 
 m88k:	This chip came after m68k and was motorola's first RISC chip.
 	Didn't go well, they moved on to PPC.

@@ -107,6 +107,7 @@
 #			Also use of gp-based  loads
 #	+ 1323 bytes -- undo the syscall# optimization as it doesn't help here
 #			due to limitations on 16-bit addiu constant size
+#	+ 1275 bytes -- make all ver_string_addr calls gp relative
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -338,7 +339,7 @@ middle_line:
 	# the branch delay slot.  So we use offsets instead.
 	li	$v0,SYSCALL_OPEN	# open()
 
-	lw	$a0,ver_string_addr
+	lw	$a0,12($gp)
 	addiu	$a0,(cpuinfo-ver_string)
 					# '/proc/cpuinfo'
 	li	$a1, 0			# 0 = O_RDONLY <bits/fcntl.h>
@@ -380,7 +381,7 @@ number_of_cpus:
 	# we cheat here and just assume 1.
 	# besides, I don't have a SMP Mips machine to test on
 
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 	addiu	$a1,(one-ver_string)	# print "One MIPS "
 	jalr	$s1			# strcat
 
@@ -402,7 +403,7 @@ chip_name:
 	jal	find_string
 
 					# print "Processor, "
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 	addiu	$a1,(processor-ver_string)
 	jalr	$s1			# strcat
 
@@ -421,7 +422,7 @@ ram:
 	jal     num_to_ascii
 
 					# print 'M RAM, '
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 	addiu	$a1,(ram_comma-ver_string)
 	jalr	$s1			# strcat
 
@@ -436,7 +437,7 @@ bogomips:
 	jal	find_string
 
 					# bogo total follows RAM
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 	addiu	$a1,(bogo_total-ver_string)
 	jalr	$s1			# strcat
 
@@ -458,7 +459,7 @@ hostname:
 
 
 					# (.txt) pointer to default_colors
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 
 	# Have to force the delay slot here, the assembler couldn't see it
 .set noreorder
@@ -579,7 +580,7 @@ center_and_print:
 
 
 
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 
 	# Have to force the delay slot here, the assembler couldn't see it
 .set noreorder
@@ -596,7 +597,7 @@ center_and_print:
 
 
 
-	lw	$a1,ver_string_addr
+	lw	$a1,12($gp)
 
 	# Have to force the delay slot here, the assembler couldn't see it
 .set noreorder
