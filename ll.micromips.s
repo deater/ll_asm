@@ -101,6 +101,10 @@
 #	+ 1388 bytes -- use andi and lhu where appropriate
 #	+ 1387 bytes -- finish with lzss optimization
 #			as you can see, there were tradeoffs :(
+#	+ 1323 bytes -- optimized first line.
+#			Used "jals" when possible
+#			Also made sure addiu16 could be used (mult of 4)
+#			Also use of gp-based  loads
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -272,8 +276,8 @@ discrete_char:
 # end of LZSS code
 
 done_logo:
-	lw	$a1,out_buffer_addr	# point $a1 to out_buffer
-	jal	write_stdout		# print the logo
+	lw	$a1,0($gp)		# point $a1 to out_buffer
+	jals	write_stdout		# print the logo
 
 	la	$s1,strcat
 
@@ -282,37 +286,39 @@ first_line:
 	# PRINT VERSION
 	#==========================
 
-	li	$v0, SYSCALL_UNAME		# uname syscall in $v0
-	lw	$a0,uname_info_addr		# destination of uname in $a0
+	li	$v0, SYSCALL_UNAME	# uname syscall in $v0
+	lw	$a0,8($gp)		# uname_info_addr
+					# destination of uname in $a0
 	syscall
 
-	lw	$s0,out_buffer_addr		# point $16 to out_buffer
+	lw	$s0,0($gp)		# point $s0 to out_buffer
 
 					# os-name from uname "Linux"
-	lw	$a1,uname_info_addr
+	lw	$a1,8($gp)
 	#addiu	$a1,U_SYSNAME		U_SYSNAME is zero
-	jalr	$s1			# strcat
+	jalrs	$s1			# strcat
 
 					# source is " Version "
-	lw	$a1,ver_string_addr
-	jalr	$s1			# strcat
+	lw	$a1,12($gp)		# ver_string_addr
+	jalrs	$s1			# strcat
 
 					# version from uname, ie "2.6.20"
-	lw	$a1,uname_info_addr
+	lw	$a1,8($gp)		# uname_info_addr
 	addiu	$a1,U_RELEASE
 	jalr	$s1			# strcat
 
-	lw	$a1,ver_string_addr
-	addiu	$a1,(compiled_string-ver_string)
+compiled:
+	lw	$a1,12($gp)		# ver_string_addr
+	addiu	$a1,12			# (compiled_string-ver_string)
 					# source is ", Compiled "
-	jalr	$s1			# strcat
+	jalrs	$s1			# strcat
 
 					# compiled date
-	lw	$a1,uname_info_addr
+	lw	$a1,8($gp)		# uname_info_addr
 	addiu	$a1,U_VERSION
 	jalr	$s1			# strcat
 
-	jal	center_and_print	# center and print
+	jals	center_and_print	# center and print
 
 	#===============================
 	# Middle-Line
@@ -690,7 +696,9 @@ sysinfo_buff_addr:	.word sysinfo_buff
 ascii_buff_addr:	.word (ascii_buffer+10)
 
 
-ver_string:		.ascii " Version \0"
+ver_string:		.ascii " Version \0\0\0"	# extra padding to x4
+							# makes code genetation
+							# better
 compiled_string:	.ascii ", Compiled \0"
 ram_comma:		.ascii "M RAM, \0"
 bogo_total:		.ascii " Bogomips Total\0"
