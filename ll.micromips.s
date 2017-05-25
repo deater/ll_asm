@@ -109,6 +109,7 @@
 #			due to limitations on 16-bit addiu constant size
 #	+ 1275 bytes -- make all ver_string_addr calls gp relative
 #	+ 1243 bytes -- optimize the syscall area, lots of gp relative
+#	+ 1227 bytes -- optimize RAM, jals and gp use
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -392,10 +393,10 @@ print_mhz:
 	# Chip Name
 	#=========
 chip_name:
-   	lw	$a0,odel_string
+   	lw	$a0,124($gp)		# odel_string
 					# find 'odel\t: ' and grab up to ' '
 	li	$a3,' '
-	jal	find_string
+	jals	find_string
 
 					# print "Processor, "
 	lw	$a1,12($gp)
@@ -414,12 +415,12 @@ ram:
 					# not help with delay slot
 					# (still too big)
 	li	$a3,1			# print to strcat, not stderr
-	jal     num_to_ascii
+	jals	num_to_ascii
 
 					# print 'M RAM, '
 	lw	$a1,12($gp)
-	addiu	$a1,(ram_comma-ver_string)
-	jalr	$s1			# strcat
+	addiu16	$a1,24			# (ram_comma-ver_string)
+	jalrs	$s1			# strcat
 
 	#========
 	# Bogomips
