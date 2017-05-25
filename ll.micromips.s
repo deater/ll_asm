@@ -10,6 +10,42 @@
 
 .include "logo.include"
 
+#
+# If ARM -> THUMB -> THUMB2 then
+#   MIPS -> MIPS16 -> MICROMIPS
+
+# hard to find a good accurate document on all of this
+#
+# MIPS Architecture for Programmers Volume II-B: microMIPS32TM Instruction Set
+
+# Various things:
+#	for stores, can't store s0 but stores zero instead
+#
+
+#	Apparently R6 added a lot of new micromips instructions but
+#		documentation not clear which is which.
+#	Can't get QEMU to execute an R6 sysetem (complains about NaN ABIFAG)
+
+
+# New 32-bit instructions
+#	+ addiupc -- addi pc relative
+#	+ beqzc/bnezc	-- branch, no delay slot
+#	+ jals/jalrs -- jump and link, sort (16-bit) delay slot
+#	+ jalrs.hb -- hazzard barrier?
+#	+ lwp/lwxs/lwm32 -- load word pairs
+#	+ swp/swm32 -- store word pairs
+
+# New 16-bit instructions
+#	+ bc -- branch compact
+#	+ jrcaddiusp -- adjust stack pointer
+#	+ lbu16 -- can have offset of 0-14 and -1
+#	+ lwgp -- load from global pointer
+#		gas syntax seems to be
+#			lw      $s0,1024($gp)
+#		and you can't do useful pointer math on it :(
+
+# can put "16" or "32" at end of instruction to force encoding
+
 # Difference from mips16
 #	+ andi/ori/xori
 #	+ cache
@@ -56,6 +92,9 @@
 #
 # Overall:
 #	+ 1396 bytes -- original port of mips16 code
+#	+ 1362 bytes -- use --relax flag to ld
+#	+ 1396 bytes -- when using relax it segfaults :(
+#	+ 1388 bytes -- use andi and lhu where appropriate
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -132,6 +171,12 @@ __start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
+#	la	$gp,data_begin
+#	lw      $s0,((out_buffer_addr-ver_string))($gp)
+#	lw      $s0,1024($gp)
+#	lw.gp	$s0,4
+#		#(ver_string_addr-out_buffer_addr)
+
 	lw	$s0,out_buffer_addr
 	la	$s1,logo
 
@@ -144,16 +189,15 @@ decompression_loop:
 	lbu	$v0,0($s1)	# load in a byte
 	addiu	$s1,$s1,1	# increment source pointer
 
-	li	$a3,0xff00	# 32-bit, zero extended
-	or	$v0,$a3		# put 0xff in top as a hackish 8-bit counter
+	ori	$v0,0xff00	# put 0xff in top as a hackish 8-bit counter
+
 
 test_flags:
 	la	$a3, logo_end
 					# have we reached the end?
 	beq	$s1,$a3,done_logo	# if so, exit
 
-	li	$a3,1
-	and     $a3,$v0		# test to see if discrete char
+	andi	$a3,$v0,1	# test to see if discrete char
 
 	srl	$v0,$v0,1	# shift
 
@@ -161,13 +205,10 @@ test_flags:
 				# if set, we jump to discrete char
 
 offset_length:
-	lbu	$v1,0($s1)	# load 16-bit length and match_position combo
-	lbu	$a0,1($s1)	# can't use lhu because might be unaligned
+	lhu	$a0,0($s1)	# unaligned 16-bit load
+	wsbh	$a0,$a0		# byte swap to get big-endian
 
 	addiu	$s1,2		# increment source pointer
-
-	sll	$a0,8
-	or	$a0,$v1		# $a0 now has 16-bit value
 
 	srl	$a1,$a0,P_BITS	# get the top bits, which is length
 
@@ -175,8 +216,7 @@ offset_length:
 	      			# add in the threshold
 
 output_loop:
-	li	$a3,(POSITION_MASK<<8+0xff)
-	and	$a0,$a3
+	andi	$a0,(POSITION_MASK<<8+0xff)
 					# get the position bits
 
 	lw	$a3,text_buf_addr
@@ -195,19 +235,17 @@ store_byte:
 	sb	$v1,0($a3)		# store also to text_buf[r]
 	addiu 	$a2,$a2,1		# r++
 
-	li	$a3,(N-1)
-	and 	$a2,$a3		        # wrap r if we are too big
+	andi 	$a2,(N-1)	        # wrap r if we are too big
 
 	addiu	$a1,$a1,-1		# decrement count
 
 	bnez	$a1,output_loop		# repeat until k>j
 
-					# OPTIMIZE: sltiu with > 8 bits
-					#     takes 32bits?
-	sltiu	$v1,$v0,0x100		# if 0 we shifted through 8 and must
-	beqz	$v1,test_flags		# re-load flags
-
+	andi	$v1,$v0,0xff00		# if 0 we shifted through 8 and must
+	bnez	$v1,test_flags		# re-load flags
 	b	decompression_loop
+# FIXME: this should be bc16 but gas is too stupid
+#	b16	decompression_loop
 
 
 discrete_char:
