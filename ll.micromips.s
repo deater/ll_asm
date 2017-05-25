@@ -112,6 +112,7 @@
 #	+ 1227 bytes -- optimize RAM, jals and gp use
 #	+ 1211 bytes -- more jals/gp relative
 #	+ 1195 bytes -- more gp/jals/delay slot
+#	+ 1163 bytes -- more of the same, through end of center_and_print
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -459,13 +460,9 @@ hostname:
 					# (.txt) pointer to default_colors
 	lw	$a1,12($gp)
 
-	# Have to force the delay slot here, the assembler couldn't see it
-#.set noreorder
 	addiu	$a1,48			# (default_colors-ver_string)
 	jal	write_stdout
 
-
-#.set reorder
 
 	#================================
 	# Exit
@@ -473,7 +470,6 @@ hostname:
 exit:
 	li	$v0,SYSCALL_EXIT	# put exit syscall in v0
 	li	$a0,5			# put exit code in a0
-
 	syscall
 
 	#=================================
@@ -494,19 +490,22 @@ find_loop:
 	beqz	$v0,done		# are we at EOF?
 					# if so, done
 
+	li	$v1,':'			# can go in delay slot
+
 	bne	$v0,$a0, find_loop	# do the strings match?
 					# if not, loop
 
 					# if we get this far, we matched
 
-	li	$v1,':'
+
 find_colon:
 	lbu	$v0,1($a2)		# repeat till we find colon
 	addiu	$a2,$a2,1
 
 	beqz	$v0,done		# not found? then done
 
-	bne	$v0,$v1,find_colon
+	xor	$v0,$v1
+	bnez	$v0,find_colon
 
 
 	addiu   $a2,$a2,2		# skip a char [should be space]
@@ -525,10 +524,6 @@ store_loop:
 
 done:
 	jr	$31			# return
-
-
-nop	#needed for alignment issues?
-
 
 	#================================
 	# strcat
@@ -549,9 +544,6 @@ done_strcat:
 	addiu	$s0,$s0,-1		# correct pointer
 	jr	$31			# return
 
-
-nop	# needed for alignment?
-
 	#==============================
 	# center_and_print
 	#==============================
@@ -560,60 +552,53 @@ nop	# needed for alignment?
 
 center_and_print:
 
-	move	$s2,$ra
-	move	$s3,$s1			# save return address
+	swm	$s0,$s1,$ra,0($sp)	# save return address
 
 	li	$v0,0xa00		# append linefeed
 	sh	$v0,0($s0)
 
-	lw	$a1,out_buffer_addr	# a1 is beginning of string
+	lw	$a1,0($gp)		# out_buffer_addr
+					# a1 is beginning of string
 					# s0 is end of string
 
 	subu	$s1,$s0,$a1		# subtract end pointer from start
        		    			# to get length
 
-	slti	$v0,$s1,80
+	li	$v0,80
 
-	beqz	$v0,done_center		# don't center if > 80
+	slt	$v1,$s1,$v0		# set v1 if length less than 80
 
-	neg	$s1  			# negate length
+	sub	$s1,$v0,$s1		# subtract 80-length
 
-
+	beqz	$v1,done_center		# don't center if > 80
 
 	lw	$a1,12($gp)
-
-	# Have to force the delay slot here, the assembler couldn't see it
-.set noreorder
-	jal	write_stdout		# print ESCAPE char
 	addiu	$a1,(escape-ver_string)
-.set reorder
+	jal	write_stdout		# print ESCAPE char
 
-	addiu	$s1,80			# add to 80
 	srl	$a0,$s1,1		# divide by 2
 
 
 	li    	$a3,0 			# print to stdout
-	jal	num_to_ascii		# print number of spaces
+	jals	num_to_ascii		# print number of spaces
 
 
 
 	lw	$a1,12($gp)
 
-	# Have to force the delay slot here, the assembler couldn't see it
-.set noreorder
-	jal	write_stdout
 	addiu	$a1,(c-ver_string)	# print "C"
-.set reorder
+	jal	write_stdout
+
+
 
 
 
 
 done_center:
 					# point to the string to print
-	lw	$a1,out_buffer_addr
+	lw	$a1,0($gp)		# out_buffer_addr
 
-	move	$ra,$s2
-	move	$s1,$s3
+	lwm	$s0,$s1,$ra,0($sp)
 				# restore saved pointer
 				# so we'll return to
 				# where we were called from
@@ -627,8 +612,8 @@ done_center:
 
 
 write_stdout:
-	move	$s4,$ra
-	move	$s5,$s1			# save return address
+
+	swm	$s0,$s1,$ra,16($sp)	# save return address
 
 	move    $a0,$a1			# copy string pointer to $a0
 	li      $a2,0			# 0 (count) in $a2
@@ -644,8 +629,7 @@ str_loop1:
 
 	syscall				# call syscall
 
-	move	$ra,$s4
-	move	$s1,$s5			# restore return address
+	lwm	$s0,$s1,$ra,16($sp)	# restore return address
 
 	jr	$ra			# retrun
 
