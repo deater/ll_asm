@@ -110,6 +110,7 @@
 #	+ 1275 bytes -- make all ver_string_addr calls gp relative
 #	+ 1243 bytes -- optimize the syscall area, lots of gp relative
 #	+ 1227 bytes -- optimize RAM, jals and gp use
+#	+ 1211 bytes -- more jals/gp relative
 
 #
 # ASSEMBLER ANNOYANCES: (gas 2.28)
@@ -426,18 +427,18 @@ ram:
 	# Bogomips
 	#========
 bogomips:
-   	lw	$a0,mips_string
+   	lw	$a0,128($gp)		# mips_string
 					# find 'MIPS\t: ' and grab up to \n
 
 	li	$a3, 0xa
-	jal	find_string
+	jals	find_string
 
 					# bogo total follows RAM
 	lw	$a1,12($gp)
-	addiu	$a1,(bogo_total-ver_string)
+	addiu	$a1,32			# (bogo_total-ver_string)
 	jalr	$s1			# strcat
 
-	jal	center_and_print	# center and print
+	jals	center_and_print	# center and print
 
 
 	#=================================
