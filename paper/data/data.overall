@@ -5,13 +5,14 @@ ia64		VLIW	2826	0
 alpha		RISC	1821	0
 RiSC		RISC	1418	0
 pa-risc		RISC	1400	0
-mips		RISC	1322	0
+mips		RISC	1314	0
 microblaze	RISC	1298	0
 m88k		RISC	1240	0
 sparc		RISC	1221	0
 PowerPC		RISC	1165	0
 arm.eabi	RISC	1161	0
 riscv64-RVM	RISC	1161	0
+micromips	EMBED	1147	0
 6502		EBIT	1130	0
 mips16		EMBED	1119	0
 arm64		RISC	1094	0

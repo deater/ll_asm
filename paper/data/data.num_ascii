@@ -12,11 +12,11 @@ sh3		EMBED	76	1
 arm.eabi	RISC	72	1
 PowerPC		RISC	68	0
 THUMB		EMBED	54	1
-mips		RISC	52	0
 microblaze	RISC	52	0
 arm64		RISC	48	0
 1802		EBIT	47	1
 Thumb-2		EMBED	42	1
+mips		RISC	40	0
 sparc		RISC	40	0
 crisv32		EMBED	40	1
 pdp-11		EBIT	40	0

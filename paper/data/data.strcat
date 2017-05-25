@@ -18,6 +18,7 @@ THUMB		EMBED	18	0
 Thumb-2		EMBED	18	0
 sh3		EMBED	14	0
 mips16		EMBED	14	0
+micromips	EMBED	14	0
 avr32		EMBED	12	0
 s390		CISC	12	0
 crisv32		EMBED	10	0

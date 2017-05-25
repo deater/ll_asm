@@ -18,6 +18,7 @@ pdp-11		EBIT	108	0
 z80		EBIT	96	0
 arm64		RISC	96	0
 mips16		EMBED	96	0
+micromips	EMBED	86	0
 avr32		EMBED	80	0
 1802		EBIT	80	0
 sh3		EMBED	76	0
