@@ -1,18 +1,38 @@
 #
-#  linux_logo in RISCV+RVM 64-bit assembler 0.49
+#  linux_logo in RISCV+RVM+RVC "compressed" 64-bit assembler 0.49
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
 #
-#  assemble with     "as -o ll.riscv.o ll.riscv.s"
+#  assemble with     "as -march=rv64imc -o ll.riscv.o ll.riscv.s"
 #  link with         "ld -o ll.riscv ll.riscv.o"
 
 .include "logo.include"
 
-# Registers:
-# UGH! They seem to have changed this mapping at least once
-#	and some documents online have the old version
+# This implementation is a lot like mips16
 
+# New 16-bit instructions:
+# C.LWSP/C.LDSP - load from stack
+# C.SWSP/C.SDSP - store to stack
+# C.LW/C.LD
+# C.SW/C.SD
+# C.J/C.JAL
+# C.BEQZ/C.BNEZ
+# C.LI/C.LUI
+# C.ADDI/C.ADDIW/C.ADDI16SP
+# C.SLLI/C.SRLI
+# C.ANDI
+# C.MV
+# C.ADD
+# C.AND/C.OR/C.XOR/C.SUB/C.ADDW/C.SUBW
+
+
+
+
+# Registers:
+#  Works for s0,s1,a0,a1,a2,a3,a4,a5
+
+#
 #	32 general purpose registers:
 #		x0/zero:	always zero
 #		x1/ra:		return address
@@ -33,58 +53,14 @@
 #	arguments in a0-a7, number in a7.  Result in a0?
 #	was "scall" but now is "ecall"?
 
-# Multiply/Div : optional
-# Little Endian, optionally Big endian
-# Misaligned memory OK
-
-# Instruction set (not-surprisingly) is very MIPS like, just w/o delay slot
-# fused compare/branch, no condition flags
-
-# 64-bit Instructions have a *W variant that operates on low 32-bits
-# The top 32 bits are sign extension of bottom 32-bits
-
-# Instructions:
-#	ADDI -- add immediate (12-bit)
-#	ANDI/ORI/XORI	-- immediate logical (12 bit, sign extended)
-#	SLTI/SLTIU -- set less than -- set to 1 if register less than immediate
-#	SLLI/SRLI/SRAI - immediate shifts
-#	LUI - load upper immediate, load top 20 bits in reg, zero out bottom
-#	AUIPC - add upper immediate to PC
-#	ADD -- add
-#	AND/OR/XOR -- logical
-#	SLT/SLTU - set if less than
-#	SLL/SRL/SRA -- shifts
-#	ADD	-- add
-#	SUB -- subtract
-#	LD/LW/LH/LB	-- load sign extend 64/32/16/8
-#	LWU/LHU/LBU	-- load zero extend 32/16/8
-#	NOP -- just an addi 0,0,0
-#	JAL -- jump and link, can be to any reg but typically x1 and x5 target
-#	JALR -- jump and link register
-#	BEQ/BNE -- branch if equal/not equal
-#	BLT/BLTU -- branch less than
-#	BGE/BGEU -- branch greater than
-#	Should use JALR rd=0 for unconditional branch rather than BEQ
-#	Multiply/Divide are optional
-#	MUL,MULH,MULU,MULHU,MULHSU
-#	DIV/DIVU/REM/REMU
-
 # Optimization:
 #  + LZSS
-#    - 136 bytes = original port of MIPS code
-#    - 120 bytes = move text_buf to dedicated register
-#    - 116 bytes = move back to 0xff in high bits for telling when shift done
-#
+#    - 94 bytes = original port of riscv64 code
+#    - 88 bytes = change registers used to fit in the magical 8
+
 #  + Overall
-#    - 1277 bytes = original working version
-#    - 1261 bytes = reserve register to hold out_buffer
-#    - 1249 bytes = use register to hold uname pointer
-#    - 1233 bytes = remove much of "la" use before lzss
-#    - 1225 bytes = use bss_start pointer math for uname
-#    - 1217 bytes = avoid "la" in first line
-#    - 1185 bytes = avoid "la" in middle/last line
-#    - 1165 bytes = optimize center_and_print
-#    - 1161 bytes = remove rest of "la"
+#    - 1059 bytes = original port of riscv64 code
+#    - 1091 bytes = after the lzss optimization
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -150,64 +126,72 @@ _start:
 
 	#la	s6,text_buf
 	addi	s6,s1,550	# (text_buf-bss_start)
+
+################
+
+	la	s1,logo
+	la	s0,out_buffer
+	li	a2,(N-F)
+	la	t0,logo_end
 	li	s10,0xff00
 	li	s11,0xff
+	la	s6,text_buf
 
 decompression_loop:
-	lbu	t1,0(s3)	# load a logo byte
-	or	t1,s10,t1	# load upper 8 bits as hacky counter
-	addi	s3,s3,1		# increment pointer
+	lbu	a4,0(s1)	# load a logo byte
+	addi	s1,s1,1		# increment pointer
+	or	a4,a4,s10	# load upper 8 bits as hacky counter
 
 test_flags:
-	beq	s4,s3,done_logo	# have we reached the end?
+	beq	s1,t0,done_logo	# have we reached the end?
 				# if so, exit
 
-	andi	t2,t1,0x1	# check low bit
+	andi	a3,a4,0x1	# check low bit
 
-	srli	t1,t1,1		# done with bit, shift to right
-	bnez	t2,discrete_char
+	srli	a4,a4,1		# done with bit, shift to right
+	bnez	a3,discrete_char
 				# if low bit set
 				# we have a discrete char
 
 offset_length:
-	lhu	t4,0(s3)	# load an unagligned halfword
-	addi	s3,s3,2		# increment pointer
+	lhu	a0,0(s1)	# load an unagligned halfword
+	addi	s1,s1,2		# increment pointer
 
-	srli	t3,t4,P_BITS
-	addi	t3,t3,THRESHOLD+1
+	srli	a1,a0,P_BITS
+	addi	a1,a1,THRESHOLD+1
 
-				# t3 = (t4 >> P_BITS) + THRESHOLD + 1
+				# a1 = (a0 >> P_BITS) + THRESHOLD + 1
 				#                       (=match_length)
 
 output_loop:
-	andi	t4,t4,((POSITION_MASK<<8)+0xff)
+	andi	a0,a0,((POSITION_MASK<<8)+0xff)
 	                                # mask it
 
-	add	t0,s6,t4
-	lbu 	t0,0(t0)		# load byte from text_buf[]
-	addi	t4,t4,1			# increment pointer in text_buf
+	add	a3,s6,a0
+	lbu 	a5,0(a3)		# load byte from text_buf[]
+	addi	a0,a0,1			# increment pointer in text_buf
 
 store_byte:
-	sb	t0,0(s5)		# store a byte to output
-	addi	s5,s5,1			# increment pointer
+	sb	a5,0(s0)		# store a byte to output
+	addi	s0,s0,1			# increment pointer
 
-	add	t5,s6,s2
-	sb	t0,0(t5)		# store a byte to text_buf[r]
-	addi	s2,s2,1			# increment pointer (r)
+	add	a3,s6,a2
+	sb	a5,0(a3)		# store a byte to text_buf[r]
+	addi	a2,a2,1			# increment pointer (r)
 
-	addi	t3,t3,-1		# decement count
-	andi	s2,s2,(N-1)		# wrap R if too big
-	bnez 	t3,output_loop		# repeat until k>j
+	addi	a1,a1,-1		# decement count
+	andi	a2,a2,(N-1)		# wrap R if too big
+	bnez 	a1,output_loop		# repeat until k>j
 
-	bne	t1,s11,test_flags	# have we shifted by 8 bits?
+	bne	a4,s11,test_flags	# have we shifted by 8 bits?
 					# if so t1 is now 0xff
 					# and we need new flags
 	j	decompression_loop
 
 discrete_char:
-	lbu	t0,0(s3)	# load a byte
-	addi	s3,s3,1		# increment pointer
-	li	t3,1		# we set t3 to one so byte
+	lbu	a5,0(s1)	# load a byte
+	addi	s1,s1,1		# increment pointer
+	li	a1,1		# we set t3 to one so byte
 				# will be output once
 
 	j	store_byte	# and store it
@@ -217,6 +201,10 @@ discrete_char:
 done_logo:
 	move	a1,s9
 	jal	write_stdout		# print the logo
+
+
+	j	exit
+
 
 	#==========================
 	# PRINT VERSION
