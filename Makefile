@@ -82,8 +82,9 @@ endif
 # Handle RISCV32
 #
 ifneq (,$(findstring riscv32,$(ARCH)))
-   SOURCE_ARCH := riscv32
-   THUMB := ll.riscv-rv32c ll.riscv-rv32c.stripped ll.riscv-rv32c.fakeproc ll.riscv-rv32c.fakeproc.stripped
+	SOURCE_ARCH := riscv32
+	C_EXTRA = -march=rv32im
+	THUMB := ll.riscv-rv32c ll.riscv-rv32c.stripped ll.riscv-rv32c.fakeproc ll.riscv-rv32c.fakeproc.stripped
 endif
 
 
@@ -91,17 +92,19 @@ endif
 # Handle RISCV64
 #
 ifneq (,$(findstring riscv64,$(ARCH)))
-   SOURCE_ARCH := riscv64
-   THUMB := ll.riscv64-imc ll.riscv64-imc.stripped \
-	ll.riscv64-imc.fakeproc ll.riscv64-imc.fakeproc.stripped
+	SOURCE_ARCH := riscv64
+	C_EXTRA = -march=rv64im
+	THUMB := ll.riscv64-imc ll.riscv64-imc.stripped \
+		ll.riscv64-imc.fakeproc ll.riscv64-imc.fakeproc.stripped
 endif
 
 #
 # Handle RISCV128
 #
 ifneq (,$(findstring riscv128,$(ARCH)))
-   SOURCE_ARCH := riscv128
-   THUMB := ll.riscv-rv128c ll.riscv-rv128c.stripped ll.riscv-rv128c.fakeproc ll.riscv-rv128c.fakeproc.stripped
+	SOURCE_ARCH := riscv128
+	C_EXTRA = -march=rv128im
+	THUMB := ll.riscv-rv128c ll.riscv-rv128c.stripped ll.riscv-rv128c.fakeproc ll.riscv-rv128c.fakeproc.stripped
 endif
 
 
@@ -350,6 +353,31 @@ ll.micromips.fakeproc.o:	ll.micromips.s
 
 
 #
+# riscv32-imc
+#
+
+ll.riscv32-imc.stripped:  ll.riscv32-imc sstrip/sstrip
+	cp ll.riscv32-imc ll.riscv32-imc.stripped
+	sstrip/sstrip ll.riscv32-imc.stripped
+
+ll.riscv32-imc:	ll.riscv32-imc.o
+	$(CROSS)$(LD) -N -o ll.riscv32-imc ll.riscv32-imc.o
+
+ll.riscv32-imc.o:	ll.riscv32-imc.s
+	$(CROSS)$(AS) -march=rv32imc -o ll.riscv32-imc.o ll.riscv32-imc.s
+
+ll.riscv32-imc.fakeproc.stripped:  ll.riscv32-imc.fakeproc sstrip/sstrip
+	cp ll.riscv32-imc.fakeproc ll.riscv32-imc.fakeproc.stripped
+	sstrip/sstrip ll.riscv32-imc.fakeproc.stripped
+
+ll.riscv32-imc.fakeproc:	ll.riscv32-imc.fakeproc.o
+	$(CROSS)$(LD) -N -o ll.riscv32-imc.fakeproc ll.riscv32-imc.fakeproc.o
+
+ll.riscv32-imc.fakeproc.o:	ll.riscv32-imc.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -march=rv32imc -o ll.riscv32-imc.fakeproc.o ll.riscv32-imc.s
+
+
+#
 # riscv64-imc
 #
 
@@ -372,6 +400,34 @@ ll.riscv64-imc.fakeproc:	ll.riscv64-imc.fakeproc.o
 
 ll.riscv64-imc.fakeproc.o:	ll.riscv64-imc.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -march=rv64imc -o ll.riscv64-imc.fakeproc.o ll.riscv64-imc.s
+
+
+
+#
+# riscv128-imc
+#
+
+ll.riscv128-imc.stripped:  ll.riscv128-imc sstrip/sstrip
+	cp ll.riscv128-imc ll.riscv128-imc.stripped
+	sstrip/sstrip ll.riscv128-imc.stripped
+
+ll.riscv128-imc:	ll.riscv128-imc.o
+	$(CROSS)$(LD) -N -o ll.riscv128-imc ll.riscv128-imc.o
+
+ll.riscv128-imc.o:	ll.riscv128-imc.s
+	$(CROSS)$(AS) -march=rv128imc -o ll.riscv128-imc.o ll.riscv128-imc.s
+
+ll.riscv128-imc.fakeproc.stripped:  ll.riscv128-imc.fakeproc sstrip/sstrip
+	cp ll.riscv128-imc.fakeproc ll.riscv128-imc.fakeproc.stripped
+	sstrip/sstrip ll.riscv128-imc.fakeproc.stripped
+
+ll.riscv128-imc.fakeproc:	ll.riscv128-imc.fakeproc.o
+	$(CROSS)$(LD) -N -o ll.riscv128-imc.fakeproc ll.riscv128-imc.fakeproc.o
+
+ll.riscv128-imc.fakeproc.o:	ll.riscv128-imc.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -march=rv128imc -o ll.riscv128-imc.fakeproc.o ll.riscv128-imc.s
+
+
 
 #
 # 8086
