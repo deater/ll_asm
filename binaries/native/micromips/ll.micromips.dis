@@ -33,242 +33,244 @@ Disassembly of section .text:
 004000ee <decompression_loop>:
   4000ee:	0910      	lbu	v0,0(s1)
   4000f0:	6c90      	addiu	s1,s1,1
-  4000f2:	5042 ff00 	ori	v0,v0,0xff00
+  4000f2:	4412      	not	v0,v0
 
-004000f6 <test_flags>:
-  4000f6:	9511 0025 	beq	s1,t0,400144 <done_logo>
-  4000fa:	2fa1      	andi	a3,v0,0x1
+004000f4 <test_flags>:
+  4000f4:	9511 0023 	beq	s1,t0,40013e <done_logo>
+  4000f8:	2fa1      	andi	a3,v0,0x1
+  4000fa:	8f9d      	beqz	a3,400136 <discrete_char>
   4000fc:	2523      	srl	v0,v0,1
-  4000fe:	40a7 001d 	bnezc	a3,40013c <discrete_char>
 
-00400102 <offset_length>:
-  400102:	2a10      	lhu	a0,0(s1)
-  400104:	0084 7b3c 	wsbh	a0,a0
-  400108:	4e24      	addiu	s1,s1,2
-  40010a:	00a4 5040 	srl	a1,a0,0xa
-  40010e:	4ca6      	addiu	a1,a1,3
+004000fe <offset_length>:
+  4000fe:	2a10      	lhu	a0,0(s1)
+  400100:	0084 7b3c 	wsbh	a0,a0
+  400104:	4e24      	addiu	s1,s1,2
+  400106:	00a4 5040 	srl	a1,a0,0xa
+  40010a:	4ca6      	addiu	a1,a1,3
 
-00400110 <output_loop>:
-  400110:	d084 03ff 	andi	a0,a0,0x3ff
-  400114:	6781      	lw	a3,4(gp)
-  400116:	07ce      	addu	a3,a3,a0
-  400118:	09f0      	lbu	v1,0(a3)
-  40011a:	6e40      	addiu	a0,a0,1
+0040010c <output_loop>:
+  40010c:	d084 03ff 	andi	a0,a0,0x3ff
+  400110:	6781      	lw	a3,4(gp)
+  400112:	07ce      	addu	a3,a3,a0
+  400114:	09f0      	lbu	v1,0(a3)
+  400116:	6e40      	addiu	a0,a0,1
 
-0040011c <store_byte>:
-  40011c:	8980      	sb	v1,0(s0)
-  40011e:	6c00      	addiu	s0,s0,1
-  400120:	6781      	lw	a3,4(gp)
-  400122:	07ee      	addu	a3,a3,a2
-  400124:	89f0      	sb	v1,0(a3)
-  400126:	6f60      	addiu	a2,a2,1
+00400118 <store_byte>:
+  400118:	8980      	sb	v1,0(s0)
+  40011a:	6c00      	addiu	s0,s0,1
+  40011c:	6781      	lw	a3,4(gp)
+  40011e:	07ee      	addu	a3,a3,a2
+  400120:	89f0      	sb	v1,0(a3)
+  400122:	6f60      	addiu	a2,a2,1
+  400124:	6ede      	addiu	a1,a1,-1
+  400126:	aef2      	bnez	a1,40010c <output_loop>
   400128:	d0c6 03ff 	andi	a2,a2,0x3ff
-  40012c:	6ede      	addiu	a1,a1,-1
-  40012e:	40a5 ffef 	bnezc	a1,400110 <output_loop>
-  400132:	d062 ff00 	andi	v1,v0,0xff00
-  400136:	40a3 ffde 	bnezc	v1,4000f6 <test_flags>
-  40013a:	8dd9      	beqz	v1,4000ee <decompression_loop>
+  40012c:	0062 c040 	srl	v1,v0,0x18
+  400130:	ade1      	bnez	v1,4000f4 <test_flags>
+  400132:	0c00      	nop
+  400134:	8ddc      	beqz	v1,4000ee <decompression_loop>
 
-0040013c <discrete_char>:
-  40013c:	0990      	lbu	v1,0(s1)
-  40013e:	6c90      	addiu	s1,s1,1
-  400140:	cfed      	b	40011c <store_byte>
-  400142:	ee81      	li	a1,1
+00400136 <discrete_char>:
+  400136:	0990      	lbu	v1,0(s1)
+  400138:	6c90      	addiu	s1,s1,1
+  40013a:	cfee      	b	400118 <store_byte>
+  40013c:	ee81      	li	a1,1
 
-00400144 <done_logo>:
-  400144:	7420 0143 	jals	400286 <write_stdout>
-  400148:	6680      	lw	a1,0(gp)
-  40014a:	41b1 0040 	lui	s1,0x40
-  40014e:	3231 02bf 	addiu	s1,s1,703
+0040013e <done_logo>:
+  40013e:	7420 0140 	jals	400280 <write_stdout>
+  400142:	6680      	lw	a1,0(gp)
+  400144:	41b1 0040 	lui	s1,0x40
+  400148:	3231 02b9 	addiu	s1,s1,697
 
-00400152 <first_line>:
-  400152:	3040 101a 	li	v0,4122
-  400156:	6602      	lw	a0,8(gp)
-  400158:	0000 8b7c 	syscall
-  40015c:	6400      	lw	s0,0(gp)
-  40015e:	45f1      	jalrs	s1
+0040014c <first_line>:
+  40014c:	3040 101a 	li	v0,4122
+  400150:	6602      	lw	a0,8(gp)
+  400152:	0000 8b7c 	syscall
+  400156:	6400      	lw	s0,0(gp)
+  400158:	45f1      	jalrs	s1
+  40015a:	6682      	lw	a1,8(gp)
+  40015c:	45f1      	jalrs	s1
+  40015e:	6683      	lw	a1,12(gp)
   400160:	6682      	lw	a1,8(gp)
-  400162:	45f1      	jalrs	s1
-  400164:	6683      	lw	a1,12(gp)
-  400166:	6682      	lw	a1,8(gp)
-  400168:	45d1      	jalr	s1
-  40016a:	30a5 0082 	addiu	a1,a1,130
+  400162:	45d1      	jalr	s1
+  400164:	30a5 0082 	addiu	a1,a1,130
 
-0040016e <compiled>:
-  40016e:	6683      	lw	a1,12(gp)
-  400170:	45f1      	jalrs	s1
-  400172:	6ed6      	addiu	a1,a1,12
-  400174:	6682      	lw	a1,8(gp)
-  400176:	45d1      	jalr	s1
-  400178:	30a5 00c3 	addiu	a1,a1,195
-  40017c:	7420 0127 	jals	40024e <center_and_print>
-  400180:	0c00      	nop
+00400168 <compiled>:
+  400168:	6683      	lw	a1,12(gp)
+  40016a:	45f1      	jalrs	s1
+  40016c:	6ed6      	addiu	a1,a1,12
+  40016e:	6682      	lw	a1,8(gp)
+  400170:	45d1      	jalr	s1
+  400172:	30a5 00c3 	addiu	a1,a1,195
+  400176:	7420 0124 	jals	400248 <center_and_print>
+  40017a:	0c00      	nop
 
-00400182 <middle_line>:
-  400182:	6400      	lw	s0,0(gp)
-  400184:	3040 0fa5 	li	v0,4005
-  400188:	6603      	lw	a0,12(gp)
-  40018a:	3084 003b 	addiu	a0,a0,59
-  40018e:	ee80      	li	a1,0
-  400190:	0000 8b7c 	syscall
-  400194:	0c82      	move	a0,v0
-  400196:	3040 0fa3 	li	v0,4003
-  40019a:	6684      	lw	a1,16(gp)
-  40019c:	30c0 1000 	li	a2,4096
-  4001a0:	0000 8b7c 	syscall
-  4001a4:	3040 0fa6 	li	v0,4006
-  4001a8:	0000 8b7c 	syscall
-  4001ac:	3040 1014 	li	v0,4116
-  4001b0:	6605      	lw	a0,20(gp)
-  4001b2:	0000 8b7c 	syscall
+0040017c <middle_line>:
+  40017c:	6400      	lw	s0,0(gp)
+  40017e:	3040 0fa5 	li	v0,4005
+  400182:	6603      	lw	a0,12(gp)
+  400184:	3084 003b 	addiu	a0,a0,59
+  400188:	ee80      	li	a1,0
+  40018a:	0000 8b7c 	syscall
+  40018e:	0c82      	move	a0,v0
+  400190:	3040 0fa3 	li	v0,4003
+  400194:	6684      	lw	a1,16(gp)
+  400196:	30c0 1000 	li	a2,4096
+  40019a:	0000 8b7c 	syscall
+  40019e:	3040 0fa6 	li	v0,4006
+  4001a2:	0000 8b7c 	syscall
+  4001a6:	3040 1014 	li	v0,4116
+  4001aa:	6605      	lw	a0,20(gp)
+  4001ac:	0000 8b7c 	syscall
 
-004001b6 <number_of_cpus>:
-  4001b6:	6683      	lw	a1,12(gp)
-  4001b8:	45d1      	jalr	s1
-  4001ba:	30a5 0049 	addiu	a1,a1,73
+004001b0 <number_of_cpus>:
+  4001b0:	6683      	lw	a1,12(gp)
+  4001b2:	45d1      	jalr	s1
+  4001b4:	30a5 0049 	addiu	a1,a1,73
 
-004001be <chip_name>:
-  4001be:	661f      	lw	a0,124(gp)
-  4001c0:	7420 010e 	jals	40021c <find_string>
-  4001c4:	efa0      	li	a3,32
-  4001c6:	6683      	lw	a1,12(gp)
-  4001c8:	45d1      	jalr	s1
-  4001ca:	30a5 0053 	addiu	a1,a1,83
+004001b8 <chip_name>:
+  4001b8:	661f      	lw	a0,124(gp)
+  4001ba:	7420 010b 	jals	400216 <find_string>
+  4001be:	efa0      	li	a3,32
+  4001c0:	6683      	lw	a1,12(gp)
+  4001c2:	45d1      	jalr	s1
+  4001c4:	30a5 0053 	addiu	a1,a1,83
 
-004001ce <ram>:
-  4001ce:	6605      	lw	a0,20(gp)
-  4001d0:	6a44      	lw	a0,16(a0)
-  4001d2:	0084 a040 	srl	a0,a0,0x14
-  4001d6:	7420 0151 	jals	4002a2 <num_to_ascii>
-  4001da:	ef81      	li	a3,1
-  4001dc:	6683      	lw	a1,12(gp)
-  4001de:	45f1      	jalrs	s1
-  4001e0:	6edc      	addiu	a1,a1,24
+004001c8 <ram>:
+  4001c8:	6605      	lw	a0,20(gp)
+  4001ca:	6a44      	lw	a0,16(a0)
+  4001cc:	0084 a040 	srl	a0,a0,0x14
+  4001d0:	7420 014e 	jals	40029c <num_to_ascii>
+  4001d4:	ef81      	li	a3,1
+  4001d6:	6683      	lw	a1,12(gp)
+  4001d8:	45f1      	jalrs	s1
+  4001da:	6edc      	addiu	a1,a1,24
 
-004001e2 <bogomips>:
-  4001e2:	6620      	lw	a0,128(gp)
-  4001e4:	7420 010e 	jals	40021c <find_string>
-  4001e8:	ef8a      	li	a3,10
-  4001ea:	6683      	lw	a1,12(gp)
-  4001ec:	45d1      	jalr	s1
-  4001ee:	30a5 0020 	addiu	a1,a1,32
-  4001f2:	7420 0127 	jals	40024e <center_and_print>
-  4001f6:	0c00      	nop
+004001dc <bogomips>:
+  4001dc:	6620      	lw	a0,128(gp)
+  4001de:	7420 010b 	jals	400216 <find_string>
+  4001e2:	ef8a      	li	a3,10
+  4001e4:	6683      	lw	a1,12(gp)
+  4001e6:	45d1      	jalr	s1
+  4001e8:	30a5 0020 	addiu	a1,a1,32
+  4001ec:	7420 0124 	jals	400248 <center_and_print>
+  4001f0:	0c00      	nop
 
-004001f8 <hostname>:
-  4001f8:	6400      	lw	s0,0(gp)
-  4001fa:	6682      	lw	a1,8(gp)
-  4001fc:	45d1      	jalr	s1
-  4001fe:	30a5 0041 	addiu	a1,a1,65
-  400202:	7420 0127 	jals	40024e <center_and_print>
-  400206:	0c00      	nop
-  400208:	6683      	lw	a1,12(gp)
-  40020a:	f420 0143 	jal	400286 <write_stdout>
-  40020e:	30a5 0030 	addiu	a1,a1,48
+004001f2 <hostname>:
+  4001f2:	6400      	lw	s0,0(gp)
+  4001f4:	6682      	lw	a1,8(gp)
+  4001f6:	45d1      	jalr	s1
+  4001f8:	30a5 0041 	addiu	a1,a1,65
+  4001fc:	7420 0124 	jals	400248 <center_and_print>
+  400200:	0c00      	nop
+  400202:	6683      	lw	a1,12(gp)
+  400204:	f420 0140 	jal	400280 <write_stdout>
+  400208:	30a5 0030 	addiu	a1,a1,48
 
-00400212 <exit>:
-  400212:	3040 0fa1 	li	v0,4001
-  400216:	ee05      	li	a0,5
-  400218:	0000 8b7c 	syscall
+0040020c <exit>:
+  40020c:	3040 0fa1 	li	v0,4001
+  400210:	ee05      	li	a0,5
+  400212:	0000 8b7c 	syscall
 
-0040021c <find_string>:
-  40021c:	6704      	lw	a2,16(gp)
+00400216 <find_string>:
+  400216:	6704      	lw	a2,16(gp)
 
-0040021e <find_loop>:
-  40021e:	fc46 0001 	lw	v0,1(a2)
-  400222:	8d14      	beqz	v0,40024c <done>
-  400224:	6f60      	addiu	a2,a2,1
-  400226:	b482 fffa 	bne	v0,a0,40021e <find_loop>
-  40022a:	edba      	li	v1,58
+00400218 <find_loop>:
+  400218:	fc46 0001 	lw	v0,1(a2)
+  40021c:	8d14      	beqz	v0,400246 <done>
+  40021e:	6f60      	addiu	a2,a2,1
+  400220:	b482 fffa 	bne	v0,a0,400218 <find_loop>
+  400224:	edba      	li	v1,58
 
-0040022c <find_colon>:
-  40022c:	0961      	lbu	v0,1(a2)
-  40022e:	8d0e      	beqz	v0,40024c <done>
-  400230:	6f60      	addiu	a2,a2,1
-  400232:	4453      	xor	v0,v0,v1
-  400234:	40a2 fffa 	bnezc	v0,40022c <find_colon>
-  400238:	4cc4      	addiu	a2,a2,2
+00400226 <find_colon>:
+  400226:	0961      	lbu	v0,1(a2)
+  400228:	8d0e      	beqz	v0,400246 <done>
+  40022a:	6f60      	addiu	a2,a2,1
+  40022c:	4453      	xor	v0,v0,v1
+  40022e:	40a2 fffa 	bnezc	v0,400226 <find_colon>
+  400232:	4cc4      	addiu	a2,a2,2
 
-0040023a <store_loop>:
-  40023a:	0960      	lbu	v0,0(a2)
-  40023c:	8d07      	beqz	v0,40024c <done>
-  40023e:	6f60      	addiu	a2,a2,1
-  400240:	94e2 0004 	beq	v0,a3,40024c <done>
-  400244:	0c00      	nop
-  400246:	8900      	sb	v0,0(s0)
-  400248:	cff8      	b	40023a <store_loop>
-  40024a:	6c00      	addiu	s0,s0,1
+00400234 <store_loop>:
+  400234:	0960      	lbu	v0,0(a2)
+  400236:	8d07      	beqz	v0,400246 <done>
+  400238:	6f60      	addiu	a2,a2,1
+  40023a:	94e2 0004 	beq	v0,a3,400246 <done>
+  40023e:	0c00      	nop
+  400240:	8900      	sb	v0,0(s0)
+  400242:	cff8      	b	400234 <store_loop>
+  400244:	6c00      	addiu	s0,s0,1
 
-0040024c <done>:
-  40024c:	45bf      	jrc	ra
+00400246 <done>:
+  400246:	45bf      	jrc	ra
 
-0040024e <center_and_print>:
-  40024e:	4550      	swm	s0-s1,ra,0(sp)
-  400250:	3040 0a00 	li	v0,2560
-  400254:	a900      	sh	v0,0(s0)
-  400256:	6680      	lw	a1,0(gp)
-  400258:	04d1      	subu	s1,s0,a1
-  40025a:	ed50      	li	v0,80
-  40025c:	0051 1b50 	slt	v1,s1,v0
-  400260:	8d90      	beqz	v1,400282 <done_center>
-  400262:	0222 8990 	sub	s1,v0,s1
-  400266:	6683      	lw	a1,12(gp)
-  400268:	f420 0143 	jal	400286 <write_stdout>
-  40026c:	30a5 0036 	addiu	a1,a1,54
-  400270:	2613      	srl	a0,s1,1
-  400272:	7420 0151 	jals	4002a2 <num_to_ascii>
-  400276:	ef80      	li	a3,0
-  400278:	6683      	lw	a1,12(gp)
-  40027a:	f420 0143 	jal	400286 <write_stdout>
-  40027e:	30a5 0039 	addiu	a1,a1,57
+00400248 <center_and_print>:
+  400248:	4550      	swm	s0-s1,ra,0(sp)
+  40024a:	3040 0a00 	li	v0,2560
+  40024e:	a900      	sh	v0,0(s0)
+  400250:	6680      	lw	a1,0(gp)
+  400252:	04d1      	subu	s1,s0,a1
+  400254:	ed50      	li	v0,80
+  400256:	0051 1b50 	slt	v1,s1,v0
+  40025a:	8d90      	beqz	v1,40027c <done_center>
+  40025c:	0222 8990 	sub	s1,v0,s1
+  400260:	6683      	lw	a1,12(gp)
+  400262:	f420 0140 	jal	400280 <write_stdout>
+  400266:	30a5 0036 	addiu	a1,a1,54
+  40026a:	2613      	srl	a0,s1,1
+  40026c:	7420 014e 	jals	40029c <num_to_ascii>
+  400270:	ef80      	li	a3,0
+  400272:	6683      	lw	a1,12(gp)
+  400274:	f420 0140 	jal	400280 <write_stdout>
+  400278:	30a5 0039 	addiu	a1,a1,57
 
-00400282 <done_center>:
-  400282:	6680      	lw	a1,0(gp)
-  400284:	4510      	lwm	s0-s1,ra,0(sp)
+0040027c <done_center>:
+  40027c:	6680      	lw	a1,0(gp)
+  40027e:	4510      	lwm	s0-s1,ra,0(sp)
 
-00400286 <write_stdout>:
-  400286:	4554      	swm	s0-s1,ra,16(sp)
-  400288:	0c85      	move	a0,a1
-  40028a:	ef00      	li	a2,0
+00400280 <write_stdout>:
+  400280:	4554      	swm	s0-s1,ra,16(sp)
+  400282:	0c85      	move	a0,a1
+  400284:	ef00      	li	a2,0
 
-0040028c <str_loop1>:
-  40028c:	0941      	lbu	v0,1(a0)
-  40028e:	6e40      	addiu	a0,a0,1
-  400290:	ad7d      	bnez	v0,40028c <str_loop1>
-  400292:	6f60      	addiu	a2,a2,1
-  400294:	3040 0fa4 	li	v0,4004
-  400298:	ee01      	li	a0,1
-  40029a:	0000 8b7c 	syscall
-  40029e:	4514      	lwm	s0-s1,ra,16(sp)
-  4002a0:	45bf      	jrc	ra
+00400286 <str_loop1>:
+  400286:	0941      	lbu	v0,1(a0)
+  400288:	6e40      	addiu	a0,a0,1
+  40028a:	ad7d      	bnez	v0,400286 <str_loop1>
+  40028c:	6f60      	addiu	a2,a2,1
+  40028e:	3040 0fa4 	li	v0,4004
+  400292:	ee01      	li	a0,1
+  400294:	0000 8b7c 	syscall
+  400298:	4514      	lwm	s0-s1,ra,16(sp)
+  40029a:	45bf      	jrc	ra
 
-004002a2 <num_to_ascii>:
-  4002a2:	6686      	lw	a1,24(gp)
+0040029c <num_to_ascii>:
+  40029c:	6686      	lw	a1,24(gp)
 
-004002a4 <div_by_10>:
-  4002a4:	6ede      	addiu	a1,a1,-1
-  4002a6:	ed8a      	li	v1,10
-  4002a8:	0064 bb3c 	divu	zero,a0,v1
-  4002ac:	4603      	mfhi	v1
-  4002ae:	3063 0030 	addiu	v1,v1,48
-  4002b2:	89d0      	sb	v1,0(a1)
-  4002b4:	4644      	mflo	a0
-  4002b6:	40a4 fff5 	bnezc	a0,4002a4 <div_by_10>
+0040029e <div_by_10>:
+  40029e:	6ede      	addiu	a1,a1,-1
+  4002a0:	ed8a      	li	v1,10
+  4002a2:	0064 bb3c 	divu	zero,a0,v1
+  4002a6:	4603      	mfhi	v1
+  4002a8:	3063 0030 	addiu	v1,v1,48
+  4002ac:	89d0      	sb	v1,0(a1)
+  4002ae:	4644      	mflo	a0
+  4002b0:	40a4 fff5 	bnezc	a0,40029e <div_by_10>
 
-004002ba <write_out>:
-  4002ba:	40e7 ffe4 	beqzc	a3,400286 <write_stdout>
+004002b4 <write_out>:
+  4002b4:	40e7 ffe4 	beqzc	a3,400280 <write_stdout>
 
-004002be <strcat>:
-  4002be:	0950      	lbu	v0,0(a1)
-  4002c0:	6ed0      	addiu	a1,a1,1
-  4002c2:	8900      	sb	v0,0(s0)
-  4002c4:	ad7c      	bnez	v0,4002be <strcat>
-  4002c6:	6c00      	addiu	s0,s0,1
+004002b8 <strcat>:
+  4002b8:	0950      	lbu	v0,0(a1)
+  4002ba:	6ed0      	addiu	a1,a1,1
+  4002bc:	8900      	sb	v0,0(s0)
+  4002be:	ad7c      	bnez	v0,4002b8 <strcat>
+  4002c0:	6c00      	addiu	s0,s0,1
 
-004002c8 <done_strcat>:
-  4002c8:	459f      	jr	ra
-  4002ca:	6c0e      	addiu	s0,s0,-1
-  4002cc:	0000 0000 	nop
+004002c2 <done_strcat>:
+  4002c2:	459f      	jr	ra
+  4002c4:	6c0e      	addiu	s0,s0,-1
+  4002c6:	0c00      	nop
+	...
 
 Disassembly of section .data:
 

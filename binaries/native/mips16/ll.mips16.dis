@@ -17,458 +17,454 @@ Disassembly of section .reginfo:
 004000b0 <.reginfo>:
   4000b0:	a10300fc 	sb	v1,252(t0)
 	...
-  4000c4:	00408450 	0x408450
+  4000c4:	00408440 	0x408440
 
 Disassembly of section .text:
 
 004000d0 <__start>:
-  4000d0:	b0da      	lw	s0,400438 <out_buffer_addr>
-  4000d2:	f240 090a 	la	s1,40031a <logo>
+  4000d0:	b0d9      	lw	s0,400434 <out_buffer_addr>
+  4000d2:	f240 0906 	la	s1,400316 <logo>
   4000d6:	f3c0 6e00 	li	a2,960
 
 004000da <decompression_loop>:
   4000da:	a140      	lbu	v0,0(s1)
   4000dc:	4121      	addiu	s1,s1,1
-  4000de:	f71f 6f00 	li	a3,65280
-  4000e2:	eaed      	or	v0,a3
+  4000de:	ea4f      	not	v0
 
-004000e4 <test_flags>:
-  4000e4:	f340 0f11 	la	a3,400434 <logo+0x11a>
-  4000e8:	e9e2      	slt	s1,a3
-  4000ea:	6026      	bteqz	400138 <done_logo>
-  4000ec:	6f01      	li	a3,1
-  4000ee:	ef4c      	and	a3,v0
-  4000f0:	3246      	srl	v0,1
-  4000f2:	2f1e      	bnez	a3,400130 <discrete_char>
+004000e0 <test_flags>:
+  4000e0:	f340 0f11 	la	a3,400430 <logo+0x11a>
+  4000e4:	e9e2      	slt	s1,a3
+  4000e6:	6026      	bteqz	400134 <done_logo>
+  4000e8:	6f01      	li	a3,1
+  4000ea:	ef4c      	and	a3,v0
+  4000ec:	3246      	srl	v0,1
+  4000ee:	271e      	beqz	a3,40012c <discrete_char>
 
-004000f4 <offset_length>:
-  4000f4:	a160      	lbu	v1,0(s1)
-  4000f6:	a181      	lbu	a0,1(s1)
-  4000f8:	4902      	addiu	s1,2
-  4000fa:	3480      	sll	a0,8
-  4000fc:	ec6d      	or	a0,v1
-  4000fe:	f280 3582 	srl	a1,a0,10
-  400102:	45a3      	addiu	a1,a1,3
+004000f0 <offset_length>:
+  4000f0:	a160      	lbu	v1,0(s1)
+  4000f2:	a181      	lbu	a0,1(s1)
+  4000f4:	4902      	addiu	s1,2
+  4000f6:	3480      	sll	a0,8
+  4000f8:	ec6d      	or	a0,v1
+  4000fa:	f280 3582 	srl	a1,a0,10
+  4000fe:	45a3      	addiu	a1,a1,3
 
-00400104 <output_loop>:
-  400104:	f3e0 6f1f 	li	a3,1023
-  400108:	ecec      	and	a0,a3
-  40010a:	b7cd      	lw	a3,40043c <text_buf_addr>
-  40010c:	e79d      	addu	a3,a0
-  40010e:	a760      	lbu	v1,0(a3)
-  400110:	4481      	addiu	a0,a0,1
+00400100 <output_loop>:
+  400100:	f3e0 6f1f 	li	a3,1023
+  400104:	ecec      	and	a0,a3
+  400106:	b7cd      	lw	a3,400438 <text_buf_addr>
+  400108:	e79d      	addu	a3,a0
+  40010a:	a760      	lbu	v1,0(a3)
+  40010c:	4481      	addiu	a0,a0,1
 
-00400112 <store_byte>:
-  400112:	c060      	sb	v1,0(s0)
-  400114:	4801      	addiu	s0,1
-  400116:	b7ca      	lw	a3,40043c <text_buf_addr>
-  400118:	e7dd      	addu	a3,a2
-  40011a:	c760      	sb	v1,0(a3)
-  40011c:	46c1      	addiu	a2,a2,1
-  40011e:	f3e0 6f1f 	li	a3,1023
-  400122:	eeec      	and	a2,a3
-  400124:	45af      	addiu	a1,a1,-1
-  400126:	2dee      	bnez	a1,400104 <output_loop>
-  400128:	f100 5a00 	sltiu	v0,256
-  40012c:	60db      	bteqz	4000e4 <test_flags>
-  40012e:	17d5      	b	4000da <decompression_loop>
+0040010e <store_byte>:
+  40010e:	c060      	sb	v1,0(s0)
+  400110:	4801      	addiu	s0,1
+  400112:	b7ca      	lw	a3,400438 <text_buf_addr>
+  400114:	e7dd      	addu	a3,a2
+  400116:	c760      	sb	v1,0(a3)
+  400118:	46c1      	addiu	a2,a2,1
+  40011a:	f3e0 6f1f 	li	a3,1023
+  40011e:	eeec      	and	a2,a3
+  400120:	45af      	addiu	a1,a1,-1
+  400122:	2dee      	bnez	a1,400100 <output_loop>
+  400124:	f600 3342 	srl	v1,v0,24
+  400128:	2bdb      	bnez	v1,4000e0 <test_flags>
+  40012a:	17d7      	b	4000da <decompression_loop>
 
-00400130 <discrete_char>:
-  400130:	a160      	lbu	v1,0(s1)
-  400132:	4901      	addiu	s1,1
-  400134:	6d01      	li	a1,1
-  400136:	17ed      	b	400112 <store_byte>
+0040012c <discrete_char>:
+  40012c:	a160      	lbu	v1,0(s1)
+  40012e:	4901      	addiu	s1,1
+  400130:	6d01      	li	a1,1
+  400132:	17ed      	b	40010e <store_byte>
 
-00400138 <done_logo>:
-  400138:	b5c0      	lw	a1,400438 <out_buffer_addr>
-  40013a:	1a00 009a 	jal	400268 <write_stdout>
-  40013e:	6500      	nop
-  400140:	f140 0919 	la	s1,400298 <strcat>
+00400134 <done_logo>:
+  400134:	b5c0      	lw	a1,400434 <out_buffer_addr>
+  400136:	1a00 0099 	jal	400264 <write_stdout>
+  40013a:	6500      	nop
+  40013c:	f140 0919 	la	s1,400294 <strcat>
 
-00400144 <first_line>:
-  400144:	f002 6a1a 	li	v0,4122
-  400148:	b4be      	lw	a0,400440 <uname_info_addr>
-  40014a:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  40014e:	6500      	nop
-  400150:	b0ba      	lw	s0,400438 <out_buffer_addr>
-  400152:	b5bc      	lw	a1,400440 <uname_info_addr>
+00400140 <first_line>:
+  400140:	f002 6a1a 	li	v0,4122
+  400144:	b4be      	lw	a0,40043c <uname_info_addr>
+  400146:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  40014a:	6500      	nop
+  40014c:	b0ba      	lw	s0,400434 <out_buffer_addr>
+  40014e:	b5bc      	lw	a1,40043c <uname_info_addr>
+  400150:	e9c0      	jalrc	s1
+  400152:	b5bc      	lw	a1,400440 <ver_string_addr>
   400154:	e9c0      	jalrc	s1
-  400156:	b5bc      	lw	a1,400444 <ver_string_addr>
-  400158:	e9c0      	jalrc	s1
-  40015a:	b5ba      	lw	a1,400440 <uname_info_addr>
-  40015c:	f080 4d02 	addiu	a1,130
-  400160:	e9c0      	jalrc	s1
-  400162:	b5b9      	lw	a1,400444 <ver_string_addr>
-  400164:	4d0a      	addiu	a1,10
-  400166:	e9c0      	jalrc	s1
-  400168:	b5b6      	lw	a1,400440 <uname_info_addr>
-  40016a:	f0c0 4d03 	addiu	a1,195
-  40016e:	e9c0      	jalrc	s1
-  400170:	1a00 008e 	jal	400238 <center_and_print>
-  400174:	6500      	nop
+  400156:	b5ba      	lw	a1,40043c <uname_info_addr>
+  400158:	f080 4d02 	addiu	a1,130
+  40015c:	e9c0      	jalrc	s1
+  40015e:	b5b9      	lw	a1,400440 <ver_string_addr>
+  400160:	4d0a      	addiu	a1,10
+  400162:	e9c0      	jalrc	s1
+  400164:	b5b6      	lw	a1,40043c <uname_info_addr>
+  400166:	f0c0 4d03 	addiu	a1,195
+  40016a:	e9c0      	jalrc	s1
+  40016c:	1a00 008d 	jal	400234 <center_and_print>
+  400170:	6500      	nop
 
-00400176 <middle_line>:
-  400176:	b0b1      	lw	s0,400438 <out_buffer_addr>
-  400178:	f7a1 6b00 	li	v1,4000
-  40017c:	4345      	addiu	v0,v1,5
-  40017e:	b4b2      	lw	a0,400444 <ver_string_addr>
-  400180:	4c39      	addiu	a0,57
-  400182:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  400186:	6d00      	li	a1,0
-  400188:	6782      	move	a0,v0
-  40018a:	4343      	addiu	v0,v1,3
-  40018c:	b5af      	lw	a1,400448 <disk_buffer_addr>
-  40018e:	6e80      	li	a2,128
-  400190:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  400194:	36d4      	sll	a2,5
-  400196:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  40019a:	4346      	addiu	v0,v1,6
-  40019c:	f070 4344 	addiu	v0,v1,116
-  4001a0:	b4ab      	lw	a0,40044c <sysinfo_buff_addr>
-  4001a2:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  4001a6:	6500      	nop
+00400172 <middle_line>:
+  400172:	b0b1      	lw	s0,400434 <out_buffer_addr>
+  400174:	f7a1 6b00 	li	v1,4000
+  400178:	4345      	addiu	v0,v1,5
+  40017a:	b4b2      	lw	a0,400440 <ver_string_addr>
+  40017c:	4c39      	addiu	a0,57
+  40017e:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  400182:	6d00      	li	a1,0
+  400184:	6782      	move	a0,v0
+  400186:	4343      	addiu	v0,v1,3
+  400188:	b5af      	lw	a1,400444 <disk_buffer_addr>
+  40018a:	6e80      	li	a2,128
+  40018c:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  400190:	36d4      	sll	a2,5
+  400192:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  400196:	4346      	addiu	v0,v1,6
+  400198:	f070 4344 	addiu	v0,v1,116
+  40019c:	b4ab      	lw	a0,400448 <sysinfo_buff_addr>
+  40019e:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  4001a2:	6500      	nop
 
-004001a8 <number_of_cpus>:
-  4001a8:	b5a7      	lw	a1,400444 <ver_string_addr>
-  4001aa:	4d47      	addiu	a1,71
-  4001ac:	e9c0      	jalrc	s1
+004001a4 <number_of_cpus>:
+  4001a4:	b5a7      	lw	a1,400440 <ver_string_addr>
+  4001a6:	4d47      	addiu	a1,71
+  4001a8:	e9c0      	jalrc	s1
 
-004001ae <chip_name>:
-  4001ae:	f160 b406 	lw	a0,400312 <odel_string>
-  4001b2:	1a00 0082 	jal	400208 <find_string>
-  4001b6:	6f20      	li	a3,32
-  4001b8:	b5a3      	lw	a1,400444 <ver_string_addr>
-  4001ba:	4d51      	addiu	a1,81
-  4001bc:	e9c0      	jalrc	s1
+004001aa <chip_name>:
+  4001aa:	f160 b406 	lw	a0,40030e <odel_string>
+  4001ae:	1a00 0081 	jal	400204 <find_string>
+  4001b2:	6f20      	li	a3,32
+  4001b4:	b5a3      	lw	a1,400440 <ver_string_addr>
+  4001b6:	4d51      	addiu	a1,81
+  4001b8:	e9c0      	jalrc	s1
 
-004001be <ram>:
-  4001be:	b4a4      	lw	a0,40044c <sysinfo_buff_addr>
-  4001c0:	9c84      	lw	a0,16(a0)
-  4001c2:	f500 3482 	srl	a0,20
-  4001c6:	1a00 00a1 	jal	400284 <num_to_ascii>
-  4001ca:	6f01      	li	a3,1
-  4001cc:	b59e      	lw	a1,400444 <ver_string_addr>
-  4001ce:	4d16      	addiu	a1,22
-  4001d0:	e9c0      	jalrc	s1
+004001ba <ram>:
+  4001ba:	b4a4      	lw	a0,400448 <sysinfo_buff_addr>
+  4001bc:	9c84      	lw	a0,16(a0)
+  4001be:	f500 3482 	srl	a0,20
+  4001c2:	1a00 00a0 	jal	400280 <num_to_ascii>
+  4001c6:	6f01      	li	a3,1
+  4001c8:	b59e      	lw	a1,400440 <ver_string_addr>
+  4001ca:	4d16      	addiu	a1,22
+  4001cc:	e9c0      	jalrc	s1
 
-004001d2 <bogomips>:
-  4001d2:	f140 b406 	lw	a0,400316 <mips_string>
-  4001d6:	1a00 0082 	jal	400208 <find_string>
-  4001da:	6f0a      	li	a3,10
-  4001dc:	b59a      	lw	a1,400444 <ver_string_addr>
-  4001de:	4d1e      	addiu	a1,30
-  4001e0:	e9c0      	jalrc	s1
-  4001e2:	1a00 008e 	jal	400238 <center_and_print>
-  4001e6:	6500      	nop
+004001ce <bogomips>:
+  4001ce:	f140 b406 	lw	a0,400312 <mips_string>
+  4001d2:	1a00 0081 	jal	400204 <find_string>
+  4001d6:	6f0a      	li	a3,10
+  4001d8:	b59a      	lw	a1,400440 <ver_string_addr>
+  4001da:	4d1e      	addiu	a1,30
+  4001dc:	e9c0      	jalrc	s1
+  4001de:	1a00 008d 	jal	400234 <center_and_print>
+  4001e2:	6500      	nop
 
-004001e8 <hostname>:
-  4001e8:	b094      	lw	s0,400438 <out_buffer_addr>
-  4001ea:	b596      	lw	a1,400440 <uname_info_addr>
-  4001ec:	e940      	jalr	s1
-  4001ee:	4d41      	addiu	a1,65
-  4001f0:	1a00 008e 	jal	400238 <center_and_print>
-  4001f4:	6500      	nop
-  4001f6:	b594      	lw	a1,400444 <ver_string_addr>
-  4001f8:	1a00 009a 	jal	400268 <write_stdout>
-  4001fc:	4d2e      	addiu	a1,46
+004001e4 <hostname>:
+  4001e4:	b094      	lw	s0,400434 <out_buffer_addr>
+  4001e6:	b596      	lw	a1,40043c <uname_info_addr>
+  4001e8:	e940      	jalr	s1
+  4001ea:	4d41      	addiu	a1,65
+  4001ec:	1a00 008d 	jal	400234 <center_and_print>
+  4001f0:	6500      	nop
+  4001f2:	b594      	lw	a1,400440 <ver_string_addr>
+  4001f4:	1a00 0099 	jal	400264 <write_stdout>
+  4001f8:	4d2e      	addiu	a1,46
 
-004001fe <exit>:
-  4001fe:	f7a1 6a01 	li	v0,4001
-  400202:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  400206:	6c05      	li	a0,5
+004001fa <exit>:
+  4001fa:	f7a1 6a01 	li	v0,4001
+  4001fe:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  400202:	6c05      	li	a0,5
 
-00400208 <find_string>:
-  400208:	b690      	lw	a2,400448 <disk_buffer_addr>
+00400204 <find_string>:
+  400204:	b690      	lw	a2,400444 <disk_buffer_addr>
 
-0040020a <find_loop>:
-  40020a:	f000 9e41 	lw	v0,1(a2)
-  40020e:	46c1      	addiu	a2,a2,1
-  400210:	2211      	beqz	v0,400234 <done>
-  400212:	ea8a      	cmp	v0,a0
-  400214:	61fa      	btnez	40020a <find_loop>
-  400216:	6b3a      	li	v1,58
+00400206 <find_loop>:
+  400206:	f000 9e41 	lw	v0,1(a2)
+  40020a:	46c1      	addiu	a2,a2,1
+  40020c:	2211      	beqz	v0,400230 <done>
+  40020e:	ea8a      	cmp	v0,a0
+  400210:	61fa      	btnez	400206 <find_loop>
+  400212:	6b3a      	li	v1,58
 
-00400218 <find_colon>:
-  400218:	a641      	lbu	v0,1(a2)
-  40021a:	46c1      	addiu	a2,a2,1
-  40021c:	220b      	beqz	v0,400234 <done>
-  40021e:	ea6a      	cmp	v0,v1
-  400220:	61fb      	btnez	400218 <find_colon>
-  400222:	46c2      	addiu	a2,a2,2
+00400214 <find_colon>:
+  400214:	a641      	lbu	v0,1(a2)
+  400216:	46c1      	addiu	a2,a2,1
+  400218:	220b      	beqz	v0,400230 <done>
+  40021a:	ea6a      	cmp	v0,v1
+  40021c:	61fb      	btnez	400214 <find_colon>
+  40021e:	46c2      	addiu	a2,a2,2
 
-00400224 <store_loop>:
-  400224:	a640      	lbu	v0,0(a2)
-  400226:	46c1      	addiu	a2,a2,1
-  400228:	2205      	beqz	v0,400234 <done>
-  40022a:	eaea      	cmp	v0,a3
-  40022c:	6003      	bteqz	400234 <done>
-  40022e:	c040      	sb	v0,0(s0)
-  400230:	4001      	addiu	s0,s0,1
-  400232:	17f8      	b	400224 <store_loop>
+00400220 <store_loop>:
+  400220:	a640      	lbu	v0,0(a2)
+  400222:	46c1      	addiu	a2,a2,1
+  400224:	2205      	beqz	v0,400230 <done>
+  400226:	eaea      	cmp	v0,a3
+  400228:	6003      	bteqz	400230 <done>
+  40022a:	c040      	sb	v0,0(s0)
+  40022c:	4001      	addiu	s0,s0,1
+  40022e:	17f8      	b	400220 <store_loop>
 
-00400234 <done>:
-  400234:	e8a0      	jrc	ra
-  400236:	6500      	nop
+00400230 <done>:
+  400230:	e8a0      	jrc	ra
+  400232:	6500      	nop
 
-00400238 <center_and_print>:
-  400238:	64d1      	save	8,ra,s1
-  40023a:	f201 6a00 	li	v0,2560
-  40023e:	c840      	sh	v0,0(s0)
-  400240:	b57e      	lw	a1,400438 <out_buffer_addr>
-  400242:	e0a7      	subu	s1,s0,a1
-  400244:	7150      	cmpi	s1,80
-  400246:	600e      	bteqz	400264 <done_center>
-  400248:	e92b      	neg	s1
-  40024a:	b57f      	lw	a1,400444 <ver_string_addr>
-  40024c:	1a00 009a 	jal	400268 <write_stdout>
-  400250:	4d34      	addiu	a1,52
-  400252:	4950      	addiu	s1,80
-  400254:	3426      	srl	a0,s1,1
-  400256:	1a00 00a1 	jal	400284 <num_to_ascii>
-  40025a:	6f00      	li	a3,0
-  40025c:	b57a      	lw	a1,400444 <ver_string_addr>
-  40025e:	1a00 009a 	jal	400268 <write_stdout>
-  400262:	4d37      	addiu	a1,55
+00400234 <center_and_print>:
+  400234:	64d1      	save	8,ra,s1
+  400236:	f201 6a00 	li	v0,2560
+  40023a:	c840      	sh	v0,0(s0)
+  40023c:	b57e      	lw	a1,400434 <out_buffer_addr>
+  40023e:	e0a7      	subu	s1,s0,a1
+  400240:	7150      	cmpi	s1,80
+  400242:	600e      	bteqz	400260 <done_center>
+  400244:	e92b      	neg	s1
+  400246:	b57f      	lw	a1,400440 <ver_string_addr>
+  400248:	1a00 0099 	jal	400264 <write_stdout>
+  40024c:	4d34      	addiu	a1,52
+  40024e:	4950      	addiu	s1,80
+  400250:	3426      	srl	a0,s1,1
+  400252:	1a00 00a0 	jal	400280 <num_to_ascii>
+  400256:	6f00      	li	a3,0
+  400258:	b57a      	lw	a1,400440 <ver_string_addr>
+  40025a:	1a00 0099 	jal	400264 <write_stdout>
+  40025e:	4d37      	addiu	a1,55
 
-00400264 <done_center>:
-  400264:	b575      	lw	a1,400438 <out_buffer_addr>
-  400266:	6451      	restore	8,ra,s1
+00400260 <done_center>:
+  400260:	b575      	lw	a1,400434 <out_buffer_addr>
+  400262:	6451      	restore	8,ra,s1
 
-00400268 <write_stdout>:
-  400268:	64d1      	save	8,ra,s1
-  40026a:	6785      	move	a0,a1
-  40026c:	6e00      	li	a2,0
+00400264 <write_stdout>:
+  400264:	64d1      	save	8,ra,s1
+  400266:	6785      	move	a0,a1
+  400268:	6e00      	li	a2,0
 
-0040026e <str_loop1>:
-  40026e:	a441      	lbu	v0,1(a0)
-  400270:	4c01      	addiu	a0,1
-  400272:	4e01      	addiu	a2,1
-  400274:	2afc      	bnez	v0,40026e <str_loop1>
-  400276:	f7a1 6a04 	li	v0,4004
-  40027a:	1e00 00aa 	jalx	4002a8 <do_syscall>
-  40027e:	6c01      	li	a0,1
-  400280:	6451      	restore	8,ra,s1
-  400282:	e8a0      	jrc	ra
+0040026a <str_loop1>:
+  40026a:	a441      	lbu	v0,1(a0)
+  40026c:	4c01      	addiu	a0,1
+  40026e:	4e01      	addiu	a2,1
+  400270:	2afc      	bnez	v0,40026a <str_loop1>
+  400272:	f7a1 6a04 	li	v0,4004
+  400276:	1e00 00a9 	jalx	4002a4 <do_syscall>
+  40027a:	6c01      	li	a0,1
+  40027c:	6451      	restore	8,ra,s1
+  40027e:	e8a0      	jrc	ra
 
-00400284 <num_to_ascii>:
-  400284:	b573      	lw	a1,400450 <ascii_buff_addr>
+00400280 <num_to_ascii>:
+  400280:	b573      	lw	a1,40044c <ascii_buff_addr>
 
-00400286 <div_by_10>:
-  400286:	45af      	addiu	a1,a1,-1
-  400288:	6b0a      	li	v1,10
-  40028a:	ec7b      	divu	zero,a0,v1
-  40028c:	eb10      	mfhi	v1
-  40028e:	4b30      	addiu	v1,48
-  400290:	c560      	sb	v1,0(a1)
-  400292:	ec12      	mflo	a0
-  400294:	2cf8      	bnez	a0,400286 <div_by_10>
+00400282 <div_by_10>:
+  400282:	45af      	addiu	a1,a1,-1
+  400284:	6b0a      	li	v1,10
+  400286:	ec7b      	divu	zero,a0,v1
+  400288:	eb10      	mfhi	v1
+  40028a:	4b30      	addiu	v1,48
+  40028c:	c560      	sb	v1,0(a1)
+  40028e:	ec12      	mflo	a0
+  400290:	2cf8      	bnez	a0,400282 <div_by_10>
 
-00400296 <write_out>:
-  400296:	27e8      	beqz	a3,400268 <write_stdout>
+00400292 <write_out>:
+  400292:	27e8      	beqz	a3,400264 <write_stdout>
 
-00400298 <strcat>:
-  400298:	a540      	lbu	v0,0(a1)
-  40029a:	45a1      	addiu	a1,a1,1
-  40029c:	c040      	sb	v0,0(s0)
-  40029e:	4001      	addiu	s0,s0,1
-  4002a0:	2afb      	bnez	v0,400298 <strcat>
+00400294 <strcat>:
+  400294:	a540      	lbu	v0,0(a1)
+  400296:	45a1      	addiu	a1,a1,1
+  400298:	c040      	sb	v0,0(s0)
+  40029a:	4001      	addiu	s0,s0,1
+  40029c:	2afb      	bnez	v0,400294 <strcat>
 
-004002a2 <done_strcat>:
-  4002a2:	e820      	jr	ra
-  4002a4:	400f      	addiu	s0,s0,-1
+0040029e <done_strcat>:
+  40029e:	e820      	jr	ra
+  4002a0:	400f      	addiu	s0,s0,-1
 	...
 
-004002a8 <do_syscall>:
-  4002a8:	0000000c 	syscall
-  4002ac:	03e00008 	jr	ra
-  4002b0:	00000000 	nop
+004002a4 <do_syscall>:
+  4002a4:	0000000c 	syscall
+  4002a8:	03e00008 	jr	ra
+  4002ac:	00000000 	nop
 
-004002b4 <data_begin>:
-  4002b4:	20566572 	addi	s6,v0,25970
-  4002b8:	73696f6e 	0x73696f6e
-  4002bc:	20002c20 	addi	zero,zero,11296
+004002b0 <data_begin>:
+  4002b0:	20566572 	addi	s6,v0,25970
+  4002b4:	73696f6e 	0x73696f6e
+  4002b8:	20002c20 	addi	zero,zero,11296
 
-004002be <compiled_string>:
-  4002be:	2c20436f 	sltiu	zero,at,17263
-  4002c2:	6d70696c 	0x6d70696c
-  4002c6:	65642000 	0x65642000
+004002ba <compiled_string>:
+  4002ba:	2c20436f 	sltiu	zero,at,17263
+  4002be:	6d70696c 	0x6d70696c
+  4002c2:	65642000 	0x65642000
 
-004002ca <ram_comma>:
-  4002ca:	4d205241 	0x4d205241
-  4002ce:	4d2c2000 	0x4d2c2000
+004002c6 <ram_comma>:
+  4002c6:	4d205241 	0x4d205241
+  4002ca:	4d2c2000 	0x4d2c2000
 
-004002d2 <bogo_total>:
-  4002d2:	20426f67 	addi	v0,v0,28519
-  4002d6:	6f6d6970 	0x6f6d6970
-  4002da:	7320546f 	0x7320546f
-  4002de:	74616c00 	jalx	185b000 <_gp+0x1452bb0>
+004002ce <bogo_total>:
+  4002ce:	20426f67 	addi	v0,v0,28519
+  4002d2:	6f6d6970 	0x6f6d6970
+  4002d6:	7320546f 	0x7320546f
+  4002da:	74616c00 	jalx	185b000 <_gp+0x1452bc0>
 
-004002e2 <default_colors>:
-  4002e2:	1b5b306d 	0x1b5b306d
-  4002e6:	0a001b5b 	j	8006d6c <_gp+0x7bfe91c>
+004002de <default_colors>:
+  4002de:	1b5b306d 	0x1b5b306d
+  4002e2:	0a001b5b 	j	8006d6c <_gp+0x7bfe92c>
 
-004002e8 <escape>:
-  4002e8:	1b5b0043 	0x1b5b0043
+004002e4 <escape>:
+  4002e4:	1b5b0043 	0x1b5b0043
 
-004002eb <c>:
-  4002eb:	4300      	addiu	s0,v1,0
+004002e7 <c>:
+  4002e7:	4300      	addiu	s0,v1,0
 
-004002ed <cpuinfo>:
-  4002ed:	2f70      	bnez	a3,4003d0 <logo+0xb6>
-  4002ef:	726f      	cmpi	v0,111
-  4002f1:	632f      	addiu	sp,376
-  4002f3:	6370      	addiu	sp,896
-  4002f5:	7569      	cmpi	a1,105
-  4002f7:	6e66      	li	a2,102
-  4002f9:	6f00      	li	a3,0
+004002e9 <cpuinfo>:
+  4002e9:	2f70      	bnez	a3,4003cc <logo+0xb6>
+  4002eb:	726f      	cmpi	v0,111
+  4002ed:	632f      	addiu	sp,376
+  4002ef:	6370      	addiu	sp,896
+  4002f1:	7569      	cmpi	a1,105
+  4002f3:	6e66      	li	a2,102
+  4002f5:	6f00      	li	a3,0
 
-004002fb <one>:
-  4002fb:	4f6e      	addiu	a3,110
-  4002fd:	6520      	move	at,s0
-  4002ff:	4d49      	addiu	a1,73
-  400301:	5053      	slti	s0,83
-  400303:	2000      	beqz	s0,400306 <processor+0x1>
+004002f7 <one>:
+  4002f7:	4f6e      	addiu	a3,110
+  4002f9:	6520      	move	at,s0
+  4002fb:	4d49      	addiu	a1,73
+  4002fd:	5053      	slti	s0,83
+  4002ff:	2000      	beqz	s0,400302 <processor+0x1>
 
-00400305 <processor>:
-  400305:	2050      	beqz	s0,4003a8 <logo+0x8e>
-  400307:	726f      	cmpi	v0,111
-  400309:	6365      	addiu	sp,808
-  40030b:	7373      	cmpi	v1,115
-  40030d:	6f72      	li	a3,114
-  40030f:	2c20      	bnez	a0,400352 <logo+0x38>
+00400301 <processor>:
+  400301:	2050      	beqz	s0,4003a4 <logo+0x8e>
+  400303:	726f      	cmpi	v0,111
+  400305:	6365      	addiu	sp,808
+  400307:	7373      	cmpi	v1,115
+  400309:	6f72      	li	a3,114
+  40030b:	2c20      	bnez	a0,40034e <logo+0x38>
 	...
 
-00400312 <odel_string>:
-  400312:	6f64656c 	0x6f64656c
+0040030e <odel_string>:
+  40030e:	6f64656c 	0x6f64656c
 
-00400316 <mips_string>:
-  400316:	4d495053 	0x4d495053
+00400312 <mips_string>:
+  400312:	4d495053 	0x4d495053
 
-0040031a <logo>:
-  40031a:	ff1b5b30 	sdc3	$27,23344(t8)
-  40031e:	3b313b33 	xori	s1,t9,0x3b33
-  400322:	379f3b34 	ori	ra,gp,0x3b34
-  400326:	376d23cc 	ori	t5,k1,0x23cc
-  40032a:	f7c00733 	sdc1	$f0,1843(s8)
-  40032e:	8d30c81b 	lw	s0,-14309(t1)
-  400332:	1b5bc407 	0x1b5bc407
-  400336:	cb1f1c0c 	lwc2	$31,7180(t8)
-  40033a:	3b0f3430 	xori	t7,t8,0x3430
-  40033e:	6d0ac0f7 	0x6d0ac0f7
-  400342:	01601a38 	0x1601a38
-  400346:	2c9c1f1b 	sltiu	gp,a0,7963
-  40034a:	5b33316d 	0x5b33316d
-  40034e:	cc0441ac 	pref	0x4,16812(zero)
-  400352:	0d24021c 	jal	4900870 <_gp+0x44f8420>
-  400356:	104f0d20 	beq	v0,t7,4037da <out_buffer+0x1d22>
-  40035a:	10419398 	beq	v0,at,3e51be <SYSCALL_UNAME+0x3e41a4>
-  40035e:	83341c34 	lb	s4,7220(t9)
-  400362:	cc10100c 	pref	0x10,4108(zero)
-  400366:	246f39ec 	addiu	t7,v1,14828
-  40036a:	a71c0833 	sh	gp,2099(t8)
-  40036e:	16148955 	bne	s0,s4,3e28c6 <SYSCALL_UNAME+0x3e18ac>
-  400372:	2c60002b 	sltiu	zero,v1,43
-  400376:	61d671e2 	0x61d671e2
-  40037a:	c8cb08d4 	lwc2	$11,2260(a2)
-  40037e:	09d3102b 	j	74c40ac <_gp+0x70bbc5c>
-  400382:	59f5d100 	0x59f5d100
-  400386:	8011d218 	lb	s1,-11752(zero)
-  40038a:	0d281c14 	jal	4a07050 <_gp+0x45fec00>
-  40038e:	0d2c1c1c 	jal	4b07070 <_gp+0x46fec20>
-  400392:	f04a1a5b 	0xf04a1a5b
-  400396:	000d505f 	0xd505f
-  40039a:	6587652b 	0x6587652b
-  40039e:	55f5cdcd 	bnel	t7,s5,3f3ad6 <SYSCALL_UNAME+0x3f2abc>
-  4003a2:	28cd1489 	slti	t5,a2,5257
-  4003a6:	41001d87 	bc0f	4079c6 <_end+0x1f06>
-  4003aa:	424b7253 	c0	0x4b7253
-  4003ae:	1c780f62 	0x1c780f62
-  4003b2:	876d5558 	lh	t5,21848(k1)
-  4003b6:	f7c100e8 	sdc1	$f1,232(s8)
-  4003ba:	2bf49749 	slti	s4,ra,-26807
-  4003be:	783db01b 	fadd.d	$w0,$w22,$w29
-  4003c2:	5f97b012 	0x5f97b012
-  4003c6:	2babca10 	slti	t3,sp,-13808
-  4003ca:	df161af5 	ldc3	$22,6901(t8)
-  4003ce:	5af5d93f 	0x5af5d93f
-  4003d2:	331b5692 	andi	k1,t8,0x5692
-  4003d6:	5bb00200 	0x5bb00200
-  4003da:	0c1dd3c8 	jal	774f20 <_gp+0x36cad0>
-  4003de:	ac391766 	sw	t9,5990(at)
-  4003e2:	32f66e6d 	andi	s6,s7,0x6e6d
-  4003e6:	ec44605e 	swc3	$4,24670(v0)
-  4003ea:	08af0aa6 	j	2bc2a98 <_gp+0x27ba648>
-  4003ee:	69140130 	0x69140130
-  4003f2:	330bde1f 	andi	t3,t8,0xde1f
-  4003f6:	310fd3bc 	andi	t7,t0,0xd3bc
-  4003fa:	00af4f19 	0xaf4f19
-  4003fe:	56aa4552 	bnel	s5,t2,41194a <_gp+0x94fa>
-  400402:	db285246 	ldc2	$8,21062(t9)
-  400406:	7f0853db 	0x7f0853db
-  40040a:	2300a955 	addi	zero,t8,-22187
-  40040e:	aa351821 	swl	s5,6177(s1)
-  400412:	1268912a 	beq	s3,t0,3e48be <SYSCALL_UNAME+0x3e38a4>
-  400416:	c822b268 	lwc2	$2,-19864(at)
-  40041a:	702d00c6 	0x702d00c6
-  40041e:	50b27991 	beql	a1,s2,41ea66 <_gp+0x16616>
-  400422:	4a7031f8 	c2	0x7031f8
-  400426:	51f328dd 	beql	t7,s3,40a79e <_gp+0x234e>
-  40042a:	17ff1708 	bne	ra,ra,40604e <_end+0x58e>
-  40042e:	02360324 	0x2360324
-  400432:	e5420a00 	swc1	$f2,2560(t2)
+00400316 <logo>:
+  400316:	ff1b5b30 	sdc3	$27,23344(t8)
+  40031a:	3b313b33 	xori	s1,t9,0x3b33
+  40031e:	379f3b34 	ori	ra,gp,0x3b34
+  400322:	376d23cc 	ori	t5,k1,0x23cc
+  400326:	f7c00733 	sdc1	$f0,1843(s8)
+  40032a:	8d30c81b 	lw	s0,-14309(t1)
+  40032e:	1b5bc407 	0x1b5bc407
+  400332:	cb1f1c0c 	lwc2	$31,7180(t8)
+  400336:	3b0f3430 	xori	t7,t8,0x3430
+  40033a:	6d0ac0f7 	0x6d0ac0f7
+  40033e:	01601a38 	0x1601a38
+  400342:	2c9c1f1b 	sltiu	gp,a0,7963
+  400346:	5b33316d 	0x5b33316d
+  40034a:	cc0441ac 	pref	0x4,16812(zero)
+  40034e:	0d24021c 	jal	4900870 <_gp+0x44f8430>
+  400352:	104f0d20 	beq	v0,t7,4037d6 <out_buffer+0x1d2e>
+  400356:	10419398 	beq	v0,at,3e51ba <SYSCALL_UNAME+0x3e41a0>
+  40035a:	83341c34 	lb	s4,7220(t9)
+  40035e:	cc10100c 	pref	0x10,4108(zero)
+  400362:	246f39ec 	addiu	t7,v1,14828
+  400366:	a71c0833 	sh	gp,2099(t8)
+  40036a:	16148955 	bne	s0,s4,3e28c2 <SYSCALL_UNAME+0x3e18a8>
+  40036e:	2c60002b 	sltiu	zero,v1,43
+  400372:	61d671e2 	0x61d671e2
+  400376:	c8cb08d4 	lwc2	$11,2260(a2)
+  40037a:	09d3102b 	j	74c40ac <_gp+0x70bbc6c>
+  40037e:	59f5d100 	0x59f5d100
+  400382:	8011d218 	lb	s1,-11752(zero)
+  400386:	0d281c14 	jal	4a07050 <_gp+0x45fec10>
+  40038a:	0d2c1c1c 	jal	4b07070 <_gp+0x46fec30>
+  40038e:	f04a1a5b 	0xf04a1a5b
+  400392:	000d505f 	0xd505f
+  400396:	6587652b 	0x6587652b
+  40039a:	55f5cdcd 	bnel	t7,s5,3f3ad2 <SYSCALL_UNAME+0x3f2ab8>
+  40039e:	28cd1489 	slti	t5,a2,5257
+  4003a2:	41001d87 	bc0f	4079c2 <_end+0x1f12>
+  4003a6:	424b7253 	c0	0x4b7253
+  4003aa:	1c780f62 	0x1c780f62
+  4003ae:	876d5558 	lh	t5,21848(k1)
+  4003b2:	f7c100e8 	sdc1	$f1,232(s8)
+  4003b6:	2bf49749 	slti	s4,ra,-26807
+  4003ba:	783db01b 	fadd.d	$w0,$w22,$w29
+  4003be:	5f97b012 	0x5f97b012
+  4003c2:	2babca10 	slti	t3,sp,-13808
+  4003c6:	df161af5 	ldc3	$22,6901(t8)
+  4003ca:	5af5d93f 	0x5af5d93f
+  4003ce:	331b5692 	andi	k1,t8,0x5692
+  4003d2:	5bb00200 	0x5bb00200
+  4003d6:	0c1dd3c8 	jal	774f20 <_gp+0x36cae0>
+  4003da:	ac391766 	sw	t9,5990(at)
+  4003de:	32f66e6d 	andi	s6,s7,0x6e6d
+  4003e2:	ec44605e 	swc3	$4,24670(v0)
+  4003e6:	08af0aa6 	j	2bc2a98 <_gp+0x27ba658>
+  4003ea:	69140130 	0x69140130
+  4003ee:	330bde1f 	andi	t3,t8,0xde1f
+  4003f2:	310fd3bc 	andi	t7,t0,0xd3bc
+  4003f6:	00af4f19 	0xaf4f19
+  4003fa:	56aa4552 	bnel	s5,t2,411946 <_gp+0x9506>
+  4003fe:	db285246 	ldc2	$8,21062(t9)
+  400402:	7f0853db 	0x7f0853db
+  400406:	2300a955 	addi	zero,t8,-22187
+  40040a:	aa351821 	swl	s5,6177(s1)
+  40040e:	1268912a 	beq	s3,t0,3e48ba <SYSCALL_UNAME+0x3e38a0>
+  400412:	c822b268 	lwc2	$2,-19864(at)
+  400416:	702d00c6 	0x702d00c6
+  40041a:	50b27991 	beql	a1,s2,41ea62 <_gp+0x16622>
+  40041e:	4a7031f8 	c2	0x7031f8
+  400422:	51f328dd 	beql	t7,s3,40a79a <_gp+0x235a>
+  400426:	17ff1708 	bne	ra,ra,40604a <_end+0x59a>
+  40042a:	02360324 	0x2360324
+  40042e:	e5420a00 	swc1	$f2,2560(t2)
 
-00400435 <logo_end>:
-  400435:	0000      	addiu	s0,sp,0
+00400431 <logo_end>:
+  400431:	0065      	addiu	s0,sp,404
 	...
 
-00400438 <out_buffer_addr>:
-  400438:	00401ab8 	0x401ab8
+00400434 <out_buffer_addr>:
+  400434:	00401aa8 	0x401aa8
 
-0040043c <text_buf_addr>:
-  40043c:	00400678 	0x400678
+00400438 <text_buf_addr>:
+  400438:	00400668 	0x400668
 
-00400440 <uname_info_addr>:
-  400440:	004004f0 	tge	v0,zero,0x13
+0040043c <uname_info_addr>:
+  40043c:	004004e0 	0x4004e0
 
-00400444 <ver_string_addr>:
-  400444:	004002b4 	teq	v0,zero,0xa
+00400440 <ver_string_addr>:
+  400440:	004002b0 	tge	v0,zero,0xa
 
-00400448 <disk_buffer_addr>:
-  400448:	00400ab8 	0x400ab8
+00400444 <disk_buffer_addr>:
+  400444:	00400aa8 	0x400aa8
 
-0040044c <sysinfo_buff_addr>:
-  40044c:	00400470 	tge	v0,zero,0x11
+00400448 <sysinfo_buff_addr>:
+  400448:	00400460 	0x400460
 
-00400450 <ascii_buff_addr>:
-  400450:	0040046a 	0x40046a
-  400454:	65006500 	0x65006500
-  400458:	65006500 	0x65006500
-  40045c:	65006500 	0x65006500
+0040044c <ascii_buff_addr>:
+  40044c:	0040045a 	0x40045a
 
 Disassembly of section .bss:
 
-00400460 <__bss_start>:
+00400450 <__bss_start>:
 	...
 
-00400470 <sysinfo_buff>:
+00400460 <sysinfo_buff>:
 	...
 
-004004f0 <uname_info>:
+004004e0 <uname_info>:
 	...
 
-00400678 <text_buf>:
+00400668 <text_buf>:
 	...
 
-00400ab8 <disk_buffer>:
+00400aa8 <disk_buffer>:
 	...
 
-00401ab8 <out_buffer>:
+00401aa8 <out_buffer>:
 	...
 
 Disassembly of section .gnu.attributes:
 
 00000000 <.gnu.attributes>:
    0:	41000000 	mftc0	zero,c0_index
-   4:	0f676e75 	jal	d9db9d4 <_gp+0xd5d3584>
+   4:	0f676e75 	jal	d9db9d4 <_gp+0xd5d3594>
    8:	00010000 	sll	zero,at,0x0
    c:	00070401 	0x70401

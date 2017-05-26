@@ -1,4 +1,4 @@
-#  linux_logo in mips16 (mips16e) assembler 0.49
+#  linux_logo in mips16 (mips16e) assembler 0.50
 #
 #  By
 #       Vince Weaver <vince _at_ deater.net>
@@ -82,7 +82,8 @@
 # Optimization:
 #  LZSS:
 #  + 96 bytes -- initial working code
-#
+#  + 90 bytes -- invert status flag trick
+
 # Overall:
 #  + 1183 bytes -- initial working code
 #  + 1151 bytes -- move strcat address into s1 and jalr to it
@@ -90,6 +91,7 @@
 #  + 1135 bytes -- split li of 4096 to 128<<5 to fit in delay slot
 #  + 1135 bytes -- more messing with delay slots
 #  + 1119 bytes -- more delay slot and extra instruction removal
+#  + 1104 bytes -- invert the flags byte trick (see thumb2)
 
 #
 # ASSEMBLER ANNOYANCES:
@@ -183,8 +185,8 @@ decompression_loop:
 	lbu	$v0,0($s1)	# load in a byte
 	addiu	$s1,$s1,1	# increment source pointer
 
-	li	$a3,0xff00	# 32-bit, zero extended
-	or	$v0,$a3		# put 0xff in top as a hackish 8-bit counter
+	not	$v0		# set top 24 bits to 1
+				# while inverting sense of flags
 
 test_flags:
 	la	$a3, logo_end
@@ -196,8 +198,8 @@ test_flags:
 
 	srl	$v0,$v0,1	# shift
 
-	bnez	$a3,discrete_char
-				# if set, we jump to discrete char
+	beqz	$a3,discrete_char
+				# if clear, we jump to discrete char
 
 offset_length:
 	lbu	$v1,0($s1)	# load 16-bit length and match_position combo
@@ -241,10 +243,9 @@ store_byte:
 
 	bnez	$a1,output_loop		# repeat until k>j
 
-					# OPTIMIZE: sltiu with > 8 bits
-					#     takes 32bits?
-	sltiu	$v0,0x100		# if 0 we shifted through 8 and must
-	bteqz	test_flags		# re-load flags
+	srl	$v1,$v0,24		# if top 8 bits clear we've shifted
+					# 8 times
+	bnez	$v1,test_flags
 
 	b	decompression_loop
 
@@ -466,7 +467,7 @@ exit:
 	#   $s0 is the output buffer
 	#
 	#   $v0 is trashed
-
+#nop
 find_string:
 	lw	$a2,disk_buffer_addr
 					# look in cpuinfo buffer
@@ -695,7 +696,8 @@ odel_string:		.ascii "odel"
 mips_string:		.ascii "MIPS"
 
 .include	"logo.lzss_new"
-			.byte 0,0	# note, without this
+.byte 0
+#			.byte 0,0	# note, without this
 					# the assembler puts
 					# logo_end in a weird
 					# place which messes up

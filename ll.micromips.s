@@ -1,4 +1,4 @@
-#  linux_logo in micromips (mips16e2) assembler 0.49
+#  linux_logo in micromips (mips16e2) assembler 0.50
 #
 #  By
 #       Vince Weaver <vince _at_ deater.net>
@@ -92,6 +92,7 @@
 #	+  86 bytes -- lots of fighting to get 16-bit versions,
 #			using non-mips16-regs, and playing
 #			with branch delay slots
+#       +  80 bytes -- using the negate-the-flags hack
 
 #
 # Overall:
@@ -213,23 +214,19 @@ decompression_loop:
 	lbu	$v0,0($s1)	# load in a byte
 	addiu	$s1,$s1,1	# increment source pointer
 
-	ori	$v0,0xff00	# put 0xff in top as a hackish 8-bit counter
-
+	not	$v0,$v0		# set the top 24 bits to 1
+				# while inverting the flags
 
 test_flags:
 
-	# Have to force the delay slot here, the assembler couldn't see it
-.set noreorder
+	andi	$a3,$v0,1	# test to see if discrete char
 					# have we reached the end?
 	beq	$s1,$t0,done_logo	# if so, exit
 
-	andi	$a3,$v0,1	# test to see if discrete char
-.set reorder
-
 	srl	$v0,$v0,1	# shift
 
-	bnez	$a3,discrete_char
-				# if set, we jump to discrete char
+	beqz16	$a3,discrete_char
+				# if clear, we jump to discrete char
 
 offset_length:
 	lhu	$a0,0($s1)	# unaligned 16-bit load
@@ -262,15 +259,17 @@ store_byte:
 	sb	$v1,0($a3)		# store also to text_buf[r]
 	addiu 	$a2,$a2,1		# r++
 
-	andi 	$a2,(N-1)	        # wrap r if we are too big
+
 
 	addiu	$a1,$a1,-1		# decrement count
+	andi 	$a2,(N-1)	        # wrap r if we are too big
 
+	bnez	$a1,output_loop		# repeat until k>j
 
-	bnezc	$a1,output_loop		# repeat until k>j
-	andi	$v1,$v0,0xff00		# if 0 we shifted through 8 and must
+	srl	$v1,$v0,24		# if top 8 bits clear, done shifting
 
-	bnez	$v1,test_flags		# re-load flags
+	bnez16	$v1,test_flags		# re-load flags
+
 .set noreorder
 	beqz	$v1,decompression_loop
 					# force the next insn in delay
