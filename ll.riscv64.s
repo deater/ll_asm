@@ -1,11 +1,11 @@
 #
-#  linux_logo in RISCV+RVM 64-bit assembler 0.49
+#  linux_logo in RISCV-rv64im assembler 0.50
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
 #
-#  assemble with     "as -o ll.riscv.o ll.riscv.s"
-#  link with         "ld -o ll.riscv ll.riscv.o"
+#  assemble with     "as -march=rv64im -o ll.riscv64.o ll.riscv64.s"
+#  link with         "ld -o ll.riscv64 ll.riscv64.o"
 
 .include "logo.include"
 

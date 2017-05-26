@@ -1,43 +1,18 @@
 #
-#  linux_logo in RISCV-rv64imc "compressed" 64-bit assembler 0.50
+#  linux_logo in RISCV32-IM assembler 0.50
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
 #
-#  assemble with     "as -march=rv64imc -o ll.riscv64-imc.o ll.riscv64-imc.s"
-#  link with         "ld -o ll.riscv64-imc ll.riscv64-imc.o"
+#  assemble with     "as -march=rv32im -o ll.riscv32.o ll.riscv32.s"
+#  link with         "ld -o ll.riscv32 ll.riscv32.o"
 
 .include "logo.include"
 
-# This implementation is a lot like mips16
-
-# New 16-bit instructions:
-# C.LWSP/C.LDSP - load from stack
-# C.SWSP/C.SDSP - store to stack
-# C.LW/C.LD
-# C.SW/C.SD
-# C.J/C.JAL
-# C.BEQZ/C.BNEZ
-# C.LI/C.LUI
-# C.ADDI/C.ADDIW/C.ADDI16SP
-# C.SLLI/C.SRLI
-# C.ANDI
-# C.MV
-# C.ADD
-# C.AND/C.OR/C.XOR/C.SUB/C.ADDW/C.SUBW
-
-# ASSEMBLER HASSLES:
-#  + Same addressing problems in regular riscv
-#  + Couldn't get C.JAL to work?
-#	Turns out there is no C.JAL in 64-bit mode (addiw instead?)
-
-
 # Registers:
-#  Works for s0,s1,a0,a1,a2,a3,a4,a5
-#
-# addi can be on any register/6-bit constant, not just the magic ones
+# UGH! They seem to have changed this mapping at least once
+#	and some documents online have the old version
 
-#
 #	32 general purpose registers:
 #		x0/zero:	always zero
 #		x1/ra:		return address
@@ -58,23 +33,58 @@
 #	arguments in a0-a7, number in a7.  Result in a0?
 #	was "scall" but now is "ecall"?
 
+# Multiply/Div : optional
+# Little Endian, optionally Big endian
+# Misaligned memory OK
+
+# Instruction set (not-surprisingly) is very MIPS like, just w/o delay slot
+# fused compare/branch, no condition flags
+
+# 64-bit Instructions have a *W variant that operates on low 32-bits
+# The top 32 bits are sign extension of bottom 32-bits
+
+# Instructions:
+#	ADDI -- add immediate (12-bit)
+#	ANDI/ORI/XORI	-- immediate logical (12 bit, sign extended)
+#	SLTI/SLTIU -- set less than -- set to 1 if register less than immediate
+#	SLLI/SRLI/SRAI - immediate shifts
+#	LUI - load upper immediate, load top 20 bits in reg, zero out bottom
+#	AUIPC - add upper immediate to PC
+#	ADD -- add
+#	AND/OR/XOR -- logical
+#	SLT/SLTU - set if less than
+#	SLL/SRL/SRA -- shifts
+#	ADD	-- add
+#	SUB -- subtract
+#	LD/LW/LH/LB	-- load sign extend 64/32/16/8
+#	LWU/LHU/LBU	-- load zero extend 32/16/8
+#	NOP -- just an addi 0,0,0
+#	JAL -- jump and link, can be to any reg but typically x1 and x5 target
+#	JALR -- jump and link register
+#	BEQ/BNE -- branch if equal/not equal
+#	BLT/BLTU -- branch less than
+#	BGE/BGEU -- branch greater than
+#	Should use JALR rd=0 for unconditional branch rather than BEQ
+#	Multiply/Divide are optional
+#	MUL,MULH,MULU,MULHU,MULHSU
+#	DIV/DIVU/REM/REMU
+
 # Optimization:
 #  + LZSS
-#    - 94 bytes = original port of riscv64 code
-#    - 88 bytes = change registers used to fit in the magical 8
-#    - 84 bytes = use the lw for lbu trick
-
+#    - 136 bytes = original port of MIPS code
+#    - 120 bytes = move text_buf to dedicated register
+#    - 116 bytes = move back to 0xff in high bits for telling when shift done
+#
 #  + Overall
-#    - 1059 bytes = original port of riscv64 code
-#    - 1091 bytes = after the lzss optimization
-#    - 1061 bytes = sort out the fallout from the lzss fix
-#    - 1059 bytes = move "strcat" to a reg and jalr to it
-#    - 1051 bytes = more strcat, also some c.ld fits
-#    - 1041 bytes = find_string, change regs (especially for beqz)
-#    - 1033 bytes = more register changing
-#    - 1023 bytes = one last pass looking for too-long instructions.
-#    - 1019 bytes = on little-endian machines we can use short "lw"
-#			for "lbu" as long as the top bits are ignored
+#    - 1277 bytes = original working version
+#    - 1261 bytes = reserve register to hold out_buffer
+#    - 1249 bytes = use register to hold uname pointer
+#    - 1233 bytes = remove much of "la" use before lzss
+#    - 1225 bytes = use bss_start pointer math for uname
+#    - 1217 bytes = avoid "la" in first line
+#    - 1185 bytes = avoid "la" in middle/last line
+#    - 1165 bytes = optimize center_and_print
+#    - 1161 bytes = remove rest of "la"
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -117,94 +127,87 @@ _start:
 # by Stephan Walter 2002, based on LZSS.C by Haruhiko Okumura 1989
 # optimized some more by Vince Weaver
 
+	la	s0,data_begin	# s0 = .data segment begin
+	#la	s1,bss_begin	# s1 = .bss segment begin
+	addi	s1,s0,0x17c	# (bss_begin-data_begin)
 
-	# hacks as the riscv assembler won't let you do pointer math
+	li	s2,(N-F)	# s2 = R
 
-	la	s5,data_begin	# s5 = .data segment begin
-	#la	s4,bss_begin	# s4 = .bss segment begin
-	addi	s4,s5,0x17c	# (bss_begin-data_begin)
+	# hack as the riscv assembler won't let you do pointer math
 
-	la	s9,out_buffer	# too big for 12-bit offset
+	#la	s3,logo
+	addi	s3,s0,0x5a		# (logo-data_begin)
 
-	move	s0,s9		# out buffer
-	#la	s1,logo
-	addi	s1,s5,0x5a	# (logo-data_begin)
-	li	a2,(N-F)	# a2 = R
-	#la	t0,logo_end
-	addi	t0,s1,0x11b	# (logo-data_end)
+	#la	s4,logo_end
+	addi	s4,s3,0x11b		# (logo-data_end)
 
-	#la	s6,text_buf
-	addi	s6,s4,550	# (text_buf-bss_start)
+	la	s9,out_buffer		# too big for 12-bit offset
+	move	s5,s9
 
 	# lots of extraneous registers to waste
 	# feels a bit cheating to optimize the size of lzss at
 	#	the expense of overall program size
 
+	#la	s6,text_buf
+	addi	s6,s1,550	# (text_buf-bss_start)
 	li	s10,0xff00
 	li	s11,0xff
 
-
 decompression_loop:
-	lbu	a4,0(s1)	# load a logo byte
-	addi	s1,s1,1		# increment pointer
-	or	a4,a4,s10	# load upper 8 bits as hacky counter
+	lbu	t1,0(s3)	# load a logo byte
+	or	t1,s10,t1	# load upper 8 bits as hacky counter
+	addi	s3,s3,1		# increment pointer
 
 test_flags:
-	beq	s1,t0,done_logo	# have we reached the end?
+	beq	s4,s3,done_logo	# have we reached the end?
 				# if so, exit
 
-	andi	a3,a4,0x1	# check low bit
+	andi	t2,t1,0x1	# check low bit
 
-	srli	a4,a4,1		# done with bit, shift to right
-	bnez	a3,discrete_char
+	srli	t1,t1,1		# done with bit, shift to right
+	bnez	t2,discrete_char
 				# if low bit set
 				# we have a discrete char
 
 offset_length:
-	lhu	a0,0(s1)	# load an unagligned halfword
-	addi	s1,s1,2		# increment pointer
+	lhu	t4,0(s3)	# load an unagligned halfword
+	addi	s3,s3,2		# increment pointer
 
-	srli	a1,a0,P_BITS
-	addi	a1,a1,THRESHOLD+1
+	srli	t3,t4,P_BITS
+	addi	t3,t3,THRESHOLD+1
 
-				# a1 = (a0 >> P_BITS) + THRESHOLD + 1
+				# t3 = (t4 >> P_BITS) + THRESHOLD + 1
 				#                       (=match_length)
 
 output_loop:
-	andi	a0,a0,((POSITION_MASK<<8)+0xff)
+	andi	t4,t4,((POSITION_MASK<<8)+0xff)
 	                                # mask it
 
-	add	a3,s6,a0
-	lw 	a5,0(a3)		# load byte from text_buf[]
-					# since we ignore top bits
-					# we can cheat and use shorter "lw"
-
-	addi	a0,a0,1			# increment pointer in text_buf
+	add	t0,s6,t4
+	lbu 	t0,0(t0)		# load byte from text_buf[]
+	addi	t4,t4,1			# increment pointer in text_buf
 
 store_byte:
-	sb	a5,0(s0)		# store a byte to output
-	addi	s0,s0,1			# increment pointer
+	sb	t0,0(s5)		# store a byte to output
+	addi	s5,s5,1			# increment pointer
 
-	add	a3,s6,a2
-	sb	a5,0(a3)		# store a byte to text_buf[r]
-	addi	a2,a2,1			# increment pointer (r)
+	add	t5,s6,s2
+	sb	t0,0(t5)		# store a byte to text_buf[r]
+	addi	s2,s2,1			# increment pointer (r)
 
-	addi	a1,a1,-1		# decement count
-	andi	a2,a2,(N-1)		# wrap R if too big
-	bnez 	a1,output_loop		# repeat until k>j
+	addi	t3,t3,-1		# decement count
+	andi	s2,s2,(N-1)		# wrap R if too big
+	bnez 	t3,output_loop		# repeat until k>j
 
-	bne	a4,s11,test_flags	# have we shifted by 8 bits?
+	bne	t1,s11,test_flags	# have we shifted by 8 bits?
 					# if so t1 is now 0xff
 					# and we need new flags
 	j	decompression_loop
 
 discrete_char:
-	lw	a5,0(s1)	# load a byte
-				# since we ignore top bits
-				# we can cheat and use shorter "lw"
-
-	addi	s1,s1,1		# increment pointer
-	li	a1,1		# we set t3 to one so byte
+	lbu	t0,0(s3)	# load a byte
+	addi	s3,s3,1		# increment pointer
+	li	t3,1		# we set t3 to one so byte
 				# will be output once
 
 	j	store_byte	# and store it
@@ -213,7 +216,6 @@ discrete_char:
 
 done_logo:
 	move	a1,s9
-	move	s0,s5
 	jal	write_stdout		# print the logo
 
 	#==========================
@@ -221,34 +223,33 @@ done_logo:
 	#==========================
 first_line:
 
-	la	s6,strcat
+	addi	a0,s1,32			# (uname_info-bss_start)
 
-	addi	a0,s4,32			# (uname_info-bss_start)
 	li	a7,SYSCALL_UNAME
 	ecall			 		# do syscall
 
 	move	s5,s9				# point s5 to out_buffer
 
-	addi	s3,s4,32+U_SYSNAME		# os-name from uname "Linux"
+	addi	s3,s1,32+U_SYSNAME		# os-name from uname "Linux"
 
-	jalr	s6				# call strcat
+	jal	strcat				# call strcat
 
 #	la	s3,ver_string			# source is " Version "
 	move	s3,s0				# (ver_string-data_begin)
 
-	jalr 	s6			        # call strcat
+	jal 	strcat			        # call strcat
 
-	addi	s3,s4,32+U_RELEASE		# version from uname,
+	addi	s3,s1,32+U_RELEASE		# version from uname,
 						#   ie "2.6.20"
-	jalr	s6				# call strcat
+	jal	strcat				# call strcat
 
 #	la	s3,compiled_string		# source is ", Compiled "
 	addi	s3,s0,10			# (compiled_string-data_begin)
 
-	jalr	s6				#  call strcat
+	jal	strcat				#  call strcat
 
-	addi	s3,s4,32+U_VERSION		# compiled date
-	jalr	s6				# call strcat
+	addi	s3,s1,32+U_VERSION		# compiled date
+	jal	strcat				# call strcat
 
 	jal	center_and_print		# center and print
 
@@ -276,7 +277,7 @@ middle_line:
 					# syscall.  return in a0?
 	move	a5,a0			# save our fd
 	#la	a1,disk_buffer
-	addi	a1,s4,0x628		# (disk_buffer-bss_begin)
+	addi	a1,s1,0x628		# (disk_buffer-bss_begin)
 	li	a2,4096	 	# cheat and assume maximum of 4kB
 	li	a7,SYSCALL_READ
 	ecall
@@ -295,7 +296,7 @@ number_of_cpus:
 					# not necessarily a good assumption
 	addi	s3,s0,0x55		# (one-data_begin)
 
-	jalr	s6			# strcat
+	jal	strcat
 
 	#=========
 	# MHz
@@ -315,29 +316,29 @@ chip_name:
 
 	#la	s3,processor		# print " Processor, "
 	addi	s3,s0,0x16		# (processor-data_begin)
-	jalr	s6			# strcat
+	jal	strcat
 
 	#========
 	# RAM
 	#========
 ram:
 	#la	a0,sysinfo_buff
-	addi	a0,s4,0x1a8		# (sysinfo_buff-bss_start)
+	addi	a0,s1,0x1a8		# (sysinfo_buff-bss_start)
 
-	move	a4,a0
+	move	t0,a0
 	li	a7,SYSCALL_SYSINFO
 	ecall				# sysinfo() syscall
 
-	c.ld	a4,S_TOTALRAM(a4)	# size in bytes of RAM
+	ld	t0,S_TOTALRAM(t0)	# size in bytes of RAM
 
-	srli	a4,a4,20		# divide by 1024*1024 to get M
+	srli	t4,t0,20		# divide by 1024*1024 to get M
 
 	li	a0,1
 	jal 	num_to_ascii		# print to string
 
 	#la	s3,ram_comma		# print 'M RAM, '
 	add	s3,s0,0x23		# (ram_comma-data_begin)
-	jalr	s6			# call strcat
+	jal	strcat			# call strcat
 
 
 	#==========
@@ -350,7 +351,7 @@ bogomips:
 
 	#la	s3,bogo_total
 	addi	s3,s0,0x2b		# (bogo_total-data_start)
-	jalr	s6			# print bogomips total
+	jal	strcat			# print bogomips total
 
 	jal	center_and_print	# center and print
 
@@ -360,8 +361,8 @@ bogomips:
 last_line:
 	move	s5,s9			# point s5 to out_buffer
 
-	addi	s3,s4,32+U_NODENAME	# host name from uname()
-	jalr	s6			# call strcat
+	addi	s3,s1,32+U_NODENAME	# host name from uname()
+	jal	strcat			# call strcat
 
 	jal	center_and_print	# center and print
 
@@ -384,33 +385,33 @@ exit:
 	#=================================
 	# t0 = string to find
 	# t3 = char to end at
-	# trashed t1,a3,a4
+	# t5 trashed,t6,t1
 find_string:
-	#la	a4,disk_buffer	# look in cpuinfo buffer
-	addi	a4,s4,0x628	# (disk_buffer-bss_start)
+	#la	t6,disk_buffer	# look in cpuinfo buffer
+	addi	t6,s1,0x628	# (disk_buffer-bss_start)
 find_loop:
-	lw	a3,0(a4)	# load a byte
-	addi	a4,a4,1		# increment pointer
+	lwu	t1,0(t6)	# load a byte
+	addi	t6,t6,1		# increment pointer
 
-	beqz	a3,done		# are we at EOF?
+	beqz	t1,done		# are we at EOF?
 				# if so, done
 
-	bne	t0,a3,find_loop	# if no match, then loop
+	bne	t0,t1,find_loop	# if no match, then loop
 
 find_colon:
-	lbu	a3,0(a4)	# load a byte
-	addi	a4,a4,1		# increment pointer
+	lbu	t5,0(t6)	# load a byte
+	addi	t6,t6,1		# increment pointer
 	li	t1,':'
-	bne	a3,t1,find_colon	# repeat till we find colon
+	bne	t5,t1,find_colon	# repeat till we find colon
 
 store_loop:
-	lbu	a3,1(a4)	# load a byte (+1 to skip space)
-	addi	a4,a4,1		# increment pointer
+	lbu	t5,1(t6)	# load a byte (+1 to skip space)
+	addi	t6,t6,1		# increment pointer
 
-	beqz	a3,done		# stop if off send
-	beq	a3,t3,done	# stop if end char
+	beqz	t5,done		# stop if off send
+	beq	t5,t3,done	# stop if end char
 
-	sb	a3,0(s5)	# store a byte
+	sb	t5,0(s5)	# store a byte
 	addi	s5,s5,1		# increment pointer
 
 	j	store_loop
@@ -424,7 +425,6 @@ done:
 	#==============================
 	# string to center in output buffer (s9)
 	# s5 coming in is end of string to print
-	# trashed: t2,a4,a5
 
 center_and_print:
 	move	a6,ra			# save return address
@@ -432,19 +432,18 @@ center_and_print:
 	li	t2,0x0a
 	sh	t2,0(s5)		# put linefeed at end
 
-	sub	a5,s5,s9		# subtract end pointer to get length
-	li	a4,80
+	sub	t1,s5,s9		# subtract end pointer to get length
+	li	t0,80
 
-	bge	a5,a4,done_center	# don't center if >80
-	sub	a4,a4,a5		# t0=80-length
+	bge	t1,t0,done_center	# don't center if >80
+
+	sub	t0,t0,t1		# t0=80-length
+	srli	t4,t0,1			# divide by two
 
 	#la	a1,escape
 	addi	a1,s0,0x42		# (escape-data_start)
 
 	jal	write_stdout		# print an escape character
-
-
-	srli	a4,a4,1			# divide by two
 
 	li	a0,0			# print to stdout
 	jal	num_to_ascii		# print num spaces
@@ -465,15 +464,15 @@ done_center:
 	#================================
 	# a1 has string
 	# a2 size
-	# t1,t2,a0,a3 trashed
+	# t1,t2 trashed
 write_stdout:
 	li	a2,0
 	move	t1,a1				# move a1 into t1
 str_loop1:
 	addiw	a2,a2,1
-	lbu	a3,0(t1)
+	lbu	t2,0(t1)
 	addi	t1,t1,1
-	bnez	a3,str_loop1			# loop until hit NUL
+	bnez	t2,str_loop1			# loop until hit NUL
 
 write_stdout_we_know_size:
 	li	a0,STDOUT			# print to stdout
@@ -485,24 +484,23 @@ write_stdout_we_know_size:
 	##############################
 	# num_to_ascii
 	#############################
-	# a4 = value to print
+	# t4 = value to print
 	# a0 = 0=stdout, 1=strcat
-	# trashed: t4
 
 num_to_ascii:
 	#la	a1,ascii_buffer+10	# point to end of ascii buffer
-	addi	a1,s4,0+10		# (bss_begin-ascii_buffer)+10
+	addi	a1,s1,0+10		# (bss_begin-ascii_buffer)+10
 
 div_by_10:
 	addi	a1,a1,-1		# point back one
 	li	t0,10			# divide by 10
 
-	remu	t4,a4,t0		# remainder in t3
-	divu	a4,a4,t0		# quotient in t4
+	remu	t3,t4,t0		# remainder in t3
+	divu	t4,t4,t0		# quotient in t4
 
-	addi	t4,t4,0x30		# convert to ascii
-	sb	t4,0(a1)		# store the byte
-	bnez	a4,div_by_10		# if Q not zero, loop
+	addi	t3,t3,0x30		# convert to ascii
+	sb	t3,0(a1)		# store the byte
+	bnez	t4,div_by_10		# if Q not zero, loop
 
 write_out:
 
@@ -517,13 +515,13 @@ write_out:
 	#================================
 	# value to cat in s3
 	# output buffer in s5
-	# a3 trashed
+	# t0 trashed
 strcat:
-	lbu	a3,0(s3)		# load a byte
+	lbu	t0,0(s3)		# load a byte
 	addi	s3,s3,1			# increment pointer
-	sb	a3,0(s5)		# store a byte
+	sb	t0,0(s5)		# store a byte
 	addi	s5,s5,1			# increment pointer
-	bnez	a3,strcat		# loop if not zero
+	bnez	t0,strcat		# loop if not zero
 
 	add	s5,s5,-1		# point to one less than null
 	ret				# return
