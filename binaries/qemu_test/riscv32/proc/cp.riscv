@@ -1,0 +1,4 @@
+hart		: 0
+isa		: RV64G
+cpu model	: Unknown
+BogoMIPS	: 199.47
