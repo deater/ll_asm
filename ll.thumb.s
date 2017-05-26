@@ -1,5 +1,5 @@
 @
-@  linux_logo in ARM THUMB assembler 0.46
+@  linux_logo in ARM THUMB assembler 0.50
 @
 @  By:
 @       Vince Weaver <vince _at_ deater.net>
@@ -13,6 +13,11 @@
 .include "logo.include"
 
 @ Optimization progress:
+@ + LZSS
+@	74 - where it's been for a while
+@	70 - clever mvns to load high bits trick as seen on Thumb2
+
+@ + Overall
 @	1035 - original
 @	1031 - not load r3 each time
 @	1027 - use "blx" instruction for strcat_r4  (arm5 specific opt)
@@ -38,6 +43,7 @@
 @	932  - rearrange the variable orders
 @	928  - use fancy ldm instruction to get logo address for free
 @	924  - combine two increments
+@	920  - LZSS improvement
 
 @
 @ Architectural info
@@ -143,19 +149,18 @@ _start:
 //	mov	r3,r4
 
 decompression_loop:
-	ldrb	r3,[r4]			@ load a byte
-	add	r4,#1			@ increment pointer
+	ldrb	r5,[r4]		@ load a byte
+	add	r4,#1		@ increment pointer
 
-	mov	r5,#0xff		@ load top as a hackish 8-bit counter
-	lsl	r5,#8			@ shift 0xff left by 8
-	orr 	r5,r3			@ or in the byte we loaded
+	mvn	r5,r5		@ set top 24-bits to one for sentinel
+				@ this inverts our status byte
 
 test_flags:
 	cmp	r4,r8		@ have we reached the end?
 	bge	done_logo  	@ if so, exit
 
 	lsr 	r5,#1		@ shift bottom bit into carry flag
-	bcs	discrete_char	@ if set, we jump to discrete char
+	bcc	discrete_char	@ if set, we jump to discrete char
 
 offset_length:
 	ldrb	r3,[r4]		@ load a byte
@@ -202,8 +207,9 @@ store_byte:
 	sub	r6,#1			@ decement count
 	bne 	output_loop		@ repeat until k>j
 
-	cmp	r5,#0xff		@ are the top bits 0?
-	bgt	test_flags		@ if not, re-load flags
+	lsr	r3,r5,#25		@ check if 24th bit is zero
+					@ if so we've shifted 8 bits
+	bcs	test_flags		@ if not, re-load flags
 
 	b	decompression_loop
 
