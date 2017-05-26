@@ -73,6 +73,12 @@
 @                1111 -- 00000000 00000000 00000001 bcdefgh0
 
 @ Optimizing:
+@ LZSS
+@  -- 70 bytes, where it stood for a while
+@  -- 68 bytes, due to mvns interting trick, found on a random internet
+@               thread (people, send your fixes too me!)
+@
+@ Overall
 @  -- 1145 bytes, direct port of THUMB code
 @  --  957 bytes, make sure we use 16-bit encoding whenever possible
 @                 (this mostly meant adding .n or s to the opcodes)
@@ -148,9 +154,11 @@ _start:
 
 
 decompression_loop:
-	ldrb	r4,[r3],#+1		@ load a byte, increment pointer
-					@ load top as a hackish 8-bit counter
-	orr 	r5,r4,#0x8000		@ or in the byte we loaded
+	ldrb	r5,[r3]		@ load a byte
+	adds	r3,r3,1		@ increment pointer
+
+	mvns	r5,r5		@ set top 24 bits to one
+				@ (while inverting sense of the low byte)
 
 test_flags:
 	cmp	r3,r8		@ have we reached the end?
@@ -158,15 +166,15 @@ test_flags:
 
 	lsrs 	r5,#1		@ shift bottom bit into carry flag
 
-	ittt cs				@ If CS Then Next instruction
-					@       plus CS for next 3
+	ittt cc			@ If shifted a zero then run next
+				@ 4 instructions
 discrete_char:
-	ldrbcs	r4,[r3]			@ load a byte
-	addcs	r3,#1			@ increment pointer
-	movcs	r6,#1			@ we set r6 to one so byte
-					@ will be output once
 
-	bcs.n	store_byte		@ and store it
+	ldrbcc	r4,[r3]		@ load a byte
+	addcc	r3,#1		@ increment pointer
+	movcc	r6,#1		@ we set r6 to one byte to write out
+
+	bcc.n	store_byte	@ and store it
 
 offset_length:
 
@@ -174,7 +182,9 @@ offset_length:
 	ldrb	r7,[r3,#1]	@ load a byte, increment pointer
 	adds	r3,r3,#2
 				@ we can't load halfword
-				@ as no unaligned loads on arm
+				@ as no unaligned loads on original arm
+
+				@ FIXME: recent arms do have unaligned?
 
 	orrs	r7,r4,r7, LSL #8	@ merge back into 16 bits
 				@ this has match_length and match_position
@@ -220,13 +230,10 @@ store_byte:
 	subs	r6,#1			@ decement count
 	bne.n 	output_loop		@ repeat until k>j
 
-	cmp	r5,#0xff		@ are the top bits 0?
-	bgt.n	test_flags		@ if not, re-load flags
+	lsrs    r4, r5, #25		@ check to see if shifted 8 bits
+					@ by seeing if 24th bit zero
 
-
-@	tst	r5,#0xff00		@ are the top bits 0?
-@	bne.n	test_flags		@ if not, re-load flags
-
+	bcs.n	test_flags		@ if not, re-load flags
 	b.n	decompression_loop
 
 # end of LZSS code
