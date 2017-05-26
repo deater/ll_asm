@@ -10,7 +10,7 @@ all:	ll_document.pdf \
 ###
 
 fancy_lzss.png:		fancy_lzss.eps
-			convert -density 600 -antialias -sample 400 fancy_lzss.eps fancy_lzss.png
+			convert -density 600 -antialias -sample 640 fancy_lzss.eps fancy_lzss.png
 
 fancy_lzss.eps:		fancy_lzss.jgr
 			jgraph < fancy_lzss.jgr > fancy_lzss.eps
@@ -21,7 +21,7 @@ fancy_lzss.jgr:		fancy_graph ../data/data.lzss
 ###
 
 fancy_strcat.png:		fancy_strcat.eps
-			convert -density 600 -antialias -sample 400 fancy_strcat.eps fancy_strcat.png
+			convert -density 600 -antialias -sample 640 fancy_strcat.eps fancy_strcat.png
 
 fancy_strcat.eps:		fancy_strcat.jgr
 			jgraph < fancy_strcat.jgr > fancy_strcat.eps
@@ -32,7 +32,7 @@ fancy_strcat.jgr:		fancy_graph ../data/data.strcat
 ###
 
 fancy_total_size.png:		fancy_total_size.eps
-			convert -density 600 -antialias -sample 400 fancy_total_size.eps fancy_total_size.png
+			convert -density 600 -antialias -sample 640 fancy_total_size.eps fancy_total_size.png
 
 fancy_total_size.eps:		fancy_total_size.jgr
 			jgraph < fancy_total_size.jgr > fancy_total_size.eps
