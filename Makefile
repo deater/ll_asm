@@ -84,7 +84,8 @@ endif
 ifneq (,$(findstring riscv32,$(ARCH)))
 	SOURCE_ARCH := riscv32
 	C_EXTRA = -march=rv32im
-	THUMB := ll.riscv-rv32c ll.riscv-rv32c.stripped ll.riscv-rv32c.fakeproc ll.riscv-rv32c.fakeproc.stripped
+	L_EXTRA = -m elf32lriscv
+	THUMB := ll.riscv32-imc ll.riscv32-imc.stripped ll.riscv32-imc.fakeproc ll.riscv32-imc.fakeproc.stripped
 endif
 
 
@@ -361,7 +362,7 @@ ll.riscv32-imc.stripped:  ll.riscv32-imc sstrip/sstrip
 	sstrip/sstrip ll.riscv32-imc.stripped
 
 ll.riscv32-imc:	ll.riscv32-imc.o
-	$(CROSS)$(LD) -N -o ll.riscv32-imc ll.riscv32-imc.o
+	$(CROSS)$(LD) $(L_EXTRA) -N -o ll.riscv32-imc ll.riscv32-imc.o
 
 ll.riscv32-imc.o:	ll.riscv32-imc.s
 	$(CROSS)$(AS) -march=rv32imc -o ll.riscv32-imc.o ll.riscv32-imc.s
@@ -371,7 +372,7 @@ ll.riscv32-imc.fakeproc.stripped:  ll.riscv32-imc.fakeproc sstrip/sstrip
 	sstrip/sstrip ll.riscv32-imc.fakeproc.stripped
 
 ll.riscv32-imc.fakeproc:	ll.riscv32-imc.fakeproc.o
-	$(CROSS)$(LD) -N -o ll.riscv32-imc.fakeproc ll.riscv32-imc.fakeproc.o
+	$(CROSS)$(LD) $(L_EXTRA) -N -o ll.riscv32-imc.fakeproc ll.riscv32-imc.fakeproc.o
 
 ll.riscv32-imc.fakeproc.o:	ll.riscv32-imc.s
 	$(CROSS)$(AS) -defsym FAKE_PROC=1 -march=rv32imc -o ll.riscv32-imc.fakeproc.o ll.riscv32-imc.s
