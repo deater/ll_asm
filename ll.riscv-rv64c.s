@@ -1,5 +1,5 @@
 #
-#  linux_logo in RISCV+RVM+RVC "compressed" 64-bit assembler 0.49
+#  linux_logo in RISCV+RVM+RVC "compressed" 64-bit assembler 0.50
 #
 #  By:
 #       Vince Weaver <vince _at_ deater.net>
@@ -29,7 +29,7 @@
 # ASSEMBLER HASSLES:
 #  + Same addressing problems in regular riscv
 #  + Couldn't get C.JAL to work?
-
+#	Turns out there is no C.JAL in 64-bit mode (addiw instead?)
 
 
 # Registers:
@@ -62,6 +62,7 @@
 #  + LZSS
 #    - 94 bytes = original port of riscv64 code
 #    - 88 bytes = change registers used to fit in the magical 8
+#    - 84 bytes = use the lw for lbu trick
 
 #  + Overall
 #    - 1059 bytes = original port of riscv64 code
@@ -72,7 +73,8 @@
 #    - 1041 bytes = find_string, change regs (especially for beqz)
 #    - 1033 bytes = more register changing
 #    - 1023 bytes = one last pass looking for too-long instructions.
-#			wish I knew why c.jal won't work
+#    - 1019 bytes = on little-endian machines we can use short "lw"
+#			for "lbu" as long as the top bits are ignored
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
@@ -173,7 +175,10 @@ output_loop:
 	                                # mask it
 
 	add	a3,s6,a0
-	lbu 	a5,0(a3)		# load byte from text_buf[]
+	lw 	a5,0(a3)		# load byte from text_buf[]
+					# since we ignore top bits
+					# we can cheat and use shorter "lw"
+
 	addi	a0,a0,1			# increment pointer in text_buf
 
 store_byte:
@@ -194,7 +199,10 @@ store_byte:
 	j	decompression_loop
 
 discrete_char:
-	lbu	a5,0(s1)	# load a byte
+	lw	a5,0(s1)	# load a byte
+				# since we ignore top bits
+				# we can cheat and use shorter "lw"
+
 	addi	s1,s1,1		# increment pointer
 	li	a1,1		# we set t3 to one so byte
 				# will be output once
