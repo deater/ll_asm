@@ -60,21 +60,10 @@
 
 # Optimization:
 #  + LZSS
-#    - 94 bytes = original port of riscv64 code
-#    - 88 bytes = change registers used to fit in the magical 8
-#    - 84 bytes = use the lw for lbu trick
+#    - 84 bytes = original port of riscv64-imc code
 
 #  + Overall
-#    - 1059 bytes = original port of riscv64 code
-#    - 1091 bytes = after the lzss optimization
-#    - 1061 bytes = sort out the fallout from the lzss fix
-#    - 1059 bytes = move "strcat" to a reg and jalr to it
-#    - 1051 bytes = more strcat, also some c.ld fits
-#    - 1041 bytes = find_string, change regs (especially for beqz)
-#    - 1033 bytes = more register changing
-#    - 1023 bytes = one last pass looking for too-long instructions.
-#    - 1019 bytes = on little-endian machines we can use short "lw"
-#			for "lbu" as long as the top bits are ignored
+#    - 961 bytes = original port of riscv64-imc code
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0

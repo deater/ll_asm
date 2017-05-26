@@ -71,20 +71,11 @@
 
 # Optimization:
 #  + LZSS
-#    - 136 bytes = original port of MIPS code
-#    - 120 bytes = move text_buf to dedicated register
-#    - 116 bytes = move back to 0xff in high bits for telling when shift done
+#    - 116 bytes = original port of riscv64 code
 #
 #  + Overall
-#    - 1277 bytes = original working version
-#    - 1261 bytes = reserve register to hold out_buffer
-#    - 1249 bytes = use register to hold uname pointer
-#    - 1233 bytes = remove much of "la" use before lzss
-#    - 1225 bytes = use bss_start pointer math for uname
-#    - 1217 bytes = avoid "la" in first line
-#    - 1185 bytes = avoid "la" in middle/last line
-#    - 1165 bytes = optimize center_and_print
-#    - 1161 bytes = remove rest of "la"
+#    - 1125 bytes = original port of riscv64 code
+#
 
 # offsets into the results returned by the uname syscall
 .equ U_SYSNAME,0
