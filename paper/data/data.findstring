@@ -12,7 +12,8 @@ sparc		RISC	92	0
 PowerPC		RISC	88	0
 arm.eabi	RISC	88	0
 6502		EBIT	85	0
-riscv64-RVM	RISC	68	0
+riscv32-im	RISC	68	0
+riscv64-im	RISC	68	0
 pdp-11		EBIT	62	0
 sh3		EMBED	58	0
 THUMB		EMBED	58	0
@@ -20,7 +21,8 @@ Thumb-2		EMBED	56	0
 arm64		RISC	56	0
 8086		EBIT	54	0
 z80		EBIT	51	0
-riscv-compressed	EMBED	50	0
+riscv32-imc	EMBED	50	0
+riscv64-imc	EMBED	50	0
 micromips	EMBED	50	0
 x86_64		CISC	50	0
 x86_x32		CISC	50	0

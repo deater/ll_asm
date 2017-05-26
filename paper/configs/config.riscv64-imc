@@ -1,4 +1,4 @@
-riscv-compressed
+riscv64-imc
 0	# VLIW
 0	# RISC
 1	# Embedded

@@ -20,10 +20,12 @@ mips		RISC	40	0
 sparc		RISC	40	0
 crisv32		EMBED	40	1
 pdp-11		EBIT	40	0
-riscv64-RVM	RISC	40	0
+riscv32-im	RISC	40	0
+riscv64-im	RISC	40	0
 s390		CISC	36	0
 m68k		CISC	34	0
-riscv-compressed	EMBED	30	0
+riscv32-imc	EMBED	30	0
+riscv64-imc	EMBED	30	0
 micromips	EMBED	28	0
 avr32		EMBED	28	0
 vax		CISC	26	0

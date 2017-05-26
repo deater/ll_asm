@@ -11,7 +11,8 @@ microblaze	RISC	136	0
 sparc		RISC	128	0
 m88k		RISC	128	0
 s390		CISC	122	0
-riscv64-RVM	RISC	116	0
+riscv32-im	RISC	116	0
+riscv64-im	RISC	116	0
 arm.eabi	RISC	108	0
 PowerPC		RISC	108	0
 pdp-11		EBIT	108	0
@@ -19,7 +20,8 @@ z80		EBIT	96	0
 arm64		RISC	96	0
 mips16		EMBED	96	0
 micromips	EMBED	86	0
-riscv-compressed	EMBED	84	0
+riscv32-imc	EMBED	84	0
+riscv64-imc	EMBED	84	0
 avr32		EMBED	80	0
 1802		EBIT	80	0
 sh3		EMBED	76	0

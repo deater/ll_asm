@@ -1,4 +1,4 @@
-riscv64-im
+riscv32-im
 0	# VLIW
 1	# RISC
 0	# Embedded
@@ -7,7 +7,7 @@ riscv64-im
 0	# 8-bit
 2010	# Year introduced
 0	# Endian 0=little 1=big
-64	# Wordsize (bits)
+32	# Wordsize (bits)
 4	# size of smallest instruction (bytes)
 4	# size of largest instruction (bytes)
 3	# numer of arguments to typical opcode
