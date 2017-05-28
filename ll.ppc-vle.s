@@ -5,12 +5,17 @@
 #
 #  assemble with     "as -o ll.o ll.ppc.s"
 #  link with         "ld -o ll ll.o"
+#
 
-#  notes ...
-#    a lot of the offsets are off by 1.  This is to use the more
-#      efficient lbu commands that auto-update.
-#    don't use non callee saved registers around a syscall.
-#      it looks like Linux does not save those anymore
+# Variable-Length Encoding (VLE) extension programming interface manual
+#  Claims 30% reduction in code size
+
+# 16-bit instructions restricted to r0-r7 and r24-r31
+#  move can be used to access r8-r23
+# Can only access CR0
+
+#
+# 32-bit PPC register usage
 
 # Register        Usage                CALLEE SAVE
 # r0            prolog/epilog           NO
@@ -23,16 +28,9 @@
 # r13           Small data area pointer NO
 # r14-r30       General Int registers   YES
 # r31           Global Environment Ptr  YES
-# f0            Scratch                 NO
-# f1            1st param/return        NO
-# f2-f8         2-8th fp param          NO
-# f9-f13        Scratch Reg             NO
-# f14-f31       Global fp regs          YES
 # CR0-CR7       Condition Regs          2,3,4 Yes
 # LR            Link register           YES
 # CTR           Counter register        NO
-# XER           Fixed Point Exception   NO
-# FPSCR         fp status& ctrl         NO
 
 # CR = condition register.
 #   There are actually 8 condition registers, CR0-CR7
@@ -43,7 +41,7 @@
 # XER = holds carry and overflow flags
 # CTR = counter register, used as a loop index
 
-# Instruction set
+# 32-bit Instruction set
 # add add. addo addo. - "." means update condition reg. "o" means handle oflo
 # addc addc. addco addco. - add while setting carry
 # addex adde. addeo addeo. - add extended (with carry from XER)
@@ -191,23 +189,18 @@ _start:
 	# Initialization
 	#========================
 
-
-#	eieio				# coolest opcode of all time ;)
-					# not needed, but I had to put it here
   	# the hack loading BSS_BEGIN and DATA_BEGIN
 	# saves one instruction on any future load from memory
 	# as we can just do an addi rather than an lis;addi
 
-	lis	25,bss_begin@ha
-	addi	25,25,bss_begin@l	# bss offset in r25
+#	e_la	25,bss_begin		# bss offset in r25
 
-	lis	26,data_begin@ha
-	addi	26,26,data_begin@l	# data offset in r26
+#	e_la	26,data_begin		# data offset in r26
 
-	addi	17,BSS_BEGIN,(out_buffer-bss_begin)
+#	addi	17,BSS_BEGIN,(out_buffer-bss_begin)
 					# output buffer in r17
 
-	addi	21,BSS_BEGIN,(text_buf-bss_begin)
+#	addi	21,BSS_BEGIN,(text_buf-bss_begin)
 					# text_buf in r21
 
 
@@ -220,76 +213,76 @@ _start:
 # optimized some more by Vince Weaver
 
 
-	li	8,(N-F)			# grab "R"
+#	li	8,(N-F)			# grab "R"
 
-	addi	9,DATA_BEGIN,(logo-data_begin)-1
+#	addi	9,DATA_BEGIN,(logo-data_begin)-1
 					# logo_pointer
 
-	addi	12,DATA_BEGIN,(logo_end-data_begin)-1
+#	addi	12,DATA_BEGIN,(logo_end-data_begin)-1
 					# end of the logo
 
 	mr      16,17			# r16 starts at output pointer
 
 decompression_loop:
-	lbzu 	10,1(9)			# load in a byte
+#	lbzu 	10,1(9)			# load in a byte
 					# auto-update
-	ori	11,10,0xff00		# load top as a hackish
+#	ori	11,10,0xff00		# load top as a hackish
 					# 8-bit counter
 
 test_flags:
-	cmpw	0,12,9			# have we reached the end?
-	ble	done_logo		# if so exit
+#	cmpw	0,12,9			# have we reached the end?
+#	ble	done_logo		# if so exit
 
-	andi.	13,11,0x1		# test bottom bit
+#	andi.	13,11,0x1		# test bottom bit
 	srawi   11,11,1			# shift over
 
-	bne	0,discrete_char		# if bit was 0, we have a single char
+#	bne	0,discrete_char		# if bit was 0, we have a single char
 
 offset_length:
 	      				# Load 16-bit little endian
-	addi	9,9,1			# have to do this because
+#	addi	9,9,1			# have to do this because
 					# we use lbzu for rest of loads
 	lhbrx	24,0,9			# load half-word byte reversed index
 					#   0 means use 0, not r0
-	addi	9,9,1			# we loaded two bytes
+#	addi	9,9,1			# we loaded two bytes
 
 	srawi  15,24,P_BITS
-	addi   15,15,THRESHOLD+1 	# match length is top bits
+#	addi   15,15,THRESHOLD+1 	# match length is top bits
 
 output_loop:
-	andi.  24,24,(POSITION_MASK<<8+0xff)
+#	andi.  24,24,(POSITION_MASK<<8+0xff)
 	       				# offset in text_buf is bottom bits
 
 	lbzx   10,21,24			# load byte from text_buf
-	addi   24,24,1			# increment pointer
+#	addi   24,24,1			# increment pointer
 
 store_byte:
-	stbu   10,1(16)			# store byte to putput
+#	stbu   10,1(16)			# store byte to putput
 
 	stbx    10,21,8			# store byte to text_buf
-	addi	8,8,1			# increment pointer
-	andi.	8,8,(N-1)		# mask to prevent overflow
+#	addi	8,8,1			# increment pointer
+#	andi.	8,8,(N-1)		# mask to prevent overflow
 
-	addic.	15,15,-1		# decrement count
-	bne	0,output_loop		# loop if not output
+#	addic.	15,15,-1		# decrement count
+#	bne	0,output_loop		# loop if not output
 
-	andi.	13,11,0xff00		# test to see if done with 8 bits of
-	bne	test_flags		# flags
+#	andi.	13,11,0xff00		# test to see if done with 8 bits of
+#	bne	test_flags		# flags
 
-	b	decompression_loop	# loop
+#	b	decompression_loop	# loop
 
 discrete_char:
 
-	lbzu    10,1(9)			# load byte to output
-	li	15,1			# set to only output one byte
+#	lbzu    10,1(9)			# load byte to output
+#	li	15,1			# set to only output one byte
 
-	b       store_byte		# go to store byte routine
+#	b       store_byte		# go to store byte routine
 
 done_logo:
 
-	addi	4,17,1			# restore output pointer
+#	addi	4,17,1			# restore output pointer
 					# (plus one because r17 is decremented)
-	bl	write_stdout		# and print the logo
+#	bl	write_stdout		# and print the logo
 
 
         #==========================
@@ -305,34 +298,34 @@ first_line:
 
 run_uname:
 
-	li	0,SYSCALL_UNAME		# uname syscall
-	addi	3,BSS_BEGIN,(uname_info-bss_begin)
+#	li	0,SYSCALL_UNAME		# uname syscall
+#	addi	3,BSS_BEGIN,(uname_info-bss_begin)
 					# uname struct
-	sc				# do syscall
+#	sc				# do syscall
 
 print_version:
 
-	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_SYSNAME@l-1
+#	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_SYSNAME@l-1
 					# os-name from uname "Linux"
-	bl	strcat
+#	bl	strcat
 
-	addi	16,DATA_BEGIN,(ver_string-data_begin)-1
+#	addi	16,DATA_BEGIN,(ver_string-data_begin)-1
 					# source is " Version "
-	bl 	strcat
+#	bl 	strcat
 
-	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_RELEASE@l-1
+#	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_RELEASE@l-1
 					# version from uname "2.4.1"
-	bl 	strcat
+#	bl 	strcat
 
-	addi	16,DATA_BEGIN,(compiled_string-data_begin)-1
+#	addi	16,DATA_BEGIN,(compiled_string-data_begin)-1
 					# source is ", Compiled "
-	bl 	strcat
+#	bl 	strcat
 
-	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_VERSION-1
+#	addi	16,BSS_BEGIN,(uname_info-bss_begin)+U_VERSION-1
       					# compiled date
-	bl 	strcat
+#	bl 	strcat
 
-	bl	center_and_print	# write it to screen
+#	bl	center_and_print	# write it to screen
 
 
 	#===============================
@@ -346,23 +339,23 @@ middle_line:
 	# Load /proc/cpuinfo into buffer
 	#=========
 
-	li	0,SYSCALL_OPEN		# open()
-	addi	3,DATA_BEGIN,(cpuinfo-data_begin)
+#	li	0,SYSCALL_OPEN		# open()
+#	addi	3,DATA_BEGIN,(cpuinfo-data_begin)
 					# '/proc/cpuinfo'
-	li	4,0			# O_RDONLY <bits/fcntl.h>
-	sc				# syscall.  fd in r0.
+#	li	4,0			# O_RDONLY <bits/fcntl.h>
+#	sc				# syscall.  fd in r0.
 					# we should check that r0>=0
 
 	mr	13,3			# save fd in r13
 
-	li	0,SYSCALL_READ		# read
-	addi	4,BSS_BEGIN,(disk_buffer-bss_begin)
-	li	5,4096		 	# assume cpuinfo file < 4k
-	sc
+#	li	0,SYSCALL_READ		# read
+#	addi	4,BSS_BEGIN,(disk_buffer-bss_begin)
+#	li	5,4096		 	# assume cpuinfo file < 4k
+#	sc
 
 	mr	3,13			# restore fd
-	li	0,6			# close
-	sc
+#	li	0,6			# close
+#	sc
 
 	#=============
 	# Number of CPUs
@@ -372,76 +365,76 @@ num_cpu:
 	# Assume 1 CPU for now
 	# my iBook's /proc/cpuinfo does not have a "processor" line ???
 
-	addi	16,DATA_BEGIN,(one-data_begin)-1
-	bl	strcat
+#	addi	16,DATA_BEGIN,(one-data_begin)-1
+#	bl	strcat
 
 	#=========
 	# MHz
 	#=========
 
 mhz:
-    	lis	20,('l'<<8)+'o'		# find 'lock ' and grab up to M
-	addi	20,20,('c'<<8)+'k'
-	li	23,'M'
-   	bl	find_string
+#	lis	20,('l'<<8)+'o'		# find 'lock ' and grab up to M
+#	addi	20,20,('c'<<8)+'k'
+#	li	23,'M'
+#	bl	find_string
 
-	addi	16,DATA_BEGIN,(megahertz-data_begin)-1
+#	addi	16,DATA_BEGIN,(megahertz-data_begin)-1
 					# print 'MHz '
-	bl	strcat
+#	bl	strcat
 
 
 	#=========
 	# Chip Name
 	#=========
 chip_name:
-   	lis     20,('c'<<8)+'p'     	# find 'cpu\t: ' and grab up to \n
-	addi	20,20,('u'<<8)+'\t'
-	li	23,'\n'
-	bl	find_string
+#	lis     20,('c'<<8)+'p'     	# find 'cpu\t: ' and grab up to \n
+#	addi	20,20,('u'<<8)+'\t'
+#	li	23,'\n'
+#	bl	find_string
 
-	addi	16,DATA_BEGIN,(comma-data_begin)-1
+#	addi	16,DATA_BEGIN,(comma-data_begin)-1
 					# print ', '
-	bl	strcat
+#	bl	strcat
 
 	#========
 	# RAM
 	#========
 ram:
-	li	0,SYSCALL_SYSINFO	# sysinfo() syscall
-	addi	3,BSS_BEGIN,(sysinfo_buff-bss_begin)
+#	li	0,SYSCALL_SYSINFO	# sysinfo() syscall
+#	addi	3,BSS_BEGIN,(sysinfo_buff-bss_begin)
 					# sysinfo_buffer
 
-	sc
+#	sc
 
-	lwz	4,(sysinfo_buff+S_TOTALRAM-bss_begin)(BSS_BEGIN)
+#	lwz	4,(sysinfo_buff+S_TOTALRAM-bss_begin)(BSS_BEGIN)
 					# load bytes of RAM into r4
 
-	srwi	19,4,20		# divide by 2^20 to get MB
+#	srwi	19,4,20		# divide by 2^20 to get MB
 
-	li	5,0
+#	li	5,0
 
-	bl	num_to_ascii
+#	bl	num_to_ascii
 
-	addi	16,DATA_BEGIN,(ram_comma-data_begin)-1
+#	addi	16,DATA_BEGIN,(ram_comma-data_begin)-1
 					# print 'M RAM, '
 
-	bl	strcat
+#	bl	strcat
 
 	#========
 	# Bogomips
 	#========
 
 bogomips:
-	lis	20,('m'<<8)+'i'		# find 'mips' and grab up to \n
-	addi	20,20,('p'<<8)+'s'
-	li	23,'\n'
-	bl	find_string
+#	lis	20,('m'<<8)+'i'		# find 'mips' and grab up to \n
+#	addi	20,20,('p'<<8)+'s'
+#	li	23,'\n'
+#	bl	find_string
 
-	addi	16,DATA_BEGIN,(bogo_total-data_begin)-1
+#	addi	16,DATA_BEGIN,(bogo_total-data_begin)-1
 					# print "Bogomips Total"
-	bl	strcat
+#	bl	strcat
 
-	bl	center_and_print	# center it
+#	bl	center_and_print	# center it
 
 
 	#=================================
@@ -450,25 +443,25 @@ bogomips:
 host_name:
 	mr	14,17			# restore out buffer
 
-	addi	16,BSS_BEGIN,((uname_info-bss_begin)+U_NODENAME)-1
+#	addi	16,BSS_BEGIN,((uname_info-bss_begin)+U_NODENAME)-1
 					# hostname
 
-	bl	strcat
+#	bl	strcat
 
-	bl	center_and_print
+#	bl	center_and_print
 
-	addi	4,DATA_BEGIN,(default_colors-data_begin)
+#	addi	4,DATA_BEGIN,(default_colors-data_begin)
 					# restore default colors
 
-	bl	write_stdout
+#	bl	write_stdout
 
 	#================================
 	# Exit
 	#================================
 exit:
-        li      3,0		# 0 exit value
-	li      0,SYSCALL_EXIT  # put the exit syscall number in eax
-	sc	             	# and exit
+#	li      3,0		# 0 exit value
+#	li      0,SYSCALL_EXIT  # put the exit syscall number in eax
+#	sc	             	# and exit
 
 
 	#=================================
@@ -481,48 +474,48 @@ exit:
 
 find_string:
 
-	addi	16,BSS_BEGIN,(disk_buffer-bss_begin)-1
+#	addi	16,BSS_BEGIN,(disk_buffer-bss_begin)-1
 					# look in cpuinfo buffer
 					# -1 so we can use lbzu
 
 find_loop:
-	lwzu	13,1(16)		# load in 32 bits, incrementing 8bits
-	cmpwi	13,0			# if null, we are done
-	beq	done
+#	lwzu	13,1(16)		# load in 32 bits, incrementing 8bits
+#	cmpwi	13,0			# if null, we are done
+#	beq	done
 	cmpw	13,20			# compare with out 4 char string
-	bne	find_loop		# if no match, keep looping
+#	bne	find_loop		# if no match, keep looping
 
 
 					# if we get this far, we matched
 
 find_colon:
-	lbzu	13,1(16)		# repeat till we find colon
+#	lbzu	13,1(16)		# repeat till we find colon
 
-	cmpwi	13,0			# if zero, bail
-	beq	done
+#	cmpwi	13,0			# if zero, bail
+#	beq	done
 
-	cmpwi	13,':'			# compare to colon
-	bne	find_colon
+#	cmpwi	13,':'			# compare to colon
+#	bne	find_colon
 
-	addi	16,16,1			# skip a char [should be space]
+#	addi	16,16,1			# skip a char [should be space]
 
 store_loop:
-	 lbzu	13,1(16)		# load byte
+#	 lbzu	13,1(16)		# load byte
 
-	 cmpwi	13,0			# if zero, bail
-	 beq	done
+#	 cmpwi	13,0			# if zero, bail
+#	 beq	done
 
     	 cmpw	13,23			# is it end string?
-	 beq 	almost_done		# if so, finish
-	 stbu	13,1(14)		# if not store and continue
-	 b	store_loop
+#	 beq 	almost_done		# if so, finish
+#	 stbu	13,1(14)		# if not store and continue
+#	 b	store_loop
 
 almost_done:
-	li	13,0			# replace last value with null
-	stb	13,1(14)
+#	li	13,0			# replace last value with null
+#	stb	13,1(14)
 
 done:
-	blr				# return
+#	blr				# return
 
 	#==============================
 	# center_and_print
@@ -539,31 +532,31 @@ center_and_print:
 	subf	5,17,14			# see how long the output
 					# buffer is
 
-	cmpwi	5,80			# see if we are >80
-        bgt	done_center		# if so, bail
+#	cmpwi	5,80			# see if we are >80
+#	bgt	done_center		# if so, bail
 
-	subfic	4,5,80			# r4 = 80-r5
+#	subfic	4,5,80			# r4 = 80-r5
 					#   is it possible to combine this
 					#   with the >80 test?
 
 	srawi	23,4,1			# divide by two
 
-	addi	4,DATA_BEGIN,(escape-data_begin)
-	bl	write_stdout
+#	addi	4,DATA_BEGIN,(escape-data_begin)
+#	bl	write_stdout
 
 	mr	19,23	    		# move size into argument
-	li	5,1			# print to stdout
-	bl	num_to_ascii		# print number
+#	li	5,1			# print to stdout
+#	bl	num_to_ascii		# print number
 
-	addi	4,DATA_BEGIN,(c-data_begin)
-	bl	write_stdout
+#	addi	4,DATA_BEGIN,(c-data_begin)
+#	bl	write_stdout
 
 done_center:
 
-	addi	4,17,1			# move string to output+1
-	bl	write_stdout		# call write stdout
+#	addi	4,17,1			# move string to output+1
+#	bl	write_stdout		# call write stdout
 
-	addi	4,DATA_BEGIN,(linefeed-data_begin)
+#	addi	4,DATA_BEGIN,(linefeed-data_begin)
 
 	mtlr	29	      		# restore link register
 					# and let write_stdout
@@ -578,20 +571,20 @@ done_center:
 	# r0,r3,r4,r5,r6 trashed
 
 write_stdout:
-	li	0,SYSCALL_WRITE		# write syscall
-	li	3,STDOUT		# stdout
+#	li	0,SYSCALL_WRITE		# write syscall
+#	li	3,STDOUT		# stdout
 
-	li	5,0			# string length counter
+#	li	5,0			# string length counter
 strlen_loop:
 	lbzx 	6,4,5			# get byte from (r4+r5)
-       	addi	5,5,1			# increment counter
-	cmpi	0,6,0			# is it zero?
-	bne	strlen_loop		# if not keep counting
+#	addi	5,5,1			# increment counter
+#	cmpi	0,6,0			# is it zero?
+#	bne	strlen_loop		# if not keep counting
 
-	addi	5,5,-1			# adjust back down
-	sc				# syscall
+#	addi	5,5,-1			# adjust back down
+#	sc				# syscall
 
-	blr				# return
+#	blr				# return
 
 
 	#================================
@@ -606,37 +599,37 @@ num_to_ascii:
 
 	mflr    30			# save the link register
 
-	addi	16,BSS_BEGIN,(num_to_ascii_end-bss_begin)
+#	addi	16,BSS_BEGIN,(num_to_ascii_end-bss_begin)
 					# the end of a backwards growing
 					# 10 byte long buffer.
 
-	li	20,10			# we will divide by 10
+#	li	20,10			# we will divide by 10
 
 div_by_10:
 	divw	21,19,20		# divide r19 by r20 put into r21
 
 	mullw	22,21,20		# find remainder.  1st q*dividend
 	subf	22,22,19		# then subtract from original = R
-	addi	22,22,0x30		# convert remainder to ascii
+#	addi	22,22,0x30		# convert remainder to ascii
 
-	stbu	22,-1(16)		# Store to backwards buffer
+#	stbu	22,-1(16)		# Store to backwards buffer
 
 	mr	19,21			# move Quotient as new dividend
-	cmpwi	19,0			# was quotient zero?
-	bne    	div_by_10		# if not keep dividing
+#	cmpwi	19,0			# was quotient zero?
+#	bne    	div_by_10		# if not keep dividing
 
 write_out:
 	mtlr	30			# restore link register
 
-	cmpwi	5,0			# if r5 is 0 then skip ahead
-	beq 	strcat_num
+#	cmpwi	5,0			# if r5 is 0 then skip ahead
+#	beq 	strcat_num
 
 stdout_num:
         mr	4,16			# point to our buffer
-	b	write_stdout		# stdout will return for us
+#	b	write_stdout		# stdout will return for us
 
 strcat_num:
-	addi	16,16,-1		# point to the beginning
+#	addi	16,16,-1		# point to the beginning
 
 					# fall through to strcat
 
@@ -647,12 +640,12 @@ strcat_num:
 	# r16 = "source"
        	# r14 = "destination"
 strcat:
-	lbzu	13,1(16)		# load a byte from [r16]
-	stbu	13,1(14)		# store a byte to [r14]
-	cmpwi	13,0			# is it zero?
-	bne	strcat			# if not loop
-	subi	14,14,1			# point to one less than null
-	blr				# return
+#	lbzu	13,1(16)		# load a byte from [r16]
+#	stbu	13,1(14)		# store a byte to [r14]
+#	cmpwi	13,0			# is it zero?
+#	bne	strcat			# if not loop
+#	subi	14,14,1			# point to one less than null
+#	blr				# return
 
 
 #===========================================================================

@@ -30,3 +30,5 @@ make CROSS=riscv-linux-gnu- ARCH=riscv64
 make CROSS=mips-linux-gnu- ARCH=mips
 ~/research/qemu.git/mips-linux-user/qemu-mips ./ll.mips.fakeproc
 ~/research/qemu.git/mips-linux-user/qemu-mips -cpu M14Kc ./ll.micromips.fakeproc
+
+make CROSS=powerpc-linux-gnu- ARCH=ppc

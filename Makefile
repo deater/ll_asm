@@ -30,6 +30,14 @@ ifneq (,$(findstring x86_64,$(ARCH)))
    THUMB := ll.x86_x32 ll.x86_x32.stripped ll.x86_x32.fakeproc ll.x86_x32.fakeproc.stripped ll.x86_x32.dis ll.x86_x32.output
 endif
 
+#
+# Handle ppc
+#
+ifneq (,$(findstring ppc,$(ARCH)))
+   SOURCE_ARCH := ppc
+   THUMB := ll.ppc-vle ll.ppc-vle.stripped ll.ppc-vle.fakeproc ll.ppc-vle.fakeproc.stripped ll.ppc-vle.dis ll.ppc-vle.output
+endif
+
 
 #
 # Handle various ARM variants
@@ -252,6 +260,30 @@ ll.x86_x32.dis:	ll.x86_x32
 ll.x86_x32.output:	ll.x86_x32.fakeproc
 	$(SIM) ./ll.x86_x32.fakeproc > ll.x86_x32.output
 
+
+#
+# PPC-vle
+#
+
+ll.ppc-vle.stripped:  ll.ppc-vle sstrip/sstrip
+	cp ll.ppc-vle ll.ppc-vle.stripped
+	sstrip/sstrip ll.ppc-vle.stripped
+
+ll.ppc-vle:	ll.ppc-vle.o
+	$(CROSS)$(LD) -N -o ll.ppc-vle ll.ppc-vle.o
+
+ll.ppc-vle.o:	ll.ppc-vle.s
+	$(CROSS)$(AS) -mvle -o ll.ppc-vle.o ll.ppc-vle.s
+
+ll.ppc-vle.fakeproc.stripped:  ll.ppc-vle.fakeproc sstrip/sstrip
+	cp ll.ppc-vle.fakeproc ll.ppc-vle.fakeproc.stripped
+	sstrip/sstrip ll.ppc-vle.fakeproc.stripped
+
+ll.ppc-vle.fakeproc:	ll.ppc-vle.fakeproc.o
+	$(CROSS)$(LD) -N -o ll.ppc-vle.fakeproc ll.ppc-vle.fakeproc.o
+
+ll.ppc-vle.fakeproc.o:	ll.ppc-vle.s
+	$(CROSS)$(AS) -defsym FAKE_PROC=1 -mvle -o ll.ppc-vle.fakeproc.o ll.ppc-vle.s
 
 
 #
