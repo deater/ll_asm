@@ -1,12 +1,20 @@
 For the code-density comparisons to be valid, some rules need
-to be enforced.  Otherwise thet results can be misleading.
+to be enforced.  Otherwise the results can be misleading.
 
 LOGO
 0.  Decoding LOGO: can be done in any way as long as standard
     LZSS read and proper output printed
 
+	a. It has to be generic LZSS and should not be too tied to
+		the ANSI art output.
+	b. Should there be a limit to the expected output size?
+		In kilobytes?
+	c. For now any code before "decompression_loop" does not count
+		toward LZSS size.  Is it cheating to hoist as much code
+		as possible outside the loop?
+
 LINE 1: Must be centered and printed
-1.  UNAME syscall must be called
+1.  UNAME syscall or equivelent must be called
 2.  U_SYSNAME ('Linux') from uname must be printed
 3.  ' Version ' must be printed
 4.  U_RELEASE must be printed
@@ -22,7 +30,7 @@ LINE 2: Must be Centered and Printed
     string in cpuinfo.
     One of "One" "Two" "Three" "Four" or "Many" must be printed based on
     this count.
-9 . MHz is searched for (even if it won't be found)
+9 . MHz is searched for and printed (even if it won't be found)
 10. The string 'MHz ' is printed
 11. A chip name is found in cpuinfo
 12. That is printed
@@ -31,8 +39,8 @@ LINE 2: Must be Centered and Printed
 15. sysinfo() is called
 16. RAM is printed: S_TOTALRAM >> 20, rounded by adc
 17. print 'M RAM,'
-18. Get bogomips, print
-19. Print bogomips
+18. BOGOMIPS is searched
+19. Bogomips string printed
 
 LINE 3: Must be centered and printed
 20.  Print hostname from UNAME
@@ -43,6 +51,7 @@ exit()
 
 find_string()
 23. can use minimum of 3 bytes in string search
+	can use more if it uses less code
     in first search loop must also exit if encounter \0 (off end of file)
        or alternately if it is bigger than 4096 (size of buffer)
 
