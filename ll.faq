@@ -5,6 +5,8 @@ Q4: What resources you use to find out about all the different architectures?
 Q5: Why?
 Q6: What are the most unusual opcodes you've come across?
 Q7: How do you port to a new architecture?
+Q8: This project has *horrible* methodology!
+Q9: Why not just write it in C and compare the generated binaries?
 
 --------------------
 
@@ -170,3 +172,34 @@ A7: First step is to find a machine from that architecture capable of
     before and after is a good tactic, especially on
     architectures with variable-sized instructions.
     
+Q8: This project has *horrible* methodology!
+
+A8: Yes, it didn't start as a code-density study.  It started as me
+	trying to port a program I liked to assembly language, just for fun.
+
+	To be perfectly fair you would have to control for:
+
+	1. Exectuable overhead.
+		ELF Linux executables have more overehad than DOS COM
+		64-bit ELF headers tend to be bigger than 32-bit
+
+	2. The code pretty printing.
+		x86 for example detects number of processors
+		Other architectures don't.
+		Going back and fixing all to match would be a pain.
+
+	Even then it's a long list of rules you'd have to enforce.
+
+	And once you have the rules, people will start over-optimizing
+		the code to take advantage of the rules.
+
+
+Q9: Why not just write it in C and compare the generated binaries?
+
+A9: That's not testing the raw code density of your architecture,
+	that's just testing the compilers.
+
+	You still have to account for executable differences.
+	You might have architectures w/o a C compiler.
+	The C compiler is likely not optimizing for size, even with -Os
+
