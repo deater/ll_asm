@@ -7,49 +7,49 @@ Disassembly of section .text:
 08048054 <_start>:
  8048054:	66 bd c0 03          	mov    $0x3c0,%bp
  8048058:	be ad 82 04 08       	mov    $0x80482ad,%esi
- 804805d:	bf 08 88 04 08       	mov    $0x8048808,%edi
- 8048062:	57                   	push   %edi
+ 804805d:	bf c8 83 04 08       	mov    $0x80483c8,%edi
+ 8048062:	8d 24 6c             	lea    (%esp,%ebp,2),%esp
 
-08048063 <decompression_loop>:
- 8048063:	ac                   	lods   %ds:(%esi),%al
- 8048064:	b7 ff                	mov    $0xff,%bh
- 8048066:	88 c3                	mov    %al,%bl
+08048065 <decompression_loop>:
+ 8048065:	ac                   	lods   %ds:(%esi),%al
+ 8048066:	b7 ff                	mov    $0xff,%bh
+ 8048068:	88 c3                	mov    %al,%bl
 
-08048068 <test_flags>:
- 8048068:	81 fe c8 83 04 08    	cmp    $0x80483c8,%esi
- 804806e:	74 32                	je     80480a2 <done_logo>
- 8048070:	d1 eb                	shr    %ebx
- 8048072:	72 2a                	jb     804809e <discrete_char>
+0804806a <test_flags>:
+ 804806a:	81 fe c8 83 04 08    	cmp    $0x80483c8,%esi
+ 8048070:	74 2c                	je     804809e <done_logo>
+ 8048072:	d1 eb                	shr    %ebx
+ 8048074:	72 24                	jb     804809a <discrete_char>
 
-08048074 <offset_length>:
- 8048074:	66 ad                	lods   %ds:(%esi),%ax
- 8048076:	89 c2                	mov    %eax,%edx
- 8048078:	c1 e8 0a             	shr    $0xa,%eax
- 804807b:	04 03                	add    $0x3,%al
- 804807d:	88 c1                	mov    %al,%cl
+08048076 <offset_length>:
+ 8048076:	66 ad                	lods   %ds:(%esi),%ax
+ 8048078:	89 c2                	mov    %eax,%edx
+ 804807a:	c1 e8 0a             	shr    $0xa,%eax
+ 804807d:	04 03                	add    $0x3,%al
+ 804807f:	88 c1                	mov    %al,%cl
 
-0804807f <output_loop>:
- 804807f:	80 e6 03             	and    $0x3,%dh
- 8048082:	8a 82 c8 83 04 08    	mov    0x80483c8(%edx),%al
- 8048088:	42                   	inc    %edx
+08048081 <output_loop>:
+ 8048081:	80 e6 03             	and    $0x3,%dh
+ 8048084:	8a 04 14             	mov    (%esp,%edx,1),%al
+ 8048087:	42                   	inc    %edx
 
-08048089 <store_byte>:
- 8048089:	aa                   	stos   %al,%es:(%edi)
- 804808a:	88 85 c8 83 04 08    	mov    %al,0x80483c8(%ebp)
- 8048090:	45                   	inc    %ebp
- 8048091:	66 81 e5 ff 03       	and    $0x3ff,%bp
- 8048096:	e2 e7                	loop   804807f <output_loop>
- 8048098:	08 ff                	or     %bh,%bh
- 804809a:	75 cc                	jne    8048068 <test_flags>
- 804809c:	eb c5                	jmp    8048063 <decompression_loop>
+08048088 <store_byte>:
+ 8048088:	aa                   	stos   %al,%es:(%edi)
+ 8048089:	88 04 2c             	mov    %al,(%esp,%ebp,1)
+ 804808c:	45                   	inc    %ebp
+ 804808d:	66 81 e5 ff 03       	and    $0x3ff,%bp
+ 8048092:	e2 ed                	loop   8048081 <output_loop>
+ 8048094:	08 ff                	or     %bh,%bh
+ 8048096:	75 d2                	jne    804806a <test_flags>
+ 8048098:	eb cb                	jmp    8048065 <decompression_loop>
 
-0804809e <discrete_char>:
- 804809e:	ac                   	lods   %ds:(%esi),%al
- 804809f:	41                   	inc    %ecx
- 80480a0:	eb e7                	jmp    8048089 <store_byte>
+0804809a <discrete_char>:
+ 804809a:	ac                   	lods   %ds:(%esi),%al
+ 804809b:	41                   	inc    %ecx
+ 804809c:	eb ea                	jmp    8048088 <store_byte>
 
-080480a2 <done_logo>:
- 80480a2:	5d                   	pop    %ebp
+0804809e <done_logo>:
+ 804809e:	bd c8 83 04 08       	mov    $0x80483c8,%ebp
  80480a3:	89 e9                	mov    %ebp,%ecx
  80480a5:	e8 72 01 00 00       	call   804821c <write_stdout>
 
@@ -57,20 +57,20 @@ Disassembly of section .text:
  80480aa:	ba e3 81 04 08       	mov    $0x80481e3,%edx
  80480af:	6a 7a                	push   $0x7a
  80480b1:	58                   	pop    %eax
- 80480b2:	bb 48 d8 04 08       	mov    $0x804d848,%ebx
+ 80480b2:	bb 08 d4 04 08       	mov    $0x804d408,%ebx
  80480b7:	cd 80                	int    $0x80
  80480b9:	89 ef                	mov    %ebp,%edi
- 80480bb:	be 48 d8 04 08       	mov    $0x804d848,%esi
+ 80480bb:	be 08 d4 04 08       	mov    $0x804d408,%esi
  80480c0:	ff d2                	call   *%edx
  80480c2:	be 43 82 04 08       	mov    $0x8048243,%esi
  80480c7:	ff d2                	call   *%edx
  80480c9:	56                   	push   %esi
- 80480ca:	be ca d8 04 08       	mov    $0x804d8ca,%esi
+ 80480ca:	be 8a d4 04 08       	mov    $0x804d48a,%esi
  80480cf:	ff d2                	call   *%edx
  80480d1:	5e                   	pop    %esi
  80480d2:	ff d2                	call   *%edx
  80480d4:	56                   	push   %esi
- 80480d5:	be 0b d9 04 08       	mov    $0x804d90b,%esi
+ 80480d5:	be cb d4 04 08       	mov    $0x804d4cb,%esi
  80480da:	ff d2                	call   *%edx
  80480dc:	89 e9                	mov    %ebp,%ecx
  80480de:	66 b8 0a 00          	mov    $0xa,%ax
@@ -87,7 +87,7 @@ Disassembly of section .text:
  80480f9:	89 c3                	mov    %eax,%ebx
  80480fb:	6a 03                	push   $0x3
  80480fd:	58                   	pop    %eax
- 80480fe:	b9 08 c8 04 08       	mov    $0x804c808,%ecx
+ 80480fe:	b9 c8 c3 04 08       	mov    $0x804c3c8,%ecx
  8048103:	b6 10                	mov    $0x10,%dh
  8048105:	cd 80                	int    $0x80
  8048107:	6a 06                	push   $0x6
@@ -147,9 +147,9 @@ Disassembly of section .text:
  8048160:	52                   	push   %edx
  8048161:	6a 74                	push   $0x74
  8048163:	58                   	pop    %eax
- 8048164:	bb 08 d8 04 08       	mov    $0x804d808,%ebx
+ 8048164:	bb c8 d3 04 08       	mov    $0x804d3c8,%ebx
  8048169:	cd 80                	int    $0x80
- 804816b:	a1 18 d8 04 08       	mov    0x804d818,%eax
+ 804816b:	a1 d8 d3 04 08       	mov    0x804d3d8,%eax
  8048170:	c1 e8 14             	shr    $0x14,%eax
  8048173:	83 d0 00             	adc    $0x0,%eax
  8048176:	e8 b3 00 00 00       	call   804822e <num_to_ascii>
@@ -166,7 +166,7 @@ Disassembly of section .text:
  8048190:	89 e9                	mov    %ebp,%ecx
  8048192:	e8 54 00 00 00       	call   80481eb <center_and_print>
  8048197:	89 ef                	mov    %ebp,%edi
- 8048199:	be 89 d8 04 08       	mov    $0x804d889,%esi
+ 8048199:	be 49 d4 04 08       	mov    $0x804d449,%esi
  804819e:	ff d2                	call   *%edx
  80481a0:	e8 46 00 00 00       	call   80481eb <center_and_print>
  80481a5:	59                   	pop    %ecx
@@ -179,7 +179,7 @@ Disassembly of section .text:
  80481b0:	cd 80                	int    $0x80
 
 080481b2 <find_string>:
- 80481b2:	be 07 c8 04 08       	mov    $0x804c807,%esi
+ 80481b2:	be c7 c3 04 08       	mov    $0x804c3c7,%esi
 
 080481b7 <find_loop>:
  80481b7:	46                   	inc    %esi
@@ -297,9 +297,12 @@ Disassembly of section .text:
 Disassembly of section .data:
 
 08048243 <ver_string>:
- 8048243:	20 56 65             	and    %dl,0x65(%esi)
- 8048246:	72 73                	jb     80482bb <logo+0xe>
- 8048248:	69 6f 6e 20 00 2c 20 	imul   $0x202c0020,0x6e(%edi),%ebp
+ 8048243:	20               	and    %dl,0x65(%esi)
+
+08048244 <_GLOBAL_OFFSET_TABLE_>:
+ 8048244:	56                   	push   %esi
+ 8048245:	65 72 73             	gs jb  80482bb <logo+0xe>
+ 8048248:	69 6f 6e 20 00   	imul   $0x202c0020,0x6e(%edi),%ebp
 
 0804824d <compiled_string>:
  804824d:	2c 20                	sub    $0x20,%al
@@ -349,7 +352,7 @@ Disassembly of section .data:
  804828b:	6f                   	outsl  %ds:(%esi),(%dx)
  804828c:	63 2f                	arpl   %bp,(%edi)
  804828e:	63 70 75             	arpl   %si,0x75(%eax)
- 8048291:	69 6e 66 6f 00 4f 6e 	imul   $0x6e4f006f,0x66(%esi),%ebp
+ 8048291:	69 6e 66 6f 00   	imul   $0x6e4f006f,0x66(%esi),%ebp
 
 08048296 <one>:
  8048296:	4f                   	dec    %edi
@@ -513,14 +516,11 @@ Disassembly of section .bss:
 080483c8 <__bss_start>:
 	...
 
-08048808 <out_buffer>:
+0804c3c8 <disk_buffer>:
 	...
 
-0804c808 <disk_buffer>:
+0804d3c8 <sysinfo_buff>:
 	...
 
-0804d808 <sysinfo_buff>:
-	...
-
-0804d848 <uname_info>:
+0804d408 <uname_info>:
 	...

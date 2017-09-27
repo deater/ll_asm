@@ -1,5 +1,5 @@
 #
-#  linux_logo in ix86 assembler 0.48
+#  linux_logo in ix86 assembler 0.49
 #
 #  Originally by:
 #       Vince Weaver <vince _at_ deater.net>
@@ -180,7 +180,8 @@
 # + 969 bytes -- as of May 2017
 # + 968 bytes -- Martin Str|mberg sent a patch to shave a byte off of
 #                write_stdout
-
+# + 968 bytes -- did some crazy hacks with stack frame, got lzss=57
+#		and still kept overall the same size
 
 .include "logo.include"
 
@@ -228,13 +229,21 @@ _start:
 	# the lzss algorithm does automatic RLE... pretty clever
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov	$(N-F), %bp		# R
+	mov	$(N-F), %bp		# R (1024-64=960)
 					# smaller to use bp than ebp
 
 	mov	$logo, %esi		# %esi points to logo (for lodsb)
 
 	mov	$out_buffer, %edi	# point to out_buffer
-	push	%edi			# save this value for later
+
+	lea	(%esp,%ebp,2),%esp	# reserve space for text_buf[] on stack
+					# only *really* want 1024
+					# this reserves 1920
+					# but in half as many bytes
+
+					# we leak this stack memory
+					# but that doesn't really matter
+					# not any worse than having it in bss
 
 decompression_loop:
 	lodsb			# load in a byte
@@ -262,12 +271,12 @@ offset_length:
 
 output_loop:
 	and	$POSITION_MASK,%dh  	# mask it
-	mov	text_buf(%edx), %al	# load byte from text_buf[]
+	mov	(%esp,%edx), %al	# load byte from text_buf[]
 	inc	%edx	    		# advance pointer in text_buf
 store_byte:
 	stosb				# store it
 
-	mov	%al, text_buf(%ebp)	# store also to text_buf[r]
+	mov	%al, (%esp,%ebp)	# store also to text_buf[r]
 	inc	%ebp 			# r++
 	and	$(N-1), %bp		# mask r
 
@@ -292,8 +301,9 @@ discrete_char:
 
 done_logo:
 
-	pop	%ebp			# get out_buffer and keep in bp
-	mov	%ebp,%ecx		# move out_buffer to ecx
+	mov	$out_buffer, %ebp	# point to out_buffer
+
+	mov	%ebp,%ecx		# copy out_buffer to ecx
 
 	call	write_stdout		# print the logo
 
@@ -743,7 +753,7 @@ four:	.ascii	"Four\0"
 #============================================================================
 .bss
 
-.lcomm  text_buf, (N+F-1)
+#.lcomm  text_buf, (N+F-1)	# typically  1024+64-1 = 1087
 .lcomm	out_buffer,16384
 
 .lcomm	disk_buffer,4096	# we cheat!!!!
