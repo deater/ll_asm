@@ -228,19 +228,19 @@ _start:
 	# the lzss algorithm does automatic RLE... pretty clever
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov     $(N-F), %bp		# R
+	mov	$(N-F), %bp		# R
 					# smaller to use bp than ebp
 
-	mov  	$logo, %esi		# %esi points to logo (for lodsb)
+	mov	$logo, %esi		# %esi points to logo (for lodsb)
 
 	mov	$out_buffer, %edi	# point to out_buffer
-	push	%edi	     		# save this value for later
+	push	%edi			# save this value for later
 
 decompression_loop:
 	lodsb			# load in a byte
 
-	mov 	$0xff, %bh	# re-load top as a hackish 8-bit counter
-	mov 	%al, %bl	# move in the flags
+	mov	$0xff, %bh	# re-load top as a hackish 8-bit counter
+	mov	%al, %bl	# move in the flags
 
 test_flags:
 	cmp	$logo_end, %esi # have we reached the end?
@@ -250,28 +250,28 @@ test_flags:
 	jc	discrete_char	# if set, we jump to discrete char
 
 offset_length:
-	lodsw                   # get match_length and match_position
-	mov %eax,%edx		# copy to edx
-	    			# no need to mask dx, as we do it
+	lodsw			# get match_length and match_position
+	mov	%eax,%edx	# copy to edx
+				# no need to mask dx, as we do it
 				# by default in output_loop
 
-	shr $(P_BITS),%eax
-	add $(THRESHOLD+1),%al
-	mov %al,%cl             # cl = (ax >> P_BITS) + THRESHOLD + 1
+	shr	$(P_BITS),%eax
+	add	$(THRESHOLD+1),%al
+	mov	%al,%cl		# cl = (ax >> P_BITS) + THRESHOLD + 1
 				#                       (=match_length)
 
 output_loop:
-	and 	$POSITION_MASK,%dh  	# mask it
-	mov 	text_buf(%edx), %al	# load byte from text_buf[]
-	inc 	%edx	    		# advance pointer in text_buf
+	and	$POSITION_MASK,%dh  	# mask it
+	mov	text_buf(%edx), %al	# load byte from text_buf[]
+	inc	%edx	    		# advance pointer in text_buf
 store_byte:
 	stosb				# store it
 
-	mov     %al, text_buf(%ebp)	# store also to text_buf[r]
-	inc 	%ebp 			# r++
-	and 	$(N-1), %bp		# mask r
+	mov	%al, text_buf(%ebp)	# store also to text_buf[r]
+	inc	%ebp 			# r++
+	and	$(N-1), %bp		# mask r
 
-	loop 	output_loop		# repeat until k>j
+	loop	output_loop		# repeat until k>j
 
 	or	%bh,%bh			# if 0 we shifted through 8 and must
 	jnz	test_flags		# re-load flags
@@ -285,17 +285,17 @@ discrete_char:
 					# ecx is set to 0 at start
 					# on Linux
 
-	jmp     store_byte              # and cleverly store it
+	jmp	store_byte              # and cleverly store it
 
 
 # end of LZSS code
 
 done_logo:
 
-	pop 	%ebp			# get out_buffer and keep in bp
+	pop	%ebp			# get out_buffer and keep in bp
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
-	call 	write_stdout		# print the logo
+	call	write_stdout		# print the logo
 
 	#
 	#  Setup
@@ -308,7 +308,7 @@ setup:
 	# PRINT VERSION
 	#==========================
 
-	push 	$SYSCALL_UNAME		# uname syscall
+	push	$SYSCALL_UNAME		# uname syscall
 	pop	%eax			# in 3 bytes
 	mov	$uname_info,%ebx	# uname struct
 	int	$0x80			# do syscall
@@ -319,19 +319,19 @@ setup:
 	call	*%edx			# call strcat
 
 	mov	$ver_string,%esi		# source is " Version "
-	call 	*%edx			        # call strcat
+	call	*%edx			        # call strcat
 	push	%esi  				# save our .txt pointer
 
 	mov	$(uname_info+U_RELEASE),%esi    # version from uname "2.4.1"
-	call 	*%edx				# call strcat
+	call	*%edx				# call strcat
 
 	pop	%esi  			# restore .txt pointer
 					# source is ", Compiled "
-	call 	*%edx			# call strcat
+	call	*%edx			# call strcat
 	push	%esi  			# store for later
 
 	mov	$(uname_info+U_VERSION),%esi	# compiled date
-	call 	*%edx			# call strcat
+	call	*%edx			# call strcat
 
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
@@ -421,8 +421,8 @@ done_bogo:
 	mov	$' ',%al		# print a space
 	stosb
 
-	push %ebx			# store cpu count
-	push %edx			# store strcat pointer
+	push	%ebx			# store cpu count
+	push	%edx			# store strcat pointer
 
 	#=========
 	# MHz
@@ -489,9 +489,9 @@ print_s:
 	adc	$0, %eax		# round
 
 
-	call num_to_ascii
+	call	num_to_ascii
 
-	pop  %edx	 		# restore strcat pointer
+	pop	%edx	 		# restore strcat pointer
 
 	pop     %esi	 		# print 'M RAM, '
 	call	*%edx			# call strcat
@@ -648,12 +648,12 @@ not_too_big:
 	mov	$'C',%al		# tack a 'C' on the end
 					# ah is zero from num_to_ascii
 	stosw				# store C and a NULL
-	pop  %ecx			# pop the pointer to ^[[xC
+	pop	%ecx			# pop the pointer to ^[[xC
 
-	call write_stdout		# write to the screen
+	call	write_stdout		# write to the screen
 
 done_center:
-	pop  %ecx			# restore string pointer
+	pop	%ecx			# restore string pointer
 	     				# and trickily print the real string
 
 	pop %edx

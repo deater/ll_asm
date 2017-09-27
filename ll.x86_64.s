@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 assembler 0.48
+#  linux_logo in x86_64 assembler 0.49
 #
 #  Originally by
 #       Vince Weaver <vince _at_ deater.net>
@@ -34,7 +34,8 @@
 # + 1030 - where we stood in May 2017
 # + 1029 - shaved a byte off of write_stdout thanks to Martin Str|mberg
 #          cmpb against ah is a byte smaller than compare against 0
-
+# + 1027 - Linux will always start an executable will all registers
+#		0, so no need to clear ecx
 
 .include "logo.include"
 
