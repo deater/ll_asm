@@ -1,9 +1,9 @@
 #
-#  linux_logo in 8086 assembler 0.43
+#  linux_logo in 8086 assembler 0.49
 #
 #  Originally by
 #       Vince Weaver <vince _at_ deater.net>
-#
+
 #
 #  Must have ANSI.SYS or equivelent loaded for this to work
 #
@@ -12,7 +12,8 @@
 #     how to create a DOS .COM file using gas
 
 #  Thanks to Ralf Brown's DOS interrupt list
-#     *fun fact* Ralf Brown's sister was a baby-sitter for my family
+#     *fun fact* Ralf Brown grew up in the same town that I did
+#		and his sister was a baby-sitter for my family
 #
 
 #  assemble with     "as --32 -R -o ll.8086.o ll.8086.s"
@@ -71,6 +72,11 @@ start:
 	mov	$out_buffer, %di	# point to out_buffer
 	push	%di	     		# save this value for later
 
+	xor	%cx,%cx			# clear cx
+					# unlike Linux cannot depend on cx
+					# being zero, see
+					# http://www.fysnet.net/yourhelp.htm
+
 decompression_loop:
 	lodsb			# load in a byte
 
@@ -115,7 +121,7 @@ store_byte:
 
 discrete_char:
 	lodsb				# load a byte
-	mov	$1,%cx			# we set ecx to one so byte
+	inc	%cx			# we set ecx to one so byte
 					# will be output once
 
 	jmp     store_byte              # and cleverly store it

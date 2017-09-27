@@ -24,6 +24,8 @@ LINE 1: Must be centered and printed
 LINE 2: Must be Centered and Printed
 7.  /proc/cpuinfo (or equiv) must be loaded using open() and read()
     a 4096 buffer size can be assumed.
+	If your target has no /proc/cpuinfo, a fake one can be created
+	with the relevant fields of info and read from disk instead.
     No need to check error on open() or read().
     The file *must* be closed with close()
 8.  Number of processors is detected via looking for a repeated 
