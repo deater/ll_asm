@@ -211,6 +211,10 @@
 
 	.globl _start
 _start:
+
+	# Note, on Linux x86 all registers but esp are 0 on start
+	# See arch/x86/include/asm/elf.h
+
 	#=========================
 	# PRINT LOGO
 	#=========================
@@ -224,7 +228,8 @@ _start:
 	# the lzss algorithm does automatic RLE... pretty clever
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov     $(N-F), %bp   	     	# R
+	mov     $(N-F), %bp		# R
+					# smaller to use bp than ebp
 
 	mov  	$logo, %esi		# %esi points to logo (for lodsb)
 
@@ -277,7 +282,8 @@ discrete_char:
 	lodsb				# load a byte
 	inc	%ecx			# we set ecx to one so byte
 					# will be output once
-					# (how do we know ecx is zero?)
+					# ecx is set to 0 at start
+					# on Linux
 
 	jmp     store_byte              # and cleverly store it
 

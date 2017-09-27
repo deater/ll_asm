@@ -78,14 +78,16 @@ _start:
 	# the lzss algorithm does automatic RLE... pretty clever
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov     $(N-F), %ebp   	     	# R
+	mov     $(N-F), %ebp		# R
 
 	mov  	$logo, %esi		# %esi points to logo (for lodsb)
 
 	mov	$out_buffer, %edi	# point to out_buffer
 	push	%rdi	     		# save this value for later
 
-	xor	%ecx, %ecx
+	# Note, Linux sets all registers to zero at start on x86_64
+	# See elf_common_init() in arch/x86/include/asm/elf.h
+	#	xor	%ecx, %ecx
 
 decompression_loop:
 	lodsb			# load in a byte
@@ -102,19 +104,19 @@ test_flags:
 
 offset_length:
 	lodsw                   # get match_length and match_position
-	mov %eax,%edx		# copy to edx
+	mov	%eax,%edx	# copy to edx
 	    			# no need to mask dx, as we do it
 				# by default in output_loop
 
-	shr $(P_BITS),%eax
-	add $(THRESHOLD+1),%al
-	mov %al,%cl             # cl = (ax >> P_BITS) + THRESHOLD + 1
-				  #                       (=match_length)
+	shr	$(P_BITS),%eax
+	add	$(THRESHOLD+1),%al
+	mov	%al,%cl		# cl = (ax >> P_BITS) + THRESHOLD + 1
+				#                       (=match_length)
 
 output_loop:
-	and 	$POSITION_MASK,%dh  	# mask it
-	mov 	text_buf(%rdx), %al	# load byte from text_buf[]
-	inc 	%edx	    		# advance pointer in text_buf
+	and 	$POSITION_MASK,%dh	# mask it
+	mov 	text_buf(%rdx),%al	# load byte from text_buf[]
+	inc 	%edx			# advance pointer in text_buf
 store_byte:
 	stosb				# store it
 
@@ -268,8 +270,8 @@ done_bogo:
 	mov	$' ',%al		# print a space
 	stosb
 
-	push %rbx
-	push %rdx			# store strcat pointer
+	push	%rbx
+	push	%rdx			# store strcat pointer
 
 	#=========
 	# MHz
@@ -495,10 +497,10 @@ not_too_big:
 	call write_stdout		# write to the screen
 
 done_center:
-	pop  %rcx			# restore string pointer
-	     				# and trickily print the real string
+	pop	%rcx			# restore string pointer
+					# and trickily print the real string
 
-	pop %rdx			# restore strcat pointer
+	pop	%rdx			# restore strcat pointer
 
 	#================================
 	# WRITE_STDOUT
