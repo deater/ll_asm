@@ -5,51 +5,51 @@ ll.x86_64:     file format elf64-x86-64
 Disassembly of section .text:
 
 0000000000400078 <_start>:
-  400078:	bd c0 03 00 00       	mov    $0x3c0,%ebp
-  40007d:	be e8 02 40 00       	mov    $0x4002e8,%esi
-  400082:	bf 48 08 40 00       	mov    $0x400848,%edi
-  400087:	57                   	push   %rdi
+  400078:	66 bd c0 03          	mov    $0x3c0,%bp
+  40007c:	be e8 02 40 00       	mov    $0x4002e8,%esi
+  400081:	bf 08 04 40 00       	mov    $0x400408,%edi
+  400086:	48 8d 24 6c          	lea    (%rsp,%rbp,2),%rsp
 
-0000000000400088 <decompression_loop>:
-  400088:	ac                   	lods   %ds:(%rsi),%al
-  400089:	b7 ff                	mov    $0xff,%bh
-  40008b:	88 c3                	mov    %al,%bl
+000000000040008a <decompression_loop>:
+  40008a:	ac                   	lods   %ds:(%rsi),%al
+  40008b:	b7 ff                	mov    $0xff,%bh
+  40008d:	88 c3                	mov    %al,%bl
 
-000000000040008d <test_flags>:
-  40008d:	81 fe 03 04 40 00    	cmp    $0x400403,%esi
-  400093:	74 35                	je     4000ca <done_logo>
-  400095:	d1 eb                	shr    %ebx
-  400097:	72 2c                	jb     4000c5 <discrete_char>
+000000000040008f <test_flags>:
+  40008f:	81 fe 03 04 40 00    	cmp    $0x400403,%esi
+  400095:	74 2f                	je     4000c6 <done_logo>
+  400097:	d1 eb                	shr    %ebx
+  400099:	72 26                	jb     4000c1 <discrete_char>
 
-0000000000400099 <offset_length>:
-  400099:	66 ad                	lods   %ds:(%rsi),%ax
-  40009b:	89 c2                	mov    %eax,%edx
-  40009d:	c1 e8 0a             	shr    $0xa,%eax
-  4000a0:	04 03                	add    $0x3,%al
-  4000a2:	88 c1                	mov    %al,%cl
+000000000040009b <offset_length>:
+  40009b:	66 ad                	lods   %ds:(%rsi),%ax
+  40009d:	89 c2                	mov    %eax,%edx
+  40009f:	c1 e8 0a             	shr    $0xa,%eax
+  4000a2:	04 03                	add    $0x3,%al
+  4000a4:	88 c1                	mov    %al,%cl
 
-00000000004000a4 <output_loop>:
-  4000a4:	80 e6 03             	and    $0x3,%dh
-  4000a7:	8a 82 08 04 40 00    	mov    0x400408(%rdx),%al
-  4000ad:	ff c2                	inc    %edx
+00000000004000a6 <output_loop>:
+  4000a6:	80 e6 03             	and    $0x3,%dh
+  4000a9:	8a 04 14             	mov    (%rsp,%rdx,1),%al
+  4000ac:	ff c2                	inc    %edx
 
-00000000004000af <store_byte>:
-  4000af:	aa                   	stos   %al,%es:(%rdi)
-  4000b0:	88 85 08 04 40 00    	mov    %al,0x400408(%rbp)
-  4000b6:	ff c5                	inc    %ebp
-  4000b8:	66 81 e5 ff 03       	and    $0x3ff,%bp
-  4000bd:	e2 e5                	loop   4000a4 <output_loop>
-  4000bf:	08 ff                	or     %bh,%bh
-  4000c1:	75 ca                	jne    40008d <test_flags>
-  4000c3:	eb c3                	jmp    400088 <decompression_loop>
+00000000004000ae <store_byte>:
+  4000ae:	aa                   	stos   %al,%es:(%rdi)
+  4000af:	88 04 2c             	mov    %al,(%rsp,%rbp,1)
+  4000b2:	ff c5                	inc    %ebp
+  4000b4:	66 81 e5 ff 03       	and    $0x3ff,%bp
+  4000b9:	e2 eb                	loop   4000a6 <output_loop>
+  4000bb:	08 ff                	or     %bh,%bh
+  4000bd:	75 d0                	jne    40008f <test_flags>
+  4000bf:	eb c9                	jmp    40008a <decompression_loop>
 
-00000000004000c5 <discrete_char>:
-  4000c5:	ac                   	lods   %ds:(%rsi),%al
-  4000c6:	ff c1                	inc    %ecx
-  4000c8:	eb e5                	jmp    4000af <store_byte>
+00000000004000c1 <discrete_char>:
+  4000c1:	ac                   	lods   %ds:(%rsi),%al
+  4000c2:	ff c1                	inc    %ecx
+  4000c4:	eb e8                	jmp    4000ae <store_byte>
 
-00000000004000ca <done_logo>:
-  4000ca:	5d                   	pop    %rbp
+00000000004000c6 <done_logo>:
+  4000c6:	bd 08 04 40 00       	mov    $0x400408,%ebp
   4000cb:	89 e9                	mov    %ebp,%ecx
   4000cd:	e8 81 01 00 00       	callq  400253 <write_stdout>
 
@@ -57,20 +57,20 @@ Disassembly of section .text:
   4000d2:	ba 17 02 40 00       	mov    $0x400217,%edx
   4000d7:	6a 3f                	pushq  $0x3f
   4000d9:	58                   	pop    %rax
-  4000da:	bf c8 58 40 00       	mov    $0x4058c8,%edi
+  4000da:	bf 88 54 40 00       	mov    $0x405488,%edi
   4000df:	0f 05                	syscall 
   4000e1:	89 ef                	mov    %ebp,%edi
-  4000e3:	be c8 58 40 00       	mov    $0x4058c8,%esi
+  4000e3:	be 88 54 40 00       	mov    $0x405488,%esi
   4000e8:	ff d2                	callq  *%rdx
   4000ea:	be 7e 02 40 00       	mov    $0x40027e,%esi
   4000ef:	ff d2                	callq  *%rdx
   4000f1:	56                   	push   %rsi
-  4000f2:	be 4a 59 40 00       	mov    $0x40594a,%esi
+  4000f2:	be 0a 55 40 00       	mov    $0x40550a,%esi
   4000f7:	ff d2                	callq  *%rdx
   4000f9:	5e                   	pop    %rsi
   4000fa:	ff d2                	callq  *%rdx
   4000fc:	56                   	push   %rsi
-  4000fd:	be 8b 59 40 00       	mov    $0x40598b,%esi
+  4000fd:	be 4b 55 40 00       	mov    $0x40554b,%esi
   400102:	ff d2                	callq  *%rdx
   400104:	89 e9                	mov    %ebp,%ecx
   400106:	66 b8 0a 00          	mov    $0xa,%ax
@@ -88,7 +88,7 @@ Disassembly of section .text:
   40011f:	0f 05                	syscall 
   400121:	89 c7                	mov    %eax,%edi
   400123:	31 c0                	xor    %eax,%eax
-  400125:	be 48 48 40 00       	mov    $0x404848,%esi
+  400125:	be 08 44 40 00       	mov    $0x404408,%esi
   40012a:	b6 10                	mov    $0x10,%dh
   40012c:	0f 05                	syscall 
   40012e:	6a 03                	pushq  $0x3
@@ -148,10 +148,10 @@ Disassembly of section .text:
   40018c:	57                   	push   %rdi
   40018d:	6a 63                	pushq  $0x63
   40018f:	58                   	pop    %rax
-  400190:	bf 48 58 40 00       	mov    $0x405848,%edi
+  400190:	bf 08 54 40 00       	mov    $0x405408,%edi
   400195:	0f 05                	syscall 
   400197:	5f                   	pop    %rdi
-  400198:	48 8b 04 25 68 58 40 	mov    0x405868,%rax
+  400198:	48 8b 04 25 28 54 40 	mov    0x405428,%rax
   40019f:	00 
   4001a0:	48 c1 e8 14          	shr    $0x14,%rax
   4001a4:	83 d0 00             	adc    $0x0,%eax
@@ -172,7 +172,7 @@ Disassembly of section .text:
 
 00000000004001c9 <last_line>:
   4001c9:	89 ef                	mov    %ebp,%edi
-  4001cb:	be 09 59 40 00       	mov    $0x405909,%esi
+  4001cb:	be c9 54 40 00       	mov    $0x4054c9,%esi
   4001d0:	ff d2                	callq  *%rdx
   4001d2:	59                   	pop    %rcx
   4001d3:	e8 48 00 00 00       	callq  400220 <center_and_print>
@@ -186,7 +186,7 @@ Disassembly of section .text:
   4001e3:	0f 05                	syscall 
 
 00000000004001e5 <find_string>:
-  4001e5:	be 47 48 40 00       	mov    $0x404847,%esi
+  4001e5:	be 07 44 40 00       	mov    $0x404407,%esi
 
 00000000004001ea <find_loop>:
   4001ea:	ff c6                	inc    %esi
@@ -431,7 +431,7 @@ Disassembly of section .data:
   400351:	f5                   	cmc    
   400352:	d1 00                	roll   (%rax)
   400354:	80 11 d2             	adcb   $0xd2,(%rcx)
-  400357:	18 0d 28 1c 14 0d    	sbb    %cl,0xd141c28(%rip)        # d541f85 <_end+0xd13c535>
+  400357:	18 0d 28 1c 14 0d    	sbb    %cl,0xd141c28(%rip)        # d541f85 <_end+0xd13c975>
   40035d:	2c 1c                	sub    $0x1c,%al
   40035f:	1c f0                	sbb    $0xf0,%al
   400361:	4a 1a 5b 00          	rex.WX sbb 0x0(%rbx),%bl
@@ -440,7 +440,7 @@ Disassembly of section .data:
   40036e:	cd cd                	int    $0xcd
   400370:	28 cd                	sub    %cl,%ch
   400372:	14 89                	adc    $0x89,%al
-  400374:	41 00 1d 87 42 4b 72 	add    %bl,0x724b4287(%rip)        # 728b4602 <_end+0x724aebb2>
+  400374:	41 00 1d 87 42 4b 72 	add    %bl,0x724b4287(%rip)        # 728b4602 <_end+0x724aeff2>
   40037b:	53                   	push   %rbx
   40037c:	1c 78                	sbb    $0x78,%al
   40037e:	0f 62 87 6d 55 58 f7 	punpckldq -0x8a7aa93(%rdi),%mm0
@@ -487,12 +487,12 @@ Disassembly of section .data:
   4003df:	21 12                	and    %edx,(%rdx)
   4003e1:	68 91 2a c8 22       	pushq  $0x22c82a91
   4003e6:	b2 68                	mov    $0x68,%dl
-  4003e8:	70 2d                	jo     400417 <text_buf+0xf>
+  4003e8:	70 2d                	jo     400417 <out_buffer+0xf>
   4003ea:	00 c6                	add    %al,%dh
   4003ec:	50                   	push   %rax
   4003ed:	b2 79                	mov    $0x79,%dl
   4003ef:	91                   	xchg   %eax,%ecx
-  4003f0:	4a 70 31             	rex.WX jo 400424 <text_buf+0x1c>
+  4003f0:	4a 70 31             	rex.WX jo 400424 <out_buffer+0x1c>
   4003f3:	f8                   	clc    
   4003f4:	51                   	push   %rcx
   4003f5:	f3 28 dd             	repz sub %bl,%ch
@@ -507,17 +507,14 @@ Disassembly of section .data:
 
 Disassembly of section .bss:
 
-0000000000400408 <text_buf>:
+0000000000400408 <out_buffer>:
 	...
 
-0000000000400848 <out_buffer>:
+0000000000404408 <disk_buffer>:
 	...
 
-0000000000404848 <disk_buffer>:
+0000000000405408 <sysinfo_buff>:
 	...
 
-0000000000405848 <sysinfo_buff>:
-	...
-
-00000000004058c8 <uname_info>:
+0000000000405488 <uname_info>:
 	...

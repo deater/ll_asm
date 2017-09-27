@@ -36,6 +36,7 @@
 #          cmpb against ah is a byte smaller than compare against 0
 # + 1027 - Linux will always start an executable will all registers
 #		0, so no need to clear ecx
+# + 1027 - put text_buf[] on stack.  Reduces lzss=60
 
 .include "logo.include"
 
@@ -79,12 +80,21 @@ _start:
 	# the lzss algorithm does automatic RLE... pretty clever
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov     $(N-F), %ebp		# R
+	mov     $(N-F), %bp		# R
 
 	mov  	$logo, %esi		# %esi points to logo (for lodsb)
 
 	mov	$out_buffer, %edi	# point to out_buffer
-	push	%rdi	     		# save this value for later
+#	push	%rdi	     		# save this value for later
+
+	lea	(%rsp,%rbp,2),%rsp	# reserve space for text_buf[] on stack
+					# only *really* want 1024
+					# this reserves 1920
+					# but in half as many bytes
+
+					# we leak this stack memory
+					# but that doesn't really matter
+					# not any worse than having it in bss
 
 	# Note, Linux sets all registers to zero at start on x86_64
 	# See elf_common_init() in arch/x86/include/asm/elf.h
@@ -116,12 +126,12 @@ offset_length:
 
 output_loop:
 	and 	$POSITION_MASK,%dh	# mask it
-	mov 	text_buf(%rdx),%al	# load byte from text_buf[]
+	mov 	(%rsp,%rdx),%al		# load byte from text_buf[]
 	inc 	%edx			# advance pointer in text_buf
 store_byte:
 	stosb				# store it
 
-	mov     %al, text_buf(%rbp)	# store also to text_buf[r]
+	mov     %al, (%rsp,%rbp)	# store also to text_buf[r]
 	inc 	%ebp 			# r++
 	and 	$(N-1), %bp		# mask r
 
@@ -144,8 +154,8 @@ discrete_char:
 # end of LZSS code
 
 done_logo:
-
-	pop 	%rbp			# get out_buffer and keep in bp
+	mov	$out_buffer, %ebp	# get out_buffer and keep in bp
+#	pop 	%rbp			# get out_buffer and keep in bp
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
 	call	write_stdout		# print the logo
@@ -588,7 +598,7 @@ four:	.ascii	"Four\0"
 #============================================================================
 .bss
 
-.lcomm  text_buf, (N+F-1)
+#.lcomm  text_buf, (N+F-1)
 .lcomm	out_buffer,16384
 
 .lcomm	disk_buffer,4096	# we cheat!!!!

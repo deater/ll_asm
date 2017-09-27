@@ -8,6 +8,9 @@
 + Look into function pointer rather than flag to ascii_to_num
 	as done in SPARC
 
++ Update x86_32 to match x86/x86_64
+
++ See if other CISC chips putting text_buf[] on stack helps
 
 Chips TODO:
 + 65c816
