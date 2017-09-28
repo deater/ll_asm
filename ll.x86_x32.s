@@ -53,6 +53,8 @@
 # + 1006 - re-optimizing to use mov rather than push/pop to load
 # 		syscall numbers into eax
 # + 1005 - Martin Str|mberg tip of using cmpb %ah rather than $0
+# + 1003 - Remove extraneous clearing of rcx (Linux clears it at startup)
+# + 1003 - move text_buf[] to live on stack (makes lzss smaller)
 
 .include "logo.include"
 
@@ -96,16 +98,27 @@ _start:
 	# the lzss algorithm does automatic RLE... pretty clever
 	# so we compress with NUL as FREQUENT_CHAR and it is pre-done for us
 
-	mov	$(N-F), %ebp		# R
+
+	# we are guaranteed on Linux that all registers start as 0
+	# so we know upper part of bp is zero, as well as cx
+
+	mov	$(N-F), %bp		# R
 					# lose a byte if we use %bp
-					# are we guaranteed ebp starts at 0?
 
 	mov	$logo, %esi		# %esi points to logo (for lodsb)
 
 	mov	$out_buffer, %edi	# point to out_buffer
-	push	%rdi	     		# save this value for later
+#	push	%rdi	     		# save this value for later
 
-	xor	%ecx, %ecx
+
+	lea	(%rsp,%rbp,2),%rsp	# reserve space for text_buf[] on stack
+					# only *really* want 1024
+					# this reserves 1920
+					# but in half as many bytes
+
+					# we leak this stack memory
+					# but that doesn't really matter
+					# not any worse than having it in bss
 
 decompression_loop:
 	lodsb			# load in a byte
@@ -133,12 +146,12 @@ offset_length:
 
 output_loop:
 	and	$POSITION_MASK,%dh  	# mask it
-	mov	text_buf(%rdx), %al	# load byte from text_buf[]
+	mov	(%rsp,%rdx), %al	# load byte from text_buf[]
 	inc	%edx	    		# advance pointer in text_buf
 store_byte:
 	stosb				# store it
 
-	mov	%al, text_buf(%rbp)	# store also to text_buf[r]
+	mov	%al, (%rsp,%rbp)	# store also to text_buf[r]
 	inc	%ebp			# r++
 	and	$(N-1), %bp		# mask r
 
@@ -162,7 +175,8 @@ discrete_char:
 
 done_logo:
 
-	pop	%rbp			# get out_buffer and keep in bp
+	mov	$out_buffer, %ebp	# point to out_buffer
+#	pop	%rbp			# get out_buffer and keep in bp
 	mov	%ebp,%ecx		# move out_buffer to ecx
 
 	call	write_stdout		# print the logo
