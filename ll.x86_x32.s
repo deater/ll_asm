@@ -108,8 +108,10 @@ _start:
 	mov	$logo, %esi		# %esi points to logo (for lodsb)
 
 	mov	$out_buffer, %edi	# point to out_buffer
-#	push	%rdi	     		# save this value for later
 
+	# Tried various ways to both save out_buffer until end
+	#  put into a high register?  push/pop, weird offsets?
+	#  enter/leave?  never came up with a good solution
 
 	lea	(%rsp,%rbp,2),%rsp	# reserve space for text_buf[] on stack
 					# only *really* want 1024

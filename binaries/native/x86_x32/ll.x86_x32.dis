@@ -5,11 +5,10 @@ ll.x86_x32:     file format elf32-x86-64
 Disassembly of section .text:
 
 00400054 <_start>:
-  400054:	bd c0 03 00 00       	mov    $0x3c0,%ebp
-  400059:	be d2 02 40 00       	mov    $0x4002d2,%esi
-  40005e:	bf 30 08 40 00       	mov    $0x400830,%edi
-  400063:	57                   	push   %rdi
-  400064:	31 c9                	xor    %ecx,%ecx
+  400054:	66 bd c0 03          	mov    $0x3c0,%bp
+  400058:	be d0 02 40 00       	mov    $0x4002d0,%esi
+  40005d:	bf 30 08 40 00       	mov    $0x400830,%edi
+  400062:	48 8d 24 6c          	lea    (%rsp,%rbp,2),%rsp
 
 00400066 <decompression_loop>:
   400066:	ac                   	lods   %ds:(%rsi),%al
@@ -17,10 +16,10 @@ Disassembly of section .text:
   400069:	88 c3                	mov    %al,%bl
 
 0040006b <test_flags>:
-  40006b:	81 fe ed 03 40 00    	cmp    $0x4003ed,%esi
-  400071:	74 35                	je     4000a8 <done_logo>
+  40006b:	81 fe eb 03 40 00    	cmp    $0x4003eb,%esi
+  400071:	74 2f                	je     4000a2 <done_logo>
   400073:	d1 eb                	shr    %ebx
-  400075:	72 2c                	jb     4000a3 <discrete_char>
+  400075:	72 26                	jb     40009d <discrete_char>
 
 00400077 <offset_length>:
   400077:	66 ad                	lods   %ds:(%rsi),%ax
@@ -31,472 +30,474 @@ Disassembly of section .text:
 
 00400082 <output_loop>:
   400082:	80 e6 03             	and    $0x3,%dh
-  400085:	8a 82 f0 03 40 00    	mov    0x4003f0(%rdx),%al
-  40008b:	ff c2                	inc    %edx
+  400085:	8a 04 14             	mov    (%rsp,%rdx,1),%al
+  400088:	ff c2                	inc    %edx
 
-0040008d <store_byte>:
-  40008d:	aa                   	stos   %al,%es:(%rdi)
-  40008e:	88 85 f0 03 40 00    	mov    %al,0x4003f0(%rbp)
-  400094:	ff c5                	inc    %ebp
-  400096:	66 81 e5 ff 03       	and    $0x3ff,%bp
-  40009b:	e2 e5                	loop   400082 <output_loop>
-  40009d:	08 ff                	or     %bh,%bh
-  40009f:	75 ca                	jne    40006b <test_flags>
-  4000a1:	eb c3                	jmp    400066 <decompression_loop>
+0040008a <store_byte>:
+  40008a:	aa                   	stos   %al,%es:(%rdi)
+  40008b:	88 04 2c             	mov    %al,(%rsp,%rbp,1)
+  40008e:	ff c5                	inc    %ebp
+  400090:	66 81 e5 ff 03       	and    $0x3ff,%bp
+  400095:	e2 eb                	loop   400082 <output_loop>
+  400097:	08 ff                	or     %bh,%bh
+  400099:	75 d0                	jne    40006b <test_flags>
+  40009b:	eb c9                	jmp    400066 <decompression_loop>
 
-004000a3 <discrete_char>:
-  4000a3:	ac                   	lods   %ds:(%rsi),%al
-  4000a4:	ff c1                	inc    %ecx
-  4000a6:	eb e5                	jmp    40008d <store_byte>
+0040009d <discrete_char>:
+  40009d:	ac                   	lods   %ds:(%rsi),%al
+  40009e:	ff c1                	inc    %ecx
+  4000a0:	eb e8                	jmp    40008a <store_byte>
 
-004000a8 <done_logo>:
-  4000a8:	5d                   	pop    %rbp
-  4000a9:	89 e9                	mov    %ebp,%ecx
-  4000ab:	e8 8b 01 00 00       	callq  40023b <write_stdout>
+004000a2 <done_logo>:
+  4000a2:	bd 30 08 40 00       	mov    $0x400830,%ebp
+  4000a7:	89 e9                	mov    %ebp,%ecx
+  4000a9:	e8 8b 01 00 00       	callq  400239 <write_stdout>
 
-004000b0 <setup>:
-  4000b0:	ba ff 01 40 00       	mov    $0x4001ff,%edx
-  4000b5:	b8 3f 00 00 40       	mov    $0x4000003f,%eax
-  4000ba:	bf b0 58 40 00       	mov    $0x4058b0,%edi
-  4000bf:	0f 05                	syscall 
-  4000c1:	89 ef                	mov    %ebp,%edi
-  4000c3:	be b0 58 40 00       	mov    $0x4058b0,%esi
-  4000c8:	ff d2                	callq  *%rdx
-  4000ca:	be 68 02 40 00       	mov    $0x400268,%esi
-  4000cf:	ff d2                	callq  *%rdx
-  4000d1:	56                   	push   %rsi
-  4000d2:	be 32 59 40 00       	mov    $0x405932,%esi
-  4000d7:	ff d2                	callq  *%rdx
-  4000d9:	5e                   	pop    %rsi
-  4000da:	ff d2                	callq  *%rdx
-  4000dc:	56                   	push   %rsi
-  4000dd:	be 73 59 40 00       	mov    $0x405973,%esi
-  4000e2:	ff d2                	callq  *%rdx
-  4000e4:	89 e9                	mov    %ebp,%ecx
-  4000e6:	66 b8 0a 00          	mov    $0xa,%ax
-  4000ea:	66 ab                	stos   %ax,%es:(%rdi)
-  4000ec:	ff d2                	callq  *%rdx
-  4000ee:	e8 15 01 00 00       	callq  400208 <center_and_print>
+004000ae <setup>:
+  4000ae:	ba fd 01 40 00       	mov    $0x4001fd,%edx
+  4000b3:	b8 3f 00 00 40       	mov    $0x4000003f,%eax
+  4000b8:	bf b0 58 40 00       	mov    $0x4058b0,%edi
+  4000bd:	0f 05                	syscall 
+  4000bf:	89 ef                	mov    %ebp,%edi
+  4000c1:	be b0 58 40 00       	mov    $0x4058b0,%esi
+  4000c6:	ff d2                	callq  *%rdx
+  4000c8:	be 66 02 40 00       	mov    $0x400266,%esi
+  4000cd:	ff d2                	callq  *%rdx
+  4000cf:	56                   	push   %rsi
+  4000d0:	be 32 59 40 00       	mov    $0x405932,%esi
+  4000d5:	ff d2                	callq  *%rdx
+  4000d7:	5e                   	pop    %rsi
+  4000d8:	ff d2                	callq  *%rdx
+  4000da:	56                   	push   %rsi
+  4000db:	be 73 59 40 00       	mov    $0x405973,%esi
+  4000e0:	ff d2                	callq  *%rdx
+  4000e2:	89 e9                	mov    %ebp,%ecx
+  4000e4:	66 b8 0a 00          	mov    $0xa,%ax
+  4000e8:	66 ab                	stos   %ax,%es:(%rdi)
+  4000ea:	ff d2                	callq  *%rdx
+  4000ec:	e8 15 01 00 00       	callq  400206 <center_and_print>
 
-004000f3 <middle_line>:
-  4000f3:	52                   	push   %rdx
-  4000f4:	b8 02 00 00 40       	mov    $0x40000002,%eax
-  4000f9:	bf ad 02 40 00       	mov    $0x4002ad,%edi
-  4000fe:	31 f6                	xor    %esi,%esi
-  400100:	99                   	cltd   
-  400101:	0f 05                	syscall 
-  400103:	89 c7                	mov    %eax,%edi
-  400105:	31 c0                	xor    %eax,%eax
-  400107:	be 30 48 40 00       	mov    $0x404830,%esi
-  40010c:	b6 10                	mov    $0x10,%dh
-  40010e:	0f 05                	syscall 
-  400110:	b8 03 00 00 40       	mov    $0x40000003,%eax
-  400115:	0f 05                	syscall 
+004000f1 <middle_line>:
+  4000f1:	52                   	push   %rdx
+  4000f2:	b8 02 00 00 40       	mov    $0x40000002,%eax
+  4000f7:	bf ab 02 40 00       	mov    $0x4002ab,%edi
+  4000fc:	31 f6                	xor    %esi,%esi
+  4000fe:	99                   	cltd   
+  4000ff:	0f 05                	syscall 
+  400101:	89 c7                	mov    %eax,%edi
+  400103:	31 c0                	xor    %eax,%eax
+  400105:	be 30 48 40 00       	mov    $0x404830,%esi
+  40010a:	b6 10                	mov    $0x10,%dh
+  40010c:	0f 05                	syscall 
+  40010e:	b8 03 00 00 40       	mov    $0x40000003,%eax
+  400113:	0f 05                	syscall 
 
-00400117 <number_of_cpus>:
-  400117:	31 db                	xor    %ebx,%ebx
+00400115 <number_of_cpus>:
+  400115:	31 db                	xor    %ebx,%ebx
 
-00400119 <bogo_loop>:
-  400119:	8b 06                	mov    (%rsi),%eax
-  40011b:	ff c6                	inc    %esi
-  40011d:	3c 00                	cmp    $0x0,%al
-  40011f:	74 0c                	je     40012d <done_bogo>
-  400121:	3d 62 6f 67 6f       	cmp    $0x6f676f62,%eax
-  400126:	75 f1                	jne    400119 <bogo_loop>
-  400128:	83 c3 02             	add    $0x2,%ebx
-  40012b:	eb ec                	jmp    400119 <bogo_loop>
+00400117 <bogo_loop>:
+  400117:	8b 06                	mov    (%rsi),%eax
+  400119:	ff c6                	inc    %esi
+  40011b:	3c 00                	cmp    $0x0,%al
+  40011d:	74 0c                	je     40012b <done_bogo>
+  40011f:	3d 62 6f 67 6f       	cmp    $0x6f676f62,%eax
+  400124:	75 f1                	jne    400117 <bogo_loop>
+  400126:	83 c3 02             	add    $0x2,%ebx
+  400129:	eb ec                	jmp    400117 <bogo_loop>
 
-0040012d <done_bogo>:
-  40012d:	8d b4 5b b5 02 40 00 	lea    0x4002b5(%rbx,%rbx,2),%esi
-  400134:	89 ef                	mov    %ebp,%edi
-  400136:	5a                   	pop    %rdx
-  400137:	ff d2                	callq  *%rdx
-  400139:	b0 20                	mov    $0x20,%al
-  40013b:	aa                   	stos   %al,%es:(%rdi)
-  40013c:	53                   	push   %rbx
-  40013d:	52                   	push   %rdx
+0040012b <done_bogo>:
+  40012b:	8d b4 5b b3 02 40 00 	lea    0x4002b3(%rbx,%rbx,2),%esi
+  400132:	89 ef                	mov    %ebp,%edi
+  400134:	5a                   	pop    %rdx
+  400135:	ff d2                	callq  *%rdx
+  400137:	b0 20                	mov    $0x20,%al
+  400139:	aa                   	stos   %al,%es:(%rdi)
+  40013a:	53                   	push   %rbx
+  40013b:	52                   	push   %rdx
 
-0040013e <print_mhz>:
-  40013e:	bb 20 4d 48 7a       	mov    $0x7a484d20,%ebx
-  400143:	b4 2e                	mov    $0x2e,%ah
-  400145:	83 ea 32             	sub    $0x32,%edx
-  400148:	ff d2                	callq  *%rdx
-  40014a:	89 d8                	mov    %ebx,%eax
-  40014c:	c1 c8 08             	ror    $0x8,%eax
-  40014f:	ab                   	stos   %eax,%es:(%rdi)
+0040013c <print_mhz>:
+  40013c:	bb 20 4d 48 7a       	mov    $0x7a484d20,%ebx
+  400141:	b4 2e                	mov    $0x2e,%ah
+  400143:	83 ea 32             	sub    $0x32,%edx
+  400146:	ff d2                	callq  *%rdx
+  400148:	89 d8                	mov    %ebx,%eax
+  40014a:	c1 c8 08             	ror    $0x8,%eax
+  40014d:	ab                   	stos   %eax,%es:(%rdi)
 
-00400150 <chip_name>:
-  400150:	bb 6e 61 6d 65       	mov    $0x656d616e,%ebx
-  400155:	b4 20                	mov    $0x20,%ah
-  400157:	ff d2                	callq  *%rdx
-  400159:	aa                   	stos   %al,%es:(%rdi)
-  40015a:	e8 87 00 00 00       	callq  4001e6 <skip_spaces>
-  40015f:	5a                   	pop    %rdx
-  400160:	5b                   	pop    %rbx
-  400161:	5e                   	pop    %rsi
-  400162:	ff d2                	callq  *%rdx
-  400164:	80 fb 02             	cmp    $0x2,%bl
-  400167:	75 03                	jne    40016c <print_s>
-  400169:	48 ff c6             	inc    %rsi
+0040014e <chip_name>:
+  40014e:	bb 6e 61 6d 65       	mov    $0x656d616e,%ebx
+  400153:	b4 20                	mov    $0x20,%ah
+  400155:	ff d2                	callq  *%rdx
+  400157:	aa                   	stos   %al,%es:(%rdi)
+  400158:	e8 87 00 00 00       	callq  4001e4 <skip_spaces>
+  40015d:	5a                   	pop    %rdx
+  40015e:	5b                   	pop    %rbx
+  40015f:	5e                   	pop    %rsi
+  400160:	ff d2                	callq  *%rdx
+  400162:	80 fb 02             	cmp    $0x2,%bl
+  400165:	75 03                	jne    40016a <print_s>
+  400167:	48 ff c6             	inc    %rsi
 
-0040016c <print_s>:
-  40016c:	ff d2                	callq  *%rdx
-  40016e:	56                   	push   %rsi
-  40016f:	52                   	push   %rdx
-  400170:	57                   	push   %rdi
-  400171:	b8 63 00 00 40       	mov    $0x40000063,%eax
-  400176:	bf 30 58 40 00       	mov    $0x405830,%edi
-  40017b:	0f 05                	syscall 
-  40017d:	5f                   	pop    %rdi
-  40017e:	48 8b 04 25 50 58 40 	mov    0x405850,%rax
-  400185:	00 
-  400186:	48 c1 e8 14          	shr    $0x14,%rax
-  40018a:	83 d0 00             	adc    $0x0,%eax
-  40018d:	e8 c0 00 00 00       	callq  400252 <num_to_ascii>
-  400192:	5a                   	pop    %rdx
-  400193:	5e                   	pop    %rsi
-  400194:	ff d2                	callq  *%rdx
-  400196:	56                   	push   %rsi
-  400197:	bb 6d 69 70 73       	mov    $0x7370696d,%ebx
-  40019c:	b4 0a                	mov    $0xa,%ah
-  40019e:	e8 2a 00 00 00       	callq  4001cd <find_string>
-  4001a3:	5e                   	pop    %rsi
-  4001a4:	ff d2                	callq  *%rdx
-  4001a6:	56                   	push   %rsi
-  4001a7:	89 e9                	mov    %ebp,%ecx
-  4001a9:	51                   	push   %rcx
-  4001aa:	e8 59 00 00 00       	callq  400208 <center_and_print>
+0040016a <print_s>:
+  40016a:	ff d2                	callq  *%rdx
+  40016c:	56                   	push   %rsi
+  40016d:	52                   	push   %rdx
+  40016e:	57                   	push   %rdi
+  40016f:	b8 63 00 00 40       	mov    $0x40000063,%eax
+  400174:	bf 30 58 40 00       	mov    $0x405830,%edi
+  400179:	0f 05                	syscall 
+  40017b:	5f                   	pop    %rdi
+  40017c:	48 8b 04 25 50 58 40 	mov    0x405850,%rax
+  400183:	00 
+  400184:	48 c1 e8 14          	shr    $0x14,%rax
+  400188:	83 d0 00             	adc    $0x0,%eax
+  40018b:	e8 c0 00 00 00       	callq  400250 <num_to_ascii>
+  400190:	5a                   	pop    %rdx
+  400191:	5e                   	pop    %rsi
+  400192:	ff d2                	callq  *%rdx
+  400194:	56                   	push   %rsi
+  400195:	bb 6d 69 70 73       	mov    $0x7370696d,%ebx
+  40019a:	b4 0a                	mov    $0xa,%ah
+  40019c:	e8 2a 00 00 00       	callq  4001cb <find_string>
+  4001a1:	5e                   	pop    %rsi
+  4001a2:	ff d2                	callq  *%rdx
+  4001a4:	56                   	push   %rsi
+  4001a5:	89 e9                	mov    %ebp,%ecx
+  4001a7:	51                   	push   %rcx
+  4001a8:	e8 59 00 00 00       	callq  400206 <center_and_print>
 
-004001af <last_line>:
-  4001af:	89 ef                	mov    %ebp,%edi
-  4001b1:	be f1 58 40 00       	mov    $0x4058f1,%esi
-  4001b6:	ff d2                	callq  *%rdx
-  4001b8:	59                   	pop    %rcx
-  4001b9:	e8 4a 00 00 00       	callq  400208 <center_and_print>
-  4001be:	59                   	pop    %rcx
-  4001bf:	e8 77 00 00 00       	callq  40023b <write_stdout>
+004001ad <last_line>:
+  4001ad:	89 ef                	mov    %ebp,%edi
+  4001af:	be f1 58 40 00       	mov    $0x4058f1,%esi
+  4001b4:	ff d2                	callq  *%rdx
+  4001b6:	59                   	pop    %rcx
+  4001b7:	e8 4a 00 00 00       	callq  400206 <center_and_print>
+  4001bc:	59                   	pop    %rcx
+  4001bd:	e8 77 00 00 00       	callq  400239 <write_stdout>
 
-004001c4 <exit>:
-  4001c4:	b8 3c 00 00 40       	mov    $0x4000003c,%eax
-  4001c9:	31 ff                	xor    %edi,%edi
-  4001cb:	0f 05                	syscall 
+004001c2 <exit>:
+  4001c2:	b8 3c 00 00 40       	mov    $0x4000003c,%eax
+  4001c7:	31 ff                	xor    %edi,%edi
+  4001c9:	0f 05                	syscall 
 
-004001cd <find_string>:
-  4001cd:	be 2f 48 40 00       	mov    $0x40482f,%esi
+004001cb <find_string>:
+  4001cb:	be 2f 48 40 00       	mov    $0x40482f,%esi
 
-004001d2 <find_loop>:
-  4001d2:	ff c6                	inc    %esi
-  4001d4:	80 3e 00             	cmpb   $0x0,(%rsi)
-  4001d7:	74 25                	je     4001fe <done>
-  4001d9:	3b 1e                	cmp    (%rsi),%ebx
-  4001db:	75 f5                	jne    4001d2 <find_loop>
+004001d0 <find_loop>:
+  4001d0:	ff c6                	inc    %esi
+  4001d2:	80 3e 00             	cmpb   $0x0,(%rsi)
+  4001d5:	74 25                	je     4001fc <done>
+  4001d7:	3b 1e                	cmp    (%rsi),%ebx
+  4001d9:	75 f5                	jne    4001d0 <find_loop>
 
-004001dd <find_colon>:
-  4001dd:	ac                   	lods   %ds:(%rsi),%al
-  4001de:	3c 00                	cmp    $0x0,%al
-  4001e0:	74 1c                	je     4001fe <done>
-  4001e2:	3c 3a                	cmp    $0x3a,%al
-  4001e4:	75 f7                	jne    4001dd <find_colon>
+004001db <find_colon>:
+  4001db:	ac                   	lods   %ds:(%rsi),%al
+  4001dc:	3c 00                	cmp    $0x0,%al
+  4001de:	74 1c                	je     4001fc <done>
+  4001e0:	3c 3a                	cmp    $0x3a,%al
+  4001e2:	75 f7                	jne    4001db <find_colon>
 
-004001e6 <skip_spaces>:
-  4001e6:	ac                   	lods   %ds:(%rsi),%al
-  4001e7:	3c 20                	cmp    $0x20,%al
-  4001e9:	74 fb                	je     4001e6 <skip_spaces>
+004001e4 <skip_spaces>:
+  4001e4:	ac                   	lods   %ds:(%rsi),%al
+  4001e5:	3c 20                	cmp    $0x20,%al
+  4001e7:	74 fb                	je     4001e4 <skip_spaces>
 
-004001eb <store_loop>:
-  4001eb:	3c 00                	cmp    $0x0,%al
-  4001ed:	74 0f                	je     4001fe <done>
-  4001ef:	38 e0                	cmp    %ah,%al
-  4001f1:	74 08                	je     4001fb <almost_done>
-  4001f3:	3c 0a                	cmp    $0xa,%al
-  4001f5:	74 04                	je     4001fb <almost_done>
-  4001f7:	aa                   	stos   %al,%es:(%rdi)
-  4001f8:	ac                   	lods   %ds:(%rsi),%al
-  4001f9:	eb f0                	jmp    4001eb <store_loop>
+004001e9 <store_loop>:
+  4001e9:	3c 00                	cmp    $0x0,%al
+  4001eb:	74 0f                	je     4001fc <done>
+  4001ed:	38 e0                	cmp    %ah,%al
+  4001ef:	74 08                	je     4001f9 <almost_done>
+  4001f1:	3c 0a                	cmp    $0xa,%al
+  4001f3:	74 04                	je     4001f9 <almost_done>
+  4001f5:	aa                   	stos   %al,%es:(%rdi)
+  4001f6:	ac                   	lods   %ds:(%rsi),%al
+  4001f7:	eb f0                	jmp    4001e9 <store_loop>
 
-004001fb <almost_done>:
-  4001fb:	c6 07 00             	movb   $0x0,(%rdi)
+004001f9 <almost_done>:
+  4001f9:	c6 07 00             	movb   $0x0,(%rdi)
 
-004001fe <done>:
-  4001fe:	c3                   	retq   
+004001fc <done>:
+  4001fc:	c3                   	retq   
 
-004001ff <strcat>:
-  4001ff:	ac                   	lods   %ds:(%rsi),%al
-  400200:	aa                   	stos   %al,%es:(%rdi)
-  400201:	3c 00                	cmp    $0x0,%al
-  400203:	75 fa                	jne    4001ff <strcat>
-  400205:	ff cf                	dec    %edi
-  400207:	c3                   	retq   
+004001fd <strcat>:
+  4001fd:	ac                   	lods   %ds:(%rsi),%al
+  4001fe:	aa                   	stos   %al,%es:(%rdi)
+  4001ff:	3c 00                	cmp    $0x0,%al
+  400201:	75 fa                	jne    4001fd <strcat>
+  400203:	ff cf                	dec    %edi
+  400205:	c3                   	retq   
 
-00400208 <center_and_print>:
-  400208:	52                   	push   %rdx
-  400209:	51                   	push   %rcx
-  40020a:	ff c7                	inc    %edi
-  40020c:	57                   	push   %rdi
-  40020d:	66 b8 1b 5b          	mov    $0x5b1b,%ax
-  400211:	66 ab                	stos   %ax,%es:(%rdi)
-  400213:	99                   	cltd   
+00400206 <center_and_print>:
+  400206:	52                   	push   %rdx
+  400207:	51                   	push   %rcx
+  400208:	ff c7                	inc    %edi
+  40020a:	57                   	push   %rdi
+  40020b:	66 b8 1b 5b          	mov    $0x5b1b,%ax
+  40020f:	66 ab                	stos   %ax,%es:(%rdi)
+  400211:	99                   	cltd   
 
-00400214 <str_loop2>:
-  400214:	ff c2                	inc    %edx
-  400216:	80 3c 11 00          	cmpb   $0x0,(%rcx,%rdx,1)
-  40021a:	75 f8                	jne    400214 <str_loop2>
-  40021c:	6a 51                	pushq  $0x51
-  40021e:	58                   	pop    %rax
-  40021f:	39 c2                	cmp    %eax,%edx
-  400221:	7c 03                	jl     400226 <not_too_big>
-  400223:	6a 50                	pushq  $0x50
-  400225:	5a                   	pop    %rdx
+00400212 <str_loop2>:
+  400212:	ff c2                	inc    %edx
+  400214:	80 3c 11 00          	cmpb   $0x0,(%rcx,%rdx,1)
+  400218:	75 f8                	jne    400212 <str_loop2>
+  40021a:	6a 51                	pushq  $0x51
+  40021c:	58                   	pop    %rax
+  40021d:	39 c2                	cmp    %eax,%edx
+  40021f:	7c 03                	jl     400224 <not_too_big>
+  400221:	6a 50                	pushq  $0x50
+  400223:	5a                   	pop    %rdx
 
-00400226 <not_too_big>:
-  400226:	29 d0                	sub    %edx,%eax
-  400228:	d1 e8                	shr    %eax
-  40022a:	e8 23 00 00 00       	callq  400252 <num_to_ascii>
-  40022f:	b0 43                	mov    $0x43,%al
-  400231:	66 ab                	stos   %ax,%es:(%rdi)
-  400233:	59                   	pop    %rcx
-  400234:	e8 02 00 00 00       	callq  40023b <write_stdout>
+00400224 <not_too_big>:
+  400224:	29 d0                	sub    %edx,%eax
+  400226:	d1 e8                	shr    %eax
+  400228:	e8 23 00 00 00       	callq  400250 <num_to_ascii>
+  40022d:	b0 43                	mov    $0x43,%al
+  40022f:	66 ab                	stos   %ax,%es:(%rdi)
+  400231:	59                   	pop    %rcx
+  400232:	e8 02 00 00 00       	callq  400239 <write_stdout>
 
-00400239 <done_center>:
-  400239:	59                   	pop    %rcx
-  40023a:	5a                   	pop    %rdx
+00400237 <done_center>:
+  400237:	59                   	pop    %rcx
+  400238:	5a                   	pop    %rdx
 
-0040023b <write_stdout>:
-  40023b:	52                   	push   %rdx
-  40023c:	b8 01 00 00 40       	mov    $0x40000001,%eax
-  400241:	99                   	cltd   
-  400242:	8d 7a 01             	lea    0x1(%rdx),%edi
-  400245:	89 ce                	mov    %ecx,%esi
+00400239 <write_stdout>:
+  400239:	52                   	push   %rdx
+  40023a:	b8 01 00 00 40       	mov    $0x40000001,%eax
+  40023f:	99                   	cltd   
+  400240:	8d 7a 01             	lea    0x1(%rdx),%edi
+  400243:	89 ce                	mov    %ecx,%esi
 
-00400247 <str_loop1>:
-  400247:	ff c2                	inc    %edx
-  400249:	38 24 11             	cmp    %ah,(%rcx,%rdx,1)
-  40024c:	75 f9                	jne    400247 <str_loop1>
-  40024e:	0f 05                	syscall 
-  400250:	5a                   	pop    %rdx
-  400251:	c3                   	retq   
+00400245 <str_loop1>:
+  400245:	ff c2                	inc    %edx
+  400247:	38 24 11             	cmp    %ah,(%rcx,%rdx,1)
+  40024a:	75 f9                	jne    400245 <str_loop1>
+  40024c:	0f 05                	syscall 
+  40024e:	5a                   	pop    %rdx
+  40024f:	c3                   	retq   
 
-00400252 <num_to_ascii>:
-  400252:	6a 0a                	pushq  $0xa
-  400254:	5b                   	pop    %rbx
-  400255:	31 c9                	xor    %ecx,%ecx
+00400250 <num_to_ascii>:
+  400250:	6a 0a                	pushq  $0xa
+  400252:	5b                   	pop    %rbx
+  400253:	31 c9                	xor    %ecx,%ecx
 
-00400257 <div_by_10>:
-  400257:	99                   	cltd   
-  400258:	f7 f3                	div    %ebx
-  40025a:	52                   	push   %rdx
-  40025b:	ff c1                	inc    %ecx
-  40025d:	09 c0                	or     %eax,%eax
-  40025f:	75 f6                	jne    400257 <div_by_10>
+00400255 <div_by_10>:
+  400255:	99                   	cltd   
+  400256:	f7 f3                	div    %ebx
+  400258:	52                   	push   %rdx
+  400259:	ff c1                	inc    %ecx
+  40025b:	09 c0                	or     %eax,%eax
+  40025d:	75 f6                	jne    400255 <div_by_10>
 
-00400261 <write_out>:
-  400261:	58                   	pop    %rax
-  400262:	04 30                	add    $0x30,%al
-  400264:	aa                   	stos   %al,%es:(%rdi)
-  400265:	e2 fa                	loop   400261 <write_out>
-  400267:	c3                   	retq   
+0040025f <write_out>:
+  40025f:	58                   	pop    %rax
+  400260:	04 30                	add    $0x30,%al
+  400262:	aa                   	stos   %al,%es:(%rdi)
+  400263:	e2 fa                	loop   40025f <write_out>
+  400265:	c3                   	retq   
 
 Disassembly of section .data:
 
-00400268 <ver_string>:
-  400268:	20 56 65             	and    %dl,0x65(%rsi)
-  40026b:	72 73                	jb     4002e0 <logo+0xe>
-  40026d:	69 6f 6e 20 00 2c 20 	imul   $0x202c0020,0x6e(%rdi),%ebp
+00400266 <ver_string>:
+  400266:	20 56              	and    %dl,0x65(%rsi)
 
-00400272 <compiled_string>:
-  400272:	2c 20                	sub    $0x20,%al
-  400274:	43 6f                	rex.XB outsl %ds:(%rsi),(%dx)
-  400276:	6d                   	insl   (%dx),%es:(%rdi)
-  400277:	70 69                	jo     4002e2 <logo+0x10>
-  400279:	6c                   	insb   (%dx),%es:(%rdi)
-  40027a:	65 64 20 00          	gs and %al,%fs:(%rax)
+00400268 <_GLOBAL_OFFSET_TABLE_>:
+  400268:	65 72 73             	gs jb  4002de <logo+0xe>
+  40026b:	69 6f 6e 20 00   	imul   $0x202c0020,0x6e(%rdi),%ebp
 
-0040027e <processor>:
-  40027e:	20 50 72             	and    %dl,0x72(%rax)
-  400281:	6f                   	outsl  %ds:(%rsi),(%dx)
-  400282:	63 65 73             	movslq 0x73(%rbp),%esp
-  400285:	73 6f                	jae    4002f6 <logo+0x24>
-  400287:	72 00                	jb     400289 <s_comma>
+00400270 <compiled_string>:
+  400270:	2c 20                	sub    $0x20,%al
+  400272:	43 6f                	rex.XB outsl %ds:(%rsi),(%dx)
+  400274:	6d                   	insl   (%dx),%es:(%rdi)
+  400275:	70 69                	jo     4002e0 <logo+0x10>
+  400277:	6c                   	insb   (%dx),%es:(%rdi)
+  400278:	65 64 20 00          	gs and %al,%fs:(%rax)
 
-00400289 <s_comma>:
-  400289:	73 2c                	jae    4002b7 <cpuinfo+0xa>
-  40028b:	20 00                	and    %al,(%rax)
+0040027c <processor>:
+  40027c:	20 50 72             	and    %dl,0x72(%rax)
+  40027f:	6f                   	outsl  %ds:(%rsi),(%dx)
+  400280:	63 65 73             	movslq 0x73(%rbp),%esp
+  400283:	73 6f                	jae    4002f4 <logo+0x24>
+  400285:	72 00                	jb     400287 <s_comma>
 
-0040028d <ram_comma>:
-  40028d:	4d 20 52 41          	rex.WRB and %r10b,0x41(%r10)
-  400291:	4d 2c 20             	rex.WRB sub $0x20,%al
+00400287 <s_comma>:
+  400287:	73 2c                	jae    4002b5 <cpuinfo+0xa>
+  400289:	20 00                	and    %al,(%rax)
+
+0040028b <ram_comma>:
+  40028b:	4d 20 52 41          	rex.WRB and %r10b,0x41(%r10)
+  40028f:	4d 2c 20             	rex.WRB sub $0x20,%al
 	...
 
-00400295 <bogo_total>:
-  400295:	20 42 6f             	and    %al,0x6f(%rdx)
-  400298:	67 6f                	outsl  %ds:(%esi),(%dx)
-  40029a:	6d                   	insl   (%dx),%es:(%rdi)
-  40029b:	69 70 73 20 54 6f 74 	imul   $0x746f5420,0x73(%rax),%esi
-  4002a2:	61                   	(bad)  
-  4002a3:	6c                   	insb   (%dx),%es:(%rdi)
-  4002a4:	0a 00                	or     (%rax),%al
+00400293 <bogo_total>:
+  400293:	20 42 6f             	and    %al,0x6f(%rdx)
+  400296:	67 6f                	outsl  %ds:(%esi),(%dx)
+  400298:	6d                   	insl   (%dx),%es:(%rdi)
+  400299:	69 70 73 20 54 6f 74 	imul   $0x746f5420,0x73(%rax),%esi
+  4002a0:	61                   	(bad)  
+  4002a1:	6c                   	insb   (%dx),%es:(%rdi)
+  4002a2:	0a 00                	or     (%rax),%al
 
-004002a6 <default_colors>:
-  4002a6:	1b 5b 30             	sbb    0x30(%rbx),%ebx
-  4002a9:	6d                   	insl   (%dx),%es:(%rdi)
-  4002aa:	0a 0a                	or     (%rdx),%cl
+004002a4 <default_colors>:
+  4002a4:	1b 5b 30             	sbb    0x30(%rbx),%ebx
+  4002a7:	6d                   	insl   (%dx),%es:(%rdi)
+  4002a8:	0a 0a                	or     (%rdx),%cl
 	...
 
-004002ad <cpuinfo>:
-  4002ad:	2f                   	(bad)  
-  4002ae:	70 72                	jo     400322 <logo+0x50>
-  4002b0:	6f                   	outsl  %ds:(%rsi),(%dx)
-  4002b1:	63 2f                	movslq (%rdi),%ebp
-  4002b3:	63 70 75             	movslq 0x75(%rax),%esi
-  4002b6:	69 6e 66 6f 00 4f 6e 	imul   $0x6e4f006f,0x66(%rsi),%ebp
+004002ab <cpuinfo>:
+  4002ab:	2f                   	(bad)  
+  4002ac:	70 72                	jo     400320 <logo+0x50>
+  4002ae:	6f                   	outsl  %ds:(%rsi),(%dx)
+  4002af:	63 2f                	movslq (%rdi),%ebp
+  4002b1:	63 70 75             	movslq 0x75(%rax),%esi
+  4002b4:	69 6e 66 6f 00   	imul   $0x6e4f006f,0x66(%rsi),%ebp
 
-004002bb <one>:
-  4002bb:	4f 6e                	rex.WRXB outsb %ds:(%rsi),(%dx)
-  4002bd:	65 00 00             	add    %al,%gs:(%rax)
+004002b9 <one>:
+  4002b9:	4f 6e                	rex.WRXB outsb %ds:(%rsi),(%dx)
+  4002bb:	65 00 00             	add    %al,%gs:(%rax)
 	...
 
-004002c1 <two>:
-  4002c1:	54                   	push   %rsp
-  4002c2:	77 6f                	ja     400333 <logo+0x61>
-  4002c4:	00 00                	add    %al,(%rax)
+004002bf <two>:
+  4002bf:	54                   	push   %rsp
+  4002c0:	77 6f                	ja     400331 <logo+0x61>
+  4002c2:	00 00                	add    %al,(%rax)
 	...
 
-004002c7 <three>:
-  4002c7:	54                   	push   %rsp
-  4002c8:	68 72 65 65 00       	pushq  $0x656572
+004002c5 <three>:
+  4002c5:	54                   	push   %rsp
+  4002c6:	68 72 65 65 00       	pushq  $0x656572
 
-004002cd <four>:
-  4002cd:	46 6f                	rex.RX outsl %ds:(%rsi),(%dx)
-  4002cf:	75 72                	jne    400343 <logo+0x71>
+004002cb <four>:
+  4002cb:	46 6f                	rex.RX outsl %ds:(%rsi),(%dx)
+  4002cd:	75 72                	jne    400341 <logo+0x71>
 	...
 
-004002d2 <logo>:
-  4002d2:	ff 1b                	lcall  *(%rbx)
-  4002d4:	5b                   	pop    %rbx
-  4002d5:	30 3b                	xor    %bh,(%rbx)
-  4002d7:	31 3b                	xor    %edi,(%rbx)
-  4002d9:	33 37                	xor    (%rdi),%esi
-  4002db:	9f                   	lahf   
-  4002dc:	3b 34 37             	cmp    (%rdi,%rsi,1),%esi
-  4002df:	6d                   	insl   (%dx),%es:(%rdi)
-  4002e0:	23 cc                	and    %esp,%ecx
-  4002e2:	f7 c0 07 33 8d 30    	test   $0x308d3307,%eax
-  4002e8:	c8 1b 1b 5b          	enterq $0x1b1b,$0x5b
-  4002ec:	c4                   	(bad)  
-  4002ed:	07                   	(bad)  
-  4002ee:	cb                   	lret   
-  4002ef:	1f                   	(bad)  
-  4002f0:	1c 0c                	sbb    $0xc,%al
-  4002f2:	3b 0f                	cmp    (%rdi),%ecx
-  4002f4:	34 30                	xor    $0x30,%al
-  4002f6:	6d                   	insl   (%dx),%es:(%rdi)
-  4002f7:	0a c0                	or     %al,%al
-  4002f9:	f7 01 60 1a 38 2c    	testl  $0x2c381a60,(%rcx)
-  4002ff:	9c                   	pushfq 
-  400300:	1f                   	(bad)  
-  400301:	1b 5b 33             	sbb    0x33(%rbx),%ebx
-  400304:	31 6d cc             	xor    %ebp,-0x34(%rbp)
-  400307:	04 41                	add    $0x41,%al
-  400309:	ac                   	lods   %ds:(%rsi),%al
-  40030a:	0d 24 02 1c 10       	or     $0x101c0224,%eax
-  40030f:	4f 0d 20 10 41 93    	rex.WRXB or $0xffffffff93411020,%rax
-  400315:	98                   	cwtl   
-  400316:	83 34 1c 34          	xorl   $0x34,(%rsp,%rbx,1)
-  40031a:	cc                   	int3   
-  40031b:	10 10                	adc    %dl,(%rax)
-  40031d:	0c 24                	or     $0x24,%al
-  40031f:	6f                   	outsl  %ds:(%rsi),(%dx)
-  400320:	39 ec                	cmp    %ebp,%esp
-  400322:	a7                   	cmpsl  %es:(%rdi),%ds:(%rsi)
-  400323:	1c 08                	sbb    $0x8,%al
-  400325:	33 16                	xor    (%rsi),%edx
-  400327:	14 89                	adc    $0x89,%al
-  400329:	55                   	push   %rbp
-  40032a:	2c 60                	sub    $0x60,%al
-  40032c:	00 2b                	add    %ch,(%rbx)
-  40032e:	61                   	(bad)  
-  40032f:	d6                   	(bad)  
-  400330:	71 e2                	jno    400314 <logo+0x42>
-  400332:	c8 cb 08 d4          	enterq $0x8cb,$0xd4
-  400336:	09 d3                	or     %edx,%ebx
-  400338:	10 2b                	adc    %ch,(%rbx)
-  40033a:	59                   	pop    %rcx
-  40033b:	f5                   	cmc    
-  40033c:	d1 00                	roll   (%rax)
-  40033e:	80 11 d2             	adcb   $0xd2,(%rcx)
-  400341:	18 0d 28 1c 14 0d    	sbb    %cl,0xd141c28(%rip)        # d541f6f <_end+0xd13c537>
-  400347:	2c 1c                	sub    $0x1c,%al
-  400349:	1c f0                	sbb    $0xf0,%al
-  40034b:	4a 1a 5b 00          	rex.WX sbb 0x0(%rbx),%bl
-  40034f:	0d 50 5f 65 87       	or     $0x87655f50,%eax
-  400354:	65 2b 55 f5          	sub    %gs:-0xb(%rbp),%edx
-  400358:	cd cd                	int    $0xcd
-  40035a:	28 cd                	sub    %cl,%ch
-  40035c:	14 89                	adc    $0x89,%al
-  40035e:	41 00 1d 87 42 4b 72 	add    %bl,0x724b4287(%rip)        # 728b45ec <SYSCALL_SYSINFO+0x328b4589>
-  400365:	53                   	push   %rbx
-  400366:	1c 78                	sbb    $0x78,%al
-  400368:	0f 62 87 6d 55 58 f7 	punpckldq -0x8a7aa93(%rdi),%mm0
-  40036f:	c1 00 e8             	roll   $0xe8,(%rax)
-  400372:	2b f4                	sub    %esp,%esi
-  400374:	97                   	xchg   %eax,%edi
-  400375:	49 78 3d             	rex.WB js 4003b5 <logo+0xe3>
-  400378:	b0 1b                	mov    $0x1b,%al
-  40037a:	5f                   	pop    %rdi
-  40037b:	97                   	xchg   %eax,%edi
-  40037c:	b0 12                	mov    $0x12,%al
-  40037e:	2b ab ca 10 df 16    	sub    0x16df10ca(%rbx),%ebp
-  400384:	1a f5                	sbb    %ch,%dh
-  400386:	5a                   	pop    %rdx
-  400387:	f5                   	cmc    
-  400388:	d9 3f                	fnstcw (%rdi)
-  40038a:	33 1b                	xor    (%rbx),%ebx
-  40038c:	56                   	push   %rsi
-  40038d:	92                   	xchg   %eax,%edx
-  40038e:	5b                   	pop    %rbx
-  40038f:	b0 02                	mov    $0x2,%al
-  400391:	00 0c 1d d3 c8 ac 39 	add    %cl,0x39acc8d3(,%rbx,1)
-  400398:	17                   	(bad)  
-  400399:	66 32 f6             	data16 xor %dh,%dh
-  40039c:	6e                   	outsb  %ds:(%rsi),(%dx)
-  40039d:	6d                   	insl   (%dx),%es:(%rdi)
-  40039e:	ec                   	in     (%dx),%al
-  40039f:	44 60                	rex.R (bad) 
-  4003a1:	5e                   	pop    %rsi
-  4003a2:	08 af 0a a6 69 14    	or     %ch,0x1469a60a(%rdi)
-  4003a8:	01 30                	add    %esi,(%rax)
-  4003aa:	33 0b                	xor    (%rbx),%ecx
-  4003ac:	de 1f                	ficomp (%rdi)
-  4003ae:	31 0f                	xor    %ecx,(%rdi)
-  4003b0:	d3 bc 00 af 4f 19 56 	sarl   %cl,0x56194faf(%rax,%rax,1)
-  4003b7:	aa                   	stos   %al,%es:(%rdi)
-  4003b8:	45 52                	rex.RB push %r10
-  4003ba:	db 28                	fldt   (%rax)
-  4003bc:	52                   	push   %rdx
-  4003bd:	46 7f 08             	rex.RX jg 4003c8 <logo+0xf6>
-  4003c0:	53                   	push   %rbx
-  4003c1:	db 23                	(bad)  (%rbx)
-  4003c3:	00 a9 55 aa 35 18    	add    %ch,0x1835aa55(%rcx)
-  4003c9:	21 12                	and    %edx,(%rdx)
-  4003cb:	68 91 2a c8 22       	pushq  $0x22c82a91
-  4003d0:	b2 68                	mov    $0x68,%dl
-  4003d2:	70 2d                	jo     400401 <text_buf+0x11>
-  4003d4:	00 c6                	add    %al,%dh
-  4003d6:	50                   	push   %rax
-  4003d7:	b2 79                	mov    $0x79,%dl
-  4003d9:	91                   	xchg   %eax,%ecx
-  4003da:	4a 70 31             	rex.WX jo 40040e <text_buf+0x1e>
-  4003dd:	f8                   	clc    
-  4003de:	51                   	push   %rcx
-  4003df:	f3 28 dd             	repz sub %bl,%ch
-  4003e2:	17                   	(bad)  
-  4003e3:	ff 17                	callq  *(%rdi)
-  4003e5:	08 02                	or     %al,(%rdx)
-  4003e7:	36                   	ss
-  4003e8:	03                   	.byte 0x3
-  4003e9:	24 e5                	and    $0xe5,%al
-  4003eb:	42                   	rex.X
-  4003ec:	0a                   	.byte 0xa
+004002d0 <logo>:
+  4002d0:	ff 1b                	lcall  *(%rbx)
+  4002d2:	5b                   	pop    %rbx
+  4002d3:	30 3b                	xor    %bh,(%rbx)
+  4002d5:	31 3b                	xor    %edi,(%rbx)
+  4002d7:	33 37                	xor    (%rdi),%esi
+  4002d9:	9f                   	lahf   
+  4002da:	3b 34 37             	cmp    (%rdi,%rsi,1),%esi
+  4002dd:	6d                   	insl   (%dx),%es:(%rdi)
+  4002de:	23 cc                	and    %esp,%ecx
+  4002e0:	f7 c0 07 33 8d 30    	test   $0x308d3307,%eax
+  4002e6:	c8 1b 1b 5b          	enterq $0x1b1b,$0x5b
+  4002ea:	c4                   	(bad)  
+  4002eb:	07                   	(bad)  
+  4002ec:	cb                   	lret   
+  4002ed:	1f                   	(bad)  
+  4002ee:	1c 0c                	sbb    $0xc,%al
+  4002f0:	3b 0f                	cmp    (%rdi),%ecx
+  4002f2:	34 30                	xor    $0x30,%al
+  4002f4:	6d                   	insl   (%dx),%es:(%rdi)
+  4002f5:	0a c0                	or     %al,%al
+  4002f7:	f7 01 60 1a 38 2c    	testl  $0x2c381a60,(%rcx)
+  4002fd:	9c                   	pushfq 
+  4002fe:	1f                   	(bad)  
+  4002ff:	1b 5b 33             	sbb    0x33(%rbx),%ebx
+  400302:	31 6d cc             	xor    %ebp,-0x34(%rbp)
+  400305:	04 41                	add    $0x41,%al
+  400307:	ac                   	lods   %ds:(%rsi),%al
+  400308:	0d 24 02 1c 10       	or     $0x101c0224,%eax
+  40030d:	4f 0d 20 10 41 93    	rex.WRXB or $0xffffffff93411020,%rax
+  400313:	98                   	cwtl   
+  400314:	83 34 1c 34          	xorl   $0x34,(%rsp,%rbx,1)
+  400318:	cc                   	int3   
+  400319:	10 10                	adc    %dl,(%rax)
+  40031b:	0c 24                	or     $0x24,%al
+  40031d:	6f                   	outsl  %ds:(%rsi),(%dx)
+  40031e:	39 ec                	cmp    %ebp,%esp
+  400320:	a7                   	cmpsl  %es:(%rdi),%ds:(%rsi)
+  400321:	1c 08                	sbb    $0x8,%al
+  400323:	33 16                	xor    (%rsi),%edx
+  400325:	14 89                	adc    $0x89,%al
+  400327:	55                   	push   %rbp
+  400328:	2c 60                	sub    $0x60,%al
+  40032a:	00 2b                	add    %ch,(%rbx)
+  40032c:	61                   	(bad)  
+  40032d:	d6                   	(bad)  
+  40032e:	71 e2                	jno    400312 <logo+0x42>
+  400330:	c8 cb 08 d4          	enterq $0x8cb,$0xd4
+  400334:	09 d3                	or     %edx,%ebx
+  400336:	10 2b                	adc    %ch,(%rbx)
+  400338:	59                   	pop    %rcx
+  400339:	f5                   	cmc    
+  40033a:	d1 00                	roll   (%rax)
+  40033c:	80 11 d2             	adcb   $0xd2,(%rcx)
+  40033f:	18 0d 28 1c 14 0d    	sbb    %cl,0xd141c28(%rip)        # d541f6d <_end+0xd13c535>
+  400345:	2c 1c                	sub    $0x1c,%al
+  400347:	1c f0                	sbb    $0xf0,%al
+  400349:	4a 1a 5b 00          	rex.WX sbb 0x0(%rbx),%bl
+  40034d:	0d 50 5f 65 87       	or     $0x87655f50,%eax
+  400352:	65 2b 55 f5          	sub    %gs:-0xb(%rbp),%edx
+  400356:	cd cd                	int    $0xcd
+  400358:	28 cd                	sub    %cl,%ch
+  40035a:	14 89                	adc    $0x89,%al
+  40035c:	41 00 1d 87 42 4b 72 	add    %bl,0x724b4287(%rip)        # 728b45ea <SYSCALL_SYSINFO+0x328b4587>
+  400363:	53                   	push   %rbx
+  400364:	1c 78                	sbb    $0x78,%al
+  400366:	0f 62 87 6d 55 58 f7 	punpckldq -0x8a7aa93(%rdi),%mm0
+  40036d:	c1 00 e8             	roll   $0xe8,(%rax)
+  400370:	2b f4                	sub    %esp,%esi
+  400372:	97                   	xchg   %eax,%edi
+  400373:	49 78 3d             	rex.WB js 4003b3 <logo+0xe3>
+  400376:	b0 1b                	mov    $0x1b,%al
+  400378:	5f                   	pop    %rdi
+  400379:	97                   	xchg   %eax,%edi
+  40037a:	b0 12                	mov    $0x12,%al
+  40037c:	2b ab ca 10 df 16    	sub    0x16df10ca(%rbx),%ebp
+  400382:	1a f5                	sbb    %ch,%dh
+  400384:	5a                   	pop    %rdx
+  400385:	f5                   	cmc    
+  400386:	d9 3f                	fnstcw (%rdi)
+  400388:	33 1b                	xor    (%rbx),%ebx
+  40038a:	56                   	push   %rsi
+  40038b:	92                   	xchg   %eax,%edx
+  40038c:	5b                   	pop    %rbx
+  40038d:	b0 02                	mov    $0x2,%al
+  40038f:	00 0c 1d d3 c8 ac 39 	add    %cl,0x39acc8d3(,%rbx,1)
+  400396:	17                   	(bad)  
+  400397:	66 32 f6             	data16 xor %dh,%dh
+  40039a:	6e                   	outsb  %ds:(%rsi),(%dx)
+  40039b:	6d                   	insl   (%dx),%es:(%rdi)
+  40039c:	ec                   	in     (%dx),%al
+  40039d:	44 60                	rex.R (bad) 
+  40039f:	5e                   	pop    %rsi
+  4003a0:	08 af 0a a6 69 14    	or     %ch,0x1469a60a(%rdi)
+  4003a6:	01 30                	add    %esi,(%rax)
+  4003a8:	33 0b                	xor    (%rbx),%ecx
+  4003aa:	de 1f                	ficomp (%rdi)
+  4003ac:	31 0f                	xor    %ecx,(%rdi)
+  4003ae:	d3 bc 00 af 4f 19 56 	sarl   %cl,0x56194faf(%rax,%rax,1)
+  4003b5:	aa                   	stos   %al,%es:(%rdi)
+  4003b6:	45 52                	rex.RB push %r10
+  4003b8:	db 28                	fldt   (%rax)
+  4003ba:	52                   	push   %rdx
+  4003bb:	46 7f 08             	rex.RX jg 4003c6 <logo+0xf6>
+  4003be:	53                   	push   %rbx
+  4003bf:	db 23                	(bad)  (%rbx)
+  4003c1:	00 a9 55 aa 35 18    	add    %ch,0x1835aa55(%rcx)
+  4003c7:	21 12                	and    %edx,(%rdx)
+  4003c9:	68 91 2a c8 22       	pushq  $0x22c82a91
+  4003ce:	b2 68                	mov    $0x68,%dl
+  4003d0:	70 2d                	jo     4003ff <text_buf+0xf>
+  4003d2:	00 c6                	add    %al,%dh
+  4003d4:	50                   	push   %rax
+  4003d5:	b2 79                	mov    $0x79,%dl
+  4003d7:	91                   	xchg   %eax,%ecx
+  4003d8:	4a 70 31             	rex.WX jo 40040c <text_buf+0x1c>
+  4003db:	f8                   	clc    
+  4003dc:	51                   	push   %rcx
+  4003dd:	f3 28 dd             	repz sub %bl,%ch
+  4003e0:	17                   	(bad)  
+  4003e1:	ff 17                	callq  *(%rdi)
+  4003e3:	08 02                	or     %al,(%rdx)
+  4003e5:	36                   	ss
+  4003e6:	03                   	.byte 0x3
+  4003e7:	24 e5                	and    $0xe5,%al
+  4003e9:	42                   	rex.X
+  4003ea:	0a                   	.byte 0xa
 
 Disassembly of section .bss:
 
