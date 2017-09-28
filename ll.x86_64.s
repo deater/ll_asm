@@ -1,5 +1,5 @@
 #
-#  linux_logo in x86_64 assembler 0.49
+#  linux_logo in x86_64 assembler 0.50
 #
 #  Originally by
 #       Vince Weaver <vince _at_ deater.net>
