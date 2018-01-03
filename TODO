@@ -26,6 +26,7 @@ Chips TODO:
 + TI-990
 + TI MSP430
 + Z8000
++ coldfire
 
 Linux:
 + blackfin
@@ -53,3 +54,11 @@ Stan Sieler <sieler _at_ allegro.com>
 suggests Burroughs B1700 (later B1800, B1900) due to code density
 from complicated microcode implementation (with multiple targets?)
 
+
++-----------------------------------------------------------
+
+m68k updates
+
+x86 updates
+
+6502 updates
