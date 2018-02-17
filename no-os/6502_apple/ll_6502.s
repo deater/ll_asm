@@ -99,7 +99,7 @@ POSITION EQU $0A
 INIT     EQU $0B
 VERIFY   EQU $0C
 
-;; 
+;;
 OUTPUT	  EQU $4000	     	       ;; hgr page2, should be unused
 
 ;; VECTORS
@@ -157,7 +157,7 @@ POSITION_MASK EQU 3
 
         ; save zero page
 	; otherwise we can't return to BASIC
-	
+
 	ldx	#$e8   	     	       	 ; we save $E8-$FF
 	ldy	#0
 	lda	#>zp_save
@@ -176,7 +176,7 @@ save_zp_loop:
   ; set graphics mode, page 0
   ;==========================
 	cld				; make sure doing binary adds
-					; not decimal	
+					; not decimal
 	jsr     HOME
 	sta	GR
 	sta	HIRES			; hires mode
@@ -184,34 +184,34 @@ save_zp_loop:
 	sta	PAGE0			; first graphics page
 
 	jsr	clear_screen		; clear the screen
-	
+
 	lda	#>LOGO			; load logo pointer
 	sta	LOGOH
 	lda     #<LOGO
 	sta	LOGOL
 
 	jsr	reset_output		; load output pointer
-					    
+
 	lda	#>(N-F)			; load R value
 	sta	STORERH
 	lda	#<(N-F)
-	sta	STORERL 
-							         
+	sta	STORERL
+
 	ldy	#0			; setup Y for indirect zero page
 					; addressing, we always want +0
 
-decompression_loop:   
-   
+decompression_loop:
+
    	lda	#8                  	; set mask counter
 	sta	COUNT
-           
+
 	lda	(LOGOL),Y		; load byte
-	      
+
 	sta	MSELECT			; store it
-		    
+
 	ldx	#LOGOL
 	jsr	inc16 			; increment pointer
-		     
+
 test_flags:
 
 	lda	LOGOH			; compare to see if we've reached end
@@ -220,61 +220,61 @@ test_flags:
 
 	lda	LOGOL
 	cmp	#<LOGO_END
-		        
+
 	bcs	done_logo 		; if so, we are done
 					; bcs one byte less than jmp
-			   
-not_match:			   
+
+not_match:
         lsr	MSELECT		   	; shift byte mask into carry flag
-     
+
 	lda	(LOGOL),Y               ; load byte
-      
+
         ldx	#LOGOL                  ; 16-bit increrment
 	jsr	inc16
 
         bcs	discrete_char		; if set we have discrete char
 
-offset_length:   
+offset_length:
 
 	sta	LOADRL			; bottom of R offset
-		     
+
 	lda	(LOGOL),Y               ; load another byte
-			
-	ldx	#LOGOL                  ; 
+
+	ldx	#LOGOL                  ;
 	jsr	inc16			; 16 bit increment
 
 	sta	LOADRH			; top of R offset
-				       
+
 	lsr	A
 	lsr	A			; shift right by 10 (top byte by 2)
-	
+
    	clc
 	adc	#3			; add threshold+1 (3)
 
 	tax				; store out count in X
-	 
+
 output_loop:
 
 	clc 				; calculate R+LOADR
 	lda	LOADRL
 	adc	#<R
 	sta	EFFECTRL
-		        
+
 	lda	LOADRH
 	and	#((N-1)>>8)		; Mask so mod N
         sta	LOADRH
-	
+
 	adc	#>R
 	sta	EFFECTRH
-				          
+
         lda	(EFFECTRL),Y		; Load byte R[LOADR]
-  
+
   	inc     LOADRL			; increment address
         bne	load_carry1
         inc	LOADRH	 		; handle overflow
 load_carry1:
-  
-store_byte:   
+
+store_byte:
 
 	sta     (OUTPUTL),Y		 ; store byte to output
 
@@ -287,18 +287,18 @@ sb_carry:
         lda	STORERL
 	adc	#<R
 	sta	EFFECTRL
-			         
+
 	lda	STORERH
 	and	#((N-1)>>8)		 ; mask so mod N
-				          
+
 	sta	STORERH
 	adc	#>R
 	sta	EFFECTRH
-						
+
 	pla				 ; restore from stack
-	
+
 	sta	(EFFECTRL),Y		 ; store A there too
-	   
+
 	inc     STORERL			 ; increment address
         bne	store_carry2
         inc	STORERH	 		 ; handle overflow
@@ -306,15 +306,15 @@ store_carry2:
 
 	dex  			         ; count down the out counter
 	bne	output_loop		 ; loop to output_loop if not 0
-		     
+
 	dec	COUNT			 ; count down the mask counter
 	bne	test_flags		 ; loop to test_flags if not zero
-			      
+
 	beq	decompression_loop	 ; restart whole process
-				 
-discrete_char:	
+
+discrete_char:
 	ldx	#1   			 ; want to write a single byte
-      
+
         bne	store_byte		 ; go and store it (1 byte less than jmp)
 
 done_logo:
@@ -322,58 +322,58 @@ done_logo:
 	;==========================
 	; print ANSI to HGR display
 	;==========================
-	
-	tya			       	 ; get zero from Y 
+
+	tya			       	 ; get zero from Y
 	sta	(OUTPUTL),Y	         ; make sure we are null terminated
 
 	jsr	reset_output		 ; restore OUTPUT pointer
 					 ; now as input
-		      
+
 	sty	COUNT  		    	 ; set count to zero
 	sty	COLOR			 ; set color to zero
-			       
+
 	lda	#64			 ; start Y at 64 (partway down screen)
 	sta	APPLEY
-				     
+
 	sty	APPLEXH			 ; set X to 20 (centered)
 	lda	#20			 ; X can be up to 280, so 16-bit val
         sta	APPLEXL
-					         
+
         jsr	y_to_addr		 ; convert Y value to an address
-						       
+
 rle_loop:
 	lda	(OUTPUTL),Y		 ; load a byte
       	beq	rle_done		 ; if zero, we are done
-             
+
 	cmp	#27			 ; are we escape?
 	bne	not_escape
-		      
+
 escape:
 	ldx	COUNT			 ; don't display if COUNT==0
 	beq	dont_output
-	
+
 	jsr	flush_line 		 ; we finished a color, display it
 					 ; flush_line should set COUNT to 0
-dont_output:   
+dont_output:
 	jsr     inc_pointer		 ; point after escape
-      
+
         lda	(OUTPUTL),Y		 ; load next byte (should be [ )
-	          
-find_m:   
+
+find_m:
 	cmp	#$6D			 ; looking for 'm'
       	beq	found_m
-      
+
         cmp	#$33   			 ; now looking for '3'
 	bne	not_three
-	    
+
 	jsr	inc_pointer
-	
+
 	; if we have 3, the next number after is our color
 	; (these are ANSI escape codes)
 	; convert to apple HGR colors
-	
+
 	lda	(OUTPUTL),Y		 ; load ascii number
-	and	#7                	 ; mask	        
+	and	#7                	 ; mask
         asl	A
 	cmp	#8
 	bmi	ok			 ; make sure red, yellow map to orange
@@ -381,21 +381,21 @@ find_m:
 ok:		 			 ; I'm out of meaningful label names!
         and	#3
         sta	COLOR			 ; save our computed color
-	          
-not_three:   
+
+not_three:
 	jsr  	inc_pointer
       	lda	(OUTPUTL),Y
         jmp	find_m	   		 ; loop until we find a 'm'
-	
-found_m:   
+
+found_m:
 	jsr	inc_pointer		 ; done with escape
 	jmp	rle_loop		 ; rejoin main loop
-	          
-not_escape:   
+
+not_escape:
 	cmp   	#10			 ; check for linefeed
         bne	not_linefeed
-			   
-linefeed:   
+
+linefeed:
 	jsr 	flush_line		 ; if linefeed, flush line
 					 ; flush_line should set count to 0
 
@@ -404,33 +404,33 @@ linefeed:
 	sty	APPLEXH	   		 ; reset APPLEX to 20
 	lda	#20
 	sta	APPLEXL
-					     
+
 	clc	       			 ; increment Y by 8 (we are doing
 	lda	APPLEY			 ;  8-pixel high blocks)
 	adc	#8
 	sta	APPLEY
 	jsr	y_to_addr
-		          
+
 	jmp rle_loop	 		 ; loop
-			        
-not_linefeed:   
+
+not_linefeed:
 	inc	COUNT			 ; normal case.  we increment run by 3
 	inc	COUNT			 ; because 80*3 fits on 280 wide screen
 	inc	COUNT
-					      
+
 	jsr	inc_pointer
-						       
+
 	jmp	rle_loop   		 ; loop
-							  
-rle_done:   
+
+rle_done:
 
 	;================================
 	; read from disk
 	;================================
-	
+
 	jsr     LOCATE_FILEM_PARAM  	; load file manager param list
 					; Y=low A=high
-		
+
 	sta	FILEMH
 	sty	FILEML
 
@@ -444,9 +444,9 @@ rle_done:
 	iny
 	lda    #>filename
 	sta    (FILEML),y
-	
+
 	ldx    #1	 		; open existing file
-	
+
 	jsr    open			; open file
 
 	jsr    read			; read buffer
@@ -469,26 +469,26 @@ rle_done:
 	;=========================
         ; print version info
         ;=========================
-	 
+
 	jsr 	reset_output
-	
+
 	lda	#>VERSION
 	sta	STRCATH
 	lda	#<VERSION
 	sta	STRCATL
 	jsr	strcat 			; concatenate version info
-	
+
 	jsr	center_and_print	; print it to screen
-			
+
 	;==========================
 	; print middle line
 	;==========================
-	
+
 	jsr	reset_output		; reset output pointer
-	
+
 		       			; STCATL/H should auto point to "One "
 	jsr	strcat 			; concatenate it
-	
+
 	lda	#('H'+$80)
 	sta	CHAR1
 	lda	#('Z'+$80)		; search for HZ
@@ -496,31 +496,31 @@ rle_done:
 	lda	#('M'+$80)
 	sta	ENDCHAR			; and get to \M
 	jsr	find_string
-	
+
 			   		; STRCATL/H already points to "MHz"
-	jsr	strcat 			; concatenate it	
-		
+	jsr	strcat 			; concatenate it
+
 	lda	#('P'+$80)
 	sta	CHAR1
 	lda	#('U'+$80)		; search for CPU
 	sta	CHAR2
 	lda	#$8d
 	sta	ENDCHAR			; and get to \r
-	jsr	find_string		
-			
+	jsr	find_string
+
 				        ; STRCATL/H already points to "Processor"
 	jsr	strcat
-			      
+
 	jsr	num_to_ascii		; add the amount of RAM
 
 	jsr	strcat 			; STRCATL/H points to "kB RAM"
-    
+
 	jsr	center_and_print	; center and print
 
 	;====================
         ; print last line
 	;====================
-	     
+
 	jsr    	reset_output		; reset output pointer
 
 	lda	#('E'+$80)
@@ -529,7 +529,7 @@ rle_done:
 	sta	CHAR2
 		     			; ENDCHAR already is $8D
 
-	jsr	find_string		
+	jsr	find_string
 
 	jsr	center_and_print	; center and print
 
@@ -542,13 +542,13 @@ rle_done:
 
 exit:
         ; restore zero page
-	
+
 	ldx	#$e8   	   		; restore $e8-$ff
 	ldy	#$0
 	lda	#>zp_save
 	sta	OUTPUTH
 	lda	#<zp_save
-	sta	OUTPUTL	
+	sta	OUTPUTL
 restore_zp_loop:
 	lda	(OUTPUTL),Y
 	sta	0,X
@@ -564,7 +564,7 @@ restore_zp_loop:
 ; Wait until keypressed
 ;==========================================================
 ;
-	        
+
 wait_until_keypressed:
         lda     KEYPRESS                 ; check if keypressed
 	bpl     wait_until_keypressed    ; if not, loop
@@ -572,7 +572,7 @@ wait_until_keypressed:
 
 
 
-	       
+
 ;==================================================
 ; y_to_addr - convert y value to address in mem
 ;==================================================
@@ -585,19 +585,19 @@ y_to_addr:
 	and	#$7  			 ; y%8
         asl	A			 ; *1024 (by saving to high bit free
 	asl	A			 ;        multiply by 256)
-	
+
 	clc
 	adc	#$20			 ; add 0x2000 which is where HGR starts
 	sta	YADDRH
 	sty	YADDRL
-			
+
 less_than_64:
 	lda  	APPLEY
 	cmp	#64
 	bcs	less_than_128
         ldx	#0
 	beq	ready_to_add
-					  
+
 less_than_128:
 	cmp     #128
 	bcs	more_than_128
@@ -605,41 +605,41 @@ less_than_128:
 	sec	     			 ; on 6502 carry must be 1 to subtract
 	sbc     #64			 ; subtract down
 	jmp	ready_to_add
-	
+
 more_than_128:
 	ldx     #$50
 	sec
         sbc	#128
-		    
-ready_to_add:   
+
+ready_to_add:
 	lsr	A			 ; divide by 8
 	lsr	A			 ; this also maskes off low bits
 	lsr	A			 ; so we can't combine with below
-				   
+
 	lsr	A			 ; this shift puts us to lower half
 					 ; of 16-bit value, so have to check
 					 ; and handle the underflow
 					 ; low bit is put into the C bit
 	bcc	no_bottom_add
-					      
+
 	pha		     		 ; save accumulator
 	clc				 ; shifted out C to bottom byte
         lda     YADDRL
 	adc	#$80
 	sta	YADDRL
        	pla	      			 ; restore A from stack
-		         
+
 no_bottom_add:
 	adc     YADDRH			 ; update top half of address
 	sta	YADDRH
-			       
+
 	clc
 	txa				 ; add in X which we picked earlier
-	adc	YADDRL			 ; we shifted by 0x80, 
+	adc	YADDRL			 ; we shifted by 0x80,
 					 ; and max X can be is 0x50
 					 ; so shouldn't ever carry
 	sta	YADDRL
-		
+
 	rts
 
 ;============================================
@@ -650,7 +650,7 @@ inc_pointer:
 	ldx	#OUTPUTL
 
 ;==================================================
-; inc16 - increments a 16-bit pointer in zero page 
+; inc16 - increments a 16-bit pointer in zero page
 ;==================================================
 
 inc16:
@@ -658,11 +658,11 @@ inc16:
 	bne     no_carry
 	inx
 	inc     0,X			 ; handle overflow
-no_carry: 
+no_carry:
 	rts
 
 
-	   
+
 ;===================================================
 ; flush_line - flush out an RLE pair to graphics mem
 ;===================================================
@@ -670,15 +670,15 @@ no_carry:
 flush_line:
         lda	COUNT			 ; repeat until COUNT=0
       	beq	end_flush
-         
+
 	jsr	hplot	 		 ; plot a point
-	       
+
 	ldx	#APPLEXL
 	jsr	inc16			 ; increment 16-bit count
-				    
+
 	dec	COUNT
 	jmp	flush_line
-					  
+
 end_flush:
 	rts
 
@@ -691,9 +691,9 @@ hplot:
       	sta	DIVIDENDH		 ; again, thanks Woz
         lda	APPLEXL
 	sta	DIVIDENDL
-	       
+
 	jsr	div7
-		        
+
 	lda	#1  			 ; load a 1
         ldx	REMAINDER		 ; and shift it by X%7
 
@@ -702,41 +702,41 @@ make_mask:
 	asl	A
 	dex
 	bne 	make_mask
-					  
+
 done_mask:
 	sta	MASK			; mask saved
-	
+
 	lda	YADDRH			; copy yaddr into our hgr pointer
 	sta	HGRPNTH
 	lda	YADDRL
 	sta	HGRPNTL
-		       
+
 	clc
         adc	QUOTIENT		; add x/7 to out mem pointer
 	sta	HGRPNTL
 	lda	HGRPNTH
         adc	#0
 	sta	HGRPNTH
-					 
+
 	lda	(HGRPNTL),Y		; get our 7 bits of interest
 	sta	BLOCK			; store for later
-					          
+
 	lda	#1			; see if out X value is even or odd
 	bit	APPLEXL
 	beq	even
-							   
+
 odd:
     	lda	#2			; load odd mask
 	bit	COLOR			; see if our color has this bit set
         bne	set_bit			; if so, set it
 	beq	clear_bit		; otherwise, clear it
-	    
+
 even:
 	lda	#1			; load even mask
 	bit	COLOR			; see if our color has this bit set
         beq	clear_bit		; if not, clear it
 					; if so, fall through
-set_bit:   
+set_bit:
 	lda	MASK			; set the bit
 	ora	BLOCK
 	jmp	done_pset
@@ -745,22 +745,22 @@ clear_bit:
 	lda	MASK			; clear the bit
 	eor	#$FF			; invert the bits
 	and	BLOCK			; and with inverse to clear
-						      
-done_pset:   
+
+done_pset:
 	ora	#$80			; force blue/orange palette
       	sta	BLOCK			; write out block
-      
+
         ldx	#8   			; we want to make it 8 pixels high
 make_blocky:
 	sta 	(HGRPNTL),Y		; store to video mem
-	
+
 	pha				; save on stack
 	clc
 	lda	HGRPNTH			; add 4 to high byte, equiv to
 	adc	#$04			; adding 1k to address. 
 	sta	HGRPNTH			; the lines are 1k apart in mem
       	pla				; restore block
-         
+
 	dex				; decrement counter
 	bne make_blocky			; repeat until done
 	rts
@@ -773,46 +773,46 @@ make_blocky:
 
 div7:
         sty	QUOTIENT		 ; clear quotient
-	
+
         lda	#1
 	sta	DIVISORH
 	lda	#$C0
 	sta	DIVISORL		 ; set DIVISOR to 7<<6
-			      
+
 div7_loop:
 	asl	QUOTIENT
-	
+
 	lda	DIVIDENDH
 	cmp	DIVISORH
         bcc	less_than
         bne	subtract
-		        
+
 	lda	DIVIDENDL
 	cmp	DIVISORL
 	bcc	less_than
-				    
+
 subtract:
         sec
         lda	DIVIDENDL
 	sbc	DIVISORL
 	sta	DIVIDENDL
-				          
+
 	lda	DIVIDENDH
 	sbc	DIVISORH
 	sta	DIVIDENDH
-							    
+
 	lda	QUOTIENT
         ora	#1
 	sta	QUOTIENT
-		  
+
 less_than:
 	clc
 	ror	DIVISORH
 	ror	DIVISORL		 ; carry should make this 16 bit
 	lda	DIVISORL
-        cmp	#3    
+        cmp	#3
 	bne	div7_loop
-		     
+
 	lda	DIVIDENDL		 ; set remainder
 	sta	REMAINDER
 
@@ -848,10 +848,10 @@ num_to_ascii:
         ldx  	#NUM2			; output to 3 bytes in zero page
 	lda	RAMSIZE			; hardcoded to only print ramsize
         sta	DIVIDENDL
-	 
+
 div_loop:
 	jsr	div10			; divide/mod by 10
-	    
+
 	clc
 	lda	#$B0
 	adc	REMAINDER		; convert remainder to ASCII
@@ -867,12 +867,12 @@ store_loop:				; now copy from zero page to output
         sta	(OUTPUTL),Y
 	cpx	#(NUM2+1)
 	beq	done_ntoa
-	
+
 	inc     OUTPUTL			 ; increment address
         bne	ntoa_carry
         inc	OUTPUTH	 		 ; handle overflow
-ntoa_carry:	
-	
+ntoa_carry:
+
 	bne	store_loop		 ; save a byte.  OutputH never in zero page
 done_ntoa:
 	rts
@@ -886,9 +886,9 @@ div10:
         lda	#$a0
         sta	DIVISORL		 ; set DIVISOR to 10<<4
 div10_loop:
-		  
+
        	asl	QUOTIENT
-			
+
 	lda	DIVIDENDL
 	cmp	DIVISORL
         bcc	less_than_10
@@ -897,23 +897,23 @@ subtract_10:
         lda	DIVIDENDL
 	sbc	DIVISORL
 	sta	DIVIDENDL
-			
+
 	lda	QUOTIENT
 	ora	#1
 	sta	QUOTIENT
 less_than_10:
-					  
+
 	clc
-	     
+
 	ror	DIVISORL
 	lda	DIVISORL
 	cmp	#$5
 	bne	div10_loop
-				     
+
 	lda	DIVIDENDL
 	sta    	REMAINDER
-			
-	rts		
+
+	rts
 
 ;====================================
 ; strcat - concatenate string
@@ -922,22 +922,22 @@ less_than_10:
 strcat:
         lda	(STRCATL),Y		; load byte into A
 	sta	(OUTPUTL),Y		; store A out
-	pha	
+	pha
 	ldx	#STRCATL		; increment STRCAT pointer
 	jsr	inc16			;  we do this first, so that we point
 					;  past null which lets us avoid
 					;  reloading in consecutive strcat's
  	pla
-        beq	strcat_done		; if zero, then done			
-  
+        beq	strcat_done		; if zero, then done
+
 	jsr	inc_pointer		; increment output pointer
 	bne	strcat	   		; we know OUTPUTH is never in zeor page
 					; so same as jmp
 strcat_done:
 	rts
-	
+
 ;====================================
-; find_string - 
+; find_string -
 ;====================================
 ; CHAR1,2 = chars to find
 ; ENDCHAR = end char
@@ -962,43 +962,43 @@ find_colon:
 	jsr find_loop
 	bcc find_string_done
 
-out_loop:	
+out_loop:
         lda	(FINDL),Y			; load byte
 	beq	find_string_done		; quit if zero
-	
+
 	cmp	ENDCHAR				; quit if endhcar matched
 	beq	find_string_done
-	
+
 	sta	(OUTPUTL),Y			; store to output
 	ldx	#FINDL
 	jsr	inc16				; increment FIND pointer
 	jsr	inc_pointer			; increment OUT pointer
 	bne	out_loop			; loop (OUT is never in page 0)
-	
+
 find_string_done:
 	tya					; null terminate (y is 0)
 	sta	(OUTPUTL),Y
-	rts	
+	rts
 
-find_loop:	
+find_loop:
         lda	(FINDL),Y			; load byte
 	beq	find_loop_done			; if zero, we're done
 
-	ldx	#FINDL				; 
+	ldx	#FINDL				;
 	jsr	inc16				; increment pointer
-	
-	cmp	CHAR1	
+
+	cmp	CHAR1
 	bne	find_loop			; jmp. disk buffer never in 0 page
-	
+
 	lda	(FINDL),Y			; load byte
 	cmp	CHAR2				; compare 2nd char
 	bne	find_loop
-	
+
 found_it:
 	ldx	#FINDL
-	jsr	inc16				; increment pointer	
+	jsr	inc16				; increment pointer
 	sec					; set that we were correct
-find_loop_done:	
+find_loop_done:
 	rts
 
 
@@ -1024,7 +1024,7 @@ strlen_loop:
         bne	strlen_loop		; same as jmp, pointer never in 0 page
 
 strlen_done:
-	  
+
 	sec
         lda	#40			; width of screen
 	sbc	COUNT
@@ -1032,13 +1032,13 @@ strlen_done:
 	bmi	no_center
 	lsr	A	 		; divide by 2
 	adc	#0			; round up if carry
-	
+
 	tax
 
 	jsr	PRBL2			; print X blanks
 
 	jsr	reset_output		; reset output pointer
-	
+
 no_center:
 	ldx	COUNT
 print_loop:
@@ -1049,12 +1049,12 @@ print_loop:
         bne	cap_carry
         inc	OUTPUTH	 		 ; handle overflow
 cap_carry:
-	
+
 	dex
 	bne	print_loop
-		  
+
 	jsr	CROUT	  		; output to screen
-		     
+
 	rts
 
 ;=========================================
@@ -1066,7 +1066,7 @@ reset_output:
       	sta	OUTPUTL
         lda	#>OUTPUT
 	sta	OUTPUTH
-	rts	    
+	rts
 
 ;=================================
 ; detect_ram
@@ -1079,37 +1079,37 @@ reset_output:
 
 detect_ram:
 	ldx 	#64			; set default ram to 64 bytes
-	
+
 	lda	$FBB3			; this address
 	cmp	#$38			; is $38 on an original apple ii
 	bne	apple_iiplus
 apple_ii:
 	beq	done_detecting		; we were apple II, done
-					  
+
 apple_iiplus:
 	cmp  	#$EA			; are we an apple iie
       	bne	apple_iie		; if so keep going
-	
+
 	; if we get here we're a ii+ or iii in emulation mode
-	       
-	ldx	#48	 		; we're an Apple II+	
+
+	ldx	#48	 		; we're an Apple II+
 					; we assume 48k even though it can be
 		     			; 64k if language card
 					; too lazy to detect that
-					
+
 	beq	done_detecting
-	
+
 apple_iie:
 	lda	$FBC0
 	beq	apple_iic		; check for apple iic
-		     
+
         cmp	#$E0	    		; if we're an Apple IIe (original)
 	bne	done_detecting		; then use 64K and finish
-			   
+
 apple_iie_enhanced:
 apple_iic:
 	ldx	#128
-	    
+
 done_detecting:
 	stx     RAMSIZE
 	rts
@@ -1139,29 +1139,29 @@ error:
 
 open:
 	; allocate one of the DOS buffers so we don't have to set them up
-	
+
 allocate_dos_buffer:
 	lda     $3D2			; DOS load point
 	sta	DOSBUFH
 	ldy	#0
 	sty	DOSBUFL
-	
+
 buf_loop:
 	lda	(DOSBUFL),Y		; locate next buffer
 	pha				; push on stack
 					; we need this later
 					; to test validity
-					
+
 	iny				; increment y
 	lda	(DOSBUFL),Y		; load next byte
 	sta	DOSBUFH			; store to buffer pointerl
 
 	pla				; restore value from stack
-	
+
 	sta	DOSBUFL			; store to buffer pointerh
-	
+
 	bne	found_buffer		; if not zero, found a buffer
-	
+
 	lda	DOSBUFH			; also if not zero, found a buffer
 	beq     error			; no buffer found, exit
 
@@ -1169,71 +1169,71 @@ found_buffer:
 	ldy  	#0			; get filename
 	lda	(DOSBUFL),Y		; get first byte
 	beq	good_buffer		; if zero, good buffer
-	
+
 					; in use
-	ldy	#$24	   		; point to next 
+	ldy	#$24	   		; point to next
 	bne	buf_loop		; and loop
-	
+
 good_buffer:
 	lda 	#$78
 	sta	(DOSBUFL),Y		; mark as in use (can be any !0)
 
 keep_opening:
-	ldy	#0	
+	ldy	#0
 	lda	#OPEN			; set operation code to OPEN
 	sta	(FILEML),y
-	
+
 	ldy	#2	  		; point to record length
 	lda	#0			; set it to zero (16-bits)
 	sta	(FILEML),y
 	iny
 	sta	(FILEML),y
-	
+
 	iny		  		; point to volume num (0=any)
 	sta	(FILEML),y
-	
+
 	jsr	LOCATE_RWTS_PARAM	; get current RWTS parameters
 					; so we can get disk/slot info
-					
+
 	sty	RWTSL
 	sta	RWTSH
-	
+
 	ldy	#1
 	lda	(RWTSL),y		; get slot*16
 	lsr	a
 	lsr	a
 	lsr	a
 	lsr	a			; divide by 16
-	
+
 	ldy	#6			; address of slot
 	sta	(FILEML),y		; store it
-	
+
 	ldy	#2
 	lda	(RWTSL),y		; get drive
 	ldy	#5			; address of drive
 	sta	(FILEML),y
-	
+
 filemanager_interface:
 
 	ldy 	#$1E
-dbuf_loop:	
+dbuf_loop:
 	lda	(DOSBUFL),y		; get three buffer pointers
 	pha				; push onto stack
 	iny				; increment pointer
 	cpy	#$24			; have we incremented 6 times?
 	bcc	dbuf_loop		; if not, loop
-	
+
 	ldy	#$11			; point to the end of the same struct
 					; in file manager
-fmgr_loop:					
+fmgr_loop:
 	pla				; pop value
 	sta	(FILEML),Y		; store it
 	dey				; work backwards
 	cpy	#$c			; see if we are done
 	bcs	fmgr_loop		; loop
-	
+
 	jmp	FILEMANAGER		; run filemanager
-	
+
 
 ;====================
 ; close DOS file
@@ -1242,14 +1242,14 @@ fmgr_loop:
 close:
         ldy    #0    			; command offset
 	lda    #CLOSE			; load close
-	sta    (FILEML),y		
-		     
+	sta    (FILEML),y
+
 	jsr    filemanager_interface
-	
+
 	ldy    #0		    	; mark dos buffer as free again
 	tya
 	sta    (DOSBUFL),y
-	
+
 	rts
 
 ;=========================
@@ -1260,11 +1260,11 @@ read:
         ldy   #0			; command offset
 	lda   #READ
 	sta   (FILEML),y
-	
+
 	iny   				; point to sub-opcode
 	lda   #2			; "range of bytes"
 	sta   (FILEML),y
-	
+
 	ldy   #6			; point to number of bytes to read
 	lda   #$ff
 	sta   (FILEML),y		; we want to read 255 bytes
@@ -1278,11 +1278,11 @@ read:
 	iny
 	lda   #>disk_buff
 	sta   (FILEML),y
-	
+
 	bne   filemanager_interface     ; same as JMP
 
 
-	
+
 ;; *********************
 ;; BSS
 ;; *********************
@@ -1323,7 +1323,7 @@ PROCESSOR:
 ; " Processor, "
 .byte	$A0,$D0,$F2,$EF,$E3,$E5,$F3,$F3,$EF,$F2,$AC,$A0,$00
 
-RAM:	
+RAM:
 ; "kB RAM"
 .byte	$EB,$C2,$A0,$D2,$C1,$CD,$00
 
@@ -1349,14 +1349,3 @@ LOGO:
 .byte	0,198,80,178,121,145,74,112,49,248,81,243,40,221,23,255,23
 .byte	8,2,54,3,36,229,66,10
 LOGO_END:
-
-
-
-
-
-
-	
-
-
-
-
