@@ -162,6 +162,20 @@ as -o ll.o ll.m88k.s ; ld -o ll ll.o
 
 
 #################################################
+
+On the PiDP-11 using the default disk images:
+	+ Boot into V7
+	+ Doesn't seem to have RL support
+	+ As below, but do
+		attach rp1 /home/pi/data.dsk
+	+ Note that the provided /dev/rp3 is *not* RP-Disk3, but RP0-partition3
+		To access this rp1 device do something like
+		/etc/mknod /dev/rp1 b 6 8
+	+ You can do tar, etc, as below
+
+
+Original directions:
+
 Using simh to simulate pdp-11:
 
 obtain "unix_v7_rl.dsk"
