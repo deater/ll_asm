@@ -346,7 +346,7 @@ ll.mips16:	ll.mips16.o
 	$(CROSS)$(LD) -N -o ll.mips16 ll.mips16.o
 
 ll.mips16.o:	ll.mips16.s
-	$(CROSS)$(AS) -mips32r2 -mips16 -o ll.mips16.o ll.mips16.s
+	$(CROSS)$(AS) $(LITTLE_ENDIAN) -mips32r2 -mips16 -o ll.mips16.o ll.mips16.s
 
 ll.mips16.fakeproc.stripped:  ll.mips16.fakeproc sstrip/sstrip
 	cp ll.mips16.fakeproc ll.mips16.fakeproc.stripped

@@ -8,6 +8,11 @@
 
 .include "logo.include"
 
+#  Note: mips16 was first (1996)
+#        mips16e was extension
+#	 mips16e2 followed
+#	 replaced in end by microMips
+
 #
 # MIPS16 differences from MIPS
 #
@@ -510,12 +515,10 @@ done:
 	jr	$31			# return
 
 
-nop	#needed for alignment issues?
-
-
-
-
+#nop	#needed for alignment issues?
 #nop	# needed for alignment?
+
+.align 2
 
 	#==============================
 	# center_and_print
@@ -527,8 +530,19 @@ center_and_print:
 
 	save	$ra,$s1,8		# save return address
 
+	# FIXME: should we worry these accesses might be unaligned?
+
+	# LITTLE ENDIAN
+.ifdef LITTLE_ENDIAN
+	li	$v0,0x000a		# append linefeed
+	sh	$v0,0($s0)
+.else
+	# BIG ENDIAN
+
 	li	$v0,0xa00		# append linefeed
 	sh	$v0,0($s0)
+.endif
+
 
 	lw	$a1,out_buffer_addr	# a1 is beginning of string
 					# s0 is end of string
@@ -581,6 +595,9 @@ done_center:
 				# where we were called from
 				# at the end of the write_stdout
 
+.align 2
+
+#nop		# alignment?
 
 	#================================
 	# WRITE_STDOUT
