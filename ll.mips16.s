@@ -8,10 +8,20 @@
 
 .include "logo.include"
 
-#  Note: mips16 was first (1996)
-#        mips16e was extension
-#	 mips16e2 followed
-#	 replaced in end by microMips
+#  Note on mips16/mips16e/mips16e2 differences:
+#	mips16 was first (1996)
+#	mips16e was the same, just formalized by MIPS (?????)
+#	mips16e2 followed, which added:
+#			32-bit ins with 16-bit immediates
+#				 (addiu, andi, lui, ori, xori)
+#			other 32-bit ins (ext/ins [extract/insert bitfield])
+#			GP-relative load/stores
+#				(lb,lbu,lh,lhu,lw,lwl,lwr,sb,sh,sw,swl,swr)
+#			conditional move movz,movn,movtn,movtz
+#			LL/SC pause
+#                       various other system instructions
+#	replaced in end by microMips
+#	then came nanoMIPS
 
 #
 # MIPS16 differences from MIPS
