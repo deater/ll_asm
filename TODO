@@ -27,6 +27,8 @@ Chips TODO:
 + TI MSP430
 + Z8000
 + coldfire
++ LM32 (lattice)
++ xtensa
 
 Linux:
 + blackfin
